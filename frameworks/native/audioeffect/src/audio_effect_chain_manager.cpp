@@ -1107,14 +1107,13 @@ void AudioEffectChainManager::AudioRotationListener::OnChange(Rosen::DisplayId d
 
 bool AudioEffectChainManager::CheckA2dpOffload()
 {
-    if ((deviceType_ == DEVICE_TYPE_SPEAKER) &&
-        (deviceClass_ == "XYAO" || deviceClass_ == "PCEL" || deviceClass_ == "HAD" || deviceClass_ == "HYM")) {
-        return false;
+    if (GetOffloadEnabled()) {
+        if ((deviceSink_ == DEFAULT_DEVICE_SINK) && ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) ||
+            (deviceType_ == DEVICE_TYPE_SPEAKER))) {
+            return true;
+        }
     }
-    if ((deviceSink_ == DEFAULT_DEVICE_SINK) && ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) ||
-        (deviceType_ == DEVICE_TYPE_SPEAKER))) {
-        return true;
-    }
+
     return false;
 }
 
@@ -1125,7 +1124,7 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
 
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
     if (spatializationEnabled_) {
-        if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (!CheckA2dpOffload())) {
+        if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (deviceSink_ == BLUETOOTH_DEVICE_SINK)) {
             AUDIO_INFO_LOG("A2dp-hal, enter ARM processing");
             btOffloadEnabled_ = false;
             RecoverAllChains();
@@ -1143,7 +1142,7 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
             DeleteAllChains();
         }
     } else {
-        if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (!CheckA2dpOffload())) {
+        if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (deviceSink_ == BLUETOOTH_DEVICE_SINK)) {
             AUDIO_INFO_LOG("A2dp-hal, leave ARM processing");
             DeleteAllChains();
             return;
