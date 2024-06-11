@@ -41,7 +41,8 @@ AudioDownMixStereo::AudioDownMixStereo() : handle_(nullptr), mixer_(nullptr)
         AUDIO_ERR_LOG("dlopen failed check so file exists");
         return;
     }
-    AudioMcrMixerClassCreateFunc *createMixerFunc = (AudioMcrMixerClassCreateFunc *)dlsym(handle_, DOWN_MIX_FUNC_NAME);
+    AudioMcrMixerClassCreateFunc *createMixerFunc =
+        reinterpret_cast<AudioMcrMixerClassCreateFunc *>(dlsym(handle_, DOWN_MIX_FUNC_NAME));
     if (!createMixerFunc) {
         AUDIO_ERR_LOG("dlsym failed.check so has this function.");
         return;
