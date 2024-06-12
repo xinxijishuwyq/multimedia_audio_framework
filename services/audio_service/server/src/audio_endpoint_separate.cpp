@@ -348,7 +348,8 @@ bool AudioEndpointSeparate::IsAnyProcessRunning()
     std::lock_guard<std::mutex> lock(listLock_);
     bool isRunning = false;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
-        if (processBufferList_[i]->GetStreamStatus()->load() == STREAM_RUNNING) {
+        if (processBufferList_[i]->GetStreamStatus() &&
+            processBufferList_[i]->GetStreamStatus()->load() == STREAM_RUNNING) {
             isRunning = true;
             break;
         }
@@ -708,7 +709,8 @@ void AudioEndpointSeparate::WriteToProcessBuffers(const BufferDesc &readBuf)
             AUDIO_ERR_LOG("%{public}s process buffer %{public}zu is null.", __func__, i);
             continue;
         }
-        if (processBufferList_[i]->GetStreamStatus()->load() != STREAM_RUNNING) {
+        if (processBufferList_[i]->GetStreamStatus() &&
+            processBufferList_[i]->GetStreamStatus()->load() != STREAM_RUNNING) {
             AUDIO_WARNING_LOG("%{public}s process buffer %{public}zu not running, stream status %{public}d.",
                 __func__, i, processBufferList_[i]->GetStreamStatus()->load());
             continue;
