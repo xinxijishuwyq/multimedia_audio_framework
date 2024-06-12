@@ -106,6 +106,7 @@ private:
     std::mutex volumeMutex_;
     std::unordered_map<AudioStreamType, bool> muteStatusMap_; // save volume Mutestatus map
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_; // save volume map
+    bool isSettingsCloneHaveStarted_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
