@@ -242,6 +242,7 @@ struct Userdata {
     } multiChannel;
 };
 
+static int32_t audioFrameNum = 0;
 static void UserdataFree(struct Userdata *u);
 static int32_t PrepareDevice(struct Userdata *u, const char *filePath);
 
@@ -1328,6 +1329,13 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag =
             EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled ? "1" : "0");
+        audioFrameNum++;
+        if (audioFrameNum == 100) {
+            audioFrameNum = 0;
+            AUDIO_DEBUG_LOG("existFlag is %{public}d,
+            scene type is %{public}s, scene mode is %{public}s, spatializationEnabled is %{public}s",
+            sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled);
+        }
         if ((IsInnerCapturer(sinkIn) && isCaptureSilently) || !InputIsPrimary(sinkIn)) {
             continue;
         } else if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
