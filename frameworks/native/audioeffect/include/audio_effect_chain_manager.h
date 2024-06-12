@@ -115,7 +115,7 @@ public:
     int32_t SetHdiParam(const std::string &sceneType, const std::string &effectMode, bool enabled);
     int32_t SessionInfoMapAdd(const std::string &sessionID, const SessionEffectInfo &info);
     int32_t SessionInfoMapDelete(const std::string &sceneType, const std::string &sessionID);
-    int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels, uint64_t *channelLayout);
+    int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
     int32_t ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
     void RegisterEffectChainCountBackupMap(const std::string &sceneType, const std::string &operation);
     int32_t EffectRotationUpdate(const uint32_t rotationState);
@@ -143,12 +143,10 @@ private:
     void SetSpkOffloadState();
     void InitHdiState();
     void UpdateCurrSceneType(AudioEffectScene &currSceneType, std::string &sceneType);
-    void ChangeEffectChainCountMap(const std::string &sceneType);
-    void EraseEffectChainSetAndMap(const std::string &sceneType);
-    void ChangeEffectChannels(const std::string &sceneType, const std::set<std::string> &sessions, uint32_t *channels,
-        uint64_t *channelLayout);
-    void FindMaxSessionID(std::string &maxSessionID, std::string &sceneType, const std::string &scenePairType,
-        std::set<std::string> &sessions);
+    void ChangeEffectChainCountMapForCreate(const std::string &sceneType);
+    void EraseEffectChainSetAndMapForCreate(const std::string &sceneType);
+    void FindMaxEffectChannels(const std::string &sceneType, const std::set<std::string> &sessions, uint32_t &channels,
+        uint64_t &channelLayout);
     int32_t UpdateDeviceInfo(int32_t device, const std::string &sinkName);
     std::shared_ptr<AudioEffectChain> CreateAudioEffectChain(const std::string &sceneType);
     bool CheckIfSpkDsp();
@@ -182,7 +180,6 @@ private:
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     int32_t hdiSceneType_ = 0;
     int32_t hdiEffectMode_ = 0;
-    int32_t maxEffectInstances_ = DEFAULT_NUM_EFFECT_INSTANCES;
     bool isCommonEffectChainExisted_ = false;
     bool debugArmFlag_ = false;
 

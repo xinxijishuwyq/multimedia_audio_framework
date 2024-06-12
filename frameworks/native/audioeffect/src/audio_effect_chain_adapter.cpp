@@ -311,7 +311,9 @@ int32_t EffectChainManagerReturnEffectChannelInfo(const char *sceneType, uint32_
     }
     std::string sceneTypeString = sceneType;
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    return audioEffectChainManager->ReturnEffectChannelInfo(sceneTypeString, channels, channelLayout);
+    uint32_t &chans = *channels;
+    uint64_t &chLayout = *channelLayout;
+    return audioEffectChainManager->ReturnEffectChannelInfo(sceneTypeString, chans, chLayout);
 }
 
 int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout)

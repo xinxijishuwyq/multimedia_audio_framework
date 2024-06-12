@@ -64,6 +64,17 @@ static bool IsChannelLayoutHVSSupported(const uint64_t channelLayout)
         HVS_SUPPORTED_CHANNELLAYOUTS.end();
 }
 
+static void AudioEffectChainManager::FindMaxSessionID(std::string &maxSessionID, std::string &sceneType,
+    const std::string &scenePairType, std::set<std::string> &sessions)
+{
+    for (auto& sessionID : sessions) {
+        if (sessionID > maxSessionID) {
+            maxSessionID = sessionID;
+            sceneType = scenePairType;
+        }
+    }
+}
+
 AudioEffectChainManager::AudioEffectChainManager()
 {
     EffectToLibraryEntryMap_.clear();
@@ -320,10 +331,10 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(const std::string
     if (SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         if (!SceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) ||
             SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] < 1) {
-            EraseEffectChainSetAndMap(sceneType);
+            EraseEffectChainSetAndMapForCreate(sceneType);
             return ERROR;
         }
-        ChangeEffectChainCountMap(sceneType);
+        ChangeEffectChainCountMapForCreate(sceneType);
         return SUCCESS;
     }
     audioEffectChain = CreateAudioEffectChain(sceneType);
@@ -706,7 +717,7 @@ int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sce
     }
     uint32_t inputChannels = DEFAULT_NUM_CHANNEL;
     uint64_t inputChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-    ReturnEffectChannelInfo(sceneType, &inputChannels, &inputChannelLayout);
+    ReturnEffectChannelInfo(sceneType, inputChannels, inputChannelLayout);
 
     auto audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
     if (audioEffectChain == nullptr) {
@@ -752,8 +763,8 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
     return SUCCESS;
 }
 
-int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels,
-    uint64_t *channelLayout)
+int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &sceneType, uint32_t &channels,
+    uint64_t &channelLayout)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     if (!SceneTypeToSessionIDMap_.count(sceneType)) {
@@ -762,7 +773,7 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
     for (auto& scenePair : SceneTypeToSessionIDMap_) {
         if (sceneType == scenePair.first || !SceneTypeToSpecialEffectSet_.count(sceneType)) {
             std::set<std::string> sessions = scenePair.second;
-            ChangeEffectChannels(sceneType, sessions, channels, channelLayout);
+            FindMaxEffectChannels(sceneType, sessions, channels, channelLayout);
         }
     }
     return SUCCESS;
@@ -1103,7 +1114,7 @@ void AudioEffectChainManager::UpdateRealAudioEffect()
     std::string sceneType = "";
     for (auto& scenePair : SceneTypeToSessionIDMap_) {
         if (!SceneTypeToSpecialEffectSet_.count(scenePair.first)) {
-            std::set<std::string>& sessions = scenePair.second;
+            std::set<std::string> &sessions = scenePair.second;
             FindMaxSessionID(maxSessionID, sceneType, scenePair.first, sessions);
         }
     }
@@ -1147,7 +1158,7 @@ void AudioEffectChainManager::UpdateCurrSceneType(AudioEffectScene &currSceneTyp
     }
 }
 
-void AudioEffectChainManager::ChangeEffectChainCountMap(const std::string &sceneType)
+void AudioEffectChainManager::ChangeEffectChainCountMapForCreate(const std::string &sceneType)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
@@ -1158,7 +1169,7 @@ void AudioEffectChainManager::ChangeEffectChainCountMap(const std::string &scene
     }
 }
 
-void AudioEffectChainManager::EraseEffectChainSetAndMap(const std::string &sceneType)
+void AudioEffectChainManager::EraseEffectChainSetAndMapForCreate(const std::string &sceneType)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
@@ -1166,8 +1177,8 @@ void AudioEffectChainManager::EraseEffectChainSetAndMap(const std::string &scene
     SceneTypeToSpecialEffectSet_.erase(sceneType);
 }
 
-void AudioEffectChainManager::ChangeEffectChannels(const std::string &sceneType,
-    const std::set<std::string> &sessions, uint32_t *channels, uint64_t *channelLayout)
+void AudioEffectChainManager::FindMaxEffectChannels(const std::string &sceneType,
+    const std::set<std::string> &sessions, uint32_t &channels, uint64_t &channelLayout)
 {
     for (auto s = sessions.begin(); s != sessions.end(); ++s) {
         SessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
@@ -1184,20 +1195,9 @@ void AudioEffectChainManager::ChangeEffectChannels(const std::string &sceneType,
             tmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
         }
 
-        if (tmpChannelCount >= *channels) {
-            *channels = tmpChannelCount;
-            *channelLayout = tmpChannelLayout;
-        }
-    }
-}
-
-void AudioEffectChainManager::FindMaxSessionID(std::string &maxSessionID, std::string &sceneType,
-    const std::string &scenePairType, std::set<std::string> &sessions)
-{
-    for (auto& sessionID : sessions) {
-        if (sessionID > maxSessionID) {
-            maxSessionID = sessionID;
-            sceneType = scenePairType;
+        if (tmpChannelCount >= channels) {
+            channels = tmpChannelCount;
+            channelLayout = tmpChannelLayout;
         }
     }
 }
@@ -1208,7 +1208,7 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
 
-    if ((maxEffectInstances_ - SceneTypeToSpecialEffectSet_.size()) > 1 && sceneType != "SCENE_OTHERS") {
+    if ((DEFAULT_NUM_EFFECT_INSTANCES - SceneTypeToSpecialEffectSet_.size()) > 1 && sceneType != "SCENE_OTHERS") {
         SceneTypeToSpecialEffectSet_.insert(sceneType);
 #ifdef SENSOR_ENABLE
         audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker_);
