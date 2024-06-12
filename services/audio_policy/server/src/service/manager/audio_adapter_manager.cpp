@@ -312,7 +312,11 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
     auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
     if (handler != nullptr) {
-        handler->SendSaveVolume(currentActiveDevice_, streamType, volumeLevel);
+        if (Util::IsDualToneStreamType(streamType)) {
+            handler->SendSaveVolume(DEVICE_TYPE_SPEAKER, streamType, volumeLevel);
+        } else {
+            handler->SendSaveVolume(currentActiveDevice_, streamType, volumeLevel);
+        }
     }
 
     return SetVolumeDb(streamType);
@@ -334,7 +338,11 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
-        volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);
+        if (Util::IsDualToneStreamType(streamType)) {
+            volumeDb = CalculateVolumeDbNonlinear(streamType, DEVICE_TYPE_SPEAKER, volumeLevel);
+        } else {
+            volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);
+        }
     } else {
         volumeDb = CalculateVolumeDb(volumeLevel);
     }
