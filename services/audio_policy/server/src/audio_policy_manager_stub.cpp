@@ -120,6 +120,20 @@ void AudioPolicyManagerStub::SetMicrophoneMuteAudioConfigInternal(MessageParcel 
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isMute = data.ReadBool();
+    PolicyType type = static_cast<PolicyType>(data.ReadInt32());
+    int32_t result = SetMicrophoneMutePersistent(isMute, type);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool result = GetPersistentMicMuteState();
+    reply.WriteBool(result);
+}
+
 void AudioPolicyManagerStub::IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply)
 {
     API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
@@ -230,6 +244,18 @@ void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParc
     }
 }
 
+void AudioPolicyManagerStub::GetDevicesInnerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int deviceFlag = data.ReadInt32();
+    DeviceFlag deviceFlagConfig = static_cast<DeviceFlag>(deviceFlag);
+    std::vector<sptr<AudioDeviceDescriptor>> devices = GetDevicesInner(deviceFlagConfig);
+    int32_t size = static_cast<int32_t>(devices.size());
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        devices[i]->Marshalling(reply);
+    }
+}
+
 void AudioPolicyManagerStub::NotifyCapturerAddedInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioCapturerInfo capturerInfo;
@@ -266,6 +292,14 @@ void AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal(MessageP
     for (uint32_t i = 0; i < size; i++) {
         devices[i]->Marshalling(reply);
     }
+}
+
+void AudioPolicyManagerStub::SetClientCallbacksEnableInternal(MessageParcel &data, MessageParcel &reply)
+{
+    CallbackChange callbackchange = static_cast<CallbackChange>(data.ReadInt32());
+    bool enable = data.ReadBool();
+    int32_t result = SetClientCallbacksEnable(callbackchange, enable);
+    reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply)
@@ -1170,6 +1204,12 @@ void AudioPolicyManagerStub::ActivateAudioConcurrencyInternal(MessageParcel &dat
 {
     AudioPipeType pipeType = static_cast<AudioPipeType>(data.ReadInt32());
     int32_t result = ActivateAudioConcurrency(pipeType);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetRingerStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = ResetRingerModeMute();
     reply.WriteInt32(result);
 }
 } // namespace audio_policy

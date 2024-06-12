@@ -200,6 +200,36 @@ bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig)
     return res;
 }
 
+bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
+{
+    DeviceInfo deviceInfo;
+    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+    if (!ret) {
+        AUDIO_WARNING_LOG("GetProcessDeviceInfo from audio policy server failed!");
+        return false;
+    }
+    if (config.audioMode != AUDIO_MODE_PLAYBACK) {
+        AUDIO_WARNING_LOG("No playback mode!");
+        return false;
+    }
+    AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
+        "supportLowLatency: %{public}d", deviceInfo.deviceType, deviceInfo.isLowLatencyDevice);
+    if (deviceInfo.deviceType == DEVICE_TYPE_WIRED_HEADSET || deviceInfo.deviceType == DEVICE_TYPE_WIRED_HEADPHONES ||
+        deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_SCO || deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        deviceInfo.deviceType == DEVICE_TYPE_USB_HEADSET || deviceInfo.deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+        switch (config.rendererInfo.streamUsage) {
+            case STREAM_USAGE_ALARM:
+            case STREAM_USAGE_VOICE_RINGTONE:
+            case STREAM_USAGE_RINGTONE:
+                AUDIO_WARNING_LOG("Should DualTone.");
+                return true;
+            default:
+                return false;
+        }
+    }
+    return false;
+}
+
 void AudioService::FilterAllFastProcess()
 {
     std::unique_lock<std::mutex> lock(processListMutex_);
@@ -261,6 +291,41 @@ int32_t AudioService::OnUpdateInnerCapList()
     lock.unlock();
     // EnableInnerCap will be called twice as it's already in filteredRendererMap_.
     return OnInitInnerCapList();
+}
+
+int32_t AudioService::EnableDualToneList(uint32_t sessionId)
+{
+    workingDualToneId_ = sessionId;
+    AUDIO_INFO_LOG("EnableDualToneList sessionId is %{public}d", sessionId);
+    std::unique_lock<std::mutex> lock(rendererMapMutex_);
+    for (auto it = allRendererMap_.begin(); it != allRendererMap_.end(); it++) {
+        std::shared_ptr<RendererInServer> renderer = it->second.lock();
+        if (renderer == nullptr) {
+            AUDIO_WARNING_LOG("Renderer is already released!");
+            continue;
+        }
+        if (ShouldBeDualTone(renderer->processConfig_)) {
+            renderer->EnableDualTone();
+            filteredDualToneRendererMap_.push_back(renderer);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioService::DisableDualToneList(uint32_t sessionId)
+{
+    AUDIO_INFO_LOG("disable dual tone, sessionId is %{public}d", sessionId);
+    std::unique_lock<std::mutex> lock(rendererMapMutex_);
+    for (size_t i = 0; i < filteredDualToneRendererMap_.size(); i++) {
+        std::shared_ptr<RendererInServer> renderer = filteredDualToneRendererMap_[i].lock();
+        if (renderer == nullptr) {
+            AUDIO_WARNING_LOG("Renderer is already released!");
+            continue;
+        }
+        renderer->DisableDualTone();
+    }
+    filteredDualToneRendererMap_.clear();
+    return SUCCESS;
 }
 
 // Only one session is working at the same time.
@@ -577,7 +642,7 @@ void AudioService::Dump(std::string &dumpString)
 float AudioService::GetMaxAmplitude(bool isOutputDevice)
 {
     std::lock_guard<std::mutex> lock(processListMutex_);
-    
+
     if (linkedPairedList_.size() == 0) {
         return 0;
     }

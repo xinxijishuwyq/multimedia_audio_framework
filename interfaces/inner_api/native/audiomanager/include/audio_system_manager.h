@@ -84,11 +84,11 @@ class InterruptGroupInfo;
 class InterruptGroupInfo : public Parcelable {
     friend class AudioSystemManager;
 public:
-    int32_t interruptGroupId_;
-    int32_t mappingId_;
+    int32_t interruptGroupId_ = 0;
+    int32_t mappingId_ = 0;
     std::string groupName_;
     std::string networkId_;
-    ConnectType connectType_;
+    ConnectType connectType_ = CONNECT_TYPE_LOCAL;
     InterruptGroupInfo();
     InterruptGroupInfo(int32_t interruptGroupId, int32_t mappingId, std::string groupName, std::string networkId,
         ConnectType type);
@@ -101,11 +101,11 @@ class VolumeGroupInfo;
 class VolumeGroupInfo : public Parcelable {
     friend class AudioSystemManager;
 public:
-    int32_t volumeGroupId_;
-    int32_t mappingId_;
+    int32_t volumeGroupId_ = 0;
+    int32_t mappingId_ = 0;
     std::string groupName_;
     std::string networkId_;
-    ConnectType connectType_;
+    ConnectType connectType_ = CONNECT_TYPE_LOCAL;
 
     /**
      * @brief Volume group info.
@@ -600,6 +600,15 @@ public:
      * @since 9
      */
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
+
+    /**
+     * @brief Get the list of audio devices (inner).
+     *
+     * @param deviceFlag Flag of device type.
+     * @return Returns the device list is obtained.
+     * @since 12
+     */
+    std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
 
     /**
      * @brief Get audio parameter.

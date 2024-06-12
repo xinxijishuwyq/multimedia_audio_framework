@@ -96,7 +96,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetLatency(uint32_t *latency) override;
     int32_t GetTransactionId(uint64_t *transactionId) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
 
     void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
@@ -109,7 +109,7 @@ public:
 
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
-    int32_t SetOutputRoute(DeviceType outputDevice) override;
+    int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) override;
     void ResetOutputRouteForDisconnect(DeviceType device) override;
     float GetMaxAmplitude() override;
     int32_t SetPaPower(int32_t flag) override;
@@ -728,13 +728,13 @@ int32_t OffloadAudioRendererSinkInner::GetLatency(uint32_t *latency)
     }
 }
 
-int32_t OffloadAudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
+int32_t OffloadAudioRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &outputDevices)
 {
-    AUDIO_WARNING_LOG("not supported.");
+    AUDIO_DEBUG_LOG("SetOutputRoutes not supported.");
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t OffloadAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t OffloadAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
 {
     AUDIO_WARNING_LOG("not supported.");
     return ERR_NOT_SUPPORTED;

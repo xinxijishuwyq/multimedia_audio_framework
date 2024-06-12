@@ -53,6 +53,8 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) override;
+
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint32_t sessionId) override;
 
@@ -93,6 +95,10 @@ public:
     int32_t SetMicrophoneMute(bool isMute) override;
 
     int32_t SetMicrophoneMuteAudioConfig(bool isMute) override;
+
+    int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type) override;
+
+    bool GetPersistentMicMuteState() override;
 
     bool IsMicrophoneMute(API_VERSION api_v) override;
 
@@ -160,6 +166,8 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) override;
+
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) override;
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
         const int32_t zoneID = 0) override;
@@ -278,6 +286,8 @@ public:
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID) override;
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) override;
+
+    int32_t ResetRingerModeMute() override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

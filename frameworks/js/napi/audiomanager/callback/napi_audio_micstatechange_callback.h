@@ -30,6 +30,8 @@ public:
     explicit NapiAudioManagerMicStateChangeCallback(napi_env env);
     virtual ~NapiAudioManagerMicStateChangeCallback();
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
+    bool IsSameCallback(const napi_value args);
+    void RemoveCallbackReference(const napi_value args);
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
 
 private:

@@ -68,6 +68,7 @@ static std::string GetAudioEventInfo(const AudioEvent audioEvent)
 
 bool AudioPnpServer::init(void)
 {
+    AUDIO_INFO_LOG("Init");
     g_socketRunThread = true;
     g_inputRunThread = true;
 
@@ -80,6 +81,7 @@ bool AudioPnpServer::init(void)
 
 int32_t AudioPnpServer::RegisterPnpStatusListener(std::shared_ptr<AudioPnpDeviceChangeCallback> callback)
 {
+    AUDIO_INFO_LOG("Enter");
     {
         std::lock_guard<std::mutex> lock(pnpMutex_);
         pnpCallback_ = callback;
@@ -194,6 +196,7 @@ void AudioPnpServer::UpdateUsbHeadset()
 
 void AudioPnpServer::DetectAudioDevice()
 {
+    AUDIO_INFO_LOG("Enter");
     int32_t ret;
     AudioEvent audioEvent = {0};
 
@@ -240,6 +243,7 @@ void AudioPnpServer::DetectAudioDevice()
         OnPnpDeviceStatusChanged(eventInfo_);
     }
 #endif
+    AUDIO_INFO_LOG("Done");
 }
 
 void AudioPnpServer::StopPnpServer()

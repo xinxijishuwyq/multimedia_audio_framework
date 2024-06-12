@@ -20,6 +20,9 @@
 
 namespace OHOS {
 namespace Bluetooth {
+
+constexpr int32_t WEAR_ENABLED = 1;
+
 enum BluetoothDeviceAction : int32_t {
     WEAR_ACTION = 0,
     UNWEAR_ACTION = 1,

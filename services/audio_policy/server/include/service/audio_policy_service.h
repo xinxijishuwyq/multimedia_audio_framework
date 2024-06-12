@@ -154,6 +154,12 @@ public:
 
     int32_t SetMicrophoneMute(bool isMute);
 
+    int32_t SetMicrophoneMutePersistent(const bool isMute);
+
+    int32_t InitPersistentMicrophoneMuteState(bool &isMute);
+
+    bool GetPersistentMicMuteState();
+
     bool IsMicrophoneMute();
 
     int32_t SetAudioScene(AudioScene audioScene);
@@ -350,6 +356,8 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(AudioCapturerInfo &captureInfo,
         std::string networkId = LOCAL_NETWORK_ID);
 
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
+
     void GetEffectManagerInfo();
 
     float GetMinStreamVolume(void);
@@ -375,8 +383,6 @@ public:
     int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config);
 
     int32_t SetCaptureSilentState(bool state);
-
-    void UnloadLoopback();
 
     int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc);
 
@@ -486,6 +492,7 @@ public:
     void GetSafeVolumeDump(std::string &dumpString);
     void GetOffloadStatusDump(std::string &dumpString);
     void EffectManagerInfoDump(std::string &dumpString);
+    void MicrophoneMuteInfoDump(std::string &dumpString);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
     bool IsStreamSupported(AudioStreamType streamType);
@@ -500,6 +507,9 @@ public:
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
+
+    int32_t ResetRingerModeMute();
+    bool IsRingerModeMute();
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -600,7 +610,7 @@ private:
     int32_t ActivateNormalNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     void MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-        unique_ptr<AudioDeviceDescriptor> &outputDevice,
+        vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void MoveToNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
@@ -620,7 +630,9 @@ private:
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
 
     void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
-        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+
+    bool IsFastFromA2dpToA2dp(const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
 
     void FetchStreamForA2dpOffload(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
 
@@ -631,7 +643,7 @@ private:
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void FetchDevice(bool isOutputDevice = true,
-        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor& updatedDesc,
         std::vector<sptr<AudioDeviceDescriptor>>& descForCb);
@@ -711,15 +723,9 @@ private:
 
     void UpdateEffectDefaultSink(DeviceType deviceType);
 
-    void LoadEffectSinks();
-
     void LoadSinksForCapturer();
 
     void LoadInnerCapturerSink(string moduleName, AudioStreamInfo streamInfo);
-
-    void LoadReceiverSink();
-
-    void LoadLoopback();
 
     DeviceType FindConnectedHeadset();
 
@@ -762,6 +768,10 @@ private:
     void FetchInputDeviceWhenNoRunningStream();
 
     void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag);
+
+    void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices);
+
+    void UpdateDualToneState(const bool &enable, const int32_t &sessionId);
 
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
@@ -848,7 +858,7 @@ private:
 
     bool IsDirectSupportedDevice(DeviceType deviceType);
 
-    bool UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReason reason,
+    bool UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason,
         const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
 
     bool NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
@@ -892,6 +902,21 @@ private:
     int32_t UnloadMchModule();
 
     int32_t MoveToNewPipeInner(const uint32_t sessionId, const AudioPipeType pipeType);
+
+    void UpdateRoute(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+        vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
+
+    bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage);
+
+    bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
+
+    bool SelectRingerOrAlarmDevices(const vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+        const int32_t &sessionId);
+
+    void DealAudioSceneOutputDevices(const AudioScene &audioScene, std::vector<DeviceType> &activeOutputDevices,
+        bool &haveArmUsbDevice);
+
+    bool IsA2dpOrArmUsbDevice(const InternalDeviceType &deviceType);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -976,7 +1001,9 @@ private:
     GlobalConfigs globalConfigs_;
     AudioEffectManager& audioEffectManager_;
 
-    bool isMicrophoneMute_ = false;
+    bool isMicrophoneMuteTemporary_ = false;
+
+    bool isMicrophoneMutePersistent_ = false;
 
     mutable std::shared_mutex deviceStatusUpdateSharedMutex_;
 
@@ -1047,6 +1074,12 @@ private:
     ConverterConfig converterConfig_;
 
     std::unique_ptr<std::thread> RecoveryDevicesThread_ = nullptr;
+
+    std::mutex offloadCloseMutex_;
+    std::atomic<bool> isOffloadOpened_ = false;
+    std::condition_variable offloadCloseCondition_;
+
+    bool ringerModeMute_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -48,7 +48,7 @@ private:
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> rendererWriteDataCallback_ = nullptr;
     NapiAudioRenderer *napiRenderer_;
-    napi_ref callback_;
+    napi_ref callback_ = nullptr;
 
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
     static vector<NapiAudioRenderer*> activeRenderers_;

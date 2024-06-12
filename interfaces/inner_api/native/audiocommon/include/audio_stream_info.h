@@ -226,10 +226,10 @@ enum AudioPipeType {
 };
 
 struct AudioStreamParams {
-    uint32_t samplingRate;
-    uint8_t encoding;
-    uint8_t format;
-    uint8_t channels;
+    uint32_t samplingRate = 0;
+    uint8_t encoding = 0;
+    uint8_t format = 0;
+    uint8_t channels = 0;
     uint64_t channelLayout = 0ULL;
 };
 

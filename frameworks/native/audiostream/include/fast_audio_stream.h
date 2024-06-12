@@ -203,7 +203,7 @@ private:
     AudioStreamParams streamInfo_;
     AudioProcessConfig processconfig_;
     State state_;
-    uint32_t sessionId_;
+    uint32_t sessionId_ = 0;
     std::string cachePath_ = "";
     uint32_t underflowCount_ = 0;
     uint32_t overflowCount_ = 0;

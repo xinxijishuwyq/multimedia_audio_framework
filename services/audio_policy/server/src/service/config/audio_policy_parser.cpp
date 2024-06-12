@@ -61,6 +61,7 @@ static std::map<std::string, uint32_t> audioUsageStrToEnum = {
 
 bool AudioPolicyParser::LoadConfiguration()
 {
+    AUDIO_INFO_LOG("Enter");
     doc_ = xmlReadFile(CHIP_PROD_CONFIG_FILE, nullptr, 0);
     if (doc_ == nullptr) {
         doc_ = xmlReadFile(CONFIG_FILE, nullptr, 0);
@@ -69,11 +70,13 @@ bool AudioPolicyParser::LoadConfiguration()
             return false;
         }
     }
+    AUDIO_INFO_LOG("Done");
     return true;
 }
 
 bool AudioPolicyParser::Parse()
 {
+    AUDIO_INFO_LOG("Enter");
     xmlNode *root = xmlDocGetRootElement(doc_);
     if (root == nullptr) {
         AUDIO_ERR_LOG("xmlDocGetRootElement Failed");
@@ -98,6 +101,7 @@ bool AudioPolicyParser::Parse()
     portObserver_.OnVolumeGroupParsed(volumeGroupMap_);
     portObserver_.OnInterruptGroupParsed(interruptGroupMap_);
     portObserver_.OnGlobalConfigsParsed(globalConfigs_);
+    AUDIO_INFO_LOG("Done");
     return true;
 }
 

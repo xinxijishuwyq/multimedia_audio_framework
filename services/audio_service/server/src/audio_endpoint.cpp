@@ -1672,6 +1672,14 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
     CHECK_AND_RETURN_RET_LOG(procBuf != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");
     uint64_t curWritePos = procBuf->GetCurWriteFrame();
     Trace trace("AudioEndpoint::WriteProcessData-<" + std::to_string(curWritePos));
+
+    int32_t writeAbleSize = procBuf->GetAvailableDataFrames();
+    if (writeAbleSize <= 0 || static_cast<uint32_t>(writeAbleSize) <= dstSpanSizeInframe_) {
+        AUDIO_WARNING_LOG("client read too slow: curWritePos:%{public}" PRIu64" writeAbleSize:%{public}d",
+            curWritePos, writeAbleSize);
+        return ERR_OPERATION_FAILED;
+    }
+
     SpanInfo *curWriteSpan = procBuf->GetSpanInfo(curWritePos);
     CHECK_AND_RETURN_RET_LOG(curWriteSpan != nullptr, ERR_INVALID_HANDLE,
         "get write span info of procBuf fail.");
@@ -1691,7 +1699,11 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
     curWriteSpan->writeDoneTime = ClockTime::GetCurNano();
     procBuf->SetHandleInfo(curWritePos, curWriteSpan->writeDoneTime);
     ret = procBuf->SetCurWriteFrame(curWritePos + dstSpanSizeInframe_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "set procBuf next write frame fail, ret %{public}d.", ret);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set procBuf next write frame fail, ret %{public}d.", ret);
+        curWriteSpan->spanStatus.store(SpanStatus::SPAN_READ_DONE);
+        return ERR_OPERATION_FAILED;
+    }
     curWriteSpan->spanStatus.store(SpanStatus::SPAN_WRITE_DONE);
     return SUCCESS;
 }

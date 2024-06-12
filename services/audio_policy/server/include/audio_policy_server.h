@@ -130,6 +130,8 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) override;
+
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint32_t sessionId) override;
 
@@ -158,6 +160,10 @@ public:
     int32_t SetMicrophoneMute(bool isMute) override;
 
     int32_t SetMicrophoneMuteAudioConfig(bool isMute) override;
+
+    int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type) override;
+
+    bool GetPersistentMicMuteState() override;
 
     bool IsMicrophoneMute(API_VERSION api_v) override;
 
@@ -189,8 +195,6 @@ public:
     void ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneId = 0);
 
     void ProcessSessionAdded(SessionEvent sessionEvent);
-
-    void OnPlaybackCapturerStop() override;
 
     void ProcessorCloseWakeupSource(const uint64_t sessionID);
 
@@ -243,6 +247,8 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) override;
+
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) override;
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
         const int32_t zoneId = 0) override;
@@ -360,6 +366,8 @@ public:
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) override;
 
+    int32_t ResetRingerModeMute() override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -406,6 +414,7 @@ public:
     void OffloadStatusDump(std::string &dumpString);
     void XmlParsedDataMapDump(std::string &dumpString);
     void EffectManagerInfoDump(std::string &dumpString);
+    void MicrophoneMuteInfoDump(std::string &dumpString);
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -427,6 +436,7 @@ private:
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
     static constexpr int32_t AUDIO_UID = 1041;
+    static constexpr uint32_t MICPHONE_CALLER = 0;
 
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
     static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;
@@ -510,6 +520,8 @@ private:
 
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
+    std::atomic<bool> isFirstKvDataServiceServiceStart_ = false;
+    std::atomic<bool> isInitMuteState_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
 #endif
@@ -537,6 +549,7 @@ private:
     AudioRouterCenter &audioRouterCenter_;
     using DumpFunc = void(AudioPolicyServer::*)(std::string &dumpString);
     std::map<std::u16string, DumpFunc> dumpFuncMap;
+    pid_t lastMicMuteSettingPid_ = 0;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

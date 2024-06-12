@@ -157,7 +157,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetLatency(uint32_t *latency) override;
     int32_t GetTransactionId(uint64_t *transactionId) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
 
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
@@ -167,8 +167,8 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
-    int32_t SetOutputRoute(DeviceType outputDevice) override;
-    int32_t SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin);
+    int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) override;
+    int32_t SetOutputRoutes(std::vector<std::pair<DeviceType, AudioPortPin>> &outputDevices);
 
     int32_t Preload(const std::string &usbInfoStr) override;
 
@@ -251,10 +251,12 @@ private:
     int32_t GetCurDeviceParam(char *keyValueList, size_t len);
 
     AudioPortPin GetAudioPortPin() const noexcept;
+    int32_t SetAudioRoute(DeviceType outputDevice, AudioRoute route);
 
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     AudioScene currentAudioScene_;
+    int32_t currentDevicesSize_ = 0;
 };
 
 AudioRendererSinkInner::AudioRendererSinkInner(const std::string &halName)
@@ -968,50 +970,8 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
     return ret;
 }
 
-int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
+int32_t AudioRendererSinkInner::SetAudioRoute(DeviceType outputDevice, AudioRoute route)
 {
-    if (outputDevice == currentActiveDevice_) {
-        AUDIO_INFO_LOG("SetOutputRoute output device not change");
-        return SUCCESS;
-    }
-    AudioPortPin outputPortPin = GetAudioPortPin();
-    return SetOutputRoute(outputDevice, outputPortPin);
-}
-
-int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin)
-{
-    Trace trace("AudioRendererSinkInner::SetOutputRoute pin " + std::to_string(outputPortPin) + " device " +
-        std::to_string(outputDevice));
-    currentActiveDevice_ = outputDevice;
-
-    AudioRouteNode source = {};
-    AudioRouteNode sink = {};
-
-    int32_t ret = SetOutputPortPin(outputDevice, sink);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetOutputRoute FAILED: %{public}d", ret);
-
-    outputPortPin = sink.ext.device.type;
-    AUDIO_INFO_LOG("Output PIN is: 0x%{public}X DeviceType is %{public}d", outputPortPin, outputDevice);
-    source.portId = 0;
-    source.role = AUDIO_PORT_SOURCE_ROLE;
-    source.type = AUDIO_PORT_MIX_TYPE;
-    source.ext.mix.moduleId = 0;
-    source.ext.mix.streamId = PRIMARY_OUTPUT_STREAM_ID;
-    source.ext.device.desc = (char *)"";
-
-    sink.portId = static_cast<int32_t>(audioPort_.portId);
-    sink.role = AUDIO_PORT_SINK_ROLE;
-    sink.type = AUDIO_PORT_DEVICE_TYPE;
-    sink.ext.device.moduleId = 0;
-    sink.ext.device.desc = (char *)"";
-
-    AudioRoute route = {
-        .sources = &source,
-        .sourcesLen = 1,
-        .sinks = &sink,
-        .sinksLen = 1,
-    };
-
     renderEmptyFrameCount_ = 3; // preRender 3 frames
     std::unique_lock<std::mutex> lock(switchMutex_);
     switchCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_FOR_RENDER_EMPTY), [this] {
@@ -1023,9 +983,9 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPor
         return false;
     });
     int64_t stamp = ClockTime::GetCurNano();
-    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "SetOutputRoute failed with null adapter");
+    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "SetOutputRoutes failed with null adapter");
     inSwitch_.store(true);
-    ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
+    int32_t ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
     inSwitch_.store(false);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_INFO_LOG("deviceType : %{public}d UpdateAudioRoute cost[%{public}" PRId64 "]ms", outputDevice, stamp);
@@ -1035,10 +995,75 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPor
     return SUCCESS;
 }
 
-int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &outputDevices)
 {
-    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
-        audioScene, activeDevice);
+    CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+        ERR_INVALID_PARAM, "Invalid audio devices.");
+    DeviceType outputDevice = outputDevices.front();
+    if (outputDevice == currentActiveDevice_ &&
+        outputDevices.size() == currentDevicesSize_) {
+        AUDIO_INFO_LOG("SetOutputRoutes output device not change");
+        return SUCCESS;
+    }
+    AudioPortPin outputPortPin = GetAudioPortPin();
+    std::vector<std::pair<DeviceType, AudioPortPin>> outputDevicesPortPin = {};
+    for (size_t i = 0; i < outputDevices.size(); i++) {
+        outputDevicesPortPin.push_back(std::make_pair(outputDevices[i], outputPortPin));
+    }
+    return SetOutputRoutes(outputDevicesPortPin);
+}
+
+int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType, AudioPortPin>> &outputDevices)
+{
+    CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+        ERR_INVALID_PARAM, "Invalid audio devices.");
+    DeviceType outputDevice = outputDevices.front().first;
+    AudioPortPin outputPortPin = outputDevices.front().second;
+    Trace trace("AudioRendererSinkInner::SetOutputRoutes pin " + std::to_string(outputPortPin) + " device " +
+        std::to_string(outputDevice));
+    currentActiveDevice_ = outputDevice;
+
+    AudioRouteNode source = {
+        .portId = static_cast<int32_t>(0),
+        .role = AUDIO_PORT_SOURCE_ROLE,
+        .type = AUDIO_PORT_MIX_TYPE,
+        .ext.mix.moduleId = static_cast<int32_t>(0),
+        .ext.mix.streamId = PRIMARY_OUTPUT_STREAM_ID,
+        .ext.device.desc = (char *)"",
+    };
+
+    int32_t sinksSize = static_cast<int32_t>(outputDevices.size());
+    AudioRouteNode* sinks = new AudioRouteNode[sinksSize];
+
+    for (size_t i = 0; i < outputDevices.size(); i++) {
+        int32_t ret = SetOutputPortPin(outputDevices[i].first, sinks[i]);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetOutputRoutes FAILED: %{public}d", ret);
+        outputDevices[i].second = sinks[i].ext.device.type;
+        AUDIO_INFO_LOG("Output[%{public}zu] PIN is: 0x%{public}X DeviceType is %{public}d", i, outputDevices[i].second,
+            outputDevices[i].first);
+        sinks[i].portId = static_cast<int32_t>(audioPort_.portId);
+        sinks[i].role = AUDIO_PORT_SINK_ROLE;
+        sinks[i].type = AUDIO_PORT_DEVICE_TYPE;
+        sinks[i].ext.device.moduleId = static_cast<int32_t>(0);
+        sinks[i].ext.device.desc = (char *)"";
+    }
+
+    AudioRoute route = {
+        .sources = &source,
+        .sourcesLen = 1,
+        .sinks = sinks,
+        .sinksLen = sinksSize,
+    };
+
+    return SetAudioRoute(outputDevice, route);
+}
+
+int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
+{
+    CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+        ERR_INVALID_PARAM, "Invalid audio devices.");
+    DeviceType activeDevice = activeDevices.front();
+    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d", audioScene, activeDevice);
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "invalid audioScene");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -1050,7 +1075,6 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
         } else if (halName_ == "dp") {
             audioSceneOutPort = PIN_OUT_DP;
         }
-
         AUDIO_DEBUG_LOG("OUTPUT port is %{public}d", audioSceneOutPort);
         bool isAudioSceneUpdate = false;
         if (audioScene != currentAudioScene_) {
@@ -1063,21 +1087,24 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
             }
             scene.desc.pins = audioSceneOutPort;
             scene.desc.desc = const_cast<char *>("");
-
             int32_t ret = audioRender_->SelectScene(audioRender_, &scene);
             CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED,
                 "Select scene FAILED: %{public}d", ret);
             currentAudioScene_ = audioScene;
             isAudioSceneUpdate = true;
         }
-
-        if (activeDevice != currentActiveDevice_ ||
+        if (activeDevices.size() != currentDevicesSize_ || activeDevice != currentActiveDevice_ ||
             (isAudioSceneUpdate &&
-                (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT))) {
-            int32_t ret = SetOutputRoute(activeDevice, audioSceneOutPort);
+            (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT))) {
+            std::vector<std::pair<DeviceType, AudioPortPin>> activeDevicesPortPin = {};
+            for (auto device : activeDevices) {
+                activeDevicesPortPin.push_back(std::make_pair(device, audioSceneOutPort));
+            }
+            int32_t ret = SetOutputRoutes(activeDevicesPortPin);
             if (ret < 0) {
                 AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
             }
+            currentDevicesSize_ = activeDevices.size();
         }
     }
     return SUCCESS;
@@ -1349,16 +1376,20 @@ int32_t AudioRendererSinkInner::InitRender()
 
     if (openSpeaker_) {
         int32_t ret = SUCCESS;
+        std::vector<DeviceType> outputDevices;
         if (halName_ == "usb") {
-            ret = SetOutputRoute(DEVICE_TYPE_USB_ARM_HEADSET);
+            outputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
+            ret = SetOutputRoutes(outputDevices);
         } else if (halName_ == "dp") {
-            ret = SetOutputRoute(DEVICE_TYPE_DP);
+            outputDevices.push_back(DEVICE_TYPE_DP);
+            ret = SetOutputRoutes(outputDevices);
         } else {
             DeviceType type = static_cast<DeviceType>(attr_.deviceType);
             if (type == DEVICE_TYPE_INVALID) {
                 type = DEVICE_TYPE_SPEAKER;
             }
-            ret = SetOutputRoute(type);
+            outputDevices.push_back(type);
+            ret = SetOutputRoutes(outputDevices);
         }
         if (ret < 0) {
             AUDIO_WARNING_LOG("Update route FAILED: %{public}d", ret);

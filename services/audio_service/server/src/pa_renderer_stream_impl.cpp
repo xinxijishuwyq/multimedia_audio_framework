@@ -103,9 +103,15 @@ int32_t PaRendererStreamImpl::InitParams()
     // Get min buffer size in frame
     const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream_);
     if (bufferAttr == nullptr) {
-        AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr");
+        int32_t count = ++bufferNullCount_;
+        AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr count is %{public}d", count);
+        if (count >= 5) { // bufferAttr is nullptr 5 times, reboot audioserver
+            AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, 2); // 2 means RECOVERY
+            sleep(2); // sleep 2 seconds to dump stacktrace
+        }
         return ERR_OPERATION_FAILED;
     }
+    bufferNullCount_ = 0;
     minBufferSize_ = (size_t)bufferAttr->minreq;
     if (byteSizePerFrame_ == 0) {
         AUDIO_ERR_LOG("byteSizePerFrame_ should not be zero.");
@@ -145,14 +151,16 @@ int32_t PaRendererStreamImpl::Start()
 int32_t PaRendererStreamImpl::Pause()
 {
     AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Pause");
-    PaLockGuard lock(mainloop_);
+    pa_threaded_mainloop_lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        pa_threaded_mainloop_unlock(mainloop_);
         return ERR_ILLEGAL_STATE;
     }
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
         AUDIO_ERR_LOG("Stream Stop Failed");
+        pa_threaded_mainloop_unlock(mainloop_);
         return ERR_OPERATION_FAILED;
     }
     pa_proplist *propList = pa_proplist_new();
@@ -163,16 +171,18 @@ int32_t PaRendererStreamImpl::Pause()
         pa_proplist_free(propList);
         pa_operation_unref(updatePropOperation);
         AUDIO_INFO_LOG("pa_stream_proplist_update done");
+        pa_threaded_mainloop_unlock(mainloop_);
         {
             std::unique_lock<std::mutex> lock(fadingMutex_);
-            const int32_t WAIT_TIME_MS = 80;
+            const int32_t WAIT_TIME_MS = 40;
             fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
         }
+        pa_threaded_mainloop_lock(mainloop_);
     }
 
     operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, reinterpret_cast<void *>(this));
     pa_operation_unref(operation);
-
+    pa_threaded_mainloop_unlock(mainloop_);
     return SUCCESS;
 }
 
@@ -710,8 +720,14 @@ void PaRendererStreamImpl::PAStreamPauseSuccessCb(pa_stream *stream, int32_t suc
 void PaRendererStreamImpl::PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
     CHECK_AND_RETURN_LOG(userdata, "PAStreamFlushSuccessCb: userdata is null");
+    std::weak_ptr<PaRendererStreamImpl> paRendererStreamWeakPtr;
+    if (rendererStreamInstanceMap_.Find(userdata, paRendererStreamWeakPtr) == false) {
+        AUDIO_ERR_LOG("streamImpl is nullptr");
+        return;
+    }
+    auto streamImpl = paRendererStreamWeakPtr.lock();
+    CHECK_AND_RETURN_LOG(streamImpl, "Userdata is null");
 
-    PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_FLUSHED);
@@ -819,7 +835,7 @@ int32_t PaRendererStreamImpl::OffloadSetVolume(float volume)
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
     }
-    return audioRendererSinkInstance->SetVolume(volume, 0);
+    return audioRendererSinkInstance->SetVolume(volume, volume);
 }
 
 int32_t PaRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)

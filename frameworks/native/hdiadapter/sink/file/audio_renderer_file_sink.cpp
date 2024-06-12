@@ -62,13 +62,14 @@ int32_t AudioRendererFileSink::SetVoiceVolume(float volume)
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t AudioRendererFileSink::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t AudioRendererFileSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
 {
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t AudioRendererFileSink::SetOutputRoute(DeviceType deviceType)
+int32_t AudioRendererFileSink::SetOutputRoutes(std::vector<DeviceType> &outputDevices)
 {
+    AUDIO_DEBUG_LOG("SetOutputRoutes not supported.");
     return ERR_NOT_SUPPORTED;
 }
 

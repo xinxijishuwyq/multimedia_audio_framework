@@ -111,6 +111,8 @@ void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
 
     bool mute = *reinterpret_cast<const bool *>(rawData);
     AudioPolicyServerPtr->SetMicrophoneMute(mute);
+    AudioPolicyServerPtr->SetMicrophoneMutePersistent(mute, PolicyType::PRIVACY_POLCIY_TYPE);
+    AudioPolicyServerPtr->GetPersistentMicMuteState();
 
     const sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();
     CastType type = *reinterpret_cast<const CastType *>(rawData);

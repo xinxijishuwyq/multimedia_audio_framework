@@ -85,6 +85,8 @@ public:
     bool SaveSystemSoundUrl(const std::string &key, const std::string &value);
     bool GetSystemSoundUrl(const std::string &key, std::string &value);
     void RegisterCloned();
+    bool SaveMicMuteState(bool isMute);
+    bool GetMicMuteState(bool &isMute);
 
 private:
     VolumeDataMaintainer();

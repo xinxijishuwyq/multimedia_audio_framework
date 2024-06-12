@@ -41,7 +41,7 @@ void AudioCommonConverter::ConvertBufferTo32Bit(const uint8_t *buffer, int32_t f
             }
             break;
         case AUDIO_SAMPLE_FORMAT_16BIT: {
-            const int16_t *src = (const int16_t *)buffer;
+            const int16_t *src = reinterpret_cast<const int16_t *>(buffer);
             dst += count;
             src += count;
             for (; count > 0; --count) {
@@ -60,7 +60,7 @@ void AudioCommonConverter::ConvertBufferTo32Bit(const uint8_t *buffer, int32_t f
             }
             break;
         case AUDIO_SAMPLE_FORMAT_32BIT: {
-            const int32_t *src = (const int32_t *)buffer;
+            const int32_t *src = reinterpret_cast<const int32_t *>(buffer);
             dst += count;
             src += count;
             for (; count > 0; --count) {
@@ -69,7 +69,7 @@ void AudioCommonConverter::ConvertBufferTo32Bit(const uint8_t *buffer, int32_t f
             break;
         }
         case AUDIO_SAMPLE_FORMAT_32F_BIT: {
-            const float *src = (const float *)buffer;
+            const float *src = reinterpret_cast<const float *>(buffer);
             for (; count > 0; --count) {
                 *dst++ = *src++ * volume * AUDIO_SAMPLE_32BIT_VALUE;
             }
@@ -92,7 +92,7 @@ void AudioCommonConverter::ConvertBufferTo16Bit(const uint8_t *buffer, int32_t f
             }
             break;
         case AUDIO_SAMPLE_FORMAT_16BIT: {
-            const int16_t *src = (const int16_t *)buffer;
+            const int16_t *src = reinterpret_cast<const int16_t *>(buffer);
             dst += count;
             src += count;
             for (; count > 0; --count) {
@@ -109,7 +109,7 @@ void AudioCommonConverter::ConvertBufferTo16Bit(const uint8_t *buffer, int32_t f
             }
             break;
         case AUDIO_SAMPLE_FORMAT_32BIT: {
-            const int32_t *src = (const int32_t *)buffer;
+            const int32_t *src = reinterpret_cast<const int32_t *>(buffer);
             dst += count;
             src += count;
             for (; count > 0; --count) {
@@ -118,7 +118,7 @@ void AudioCommonConverter::ConvertBufferTo16Bit(const uint8_t *buffer, int32_t f
             break;
         }
         case AUDIO_SAMPLE_FORMAT_32F_BIT: {
-            const float *src = (const float *)buffer;
+            const float *src = reinterpret_cast<const float *>(buffer);
             static const float scale = 1 << (AUDIO_SAMPLE_16BIT_LENGTH - 1);
             for (; count > 0; --count) {
                 *dst++ = *src++ * scale * volume;

@@ -43,11 +43,7 @@ using InternalAudioCapturerOptions = AudioCapturerOptions;
 
 class AudioPolicyManager {
 public:
-    static AudioPolicyManager& GetInstance()
-    {
-        static AudioPolicyManager policyManager;
-        return policyManager;
-    }
+    static AudioPolicyManager& GetInstance();
 
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
 
@@ -80,6 +76,8 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
+
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
@@ -104,6 +102,10 @@ public:
 
     int32_t SetMicrophoneMuteAudioConfig(bool isMute);
 
+    int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type);
+
+    bool GetPersistentMicMuteState();
+    
     bool IsMicrophoneMute(API_VERSION api_v = API_9);
 
     AudioScene GetAudioScene();
@@ -123,6 +125,8 @@ public:
 
     int32_t SetMicStateChangeCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
+
+    int32_t UnsetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
         const std::shared_ptr<AudioInterruptCallback> &callback, const int32_t zoneID = 0);
@@ -366,23 +370,29 @@ public:
     int32_t TriggerFetchDevice();
 
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
-    
+
     int32_t SetAudioConcurrencyCallback(const uint32_t sessionID,
         const std::shared_ptr<AudioConcurrencyCallback> &callback);
 
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
+
+    int32_t ResetRingerModeMute();
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
 
     std::mutex listenerStubMutex_;
     std::mutex registerCallbackMutex_;
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
+    std::mutex focusInfoMutex_;
+    std::mutex rendererStateMutex_;
+    std::mutex capturerStateMutex_;
     sptr<AudioPolicyClientStubImpl> audioPolicyClientStubCB_;
     std::atomic<bool> isAudioPolicyClientRegisted_ = false;
 

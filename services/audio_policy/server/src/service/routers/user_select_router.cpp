@@ -29,7 +29,7 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
         return make_unique<AudioDeviceDescriptor>();
     }
     unique_ptr<AudioDeviceDescriptor> perDev_ =
-        AudioStateManager::GetAudioStateManager().GetPerferredMediaRenderDevice();
+        AudioStateManager::GetAudioStateManager().GetPreferredMediaRenderDevice();
     vector<unique_ptr<AudioDeviceDescriptor>> mediaDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_OUTPUT_DEVICES);
     if (perDev_->deviceId_ == 0) {
@@ -44,7 +44,7 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
     unique_ptr<AudioDeviceDescriptor> perDev_ =
-        AudioStateManager::GetAudioStateManager().GetPerferredCallRenderDevice();
+        AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
     vector<unique_ptr<AudioDeviceDescriptor>> callDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_OUTPUT_DEVICES);
     if (perDev_->deviceId_ == 0) {
@@ -71,9 +71,11 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceT
     }
 }
 
-unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRingRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+vector<std::unique_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDevices(StreamUsage streamUsage,
+    int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    vector<unique_ptr<AudioDeviceDescriptor>> descs;
+    return descs;
 }
 
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)

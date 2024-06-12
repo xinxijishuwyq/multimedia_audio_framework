@@ -25,6 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t DELTA_TIME = 4000000; // 4ms
 constexpr int32_t PERIOD_NS = 20000000; // 20ms
+constexpr int32_t FADING_MS = 20; // 20ms
 constexpr int32_t MAX_ERROR_COUNT = 5;
 constexpr int16_t STEREO_CHANNEL_COUNT = 2;
 constexpr int16_t HDI_STEREO_CHANNEL_LAYOUT = 3;
@@ -37,7 +38,7 @@ const char *SINK_ADAPTER_NAME = "primary";
 NoneMixEngine::NoneMixEngine(DeviceInfo type, bool isVoip)
     : isVoip_(isVoip), isStart_(false), isPause_(false), device_(type), failedCount_(0), writeCount_(0),
       fwkSyncTime_(0), stream_(nullptr), startFadein_(false), startFadeout_(false), uChannel_(0),
-      uFormat_(HdiAdapterFormat::SAMPLE_F32), uSampleRate_(0)
+      uFormat_(sizeof(int32_t)), uSampleRate_(0)
 {
     AUDIO_INFO_LOG("Constructor");
 }
@@ -96,7 +97,7 @@ int32_t NoneMixEngine::Stop()
         // wait until fadeout complete
         std::unique_lock fadingLock(fadingMutex_);
         cvFading_.wait_for(
-            fadingLock, std::chrono::milliseconds(PERIOD_NS), [this] { return (!(startFadein_ || startFadeout_)); });
+            fadingLock, std::chrono::milliseconds(FADING_MS), [this] { return (!(startFadein_ || startFadeout_)); });
         playbackThread_->Stop();
         playbackThread_ = nullptr;
     }
@@ -115,7 +116,7 @@ void NoneMixEngine::PauseAsync()
         startFadeout_ = true;
         std::unique_lock fadingLock(fadingMutex_);
         cvFading_.wait_for(
-            fadingLock, std::chrono::milliseconds(PERIOD_NS), [this] { return (!(startFadein_ || startFadeout_)); });
+            fadingLock, std::chrono::milliseconds(FADING_MS), [this] { return (!(startFadein_ || startFadeout_)); });
         playbackThread_->PauseAsync();
     }
     isPause_ = true;
@@ -133,7 +134,7 @@ int32_t NoneMixEngine::Pause()
         // wait until fadeout complete
         std::unique_lock fadingLock(fadingMutex_);
         cvFading_.wait_for(
-            fadingLock, std::chrono::milliseconds(PERIOD_NS), [this] { return (!(startFadein_ || startFadeout_)); });
+            fadingLock, std::chrono::milliseconds(FADING_MS), [this] { return (!(startFadein_ || startFadeout_)); });
         playbackThread_->Pause();
     }
     isPause_ = true;
@@ -148,7 +149,7 @@ int32_t NoneMixEngine::Flush()
 
 void NoneMixEngine::DoFadeinOut(bool isFadeOut, char *pBuffer, size_t bufferSize)
 {
-    CHECK_AND_RETURN_LOG(pBuffer != nullptr && bufferSize > 0, "buffer is null.");
+    CHECK_AND_RETURN_LOG(pBuffer != nullptr && bufferSize > 0 && uChannel_ > 0, "buffer is null.");
     int32_t *dstPtr = reinterpret_cast<int32_t *>(pBuffer);
     size_t dataLength = bufferSize / (uFormat_ * uChannel_);
     float fadeStep = 1.0f / dataLength;
@@ -211,10 +212,8 @@ void NoneMixEngine::MixStreams()
 int32_t NoneMixEngine::AddRenderer(const std::shared_ptr<IRendererStream> &stream)
 {
     AUDIO_INFO_LOG("Enter add");
-    bool isNeedInit = false;
     if (!stream_) {
         stream_ = stream;
-        isNeedInit = true;
         AudioProcessConfig config = stream->GetAudioProcessConfig();
         return InitSink(config.streamInfo);
     } else if (stream->GetStreamIndex() != stream_->GetStreamIndex()) {
@@ -292,6 +291,19 @@ HdiAdapterFormat NoneMixEngine::GetDirectDeviceFormate(AudioSampleFormat format)
     }
 }
 
+int32_t NoneMixEngine::GetDirectFormatByteSize(HdiAdapterFormat format)
+{
+    switch (format) {
+        case HdiAdapterFormat::SAMPLE_S16:
+            return sizeof(int16_t);
+        case HdiAdapterFormat::SAMPLE_S32:
+        case HdiAdapterFormat::SAMPLE_F32:
+            return sizeof(int32_t);
+        default:
+            return sizeof(int32_t);
+    }
+}
+
 int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
 {
     std::string sinkName = DIRECT_SINK_NAME;
@@ -320,7 +332,8 @@ int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
     ret = renderSink_->SetVolume(volume, volume);
     uChannel_ = attr.channel;
     uSampleRate_ = attr.sampleRate;
-    uFormat_ = attr.format;
+    uFormat_ = GetDirectFormatByteSize(attr.format);
+
     return ret;
 }
 

@@ -40,7 +40,6 @@ namespace AudioStandard {
 static unique_ptr<AudioServiceAdapterCallback> g_audioServiceAdapterCallback;
 std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sinkIndexSessionIDMap;
 std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndexSessionIDMap;
-int32_t g_playbackCapturerSourceOutputIndex = -1;
 
 static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM_MAP = {
     {"voice_call", STREAM_VOICE_CALL},
@@ -134,6 +133,10 @@ bool PulseAudioServiceAdapterImpl::ConnectToPulseAudio()
 
     swapStatus = 0;
     pa_proplist *proplist = pa_proplist_new();
+    if (proplist == nullptr) {
+        AUDIO_ERR_LOG("Connect to pulseAudio and new proplist return nullptr!");
+        return false;
+    }
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_NAME, "PulseAudio Service");
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_ID, "com.ohos.pulseaudio.service");
     pa_proplist_sets(proplist, "device.swap.status", "0");
@@ -820,16 +823,6 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
     sessionStr >> sessionID;
     AUDIO_INFO_LOG("sessionID %{public}u", sessionID);
     sourceIndexSessionIDMap[i->index] = sessionID;
-
-    const char *captureFlag = pa_proplist_gets(i->proplist, "stream.isInnerCapturer");
-    if (captureFlag == nullptr) {
-        AUDIO_WARNING_LOG("Invalid stream parameter:isInnerCapturer.");
-    } else {
-        int32_t flag = atoi(captureFlag);
-        if (flag == 1) {
-            g_playbackCapturerSourceOutputIndex = i->index;
-        }
-    }
 }
 
 void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_sink_input_info *i, int eol,
@@ -954,11 +947,6 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
         uint32_t sessionID = sourceIndexSessionIDMap[idx];
         AUDIO_ERR_LOG("sessionID: %{public}d removed", sessionID);
         g_audioServiceAdapterCallback->OnSessionRemoved(sessionID);
-        if (g_playbackCapturerSourceOutputIndex >= 0 &&
-            idx == static_cast<uint32_t>(g_playbackCapturerSourceOutputIndex)) {
-            g_audioServiceAdapterCallback->OnPlaybackCapturerStop();
-            g_playbackCapturerSourceOutputIndex = -1;
-        }
     }
 }
 
@@ -1012,6 +1000,10 @@ int32_t PulseAudioServiceAdapterImpl::UpdateSwapDeviceStatus()
 
     swapStatus = 1 - swapStatus;
     pa_proplist *proplist = pa_proplist_new();
+    if (proplist == nullptr) {
+        AUDIO_ERR_LOG("Update swap status and new proplist return nullptr!");
+        return ERROR;
+    }
     pa_proplist_sets(proplist, "device.swap.status", std::to_string(swapStatus).c_str());
     pa_operation *operation = pa_context_proplist_update(mContext, PA_UPDATE_REPLACE, proplist, nullptr, nullptr);
     if (operation == nullptr) {
