@@ -6778,6 +6778,22 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             }
         }
     } else if (updateCommand == ENABLE_UPDATE) {
+        if (userSelectMediaRenderDevice->deviceType_ == desc.deviceType_ &&
+            userSelectMediaRenderDevice->macAddress_ == desc.macAddress_) {
+            audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
+        }
+        if (userSelectCallRenderDevice->deviceType_ == desc.deviceType_ &&
+            userSelectCallRenderDevice->macAddress_ == desc.macAddress_) {
+            audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
+        }
+        if (userSelectCallCaptureDevice->deviceType_ == desc.deviceType_ &&
+            userSelectCallCaptureDevice->macAddress_ == desc.macAddress_) {
+            audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
+        }
+        if (userSelectRecordCaptureDevice->deviceType_ == desc.deviceType_ &&
+            userSelectRecordCaptureDevice->macAddress_ == desc.macAddress_) {
+            audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
+        }
         reason = desc.isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
             AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     }
@@ -6794,6 +6810,19 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
         if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             ClearScoDeviceSuspendState(desc.macAddress_);
+        }
+        unique_ptr<AudioDeviceDescriptor> userSelectMediaDevice =
+            AudioStateManager::GetAudioStateManager().GetPreferredMediaRenderDevice();
+        unique_ptr<AudioDeviceDescriptor> userSelectCallDevice =
+            AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
+        if ((userSelectMediaDevice->deviceType_ == desc.deviceType_ &&
+            userSelectMediaDevice->macAddress_ == desc.macAddress_ &&
+            userSelectMediaDevice->isEnable_ == desc.isEnable_) ||
+            (userSelectCallDevice->deviceType_ == desc.deviceType_ &&
+            userSelectCallDevice->macAddress_ == desc.macAddress_ &&
+            userSelectCallDevice->isEnable_ == desc.isEnable_)) {
+            AUDIO_INFO_LOG("Current enable state has been set true during user selection, no need to be set again.");
+            return;
         }
     } else if (command == ENABLE_UPDATE && !desc.isEnable_ && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
         currentActiveDevice_.macAddress_ == desc.macAddress_) {
