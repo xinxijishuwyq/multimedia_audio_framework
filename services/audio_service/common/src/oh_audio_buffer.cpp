@@ -395,6 +395,9 @@ int32_t OHAudioBuffer::GetSizeParameter(uint32_t &totalSizeInFrame, uint32_t &sp
 
 std::atomic<StreamStatus> *OHAudioBuffer::GetStreamStatus()
 {
+    if (basicBufferInfo_ == nullptr) {
+        return nullptr;
+    }
     return &basicBufferInfo_->streamStatus;
 }
 
