@@ -64,7 +64,7 @@ static bool IsChannelLayoutHVSSupported(const uint64_t channelLayout)
         HVS_SUPPORTED_CHANNELLAYOUTS.end();
 }
 
-static void AudioEffectChainManager::FindMaxSessionID(std::string &maxSessionID, std::string &sceneType,
+static void FindMaxSessionID(std::string &maxSessionID, std::string &sceneType,
     const std::string &scenePairType, std::set<std::string> &sessions)
 {
     for (auto& sessionID : sessions) {
