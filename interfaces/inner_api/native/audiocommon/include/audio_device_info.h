@@ -490,9 +490,9 @@ public:
     operator AudioStreamDeviceChangeReason() const
     {
         if (reason_ < ExtEnum::MIN) {
-            return AudioStreamDeviceChangeReason::UNKNOWN;
-        } else {
             return static_cast<AudioStreamDeviceChangeReason>(reason_);
+        } else {
+            return AudioStreamDeviceChangeReason::UNKNOWN;
         }
     }
 
