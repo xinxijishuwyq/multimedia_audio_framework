@@ -61,6 +61,7 @@ const uint64_t SECOND_TO_MICROSECOND = 1000000;
 const uint64_t SECOND_TO_MILLISECOND = 1000;
 const uint32_t BIT_IN_BYTE = 8;
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
+const unsigned int TIME_OUT_SECONDS = 10;
 }
 
 struct AudioCallbackService {
@@ -522,6 +523,7 @@ int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &rend
     deviceDesc.portId = renderPort.portId;
     deviceDesc.desc = const_cast<char *>("");
     deviceDesc.pins = PIN_OUT_SPEAKER;
+    AudioXCollie audioXCollie("audioAdapter_->CreateRender", TIME_OUT_SECONDS);
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("not started failed.");
@@ -652,6 +654,7 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
         }
     }
 
+    AudioXCollie audioXCollie("audioRender_->Start", TIME_OUT_SECONDS);
     int32_t ret = audioRender_->Start(audioRender_);
     if (ret) {
         AUDIO_ERR_LOG("Start failed! ret %d", ret);
@@ -781,6 +784,7 @@ int32_t OffloadAudioRendererSinkInner::Stop(void)
 
     if (started_) {
         CHECK_AND_RETURN_RET_LOG(!Flush(), ERR_OPERATION_FAILED, "Flush failed!");
+        AudioXCollie audioXCollie("audioRender_->Stop", TIME_OUT_SECONDS);
         int32_t ret = audioRender_->Stop(audioRender_);
         if (!ret) {
             started_ = false;
