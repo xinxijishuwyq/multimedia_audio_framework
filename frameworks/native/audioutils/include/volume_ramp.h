@@ -44,14 +44,14 @@ private:
     float GetScaledTime(int64_t currentTime);
     float FindRampVolume(float time);
 
-    int32_t duration_;
+    int32_t duration_ = 0;
     RampDirection rampDirection_;
     std::mutex curveMapMutex_;
     std::map<float, float> curvePoints_;
-    int64_t initTime_;
-    float scale_;
-    bool isVolumeRampActive_;
-    float rampVolume_;
+    int64_t initTime_ = 0;
+    float scale_ = 0.0f;
+    bool isVolumeRampActive_ = false;
+    float rampVolume_ = 0.0f;
 };
 } // namespace AudioStandard
 } // namespace OHOS

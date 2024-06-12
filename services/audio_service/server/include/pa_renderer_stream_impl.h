@@ -99,9 +99,9 @@ private:
     AudioProcessConfig processConfig_;
     std::weak_ptr<IStatusCallback> statusCallback_;
     std::weak_ptr<IWriteCallback> writeCallback_;
-    int32_t streamCmdStatus_;
-    int32_t streamDrainStatus_;
-    int32_t streamFlushStatus_;
+    int32_t streamCmdStatus_ = 0;
+    int32_t streamDrainStatus_ = 0;
+    int32_t streamFlushStatus_ = 0;
     State state_ = INVALID;
     uint32_t underFlowCount_ = 0;
     bool isDrain_ = false;
@@ -113,7 +113,7 @@ private:
 
     size_t totalBytesWritten_ = 0;
     uint32_t sinkLatencyInMsec_ {0};
-    int32_t renderRate_;
+    int32_t renderRate_ = 0;
     int32_t effectMode_ = -1;
     std::string effectSceneName_ = "";
     int32_t privacyType_ = 0;
