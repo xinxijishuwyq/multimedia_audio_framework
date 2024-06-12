@@ -167,5 +167,89 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetActiveBluetoothDevi
     EXPECT_NE(nullptr, activeDescriptor);
     EXPECT_EQ(DEVICE_TYPE_NONE, activeDescriptor->deviceType_);
 }
+
+/**
+ * @tc.name   : Test Audio_Routing_Manager_GetAvailableDevices_001 via legal state
+ * @tc.number : Audio_Routing_Manager_GetAvailableDevices_001
+ * @tc.desc   : Test GetAvailableDevices interface.Get available devices and return list of devices.
+ */
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableDevices_001, TestSize.Level1)
+{
+    AudioDeviceUsage usage = MEDIA_OUTPUT_DEVICES;
+    auto availableDescriptor = AudioRoutingManager::GetInstance()->GetAvailableDevices(usage);
+    EXPECT_GT(availableDescriptor.size(), 0);
+}
+
+/**
+ * @tc.name   : Test Audio_Routing_Manager_GetAvailableDevices_002 via legal state
+ * @tc.number : Audio_Routing_Manager_GetAvailableDevices_002
+ * @tc.desc   : Test GetAvailableDevices interface.Get available devices and return list of devices.
+ */
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableDevices_002, TestSize.Level1)
+{
+    AudioDeviceUsage usage = MEDIA_INPUT_DEVICES;
+    auto availableDescriptor = AudioRoutingManager::GetInstance()->GetAvailableDevices(usage);
+    EXPECT_GT(availableDescriptor.size(), 0);
+}
+
+/**
+ * @tc.name   : Test Audio_Routing_Manager_GetAvailableDevices_003 via legal state
+ * @tc.number : Audio_Routing_Manager_GetAvailableDevices_003
+ * @tc.desc   : Test GetAvailableDevices interface.Get available devices and return list of devices.
+ */
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableDevices_003, TestSize.Level1)
+{
+    AudioDeviceUsage usage = ALL_MEDIA_DEVICES;
+    auto availableDescriptor = AudioRoutingManager::GetInstance()->GetAvailableDevices(usage);
+    EXPECT_GT(availableDescriptor.size(), 0);
+}
+
+/**
+ * @tc.name   : Test Audio_Routing_Manager_GetAvailableDevices_004 via legal state
+ * @tc.number : Audio_Routing_Manager_GetAvailableDevices_004
+ * @tc.desc   : Test GetAvailableDevices interface.Get available devices and return list of devices.
+ */
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableDevices_004, TestSize.Level1)
+{
+    AudioDeviceUsage usage = CALL_OUTPUT_DEVICES;
+    auto availableDescriptor = AudioRoutingManager::GetInstance()->GetAvailableDevices(usage);
+    EXPECT_GT(availableDescriptor.size(), 0);
+}
+
+/**
+ * @tc.name   : Test Audio_Routing_Manager_GetAvailableDevices_005 via legal state
+ * @tc.number : Audio_Routing_Manager_GetAvailableDevices_005
+ * @tc.desc   : Test GetAvailableDevices interface.Get available devices and return list of devices.
+ */
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableDevices_005, TestSize.Level1)
+{
+    AudioDeviceUsage usage = CALL_INPUT_DEVICES;
+    auto availableDescriptor = AudioRoutingManager::GetInstance()->GetAvailableDevices(usage);
+    EXPECT_GT(availableDescriptor.size(), 0);
+}
+
+/**
+ * @tc.name   : Test Audio_Routing_Manager_GetAvailableDevices_006 via legal state
+ * @tc.number : Audio_Routing_Manager_GetAvailableDevices_006
+ * @tc.desc   : Test GetAvailableDevices interface.Get available devices and return list of devices.
+ */
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableDevices_006, TestSize.Level1)
+{
+    AudioDeviceUsage usage = ALL_CALL_DEVICES;
+    auto availableDescriptor = AudioRoutingManager::GetInstance()->GetAvailableDevices(usage);
+    EXPECT_GT(availableDescriptor.size(), 0);
+}
+
+/**
+ * @tc.name   : Test Audio_Routing_Manager_GetAvailableDevices_007 via legal state
+ * @tc.number : Audio_Routing_Manager_GetAvailableDevices_007
+ * @tc.desc   : Test GetAvailableDevices interface.Get available devices and return list of devices.
+ */
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableDevices_007, TestSize.Level1)
+{
+    AudioDeviceUsage usage = D_ALL_DEVICES;
+    auto availableDescriptor = AudioRoutingManager::GetInstance()->GetAvailableDevices(usage);
+    EXPECT_GT(availableDescriptor.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
