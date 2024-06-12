@@ -255,7 +255,7 @@ private:
 
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
-    AudioScene currentAudioScene_;
+    AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     int32_t currentDevicesSize_ = 0;
 };
 
