@@ -1334,7 +1334,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
             audioFrameNum = 0;
             AUDIO_DEBUG_LOG("existFlag is %{public}d,
             scene type is %{public}s, scene mode is %{public}s, spatializationEnabled is %{public}s",
-            sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled);
+            existFlag, sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled);
         }
         if ((IsInnerCapturer(sinkIn) && isCaptureSilently) || !InputIsPrimary(sinkIn)) {
             continue;
