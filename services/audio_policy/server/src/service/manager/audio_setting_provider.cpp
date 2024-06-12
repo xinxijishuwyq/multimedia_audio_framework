@@ -40,6 +40,8 @@ const std::string SETTING_USER_URI_PROXY = "datashare:///com.ohos.settingsdata/e
 const std::string SETTING_USER_SECURE_URI_PROXY =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/USER_SETTINGSDATA_SECURE_";
 constexpr const char *SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
+constexpr int32_t RETRY_TIMES = 5;
+constexpr int64_t SLEEP_TIME = 1;
 
 AudioSettingProvider::~AudioSettingProvider()
 {
@@ -287,12 +289,20 @@ int32_t AudioSettingProvider::GetCurrentUserId()
 {
     std::vector<int> ids;
     int32_t currentuserId = -1;
-    ErrCode result = AccountSA::OsAccountManager::QueryActiveOsAccountIds(ids);
+    ErrCode result;
+    int32_t retry = RETRY_TIMES;
+    while (retry--) {
+        result = AccountSA::OsAccountManager::QueryActiveOsAccountIds(ids);
+        if (result == ERR_OK && !ids.empty()) {
+            currentuserId = ids[0];
+            AUDIO_DEBUG_LOG("current userId is :%{public}d", currentuserId);
+            break;
+        }
+        // sleep and wait for 1 millisecond
+        sleep(SLEEP_TIME);
+    }
     if (result != ERR_OK || ids.empty()) {
         AUDIO_WARNING_LOG("current userId is empty");
-    } else {
-        currentuserId = ids[0];
-        AUDIO_DEBUG_LOG("current userId is :%{public}d", currentuserId);
     }
     return currentuserId;
 }

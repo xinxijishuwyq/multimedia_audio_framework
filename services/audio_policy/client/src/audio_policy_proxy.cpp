@@ -190,6 +190,36 @@ int32_t AudioPolicyProxy::SetMicrophoneMuteAudioConfig(bool isMute)
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetMicrophoneMutePersistent(const bool isMute, const PolicyType type)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteBool(isMute);
+    data.WriteInt32(static_cast<int32_t>(type));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE_PERSISTENT), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set microphoneMute persistent failed, error: %d", error);
+
+    return reply.ReadInt32();
+}
+
+bool AudioPolicyProxy::GetPersistentMicMuteState()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MICROPHONE_MUTE_PERSISTENT), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get persistent microphoneMute state failed, error: %d", error);
+
+    return reply.ReadBool();
+}
+
 bool AudioPolicyProxy::IsMicrophoneMute(API_VERSION api_v)
 {
     MessageParcel data;
@@ -374,6 +404,28 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag
     data.WriteInt32(static_cast<int32_t>(deviceFlag));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DEVICES), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, deviceInfo, "Get devices failed, error: %d", error);
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+    }
+
+    return deviceInfo;
+}
+
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevicesInner(DeviceFlag deviceFlag)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, deviceInfo, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(deviceFlag));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DEVICES_INNER), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, deviceInfo, "Get devices failed, error: %d", error);
 
     int32_t size = reply.ReadInt32();
@@ -728,6 +780,24 @@ int32_t AudioPolicyProxy::AbandonAudioFocus(const int32_t clientId, const AudioI
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(callbackchange));
+    data.WriteBool(enable);
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACKS_ENABLE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Set client callback failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
 AudioStreamType AudioPolicyProxy::GetStreamInFocus(const int32_t zoneID)
 {
     MessageParcel data;
@@ -767,7 +837,7 @@ int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, 
 bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     SourceType sourceType)
 {
-    AUDIO_DEBUG_LOG("CheckRecordingCreate: [tid : %{public}d]", appTokenId);
+    AUDIO_DEBUG_LOG("CheckRecordingCreate: [uid : %{public}d]", appUid);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -2165,6 +2235,20 @@ int32_t AudioPolicyProxy::ActivateAudioConcurrency(const AudioPipeType &pipeType
     data.WriteInt32(pipeType);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_AUDIO_CONCURRENCY), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "activate concurrency failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::ResetRingerModeMute()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_RINGER_MODE_MUTE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "activate concurrency failed, error: %{public}d", error);
     return reply.ReadInt32();
 }

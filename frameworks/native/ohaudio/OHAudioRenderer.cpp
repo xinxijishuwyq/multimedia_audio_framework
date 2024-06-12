@@ -327,7 +327,7 @@ OH_AudioStream_Result OH_AudioRenderer_SetSilentModeAndMixWithOthers(
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OH_AudioRenderer_SetSilentModeAndMixWithOthers(
+OH_AudioStream_Result OH_AudioRenderer_GetSilentModeAndMixWithOthers(
     OH_AudioRenderer* renderer, bool* on)
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
@@ -348,10 +348,23 @@ OHAudioRenderer::~OHAudioRenderer()
     AUDIO_INFO_LOG("OHAudioRenderer destroyed!");
 }
 
-bool OHAudioRenderer::Initialize(const AudioRendererOptions &rendererOptions)
+bool OHAudioRenderer::Initialize(AudioRendererOptions &rendererOptions)
 {
+    bool offloadAllowed = true;
+
+    // unknown stream use music policy as default
+    if (rendererOptions.rendererInfo.streamUsage == STREAM_USAGE_UNKNOWN) {
+        rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+        offloadAllowed = false;
+    }
     std::string cacheDir = "/data/storage/el2/base/temp";
     audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
+
+    // if caller do not set usage, do not allow to use offload output
+    if (audioRenderer_ != nullptr) {
+        audioRenderer_->SetOffloadAllowed(offloadAllowed);
+    }
+
     return audioRenderer_ != nullptr;
 }
 
@@ -661,14 +674,16 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
         "pointer to the function is nullptr");
     BufferDesc bufDesc;
     audioRenderer->GetBufferDesc(bufDesc);
-    if (encodingType_ == ENCODING_AUDIOVIVID) {
+    if (encodingType_ == ENCODING_AUDIOVIVID && writeDataWithMetadataCallback_ != nullptr) {
         writeDataWithMetadataCallback_(ohAudioRenderer_, metadataUserData_, (void*)bufDesc.buffer, bufDesc.bufLength,
             (void*)bufDesc.metaBuffer, bufDesc.metaLength);
     } else {
-        if (audioRenderer->GetRendererCallbackType() == CALLBACKS_ON_WRITE_DATA) {
+        if (audioRenderer->GetRendererCallbackType() == CALLBACKS_ON_WRITE_DATA &&
+            callbacks_.OH_AudioRenderer_OnWriteData != nullptr) {
             callbacks_.OH_AudioRenderer_OnWriteData(ohAudioRenderer_, userData_,
                 (void*)bufDesc.buffer, bufDesc.bufLength);
-        } else {
+        }
+        if (audioRenderer->GetRendererCallbackType() == ON_WRITE_DATA_CALLBACK && onWriteDataCallback_ != nullptr) {
             OH_AudioData_Callback_Result result = onWriteDataCallback_(ohAudioRenderer_, userData_,
                 (void*)bufDesc.buffer, bufDesc.bufLength);
             if (result == AUDIO_DATA_CALLBACK_RESULT_INVALID) {

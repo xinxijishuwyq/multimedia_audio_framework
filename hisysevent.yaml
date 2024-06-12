@@ -59,6 +59,11 @@ BACKGROUND_SILENT_PLAYBACK:
   APP_VERSION_CODE: {type: UINT32, desc: application version code}
   TIMES: {type: UINT32, desc: how many times when this event happens}
 
+BG_SILENT_PLAYBACK:
+  __BASE: {type: BEHAVIOR, level: MINOR, tag: PowerStats, desc: report the behavior of silent background playback concerned by power consumption detection }
+  APP_NAME: {type: STRING, desc: application name}
+  APP_VERSION_CODE: {type: UINT32, desc: application version code}
+
 LOAD_CONFIG_ERROR:
   __BASE: {type: FAULT, level: CRITICAL, desc: load configuration failed on audio policy service startup}
   CATEGORY: {type: UINT16, desc: category of audio policy configuration in uint16}

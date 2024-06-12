@@ -51,6 +51,11 @@ constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_CAMERA = 1047;
 
+constexpr size_t FIRST_CHAR = 1;
+constexpr size_t MIN_LEN = 8;
+constexpr size_t HEAD_STR_LEN = 2;
+constexpr size_t TAIL_STR_LEN = 5;
+
 const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     0, // UID_ROOT
@@ -258,7 +263,7 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
 
     bool ret = Security::AccessToken::PrivacyKit::IsAllowedUsingPermission(tokenId, MICROPHONE_PERMISSION);
     if (!ret) {
-        AUDIO_ERR_LOG("failed: %{public}u not allowed!", tokenId);
+        AUDIO_ERR_LOG("failed: not allowed!");
     }
     return ret;
 }
@@ -1121,6 +1126,31 @@ const std::string AudioInfoDumpUtils::GetDeviceVolumeTypeName(DeviceVolumeType d
 
     const std::string deviceTypeName = device;
     return deviceTypeName;
+}
+
+std::string GetEncryptStr(const std::string &src)
+{
+    if (src.empty()) {
+        return std::string("");
+    }
+
+    int32_t strLen = src.length();
+    std::string dst;
+
+    if (strLen < MIN_LEN) {
+        // src: abcdef
+        // dst: *bcdef
+        dst = '*' + src.substr(FIRST_CHAR, strLen - FIRST_CHAR);
+    } else {
+        // src: 00:00:00:00:00:00
+        // dst: 00**********00:00
+        dst = src.substr(0, HEAD_STR_LEN);
+        std::string tempStr(strLen - HEAD_STR_LEN - TAIL_STR_LEN, '*');
+        dst += tempStr;
+        dst += src.substr(strLen - TAIL_STR_LEN, TAIL_STR_LEN);
+    }
+
+    return dst;
 }
 } // namespace AudioStandard
 } // namespace OHOS

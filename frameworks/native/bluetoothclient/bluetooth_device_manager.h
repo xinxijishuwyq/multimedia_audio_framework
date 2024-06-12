@@ -31,6 +31,8 @@ namespace Bluetooth {
 int32_t RegisterDeviceObserver(AudioStandard::IDeviceStatusObserver &observer);
 void UnregisterDeviceObserver();
 void SendUserSelectionEvent(AudioStandard::DeviceType devType, const std::string &macAddress, int32_t eventType);
+bool IsBTWearDetectionEnable(const BluetoothRemoteDevice &device);
+std::string GetEncryptAddr(const std::string &addr);
 
 class MediaBluetoothDeviceManager {
 public:
@@ -56,6 +58,7 @@ public:
     static int32_t GetConnectedA2dpBluetoothDevice(const std::string& macAddress, BluetoothRemoteDevice &device);
     static void UpdateA2dpDeviceConfiguration(const BluetoothRemoteDevice &device,
         const AudioStandard::AudioStreamInfo &streamInfo);
+    static std::vector<BluetoothRemoteDevice> GetAllA2dpBluetoothDevice();
     static void ClearAllA2dpBluetoothDevice();
 
 private:
@@ -91,6 +94,7 @@ public:
         const AudioStandard::AudioStreamInfo &streamInfo);
     static void OnScoStateChanged(const BluetoothRemoteDevice &device, bool isConnected, int reason);
     static int32_t GetConnectedHfpBluetoothDevice(const std::string& macAddress, BluetoothRemoteDevice &device);
+    static std::vector<BluetoothRemoteDevice> GetAllHfpBluetoothDevice();
     static void ClearAllHfpBluetoothDevice();
 
 private:

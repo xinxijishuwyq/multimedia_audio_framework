@@ -268,6 +268,9 @@ int32_t OHAudioBuffer::Init(int dataFd, int infoFd)
     basicBufferInfo_->curReadFrame.store(0);
     basicBufferInfo_->curWriteFrame.store(0);
 
+    basicBufferInfo_->streamVolume.store(MAX_FLOAT_VOLUME);
+    basicBufferInfo_->duckFactor.store(MAX_FLOAT_VOLUME);
+
     if (bufferHolder_ == AUDIO_SERVER_SHARED || bufferHolder_ == AUDIO_SERVER_ONLY) {
         basicBufferInfo_->handlePos.store(0);
         basicBufferInfo_->handleTime.store(0);
@@ -393,6 +396,57 @@ int32_t OHAudioBuffer::GetSizeParameter(uint32_t &totalSizeInFrame, uint32_t &sp
 std::atomic<StreamStatus> *OHAudioBuffer::GetStreamStatus()
 {
     return &basicBufferInfo_->streamStatus;
+}
+
+
+float OHAudioBuffer::GetStreamVolume()
+{
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, MAX_FLOAT_VOLUME, "buffer is not inited!");
+    float vol = basicBufferInfo_->streamVolume.load();
+    if (vol < MIN_FLOAT_VOLUME) {
+        AUDIO_WARNING_LOG("vol < 0.0, invalid volume! using 0.0 instead.");
+        return MIN_FLOAT_VOLUME;
+    } else if (vol > MAX_FLOAT_VOLUME) {
+        AUDIO_WARNING_LOG("vol > 0.0, invalid volume! using 1.0 instead.");
+        return MAX_FLOAT_VOLUME;
+    }
+    return vol;
+}
+
+bool OHAudioBuffer::SetStreamVolume(float streamVolume)
+{
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, false, "buffer is not inited!");
+    if (streamVolume < MIN_FLOAT_VOLUME || streamVolume > MAX_FLOAT_VOLUME) {
+        AUDIO_ERR_LOG("invlaid volume:%{public}f", streamVolume);
+        return false;
+    }
+    basicBufferInfo_->streamVolume.store(streamVolume);
+    return true;
+}
+
+float OHAudioBuffer::GetDuckFactor()
+{
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, MAX_FLOAT_VOLUME, "buffer is not inited!");
+    float factor = basicBufferInfo_->duckFactor.load();
+    if (factor < MIN_FLOAT_VOLUME) {
+        AUDIO_WARNING_LOG("vol < 0.0, invalid duckFactor! using 0.0 instead.");
+        return MIN_FLOAT_VOLUME;
+    } else if (factor > MAX_FLOAT_VOLUME) {
+        AUDIO_WARNING_LOG("vol > 0.0, invalid duckFactor! using 1.0 instead.");
+        return MAX_FLOAT_VOLUME;
+    }
+    return factor;
+}
+
+bool OHAudioBuffer::SetDuckFactor(float duckFactor)
+{
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, false, "buffer is not inited!");
+    if (duckFactor < MIN_FLOAT_VOLUME || duckFactor > MAX_FLOAT_VOLUME) {
+        AUDIO_ERR_LOG("invlaid factor:%{public}f", duckFactor);
+        return false;
+    }
+    basicBufferInfo_->duckFactor.store(duckFactor);
+    return true;
 }
 
 bool OHAudioBuffer::GetHandleInfo(uint64_t &frames, int64_t &nanoTime)

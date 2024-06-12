@@ -1158,7 +1158,7 @@ int32_t AudioRendererPrivate::SetRendererFirstFrameWritingCallback(
 
 void AudioRendererPrivate::SetInterruptMode(InterruptMode mode)
 {
-    AUDIO_INFO_LOG("InterruptMode %{pubilc}d", mode);
+    AUDIO_INFO_LOG("InterruptMode %{public}d", mode);
     if (audioInterrupt_.mode == mode) {
         return;
     } else if (mode != SHARE_MODE && mode != INDEPENDENT_MODE) {
@@ -1189,7 +1189,7 @@ bool AudioRendererPrivate::GetSilentModeAndMixWithOthers()
 
 int32_t AudioRendererPrivate::SetParallelPlayFlag(bool parallelPlayFlag)
 {
-    AUDIO_INFO_LOG("parallelPlayFlag %{pubilc}d", parallelPlayFlag);
+    AUDIO_INFO_LOG("parallelPlayFlag %{public}d", parallelPlayFlag);
     audioInterrupt_.parallelPlayFlag = parallelPlayFlag;
     return SUCCESS;
 }
@@ -1240,8 +1240,6 @@ int32_t AudioRendererPrivate::UnsetOffloadMode() const
     AUDIO_INFO_LOG("session %{public}u session unset offload", sessionID_);
     int32_t ret = audioStream_->UnsetOffloadMode();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "unset offload failed");
-    ret = AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_NORMAL_OUT);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "concede from offload failed");
     return SUCCESS;
 }
 
@@ -1459,21 +1457,23 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         RendererState previousState = GetStatus();
         AUDIO_INFO_LOG("Previous stream state: %{public}d", previousState);
         if (previousState == RENDERER_RUNNING) {
-            // stop old stream
             switchResult = audioStream_->StopAudioStream();
             CHECK_AND_RETURN_RET_LOG(switchResult, false, "StopAudioStream failed.");
         }
         std::lock_guard<std::mutex> lock(switchStreamMutex_);
-        // switch new stream
         IAudioStream::SwitchInfo info;
         audioStream_->GetSwitchInfo(info);
         if (targetClass == IAudioStream::VOIP_STREAM) {
             info.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
         }
+
         if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) {
             info.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_DIRECT;
             info.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
             info.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
+        }
+        if (targetClass == AUDIO_FLAG_MMAP) {
+            switchResult = audioStream_->ReleaseAudioStream();
         }
         std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, info.params,
             info.eStreamType, appInfo_.appPid);
@@ -1483,8 +1483,9 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         // set new stream info
         SetSwitchInfo(info, newAudioStream);
 
-        // release old stream and restart audio stream
-        switchResult = audioStream_->ReleaseAudioStream();
+        if (targetClass != AUDIO_FLAG_MMAP) {
+            switchResult = audioStream_->ReleaseAudioStream();
+        }
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
 
         if (previousState == RENDERER_RUNNING) {
@@ -1497,17 +1498,22 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult= true;
     }
+    WriteSwitchStreamLogMsg();
+    return switchResult;
+}
+
+void AudioRendererPrivate::WriteSwitchStreamLogMsg()
+{
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_PIPE_CHANGE,
         Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
-        bean->Add("CLIENT_UID", appInfo_.appUid);
-        bean->Add("IS_PLAYBACK", 1);
-        bean->Add("STREAM_TYPE", rendererInfo_.streamUsage);
-        bean->Add("PIPE_TYPE_BEFORE_CHANGE", PIPE_TYPE_LOWLATENCY_OUT);
-        bean->Add("PIPE_TYPE_AFTER_CHANGE", PIPE_TYPE_NORMAL_OUT);
-        bean->Add("REASON", Media::MediaMonitor::DEVICE_CHANGE_FROM_FAST);
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-    return switchResult;
+    bean->Add("CLIENT_UID", appInfo_.appUid);
+    bean->Add("IS_PLAYBACK", 1);
+    bean->Add("STREAM_TYPE", rendererInfo_.streamUsage);
+    bean->Add("PIPE_TYPE_BEFORE_CHANGE", PIPE_TYPE_LOWLATENCY_OUT);
+    bean->Add("PIPE_TYPE_AFTER_CHANGE", PIPE_TYPE_NORMAL_OUT);
+    bean->Add("REASON", Media::MediaMonitor::DEVICE_CHANGE_FROM_FAST);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t streamFlag)
@@ -1848,7 +1854,7 @@ void AudioRendererPrivate::ActivateAudioConcurrency(const AudioStreamParams &aud
                 deviceDescriptors[0]->deviceType_ == DEVICE_TYPE_WIRED_HEADSET) &&
                 streamType == STREAM_MUSIC && audioStreamParams.samplingRate >= SAMPLE_RATE_48000 &&
                 audioStreamParams.format >= SAMPLE_S24LE) {
-                rendererInfo_.pipeType = PIPE_TYPE_DIRECT_OUT;
+                rendererInfo_.pipeType = PIPE_TYPE_DIRECT_MUSIC;
             }
         }
     }

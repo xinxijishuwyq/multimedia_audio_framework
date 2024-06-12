@@ -803,12 +803,56 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_SetMicrophoneMute_001, Tes
     if (infos.size() > 0) {
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-
+        
+        audioGroupMngr_->SetMicrophoneMutePersistent(false, PolicyType::PRIVACY_POLCIY_TYPE);
         bool isMuteFirst = audioGroupMngr_->IsMicrophoneMute();
         ret = audioGroupMngr_->SetMicrophoneMute(!isMuteFirst);
         EXPECT_EQ(SUCCESS, ret);
         bool isMuteSecond = audioGroupMngr_->IsMicrophoneMute();
         EXPECT_EQ(isMuteSecond, !isMuteFirst);
+    }
+}
+
+/**
+ * @tc.name  : Test SetMicrophoneMutePersistent API
+ * @tc.number: Audio_Group_Manager_SetMicrophoneMutePersistent_001
+ * @tc.desc  : SetMicrophoneMutePersistent
+ * @tc.require: issueI5M1XV
+ */
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_SetMicrophoneMutePersistent_001, TestSize.Level0)
+{
+    int32_t ret = -1;
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+        bool isMutePersistentFirst = audioGroupMngr_->GetPersistentMicMuteState();
+        ret = audioGroupMngr_->SetMicrophoneMutePersistent(!isMutePersistentFirst, PolicyType::PRIVACY_POLCIY_TYPE);
+        EXPECT_EQ(SUCCESS, ret);
+        bool isMutePersistentSecond = audioGroupMngr_->GetPersistentMicMuteState();
+        EXPECT_EQ(isMutePersistentFirst, !isMutePersistentSecond);
+    }
+}
+
+/**
+ * @tc.name  : Test GetPersistentMicMuteState API
+ * @tc.number: Audio_Group_Manager_GetPersistentMicMuteState_001
+ * @tc.desc  : GetPersistentMicMuteState
+ * @tc.require: issueI5M1XV
+ */
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetPersistentMicMuteState_001, TestSize.Level0)
+{
+    int32_t ret = -1;
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+        ret = audioGroupMngr_->SetMicrophoneMutePersistent(true, PolicyType::PRIVACY_POLCIY_TYPE);
+        EXPECT_EQ(SUCCESS, ret);
+        bool isMutePersistent = audioGroupMngr_->GetPersistentMicMuteState();
+        EXPECT_EQ(isMutePersistent, true);
     }
 }
 } // namespace AudioStandard

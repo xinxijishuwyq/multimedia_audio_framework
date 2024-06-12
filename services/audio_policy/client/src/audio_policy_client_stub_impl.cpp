@@ -95,6 +95,12 @@ void AudioPolicyClientStubImpl::OnAudioFocusAbandoned(const AudioInterrupt &aban
     }
 }
 
+size_t AudioPolicyClientStubImpl::GetFocusInfoChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(focusInfoChangeMutex_);
+    return focusInfoChangeCallbackList_.size();
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyClientStubImpl::DeviceFilterByFlag(DeviceFlag flag,
     const std::vector<sptr<AudioDeviceDescriptor>>& desc)
 {
@@ -221,6 +227,16 @@ int32_t AudioPolicyClientStubImpl::RemoveMicStateChangeCallback()
     return SUCCESS;
 }
 
+bool AudioPolicyClientStubImpl::HasMicStateChangeCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(micStateChangeMutex_);
+    if (micStateChangeCallbackList_.empty()) {
+        AUDIO_INFO_LOG("MicStateChangeCallback list is empty.");
+        return false;
+    }
+    return true;
+}
+
 void AudioPolicyClientStubImpl::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
 {
     std::lock_guard<std::mutex> lockCbMap(micStateChangeMutex_);
@@ -288,6 +304,12 @@ int32_t AudioPolicyClientStubImpl::RemoveRendererStateChangeCallback()
     std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
     rendererStateChangeCallbackList_.clear();
     return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetRendererStateChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
+    return rendererStateChangeCallbackList_.size();
 }
 
 int32_t AudioPolicyClientStubImpl::AddDeviceChangeWithInfoCallback(
@@ -377,6 +399,12 @@ int32_t AudioPolicyClientStubImpl::RemoveCapturerStateChangeCallback()
     std::lock_guard<std::mutex> lockCbMap(capturerStateChangeMutex_);
     capturerStateChangeCallbackList_.clear();
     return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetCapturerStateChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(capturerStateChangeMutex_);
+    return capturerStateChangeCallbackList_.size();
 }
 
 void AudioPolicyClientStubImpl::OnCapturerStateChange(

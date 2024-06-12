@@ -51,6 +51,34 @@ void NapiAudioRingerModeCallback::SaveCallbackReference(const std::string &callb
     }
 }
 
+void NapiAudioRingerModeCallback::RemoveCallbackReference(const napi_value args)
+{
+    if (!IsSameCallback(args)) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    napi_delete_reference(env_, ringerModeCallback_->cb_);
+    ringerModeCallback_ = nullptr;
+    AUDIO_INFO_LOG("Remove callback reference successful.");
+}
+
+bool NapiAudioRingerModeCallback::IsSameCallback(const napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (args == nullptr) {
+        return true;
+    }
+    if (ringerModeCallback_.get() == nullptr) {
+        return false;
+    }
+    napi_value ringerModeCallback = nullptr;
+    napi_get_reference_value(env_, ringerModeCallback_->cb_, &ringerModeCallback);
+    bool isEquals = false;
+    CHECK_AND_RETURN_RET_LOG(napi_strict_equals(env_, args, ringerModeCallback, &isEquals) == napi_ok, false,
+        "get napi_strict_equals failed");
+    return isEquals;
+}
+
 void NapiAudioRingerModeCallback::OnRingerModeUpdated(const AudioRingerMode &ringerMode)
 {
     std::lock_guard<std::mutex> lock(mutex_);

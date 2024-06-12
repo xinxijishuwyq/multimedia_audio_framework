@@ -24,6 +24,7 @@ namespace AudioStandard {
 enum ManagerType : int32_t {
     PLAYBACK = 0,
     DUP_PLAYBACK,
+    DUAL_PLAYBACK,
     DIRECT_PLAYBACK,
     VOIP_PLAYBACK,
     RECORDER,
@@ -36,6 +37,7 @@ public:
     static IStreamManager &GetPlaybackManager(ManagerType managerType = PLAYBACK);
     static IStreamManager &GetRecorderManager();
     static IStreamManager &GetDupPlaybackManager();
+    static IStreamManager &GetDualPlaybackManager();
 
     virtual int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream) = 0;
     virtual int32_t ReleaseRender(uint32_t streamIndex_) = 0;

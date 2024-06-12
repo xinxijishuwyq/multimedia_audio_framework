@@ -241,8 +241,6 @@ private:
 
     int32_t WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
-    void VolumeHandle(BufferDesc &desc);
-
     void ResetFramePosition();
 
     int32_t RegisterRendererInClientPolicyServerDiedCb();
@@ -250,9 +248,13 @@ private:
 
     void ReportDataToResSched();
 
+    int32_t SetInnerVolume(float volume);
+
     bool IsHighResolution() const noexcept;
 
     void ProcessWriteInner(BufferDesc &bufferDesc);
+
+    void ResetRingerModeMute();
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -324,10 +326,10 @@ private:
     std::mutex writeDataMutex_;
     std::condition_variable writeDataCV_;
 
+    int32_t continueDownCount_ = 0;
     float lowPowerVolume_ = 1.0;
     float duckVolume_ = 1.0;
     float clientVolume_ = 1.0;
-    float clientOldVolume_ = 1.0;
     float cacheVolume_ = 1.0;
     bool silentModeAndMixWithOthers_ = false;
 

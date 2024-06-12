@@ -104,6 +104,12 @@ const std::set<uid_t> RECORD_CHECK_FORWARD_LIST = {
     UID_VM_MANAGER
 };
 
+std::map<PolicyType, uint32_t> POLICY_TYPE_MAP = {
+    {PolicyType::EDM_POLICY_TYPE, 0},
+    {PolicyType::PRIVACY_POLCIY_TYPE, 1},
+    {PolicyType::TEMPORARY_POLCIY_TYPE, 2}
+};
+
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
       audioPolicyService_(AudioPolicyService::GetAudioPolicyService()),
@@ -199,6 +205,8 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
 #endif
         case DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility kv data service start");
+            isFirstKvDataServiceServiceStart_ = true;
+            InitMicrophoneMute();
             InitKVStore();
             RegisterDataObserver();
             break;
@@ -818,7 +826,8 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
     volumeEvent.updateUi = isUpdateUi;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
-    if (audioPolicyServerHandler_ != nullptr) {
+    bool ringerModeMute = audioPolicyService_.IsRingerModeMute();
+    if (audioPolicyServerHandler_ != nullptr && ringerModeMute) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
     }
     return ret;
@@ -904,6 +913,18 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
     return deviceDescs;
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevicesInner(DeviceFlag deviceFlag)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        AUDIO_ERR_LOG("only for audioUid");
+        return {};
+    }
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = audioPolicyService_.GetDevicesInner(deviceFlag);
+
+    return deviceDescs;
+}
+
 int32_t AudioPolicyServer::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
     uint32_t sessionId)
 {
@@ -948,6 +969,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredInputDev
     }
 
     return deviceDescs;
+}
+
+int32_t AudioPolicyServer::SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
+{
+    return audioPolicyService_.SetClientCallbacksEnable(callbackchange, enable);
 }
 
 bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
@@ -1036,19 +1062,20 @@ std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
 
 void AudioPolicyServer::InitMicrophoneMute()
 {
-    if (system::GetBoolParameter("persist.edm.mic_disable", false)) {
-        AUDIO_INFO_LOG("Entered %{public}s", __func__);
-        bool isMute = true;
-        bool isMicrophoneMute = audioPolicyService_.IsMicrophoneMute();
-        int32_t ret = audioPolicyService_.SetMicrophoneMute(isMute);
-        if (ret == SUCCESS && isMicrophoneMute != isMute && audioPolicyServerHandler_ != nullptr) {
-            MicStateChangeEvent micStateChangeEvent;
-            micStateChangeEvent.mute = isMute;
-            audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
-        }
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("InitMicrophoneMute EDM SetMicrophoneMute result %{public}d", ret);
-        }
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    if (!isFirstKvDataServiceServiceStart_ || isInitMuteState_) {
+        AUDIO_ERR_LOG("kv data service is not start or the state has already been initialized.");
+        return;
+    }
+    isInitMuteState_ = true;
+    bool isMute = false;
+    int32_t ret = audioPolicyService_.InitPersistentMicrophoneMuteState(isMute);
+    AUDIO_INFO_LOG("Get persistent mic ismute: %{public}d  state from setting db", isMute);
+    CHECK_AND_RETURN_LOG(ret != SUCCESS, "InitMicrophoneMute InitPersistentMicrophoneMuteState result %{public}d", ret);
+    if (audioPolicyServerHandler_ != nullptr) {
+        MicStateChangeEvent micStateChangeEvent;
+        micStateChangeEvent.mute = isMute;
+        audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
     }
 }
 
@@ -1056,11 +1083,6 @@ int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     std::lock_guard<std::mutex> lock(micStateChangeMutex_);
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    if (!isMute && callerUid != EDM_SERVICE_UID && system::GetBoolParameter("persist.edm.mic_disable", false)) {
-        AUDIO_ERR_LOG("set microphone mute failed cause feature is disabled by edm");
-        return ERR_MICROPHONE_DISABLED_BY_EDM;
-    }
     bool isMicrophoneMute = IsMicrophoneMute(api_v);
     int32_t ret = audioPolicyService_.SetMicrophoneMute(isMute);
     if (ret == SUCCESS && isMicrophoneMute != isMute && audioPolicyServerHandler_ != nullptr) {
@@ -1086,7 +1108,39 @@ int32_t AudioPolicyServer::SetMicrophoneMuteAudioConfig(bool isMute)
     bool ret = VerifyPermission(MANAGE_AUDIO_CONFIG);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
         "MANAGE_AUDIO_CONFIG permission denied");
+    lastMicMuteSettingPid_ = IPCSkeleton::GetCallingPid();
+    PrivacyKit::SetMutePolicy(POLICY_TYPE_MAP[TEMPORARY_POLCIY_TYPE], MICPHONE_CALLER, isMute);
     return SetMicrophoneMuteCommon(isMute, API_9);
+}
+
+int32_t AudioPolicyServer::SetMicrophoneMutePersistent(const bool isMute, const PolicyType type)
+{
+    AUDIO_INFO_LOG("Entered %{public}s isMute:%{public}d, type:%{public}d", __func__, isMute, type);
+    bool hasPermission = VerifyPermission(MICROPHONE_CONTROL_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_PERMISSION_DENIED,
+        "MICROPHONE_CONTROL_PERMISSION permission denied");
+    int32_t ret = PrivacyKit::SetMutePolicy(POLICY_TYPE_MAP[type], MICPHONE_CALLER, isMute);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("PrivacyKit SetMutePolicy failed ret is %{public}d", ret);
+        return ret;
+    }
+    ret = audioPolicyService_.SetMicrophoneMutePersistent(isMute);
+    if (ret == SUCCESS && audioPolicyServerHandler_ != nullptr) {
+        MicStateChangeEvent micStateChangeEvent;
+        micStateChangeEvent.mute = isMute;
+        AUDIO_INFO_LOG("SendMicStateUpdatedCallback when set mic mute state persistent.");
+        audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
+    }
+    return ret;
+}
+
+bool AudioPolicyServer::GetPersistentMicMuteState()
+{
+    bool hasPermission = VerifyPermission(MICROPHONE_CONTROL_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_PERMISSION_DENIED,
+        "MICROPHONE_CONTROL_PERMISSION permission denied");
+
+    return audioPolicyService_.GetPersistentMicMuteState();
 }
 
 bool AudioPolicyServer::IsMicrophoneMute(API_VERSION api_v)
@@ -1218,11 +1272,6 @@ void AudioPolicyServer::ProcessSessionAdded(SessionEvent sessionEvent)
 void AudioPolicyServer::ProcessorCloseWakeupSource(const uint64_t sessionID)
 {
     audioPolicyService_.CloseWakeUpAudioCapturer();
-}
-
-void AudioPolicyServer::OnPlaybackCapturerStop()
-{
-    audioPolicyService_.UnloadLoopback();
 }
 
 AudioStreamType AudioPolicyServer::GetStreamInFocus(const int32_t zoneID)
@@ -1443,6 +1492,7 @@ void AudioPolicyServer::InitPolicyDumpMap()
     dumpFuncMap[u"-s"] = &AudioPolicyServer::AudioStreamDump;
     dumpFuncMap[u"-xp"] = &AudioPolicyServer::XmlParsedDataMapDump;
     dumpFuncMap[u"-e"] = &AudioPolicyServer::EffectManagerInfoDump;
+    dumpFuncMap[u"-ms"] = &AudioPolicyServer::MicrophoneMuteInfoDump;
 }
 
 void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
@@ -1455,6 +1505,7 @@ void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
     AudioStreamDump(dumpString);
     XmlParsedDataMapDump(dumpString);
     EffectManagerInfoDump(dumpString);
+    MicrophoneMuteInfoDump(dumpString);
 }
 
 void AudioPolicyServer::AudioDevicesDump(std::string &dumpString)
@@ -1495,6 +1546,11 @@ void AudioPolicyServer::XmlParsedDataMapDump(std::string &dumpString)
 void AudioPolicyServer::EffectManagerInfoDump(std::string &dumpString)
 {
     audioPolicyService_.EffectManagerInfoDump(dumpString);
+}
+
+void AudioPolicyServer::MicrophoneMuteInfoDump(std::string &dumpString)
+{
+    audioPolicyService_.MicrophoneMuteInfoDump(dumpString);
 }
 
 void AudioPolicyServer::ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue)
@@ -1726,6 +1782,11 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t uid)
 void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
 {
     AUDIO_INFO_LOG("RegisteredStreamListenerClient died: remove entry, uid %{public}d", pid);
+    if (pid == lastMicMuteSettingPid_) {
+        // The last app with the non-persistent microphone setting died, restore the default non-persistent value
+        AUDIO_INFO_LOG("Cliet died and reset non-persist mute state");
+        audioPolicyService_.SetMicrophoneMute(false);
+    }
     audioPolicyService_.ReduceAudioPolicyClientProxyMap(pid);
 }
 
@@ -1889,19 +1950,22 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
     if (res < 0) {
         AUDIO_ERR_LOG("Call GetHapTokenInfo fail.");
     }
-    bool bSetMute;
-    if (result.permStateChangeType > 0) {
-        bSetMute = false;
-    } else {
-        bSetMute = true;
-    }
 
+    bool targetMuteState = (result.permStateChangeType > 0) ? false : true;
     int32_t appUid = getUidByBundleName(hapTokenInfo.bundleName, hapTokenInfo.userID);
     if (appUid < 0) {
         AUDIO_ERR_LOG("fail to get uid.");
     } else {
-        server_->audioPolicyService_.SetSourceOutputStreamMute(appUid, bSetMute);
-        AUDIO_DEBUG_LOG("get uid value:%{public}d", appUid);
+        int32_t streamSet = server_->audioPolicyService_.SetSourceOutputStreamMute(appUid, targetMuteState);
+        if (streamSet > 0) {
+            AUDIO_INFO_LOG("update using mic %{public}d for uid: %{public}d because permission changed",
+                targetMuteState, appUid);
+            if (targetMuteState) {
+                PrivacyKit::StopUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
+            } else {
+                PrivacyKit::StartUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
+            }
+        }
     }
 }
 
@@ -2633,6 +2697,11 @@ int32_t AudioPolicyServer::UnsetAudioConcurrencyCallback(const uint32_t sessionI
 int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeType)
 {
     return audioPolicyService_.ActivateAudioConcurrency(pipeType);
+}
+
+int32_t AudioPolicyServer::ResetRingerModeMute()
+{
+    return audioPolicyService_.ResetRingerModeMute();
 }
 } // namespace AudioStandard
 } // namespace OHOS

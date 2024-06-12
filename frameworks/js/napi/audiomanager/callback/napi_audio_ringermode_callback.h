@@ -31,6 +31,8 @@ public:
     explicit NapiAudioRingerModeCallback(napi_env env);
     virtual ~NapiAudioRingerModeCallback();
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
+    bool IsSameCallback(const napi_value args);
+    void RemoveCallbackReference(const napi_value args);
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
 
 private:

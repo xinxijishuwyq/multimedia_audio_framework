@@ -418,8 +418,7 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
 
 void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId)
 {
-    AUDIO_INFO_LOG("PID:%{public}d UID:%{public}d tokenId:%{public}u fullTokenId:%{public}" PRIu64".", clientPid,
-        clientUid, appTokenId, fullTokenId);
+    AUDIO_INFO_LOG("PID:%{public}d UID:%{public}d.", clientPid, clientUid);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;

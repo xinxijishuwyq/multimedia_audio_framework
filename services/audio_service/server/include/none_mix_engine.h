@@ -47,6 +47,7 @@ private:
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate);
     AudioSamplingRate GetDirectVoipSampleRate(AudioSamplingRate sampleRate);
     HdiAdapterFormat GetDirectDeviceFormate(AudioSampleFormat format);
+    int32_t GetDirectFormatByteSize(HdiAdapterFormat format);
 
 private:
     bool isVoip_;
@@ -65,7 +66,7 @@ private:
     std::atomic<bool> startFadein_;
     std::atomic<bool> startFadeout_;
     uint32_t uChannel_;
-    HdiAdapterFormat uFormat_;
+    int32_t uFormat_;
     uint32_t uSampleRate_;
 };
 } // namespace AudioStandard

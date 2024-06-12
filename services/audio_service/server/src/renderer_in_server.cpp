@@ -27,7 +27,8 @@
 #include "res_type.h"
 #include "res_sched_client.h"
 #endif
- 
+#include "volume_tools.h"
+#include "policy_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,6 +45,9 @@ namespace {
     static const int32_t BYTE_LEN_FOR_24BIT = 3;
     static const int32_t BYTE_LEN_FOR_32BIT = 4;
     static constexpr int32_t ONE_MINUTE = 60;
+    const int32_t MEDIA_UID = 1013;
+    const float AUDIO_VOLOMUE_EPSILON = 0.0001;
+    static const int32_t UINT8_SILENCE_VALUE = 128;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -51,6 +55,10 @@ RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_p
 {
     streamListener_ = streamListener;
     managerType_ = PLAYBACK;
+    if (processConfig_.callerUid == MEDIA_UID) {
+        isNeedFade_ = true;
+        oldAppliedVolume_ = MIN_FLOAT_VOLUME;
+    }
 }
 
 RendererInServer::~RendererInServer()
@@ -267,7 +275,8 @@ void RendererInServer::DoFadingOutFor8Bit(BufferDesc& bufferDesc, size_t byteLen
     for (size_t i = 0; i < length / numChannels; i++) {
         for (int32_t j = 0; j < numChannels; j++) {
             float fadeoutRatio = (float)(length - (i * numChannels + j)) / (length);
-            data[i * numChannels + j] *= fadeoutRatio;
+            data[i * numChannels + j] =
+                (data[i * numChannels + j] - UINT8_SILENCE_VALUE) * fadeoutRatio + UINT8_SILENCE_VALUE;
         }
     }
 }
@@ -283,11 +292,16 @@ void RendererInServer::DoFadingOutFor16Bit(BufferDesc& bufferDesc, size_t byteLe
         return;
     }
     int32_t numChannels = processConfig_.streamInfo.channels;
+    size_t lastPos = 0;
     for (size_t i = 0; i < length / numChannels; i++) {
         for (int32_t j = 0; j < numChannels; j++) {
             float fadeoutRatio = (float)(length - (i * numChannels + j)) / (length);
-            data[i * numChannels + j] *= fadeoutRatio;
+            lastPos = i * numChannels + j;
+            data[lastPos] *= fadeoutRatio;
         }
+    }
+    while (lastPos < length) {
+        data[lastPos++] = 0;
     }
 }
 
@@ -301,14 +315,19 @@ void RendererInServer::DoFadingOutFor24Bit(BufferDesc& bufferDesc, size_t byteLe
 
     int32_t numChannels = processConfig_.streamInfo.channels;
     size_t step = byteLen * numChannels;
+    size_t lastPos = 0;
     for (size_t i = 0; i < length;) {
         if ((i + step) < length) {
             float fadeoutRatio = (float)(length - i) / (length);
             for (size_t j = 0; j < step; j++) {
                 data[i + j] *= fadeoutRatio;
             }
+            lastPos = i + step;
         }
         i += step;
+    }
+    while (lastPos < length) {
+        data[lastPos++] = 0;
     }
 }
 
@@ -323,11 +342,16 @@ void RendererInServer::DoFadingOutFor32Bit(BufferDesc& bufferDesc, size_t byteLe
         return;
     }
     int32_t numChannels = processConfig_.streamInfo.channels;
+    size_t lastPos = 0;
     for (size_t i = 0; i < length / numChannels; i++) {
         for (int32_t j = 0; j < numChannels; j++) {
             float fadeoutRatio = (float)(length - (i * numChannels + j)) / (length);
-            data[i * numChannels + j] *= fadeoutRatio;
+            lastPos = i * numChannels + j;
+            data[lastPos] *= fadeoutRatio;
         }
+    }
+    while (lastPos < length) {
+        data[lastPos++] = 0;
     }
 }
 
@@ -388,6 +412,9 @@ void RendererInServer::CheckFadingOutDone(int32_t fadeoutFlag_, BufferDesc& buff
 
 void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
+    if (silentModeAndMixWithOthers_) {
+        return;
+    }
     if (buffer[0] == 0) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -422,6 +449,36 @@ void RendererInServer::ReportDataToResSched(bool isSilent)
     #endif
 }
 
+void RendererInServer::VolumeHandle(BufferDesc &desc)
+{
+    // volume process in server
+    if (audioServerBuffer_ == nullptr) {
+        AUDIO_WARNING_LOG("buffer in not inited");
+        return;
+    }
+    float applyVolume = audioServerBuffer_->GetStreamVolume();
+    float duckVolume_ = audioServerBuffer_->GetDuckFactor();
+    if (!IsVolumeSame(MAX_FLOAT_VOLUME, lowPowerVolume_, AUDIO_VOLOMUE_EPSILON)) {
+        applyVolume *= lowPowerVolume_;
+    }
+    if (!IsVolumeSame(MAX_FLOAT_VOLUME, duckVolume_, AUDIO_VOLOMUE_EPSILON)) {
+        applyVolume *= duckVolume_;
+    }
+    //in plan: put system volume handle here
+    if (!IsVolumeSame(MAX_FLOAT_VOLUME, applyVolume, AUDIO_VOLOMUE_EPSILON) ||
+        !IsVolumeSame(oldAppliedVolume_, applyVolume, AUDIO_VOLOMUE_EPSILON)) {
+        Trace traceVol("RendererInServer::VolumeTools::Process " + std::to_string(oldAppliedVolume_) + "~" +
+            std::to_string(applyVolume));
+        AudioChannel channel = processConfig_.streamInfo.channels;
+        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, oldAppliedVolume_, applyVolume);
+        int32_t volRet = VolumeTools::Process(desc, processConfig_.streamInfo.format, mapVols);
+        oldAppliedVolume_ = applyVolume;
+        if (volRet != SUCCESS) {
+            AUDIO_WARNING_LOG("VolumeTools::Process error: %{public}d", volRet);
+        }
+    }
+}
+
 int32_t RendererInServer::WriteData()
 {
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
@@ -445,19 +502,16 @@ int32_t RendererInServer::WriteData()
     BufferDesc bufferDesc = {nullptr, 0, 0}; // will be changed in GetReadbuffer
 
     if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == SUCCESS) {
+        VolumeHandle(bufferDesc);
         if (processConfig_.streamType != STREAM_ULTRASONIC) {
             DoFadingOut(bufferDesc);
             CheckFadingOutDone(fadeoutFlag_, bufferDesc);
         }
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
-        if (isInnerCapEnabled_) {
-            Trace traceDup("RendererInServer::WriteData DupSteam write");
-            std::lock_guard<std::mutex> lock(dupMutex_);
-            if (dupStream_ != nullptr) {
-                dupStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
-            }
-        }
+
+        OtherStreamEnqueue(bufferDesc);
+
         WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
         // Client may write the buffer immediately after SetCurReadFrame, so put memset_s before it!
@@ -468,13 +522,31 @@ int32_t RendererInServer::WriteData()
             fadeoutFlag_ = FADING_OUT_DONE;
             AUDIO_INFO_LOG("fadeoutFlag_ = FADING_OUT_DONE");
         }
-    } else {
-        Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
     }
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, SUCCESS, "IStreamListener is nullptr");
     stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
     return SUCCESS;
+}
+
+void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
+{
+    // for inner capture
+    if (isInnerCapEnabled_) {
+        Trace traceDup("RendererInServer::WriteData DupSteam write");
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
+        }
+    }
+    // for dual tone
+    if (isDualToneEnabled_) {
+        Trace traceDup("RendererInServer::WriteData DualToneSteam write");
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
+        }
+    }
 }
 
 void RendererInServer::WriteEmptyData()
@@ -585,6 +657,13 @@ int32_t RendererInServer::Start()
             dupStream_->Start();
         }
     }
+
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->Start();
+        }
+    }
     return SUCCESS;
 }
 
@@ -604,7 +683,16 @@ int32_t RendererInServer::Pause()
             dupStream_->Pause();
         }
     }
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->Pause();
+        }
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
+    if (isNeedFade_) {
+        oldAppliedVolume_ = MIN_FLOAT_VOLUME;
+    }
     return SUCCESS;
 }
 
@@ -648,6 +736,12 @@ int32_t RendererInServer::Flush()
             dupStream_->Flush();
         }
     }
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->Flush();
+        }
+    }
     return SUCCESS;
 }
 
@@ -681,6 +775,12 @@ int32_t RendererInServer::Drain()
             dupStream_->Drain();
         }
     }
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->Drain();
+        }
+    }
     return SUCCESS;
 }
 
@@ -707,7 +807,16 @@ int32_t RendererInServer::Stop()
             dupStream_->Stop();
         }
     }
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->Stop();
+        }
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
+    if (isNeedFade_) {
+        oldAppliedVolume_ = MIN_FLOAT_VOLUME;
+    }
     return SUCCESS;
 }
 
@@ -773,7 +882,12 @@ int32_t RendererInServer::SetRate(int32_t rate)
 
 int32_t RendererInServer::SetLowPowerVolume(float volume)
 {
-    return stream_->SetLowPowerVolume(volume);
+    if (volume < MIN_FLOAT_VOLUME || volume > MAX_FLOAT_VOLUME) {
+        AUDIO_ERR_LOG("invalid volume:%{public}f", volume);
+        return ERR_INVALID_PARAM;
+    }
+    lowPowerVolume_ = volume;
+    return SUCCESS;
 }
 
 int32_t RendererInServer::GetLowPowerVolume(float &volume)
@@ -851,6 +965,54 @@ int32_t RendererInServer::InitDupStream()
     return SUCCESS;
 }
 
+int32_t RendererInServer::EnableDualTone()
+{
+    if (isDualToneEnabled_) {
+        AUDIO_INFO_LOG("DualTone is already enabled");
+        return SUCCESS;
+    }
+    int32_t ret = InitDualToneStream();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dual tone stream failed");
+    return SUCCESS;
+}
+
+int32_t RendererInServer::DisableDualTone()
+{
+    std::lock_guard<std::mutex> lock(dualToneMutex_);
+    if (!isDualToneEnabled_) {
+        AUDIO_WARNING_LOG("DualTone is already disabled.");
+        return ERR_INVALID_OPERATION;
+    }
+    isDualToneEnabled_ = false;
+    AUDIO_INFO_LOG("Disable dual tone renderer %{public}u with status: %{public}d", streamIndex_, status_);
+    IStreamManager::GetDupPlaybackManager().ReleaseRender(dupStreamIndex_);
+    dupStream_ = nullptr;
+
+    return ERROR;
+}
+
+int32_t RendererInServer::InitDualToneStream()
+{
+    std::lock_guard<std::mutex> lock(dualToneMutex_);
+
+    int32_t ret = IStreamManager::GetDualPlaybackManager().CreateRender(processConfig_, dualToneStream_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dualToneStream_ != nullptr,
+        ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
+    dualToneStreamIndex_ = dualToneStream_->GetStreamIndex();
+
+    dualToneStreamCallback_ = std::make_shared<StreamCallbacks>(dualToneStreamIndex_);
+    dualToneStream_->RegisterStatusCallback(dualToneStreamCallback_);
+    dualToneStream_->RegisterWriteCallback(dualToneStreamCallback_);
+
+    isDualToneEnabled_ = true;
+
+    if (status_ == I_STATUS_STARTED) {
+        AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dual stream", streamIndex_);
+        dualToneStream_->Start();
+    }
+    return SUCCESS;
+}
+
 StreamCallbacks::StreamCallbacks(uint32_t streamIndex) : streamIndex_(streamIndex)
 {
     AUDIO_INFO_LOG("DupStream %{public}u create StreamCallbacks", streamIndex_);
@@ -876,6 +1038,12 @@ int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
             dupStream_->UpdateMaxLength(350); // 350 for cover offload
         }
     }
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->UpdateMaxLength(350); // 350 for cover offload
+        }
+    }
     return ret;
 }
 
@@ -886,6 +1054,12 @@ int32_t RendererInServer::UnsetOffloadMode()
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (dupStream_ != nullptr) {
             dupStream_->UpdateMaxLength(20); // 20 for unset offload
+        }
+    }
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->UpdateMaxLength(20); // 20 for cover offload
         }
     }
     return ret;
@@ -899,7 +1073,19 @@ int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, 
 
 int32_t RendererInServer::OffloadSetVolume(float volume)
 {
-    return stream_->OffloadSetVolume(volume);
+    if (volume < MIN_FLOAT_VOLUME || volume > MAX_FLOAT_VOLUME) {
+        AUDIO_ERR_LOG("invalid volume:%{public}f", volume);
+        return ERR_INVALID_PARAM;
+    }
+
+    AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(processConfig_.streamType);
+    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+    Volume vol = {false, 0.0f, 0};
+    PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
+    float systemVol = vol.isMute ? 0.0f : vol.volumeFloat;
+    AUDIO_INFO_LOG("sessionId %{public}u set volume:%{public}f [volumeType:%{public}d deviceType:%{public}d systemVol:"
+        "%{public}f]", streamIndex_, volume, volumeType, deviceType, systemVol);
+    return stream_->OffloadSetVolume(systemVol * volume);
 }
 
 int32_t RendererInServer::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
@@ -925,6 +1111,12 @@ bool RendererInServer::IsHighResolution() const noexcept
     }
     Trace trace("RendererInServer::IsHighResolution false");
     return false;
+}
+
+int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
+{
+    silentModeAndMixWithOthers_ = on;
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -54,6 +54,7 @@ const uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 4096;
 const uint32_t RENDER_FRAME_INTERVAL_IN_MICROSECONDS = 10000;
 const uint32_t SECOND_TO_NANOSECOND = 1000000000;
 const uint32_t SECOND_TO_MILLISECOND = 1000;
+const uint32_t  WAIT_TIME_FOR_RETRY_IN_MICROSECOND = 50000;
 const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
@@ -95,8 +96,8 @@ public:
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
     int32_t SetVoiceVolume(float volume) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
-    int32_t SetOutputRoute(DeviceType deviceType) override;
+    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
+    int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) override;
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
@@ -130,6 +131,7 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    int32_t initCount_ = 0;
 
     // Low latency
     int32_t PrepareMmapBuffer();
@@ -208,13 +210,14 @@ int32_t BluetoothRendererSinkInner::SetVoiceVolume(float volume)
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t BluetoothRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t BluetoothRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
 {
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t BluetoothRendererSinkInner::SetOutputRoute(DeviceType deviceType)
+int32_t BluetoothRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &outputDevices)
 {
+    AUDIO_DEBUG_LOG("SetOutputRoutes not supported.");
     return ERR_NOT_SUPPORTED;
 }
 
@@ -249,6 +252,10 @@ void BluetoothRendererSinkInner::DeInit()
 {
     Trace trace("BluetoothRendererSinkInner::DeInit");
     AUDIO_INFO_LOG("DeInit.");
+    if (--initCount_ > 0) {
+        AUDIO_WARNING_LOG("Sink is still being used, count: %{public}d", initCount_);
+        return;
+    }
     started_ = false;
     rendererInited_ = false;
     if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
@@ -412,6 +419,10 @@ AudioFormat BluetoothRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat form
 int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     AUDIO_INFO_LOG("Init: %{public}d", attr.format);
+    if (rendererInited_) {
+        AUDIO_ERR_LOG("Already inited");
+        return true;
+    }
 
     attr_.format = ConvertToHdiFormat(attr.format);
     attr_.sampleRate = attr.sampleRate;
@@ -452,6 +463,7 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
     }
 
     rendererInited_ = true;
+    initCount_++;
 
     return SUCCESS;
 }
@@ -585,17 +597,20 @@ int32_t BluetoothRendererSinkInner::Start(void)
 
     InitLatencyMeasurement();
 
+    int32_t tryCount = 3; // try to start bluetooth render up to 3 times;
     if (!started_) {
-        ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
-        if (!ret) {
-            started_ = true;
-            return SUCCESS;
-        } else {
-            AUDIO_ERR_LOG("Start failed!");
-            return ERR_NOT_STARTED;
+        while (tryCount-- > 0) {
+            AUDIO_INFO_LOG("Try to start bluetooth render");
+            ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
+            if (!ret) {
+                started_ = true;
+                return SUCCESS;
+            } else {
+                AUDIO_ERR_LOG("Start failed, remaining %{public}d attempt(s)", tryCount);
+                usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
+            }
         }
     }
-
     return SUCCESS;
 }
 
