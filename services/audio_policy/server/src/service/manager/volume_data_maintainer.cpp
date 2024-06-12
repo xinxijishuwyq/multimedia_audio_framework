@@ -31,6 +31,9 @@ const std::string AUDIO_SAFE_VOLUME_STATE_BT = "audio_safe_volume_state_bt";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS = "unsafe_volume_music_active_ms";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS_BT = "unsafe_volume_music_active_ms_bt";
 const std::string SETTINGS_CLONED = "settingsCloneStatus";
+const int32_t INVALIAD_SETTINGS_CLONE_STATUS = -1;
+const int32_t SETTINGS_CLONING_STATUS = 1;
+const int32_t SETTINGS_CLONED_STATUS = 0;
 
 static const std::vector<VolumeDataMaintainer::VolumeDataMaintainerStreamType> VOLUME_MUTE_STREAM_TYPE = {
     // all volume types except STREAM_ALL
@@ -510,12 +513,18 @@ void VolumeDataMaintainer::RegisterCloned()
 {
     AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     AudioSettingObserver::UpdateFunc updateFunc = [&](const std::string& key) {
-        int32_t value = 0;
+        int32_t value = INVALIAD_SETTINGS_CLONE_STATUS;
         ErrCode result =
             AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID).GetIntValue(SETTINGS_CLONED, value);
-        if ((value == 0) && (result == SUCCESS)) {
-            AUDIO_INFO_LOG("Get SETTINGS_CLONED success");
+        if (!isSettingsCloneHaveStarted_ && (value == SETTINGS_CLONING_STATUS) && (result == SUCCESS)) {
+            AUDIO_INFO_LOG("clone staring");
+            isSettingsCloneHaveStarted_ = true;
+        }
+
+        if (isSettingsCloneHaveStarted_ && (value == SETTINGS_CLONED_STATUS) && (result == SUCCESS)) {
+            AUDIO_INFO_LOG("Get SETTINGS_CLONED success, clone done, restore.");
             AudioPolicyManagerFactory::GetAudioPolicyManager().DoRestoreData();
+            isSettingsCloneHaveStarted_ = false;
         }
     };
     sptr<AudioSettingObserver> observer = settingProvider.CreateObserver(SETTINGS_CLONED, updateFunc);
