@@ -84,10 +84,9 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     if (parser == nullptr) {
         WriteServiceStartupError();
     }
-    CHECK_AND_RETURN_LOG(!parser->LoadConfig(focusCfgMap_), "load fail");
 
     int32_t ret = parser->LoadConfig(focusCfgMap_);
-    if (ret) {
+    if (ret != SUCCESS) {
         WriteServiceStartupError();
     }
     CHECK_AND_RETURN_LOG(!ret, "load fail");
