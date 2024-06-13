@@ -274,28 +274,6 @@ bool VolumeDataMaintainer::GetStreamMuteInternal(AudioStreamType streamType)
     return muteStatusMap_[streamForVolumeMap];
 }
 
-void VolumeDataMaintainer::UpdateMuteStatusForVolume(DeviceType deviceType,
-    AudioStreamType streamType, int32_t volumeLevel)
-{
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
-    UpdateMuteStatusForVolumeInternal(deviceType, streamType, volumeLevel);
-}
-
-void VolumeDataMaintainer::UpdateMuteStatusForVolumeInternal(DeviceType deviceType,
-    AudioStreamType streamType, int32_t volumeLevel)
-{
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
-
-    // The mute status is automatically updated based on the stream volume
-    if (volumeLevel > 0 && GetStreamMuteInternal(streamType)) {
-        muteStatusMap_[streamForVolumeMap] = false;
-        SaveMuteStatusInternal(deviceType, streamType, false);
-    } else if (volumeLevel == 0 && !GetStreamMuteInternal(streamType)) {
-        muteStatusMap_[streamForVolumeMap] = true;
-        SaveMuteStatusInternal(deviceType, streamType, true);
-    }
-}
-
 bool VolumeDataMaintainer::GetMuteAffected(int32_t &affected)
 {
     AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
