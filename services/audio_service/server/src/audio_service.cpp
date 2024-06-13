@@ -478,6 +478,7 @@ void AudioService::CheckInnerCapForProcess(sptr<AudioProcessInServer> process, s
 int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
 {
     int32_t ret = SUCCESS;
+    std::lock_guard<std::mutex> lockEndpoint(processListMutex_);
     for (auto item : endpointList_) {
         std::string endpointName = item.second->GetEndpointName();
         if (endpointName == item.first) {
@@ -519,9 +520,11 @@ int32_t AudioService::UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process
 
 void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs)
 {
+    std::unique_lock<std::mutex> lockEndpoint(processListMutex_);
     AUDIO_INFO_LOG("Delay release endpoint [%{public}s] start.", endpointName.c_str());
     CHECK_AND_RETURN_LOG(endpointList_.count(endpointName),
         "Find no such endpoint: %{public}s", endpointName.c_str());
+    lockEndpoint.unlock();
     std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
     releaseEndpointCV_.wait_for(lock, std::chrono::milliseconds(delayInMs), [this, endpointName] {
         if (releasingEndpointSet_.count(endpointName)) {
@@ -539,6 +542,7 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t de
     releasingEndpointSet_.erase(endpointName);
 
     std::shared_ptr<AudioEndpoint> temp = nullptr;
+    std::unique_lock<std::mutex> lockEndptr(processListMutex_);
     CHECK_AND_RETURN_LOG(endpointList_.find(endpointName) != endpointList_.end() &&
         endpointList_[endpointName] != nullptr, "Endpoint %{public}s not available, stop call release",
         endpointName.c_str());
@@ -632,10 +636,12 @@ void AudioService::Dump(std::string &dumpString)
         paired.first->Dump(dumpString);
     }
     // dump endpoint
+    std::unique_lock<std::mutex> lockEndpoint(processListMutex_);
     for (auto item : endpointList_) {
         AppendFormat(dumpString, "  - Endpoint device id: %s\n", item.first.c_str());
         item.second->Dump(dumpString);
     }
+    lockEndpoint.unlock();
     PolicyHandler::GetInstance().Dump(dumpString);
 }
 
