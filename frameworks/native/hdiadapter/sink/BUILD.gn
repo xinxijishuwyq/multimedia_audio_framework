@@ -123,6 +123,7 @@ ohos_shared_library("bluetooth_renderer_sink") {
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",
     "hilog:libhilog",
+    "init:libbegetutil",
   ]
   defines = []
   if (audio_framework_feature_power_manager) {

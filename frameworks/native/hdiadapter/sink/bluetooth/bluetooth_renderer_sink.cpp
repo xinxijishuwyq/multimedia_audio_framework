@@ -37,6 +37,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#include "parameters.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
@@ -62,6 +63,7 @@ const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 constexpr uint32_t BIT_TO_BYTES = 8;
+constexpr int64_t STAMP_THRESHOLD_MS = 20;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
@@ -132,6 +134,7 @@ private:
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
     int32_t initCount_ = 0;
+    int32_t logMode_ = 0;
 
     // Low latency
     int32_t PrepareMmapBuffer();
@@ -462,6 +465,8 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
         CHECK_AND_RETURN_RET_LOG(result == 0, ERR_NOT_STARTED, "Prepare mmap buffer failed");
     }
 
+    logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
+
     rendererInited_ = true;
     initCount_++;
 
@@ -494,8 +499,13 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
             Trace::Count("BluetoothRendererSinkInner::RenderFrame", PCM_MAYBE_NOT_SILENT);
         }
         Trace trace("audioRender_->RenderFrame");
+        int64_t stamp = ClockTime::GetCurNano();
         ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
-        AUDIO_DEBUG_LOG("A2dp RenderFrame returns: %{public}x", ret);
+        stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
+        if (logMode_ || stamp >= STAMP_THRESHOLD_MS) {
+            AUDIO_WARNING_LOG("A2dp RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms " \
+                "writeLen[%{public}" PRIu64 "] returns: %{public}x", len, stamp, writeLen, ret);
+        }
         if (ret == RENDER_FRAME_NUM) {
             AUDIO_ERR_LOG("retry render frame...");
             usleep(RENDER_FRAME_INTERVAL_IN_MICROSECONDS);

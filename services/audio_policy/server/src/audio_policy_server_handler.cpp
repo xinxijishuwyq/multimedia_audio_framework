@@ -18,6 +18,7 @@
 #include "audio_policy_server_handler.h"
 #include "audio_policy_service.h"
 #include "audio_policy_manager_factory.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -134,6 +135,7 @@ void AudioPolicyServerHandler::AddConcurrencyEventDispatcher(std::shared_ptr<IAu
 bool AudioPolicyServerHandler::SendDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
     bool isConnected)
 {
+    Trace trace("AudioPolicyServerHandler::SendDeviceChangedCallback");
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->deviceChangeAction.type = isConnected ? DeviceChangeType::CONNECT : DeviceChangeType::DISCONNECT;
