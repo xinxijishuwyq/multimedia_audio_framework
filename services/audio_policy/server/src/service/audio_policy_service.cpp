@@ -7773,5 +7773,17 @@ bool AudioPolicyService::IsRingerModeMute()
 {
     return ringerModeMute_;
 }
+
+void AudioPolicyService::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
+{
+    std::lock_guard<std::shared_mutex> lock(deviceStatusUpdateSharedMutex_);
+    for (auto device : connectedDevices_) {
+        if (device->macAddress_ == macAddress) {
+            device->deviceName_ = deviceName;
+            AUDIO_INFO_LOG("bluetooth device %{public}d alias name changing to %{public}s",
+                device->deviceId_, device->deviceName_.c_str());
+        }
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

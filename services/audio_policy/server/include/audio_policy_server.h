@@ -29,6 +29,8 @@
 #include "perm_state_change_callback_customize.h"
 #include "power_state_callback_stub.h"
 #include "power_state_listener.h"
+#include "common_event_subscriber.h"
+#include "common_event_support.h"
 
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
@@ -56,6 +58,7 @@ constexpr uint32_t LOCAL_USER_ID = 100;
 class AudioPolicyService;
 class AudioInterruptService;
 class AudioPolicyServerHandler;
+class BluetoothEventSubscriber;
 
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyManagerStub,
@@ -404,6 +407,7 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
+    void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     // for hidump
     void AudioDevicesDump(std::string &dumpString);
     void AudioModeDump(std::string &dumpString);
@@ -507,7 +511,8 @@ private:
     void RegisterDataObserver();
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();
-
+    void RegisterCommonEventReceiver();
+    void UnregisterCommonEventReceiver();
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
 
     void InitPolicyDumpMap();
@@ -541,6 +546,7 @@ private:
 
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
+    std::shared_ptr<BluetoothEventSubscriber> bluetoothEventSubscriberOb_ = nullptr;
     bool isAvSessionSetVoipStart = false;
     bool volumeApplyToAll_ = false;
 
@@ -578,6 +584,19 @@ public:
     }
 private:
     AudioPolicyServer *audioPolicyServer_;
+};
+
+class BluetoothEventSubscriber : public EventFwk::CommonEventSubscriber,
+                                 public std::enable_shared_from_this<BluetoothEventSubscriber> {
+public:
+    explicit BluetoothEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,
+        sptr<AudioPolicyServer> audioPolicyServer) : EventFwk::CommonEventSubscriber(subscribeInfo),
+        audioPolicyServer_(audioPolicyServer) {}
+    ~BluetoothEventSubscriber() {}
+    void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
+private:
+    BluetoothEventSubscriber() = default;
+    sptr<AudioPolicyServer> audioPolicyServer_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
