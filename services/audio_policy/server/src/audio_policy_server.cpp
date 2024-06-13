@@ -2058,6 +2058,8 @@ int32_t AudioPolicyServer::GetMaxRendererInstances()
         if (retryCount > 0) {
             AUDIO_WARNING_LOG("Audio server is not start");
             usleep(200000); // Wait 200000us when audio server is not started
+        } else {
+            break;
         }
     }
     return audioPolicyService_.GetMaxRendererInstances();
