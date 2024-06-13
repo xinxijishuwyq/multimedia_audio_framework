@@ -126,7 +126,7 @@ int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
         return ERROR;
     }
     AUDIO_INFO_LOG("Create Audio Effect Chain Success, sessionID is %{public}s, sceneType is %{public}s",
-        sessionIDString.c_str, sceneTypeString.c_str);
+        sessionIDString.c_str(), sceneTypeString.c_str());
     return SUCCESS;
 }
 
@@ -158,7 +158,7 @@ int32_t EffectChainManagerReleaseCb(const char *sceneType, const char *sessionID
         return ERROR;
     }
     AUDIO_INFO_LOG("Release Audio Effect Chain Success, sessionID is %{public}s, sceneType is %{public}s",
-        sessionIDString.c_str, sceneTypeString.c_str);
+        sessionIDString.c_str(), sceneTypeString.c_str());
     return SUCCESS;
 }
 
