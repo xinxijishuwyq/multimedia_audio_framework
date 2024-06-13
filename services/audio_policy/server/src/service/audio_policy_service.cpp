@@ -4796,6 +4796,7 @@ std::string AudioPolicyService::GetGroupName(const std::string& deviceName, cons
 
 void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected)
 {
+    Trace trace("AudioPolicyService::WriteDeviceChangedSysEvents");
     for (auto deviceDescriptor : desc) {
         if (deviceDescriptor != nullptr) {
             if ((deviceDescriptor->deviceType_ == DEVICE_TYPE_WIRED_HEADSET)
