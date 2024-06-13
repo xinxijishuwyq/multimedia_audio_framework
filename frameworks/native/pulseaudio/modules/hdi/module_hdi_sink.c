@@ -112,6 +112,7 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
         SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled, volume};
         if (si->state == PA_SINK_INPUT_RUNNING && !EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
             EffectChainManagerMultichannelUpdate(sceneType);
+            EffectChainManagerEffectUpdate();
         }
     }
     return PA_HOOK_OK;
@@ -139,6 +140,7 @@ static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si, void *u
         EffectChainManagerReleaseCb(sceneType, sessionID);
         if (si->state == PA_SINK_INPUT_RUNNING && !EffectChainManagerDeleteSessionInfo(sceneType, sessionID)) {
             EffectChainManagerMultichannelUpdate(sceneType);
+            EffectChainManagerEffectUpdate();
         }
     }
     return PA_HOOK_OK;

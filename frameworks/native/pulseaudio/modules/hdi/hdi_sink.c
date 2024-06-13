@@ -1328,10 +1328,10 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag =
             EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled ? "1" : "0");
+        bool sceneTypeFlag = EffectChainManagerSceneCheck(sinkSceneType, sceneType);
         if ((IsInnerCapturer(sinkIn) && isCaptureSilently) || !InputIsPrimary(sinkIn)) {
             continue;
-        } else if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
-            (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
+        } else if ((sceneTypeFlag && existFlag) || (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
             pa_sink_input_assert_ref(sinkIn);
             updateResampler(sinkIn, sinkSceneType, false);
 
