@@ -72,14 +72,14 @@ public:
 
 class Trace {
 public:
-    static void Count(const std::string &value, int64_t count, bool isEnable = true);
-    Trace(const std::string &value, bool isShowLog = false, bool isEnable = true);
+    static void Count(const std::string &value, int64_t count);
+    // Show if data is silent.
+    static void CountVolume(const std::string &value, uint8_t data);
+    Trace(const std::string &value);
     void End();
     ~Trace();
 private:
     std::string value_;
-    bool isShowLog_;
-    bool isEnable_;
     bool isFinished_;
 };
 

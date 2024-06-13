@@ -157,6 +157,7 @@ int32_t RendererInServer::Init()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
         "Construct rendererInServer failed: %{public}d", ret);
     streamIndex_ = stream_->GetStreamIndex();
+    traceTag_ = "RendererInServer::sessionid:" + std::to_string(streamIndex_);
     ret = ConfigServerBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
         "Construct rendererInServer failed: %{public}d", ret);
@@ -483,8 +484,7 @@ int32_t RendererInServer::WriteData()
 {
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
-    Trace::Count("RendererInServer::WriteData", (currentWriteFrame - currentReadFrame) / spanSizeInFrame_);
-    Trace trace1("RendererInServer::WriteData");
+    Trace trace1(traceTag_ + " WriteData"); // RendererInServer::sessionid:100001 WriteData
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
         if (underRunLogFlag_ == 0) {
             AUDIO_INFO_LOG("near underrun");
@@ -507,6 +507,7 @@ int32_t RendererInServer::WriteData()
             DoFadingOut(bufferDesc);
             CheckFadingOutDone(fadeoutFlag_, bufferDesc);
         }
+        Trace::CountVolume(traceTag_, *bufferDesc.buffer);
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
 

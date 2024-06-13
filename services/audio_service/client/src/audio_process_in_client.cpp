@@ -891,7 +891,7 @@ int32_t AudioProcessInClientInner::SetVolume(int32_t vol)
 
 int32_t AudioProcessInClientInner::Start()
 {
-    Trace traceWithLog("AudioProcessInClient::Start", true);
+    Trace traceStart("AudioProcessInClient::Start");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_PROCESS_IN_CLIENT_FILENAME, &dumpFile_);
@@ -926,7 +926,7 @@ int32_t AudioProcessInClientInner::Start()
 
 int32_t AudioProcessInClientInner::Pause(bool isFlush)
 {
-    Trace traceWithLog("AudioProcessInClient::Pause", true);
+    Trace tracePause("AudioProcessInClient::Pause");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
@@ -960,7 +960,7 @@ int32_t AudioProcessInClientInner::Pause(bool isFlush)
 
 int32_t AudioProcessInClientInner::Resume()
 {
-    Trace traceWithLog("AudioProcessInClient::Resume", true);
+    Trace traceResume("AudioProcessInClient::Resume");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
 
@@ -1002,7 +1002,7 @@ int32_t AudioProcessInClientInner::Resume()
 
 int32_t AudioProcessInClientInner::Stop()
 {
-    Trace traceWithLog("AudioProcessInClient::Stop", true);
+    Trace traceStop("AudioProcessInClient::Stop");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
     if (streamStatus_->load() == StreamStatus::STREAM_STOPPED) {
@@ -1038,7 +1038,7 @@ int32_t AudioProcessInClientInner::Stop()
 
 int32_t AudioProcessInClientInner::Release()
 {
-    Trace traceWithLog("AudioProcessInClient::Release", true);
+    Trace traceRelease("AudioProcessInClient::Release");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     AUDIO_INFO_LOG("AudioProcessInClientInner::Release()");
     // not lock as status is already released

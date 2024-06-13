@@ -493,11 +493,7 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 
     Trace trace("BluetoothRendererSinkInner::RenderFrame");
     while (true) {
-        if (*reinterpret_cast<int8_t*>(&data) == 0) {
-            Trace::Count("BluetoothRendererSinkInner::RenderFrame", PCM_MAYBE_SILENT);
-        } else {
-            Trace::Count("BluetoothRendererSinkInner::RenderFrame", PCM_MAYBE_NOT_SILENT);
-        }
+        Trace::CountVolume("BluetoothRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
         Trace trace("audioRender_->RenderFrame");
         int64_t stamp = ClockTime::GetCurNano();
         ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);

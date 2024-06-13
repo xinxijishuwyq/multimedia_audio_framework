@@ -20,6 +20,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_policy_ipc_interface_code.h"
+#include "audio_utils.h"
 
 namespace {
 constexpr int MAX_PID_COUNT = 1000;
@@ -1067,6 +1068,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(), -1, "ReadInterfaceToken failed");
+    Trace trace("AudioPolicy::Handle::" + std::to_string(code));
     if (code <= static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX)) {
         (this->*handlers[code])(data, reply);
         return AUDIO_OK;

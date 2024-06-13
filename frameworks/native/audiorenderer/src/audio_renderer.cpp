@@ -667,7 +667,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
-    Trace trace("Write");
+    Trace trace("AudioRenderer::Write");
     MockPcmData(buffer, bufferSize);
     int32_t size = audioStream_->Write(buffer, bufferSize);
     if (size > 0) {
@@ -1114,6 +1114,7 @@ int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc) const
 
 int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc) const
 {
+    Trace trace("AudioRenderer::Enqueue");
     MockPcmData(bufDesc.buffer, bufDesc.bufLength);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
     if (!switchStreamMutex_.try_lock()) {
