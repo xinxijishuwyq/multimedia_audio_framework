@@ -35,6 +35,8 @@
 #include "permission_state_change_info.h"
 #include "token_setproc.h"
 #include "tokenid_kit.h"
+#include "want.h"
+#include "common_event_manager.h"
 
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
@@ -178,7 +180,7 @@ void AudioPolicyServer::OnStart()
     if (iRes < 0) {
         AUDIO_ERR_LOG("fail to call RegisterPermStateChangeCallback.");
     }
-
+    RegisterCommonEventReceiver();
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
@@ -189,6 +191,7 @@ void AudioPolicyServer::OnStop()
 {
     audioPolicyService_.Deinit();
     UnRegisterPowerStateListener();
+    UnregisterCommonEventReceiver();
     return;
 }
 
@@ -2704,6 +2707,42 @@ int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeTyp
 int32_t AudioPolicyServer::ResetRingerModeMute()
 {
     return audioPolicyService_.ResetRingerModeMute();
+}
+
+void AudioPolicyServer::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
+{
+    audioPolicyService_.OnReceiveBluetoothEvent(macAddress, deviceName);
+}
+
+void BluetoothEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
+{
+    const AAFwk::Want& want = eventData.GetWant();
+    std::string action = want.GetAction();
+    std::string deviceName  = want.GetStringParam("remoteName");
+    std::string macAddress = want.GetStringParam("deviceAddr");
+    AUDIO_INFO_LOG("receive action %{public}s", deviceName.c_str());
+    if (action == EventFwk::CommonEventSupport::COMMON_EVENT_BLUETOOTH_REMOTEDEVICE_NAME_UPDATE) {
+        audioPolicyServer_->OnReceiveBluetoothEvent(macAddress, deviceName);
+    }
+}
+
+void AudioPolicyServer::RegisterCommonEventReceiver()
+{
+    AUDIO_INFO_LOG("register bluetooth remote device name receiver");
+    EventFwk::MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_BLUETOOTH_REMOTEDEVICE_NAME_UPDATE);
+    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
+    bluetoothEventSubscriberOb_ =
+        std::make_shared<BluetoothEventSubscriber>(subscribeInfo, this);
+    EventFwk::CommonEventManager::NewSubscribeCommonEvent(bluetoothEventSubscriberOb_);
+}
+
+void AudioPolicyServer::UnregisterCommonEventReceiver()
+{
+    if (bluetoothEventSubscriberOb_ != nullptr) {
+        EventFwk::CommonEventManager::NewUnSubscribeCommonEvent(bluetoothEventSubscriberOb_);
+        AUDIO_INFO_LOG("unregister bluetooth device name commonevent");
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

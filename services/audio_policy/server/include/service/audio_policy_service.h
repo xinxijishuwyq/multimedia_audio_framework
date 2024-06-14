@@ -510,6 +510,8 @@ public:
 
     int32_t ResetRingerModeMute();
     bool IsRingerModeMute();
+
+    void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
