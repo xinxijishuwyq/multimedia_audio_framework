@@ -6647,7 +6647,6 @@ void AudioPolicyService::UpdateAllActiveSessions(std::vector<Bluetooth::A2dpStre
 int32_t AudioPolicyService::HandleA2dpDeviceOutOffload(BluetoothOffloadState a2dpOffloadFlag)
 {
 #ifdef BLUETOOTH_ENABLE
-    GetA2dpOffloadCodecAndSendToDsp();
     std::vector<int32_t> allSessions;
     GetAllRunningStreamSession(allSessions);
     OffloadStopPlaying(allSessions);
