@@ -1573,7 +1573,7 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
             return false;
         }
         buffer = speedBuffer_.get();
-        bufferSize = outBufferSize;
+        bufferSize = static_cast<size_t>(outBufferSize);
         speedCached = true;
     }
 #endif
