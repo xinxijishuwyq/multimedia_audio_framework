@@ -476,7 +476,7 @@ static ssize_t RenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memchunk 
             count = -1 - count;
             break;
         } else {
-            count += writeLen;
+            count += (ssize_t)writeLen;
             index += writeLen;
             length -= writeLen;
             if (length == 0) {
@@ -2321,8 +2321,8 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
         tchunk.length = PA_MIN(length, blockSize - tchunk.index);
 
         PaSinkRenderIntoOffload(i->sink, infoInputs, nInputs, &tchunk);
-        d += tchunk.length;
-        l -= tchunk.length;
+        d += (int64_t)tchunk.length;
+        l -= (int64_t)tchunk.length;
     }
     if (l < 0) {
         chunk->length += -l;

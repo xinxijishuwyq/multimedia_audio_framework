@@ -99,7 +99,7 @@ int32_t AudioSpeed::ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
     std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
 {
     Trace trace("AudioSpeed::ChangeSpeedFor8Bit");
-    int32_t numSamples = bufferSize / (formatSize_ * channels_);
+    int32_t numSamples = bufferSize / static_cast<int32_t>(formatSize_ * channels_);
     int32_t res = sonicWriteUnsignedCharToStream(sonicStream_, static_cast<unsigned char*>(buffer), numSamples);
     CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write unsigned char to stream failed.");
 
@@ -115,7 +115,7 @@ int32_t AudioSpeed::ChangeSpeedFor16Bit(uint8_t *buffer, int32_t bufferSize,
     std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
 {
     Trace trace("AudioSpeed::ChangeSpeedFor16Bit");
-    int32_t numSamples = bufferSize / (formatSize_ * channels_);
+    int32_t numSamples = bufferSize / static_cast<int32_t>(formatSize_ * channels_);
     int32_t res = sonicWriteShortToStream(sonicStream_, reinterpret_cast<short*>(buffer), numSamples);
     CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write short to stream failed.");
 
@@ -191,8 +191,8 @@ int32_t AudioSpeed::ChangeSpeedForFloat(float *buffer, int32_t bufferSize,
     float* outBuffer, int32_t &outBufferSize)
 {
     Trace trace("AudioSpeed::ChangeSpeedForFloat");
-    int32_t numSamples = bufferSize / (formatSize_ * channels_);
-    int32_t res = sonicWriteFloatToStream(sonicStream_, buffer, numSamples);
+    int32_t numSamples = bufferSize / static_cast<int32_t>(formatSize_ * channels_);
+    int32_t res = static_cast<int32_t>(sonicWriteFloatToStream(sonicStream_, buffer, numSamples));
     CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write float to stream failed.");
     int32_t outSamples = sonicReadFloatFromStream(sonicStream_, outBuffer, MAX_BUFFER_SIZE);
     outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);

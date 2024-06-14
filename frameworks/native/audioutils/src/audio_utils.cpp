@@ -1134,7 +1134,7 @@ std::string GetEncryptStr(const std::string &src)
         return std::string("");
     }
 
-    int32_t strLen = src.length();
+    size_t strLen = src.length();
     std::string dst;
 
     if (strLen < MIN_LEN) {

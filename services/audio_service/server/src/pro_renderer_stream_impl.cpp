@@ -109,7 +109,7 @@ int32_t ProRendererStreamImpl::InitParams()
     AUDIO_INFO_LOG("sampleSpec: channels: %{public}u, formats: %{public}d, rate: %{public}d", streamInfo.channels,
         streamInfo.format, streamInfo.samplingRate);
     InitBasicInfo(streamInfo);
-    int32_t frameSize = spanSizeInFrame_ * streamInfo.channels;
+    size_t frameSize = spanSizeInFrame_ * streamInfo.channels;
     uint32_t desChannels = streamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
     uint32_t desSpanSize = (desSamplingRate_ * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
     if (streamInfo.samplingRate != desSamplingRate_) {
@@ -275,7 +275,7 @@ int32_t ProRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     uint64_t framePosition;
     int32_t ret = GetAudioTime(framePosition, timeSec, timeNsec);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "GetBufferSize error.");
-    timestamp = timeSec * AUDIO_NS_PER_S + timeNsec;
+    timestamp = static_cast<uint64_t>(timeSec * AUDIO_NS_PER_S + timeNsec);
     return SUCCESS;
 }
 
@@ -285,7 +285,7 @@ int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint6
     int64_t timeNsec = 0;
     int32_t ret = GetAudioTime(framePosition, timeSec, timeNsec);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "GetBufferSize error.");
-    timestamp = timeSec * AUDIO_NS_PER_S + timeNsec;
+    timestamp = static_cast<uint64_t>(timeSec * AUDIO_NS_PER_S + timeNsec);
     return SUCCESS;
 }
 

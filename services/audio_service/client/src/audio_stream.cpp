@@ -241,7 +241,7 @@ bool AudioStream::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbas
         timestamp.framePosition = framePosition;
         timestamp.time.tv_sec = static_cast<time_t>(timestampHdi / TIME_CONVERSION_NS_S);
         timestamp.time.tv_nsec
-            = static_cast<time_t>(timestampHdi - (timestamp.time.tv_sec * TIME_CONVERSION_NS_S));
+            = static_cast<long>(timestampHdi - (timestamp.time.tv_sec * TIME_CONVERSION_NS_S));
         return true;
     }
     return false;
