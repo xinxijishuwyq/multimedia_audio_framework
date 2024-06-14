@@ -1021,9 +1021,14 @@ int32_t PaRendererStreamImpl::OffloadUpdatePolicy(AudioOffloadType statePolicy, 
 int32_t PaRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
 {
 #ifdef FEATURE_POWER_MANAGER
+    static const std::set<PowerMgr::PowerState> screenOffTable = {
+        PowerMgr::PowerState::INACTIVE, PowerMgr::PowerState::STAND_BY,
+        PowerMgr::PowerState::DOZE, PowerMgr::PowerState::SLEEP,
+        PowerMgr::PowerState::HIBERNATE,
+    };
     AudioOffloadType statePolicy = OFFLOAD_DEFAULT;
     auto powerState = static_cast<PowerMgr::PowerState>(state);
-    if ((powerState != PowerMgr::PowerState::AWAKE) && (powerState != PowerMgr::PowerState::FREEZE)) {
+    if (screenOffTable.count(powerState)) {
         statePolicy = OFFLOAD_INACTIVE_BACKGROUND;
     } else {
         statePolicy = OFFLOAD_ACTIVE_FOREGROUND;
