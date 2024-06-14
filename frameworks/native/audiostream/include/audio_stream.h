@@ -168,7 +168,7 @@ private:
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
     AudioRendererInfo rendererInfo_;
     AudioCapturerInfo capturerInfo_;
-    uint32_t sessionId_;
+    uint32_t sessionId_ = 0;
 
     bool isFirstRead_;
     bool isFirstWrite_;

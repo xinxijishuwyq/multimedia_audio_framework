@@ -159,8 +159,8 @@ private:
     void CheckUpdateState(char *frame, uint64_t replyBytes);
 
     FILE *dumpFile_ = nullptr;
-    DeviceType currentActiveDevice_;
-    AudioScene currentAudioScene_;
+    DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
+    AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
 };
 
 MultiChannelRendererSinkInner::MultiChannelRendererSinkInner(const std::string &halName)

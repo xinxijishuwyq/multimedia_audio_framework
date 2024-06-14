@@ -49,11 +49,10 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume,
         return SUCCESS;
     }
 
-    AUDIO_INFO_LOG("SetVolume volumeType[%{public}d], volume[%{public}d], flag[%{public}d]", volumeType, volume,
-        volumeFlag);
+    AUDIO_INFO_LOG("SetSystemVolume: volumeType[%{public}d], volume[%{public}d], flag[%{public}d]",
+        volumeType, volume, volumeFlag);
 
     /* Validate volume type and return INVALID_PARAMS error */
-
     switch (volumeType) {
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_COMMUNICATION:
@@ -179,7 +178,7 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
         return SUCCESS;
     }
 
-    AUDIO_DEBUG_LOG("AudioSystemManager SetMute for volumeType=%{public}d", volumeType);
+    AUDIO_INFO_LOG("SetStreamMute: volumeType [%{public}d], mute [%{public}d]", volumeType, mute);
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
@@ -193,7 +192,7 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
         case STREAM_ALL:
             break;
         default:
-            AUDIO_ERR_LOG("SetMute volumeType=%{public}d not supported", volumeType);
+            AUDIO_ERR_LOG("volumeType [%{public}d] is not supported", volumeType);
             return ERR_NOT_SUPPORTED;
     }
 
@@ -203,7 +202,7 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
 
 int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute)
 {
-    AUDIO_DEBUG_LOG("AudioSystemManager::GetMute Client");
+    AUDIO_DEBUG_LOG("GetMute Client");
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
@@ -230,7 +229,7 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
             break;
         }
         default:
-            AUDIO_ERR_LOG("IsStreamMute volumeType=%{public}d not supported", volumeType);
+            AUDIO_ERR_LOG("volumeType [%{public}d] is not supported", volumeType);
             return false;
     }
 
@@ -306,6 +305,7 @@ int32_t AudioGroupManager::UnsetRingerModeCallback(const int32_t clientId,
 
 int32_t AudioGroupManager::SetRingerMode(AudioRingerMode ringMode) const
 {
+    AUDIO_INFO_LOG("ringer mode: %{public}d", ringMode);
     CHECK_AND_RETURN_RET_LOG(netWorkId_ == LOCAL_NETWORK_ID, ERROR,
         "AudioGroupManager::SetRingerMode is not supported for local device.");
     /* Call Audio Policy SetRingerMode */

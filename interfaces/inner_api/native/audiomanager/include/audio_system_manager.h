@@ -38,23 +38,23 @@ class AudioDeviceDescriptor : public Parcelable {
 public:
     DeviceType getType();
     DeviceRole getRole() const;
-    DeviceType deviceType_;
-    DeviceRole deviceRole_;
-    int32_t deviceId_;
-    int32_t channelMasks_;
-    int32_t channelIndexMasks_;
+    DeviceType deviceType_ = DEVICE_TYPE_NONE;
+    DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
+    int32_t deviceId_ = 0;
+    int32_t channelMasks_ = 0;
+    int32_t channelIndexMasks_ = 0;
     std::string deviceName_;
     std::string macAddress_;
-    int32_t interruptGroupId_;
-    int32_t volumeGroupId_;
+    int32_t interruptGroupId_ = 0;
+    int32_t volumeGroupId_ = 0;
     std::string networkId_;
     std::string displayName_;
     bool exceptionFlag_ = false;
     DeviceStreamInfo audioStreamInfo_ = {};
-    DeviceCategory deviceCategory_;
-    int64_t connectTimeStamp_;
+    DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
+    int64_t connectTimeStamp_ = 0;
     std::shared_ptr<AudioDeviceDescriptor> pairDeviceDescriptor_;
-    ConnectState connectState_;
+    ConnectState connectState_ = CONNECTED;
     bool isScoRealConnected_ = false;
     bool isEnable_ = true;
 
@@ -84,11 +84,11 @@ class InterruptGroupInfo;
 class InterruptGroupInfo : public Parcelable {
     friend class AudioSystemManager;
 public:
-    int32_t interruptGroupId_;
-    int32_t mappingId_;
+    int32_t interruptGroupId_ = 0;
+    int32_t mappingId_ = 0;
     std::string groupName_;
     std::string networkId_;
-    ConnectType connectType_;
+    ConnectType connectType_ = CONNECT_TYPE_LOCAL;
     InterruptGroupInfo();
     InterruptGroupInfo(int32_t interruptGroupId, int32_t mappingId, std::string groupName, std::string networkId,
         ConnectType type);
@@ -101,11 +101,11 @@ class VolumeGroupInfo;
 class VolumeGroupInfo : public Parcelable {
     friend class AudioSystemManager;
 public:
-    int32_t volumeGroupId_;
-    int32_t mappingId_;
+    int32_t volumeGroupId_ = 0;
+    int32_t mappingId_ = 0;
     std::string groupName_;
     std::string networkId_;
-    ConnectType connectType_;
+    ConnectType connectType_ = CONNECT_TYPE_LOCAL;
 
     /**
      * @brief Volume group info.

@@ -100,7 +100,7 @@ napi_status NapiAudioVolumeGroupManager::InitNapiAudioVolumeGroupManager(napi_en
         DECLARE_NAPI_FUNCTION("isMicrophoneMuteSync", IsMicrophoneMuteSync),
         DECLARE_NAPI_FUNCTION("setMicMute", SetMicMute),
         DECLARE_NAPI_FUNCTION("setMicMutePersistent", SetMicMutePersistent),
-        DECLARE_NAPI_FUNCTION("getPersistentMicMute", GetPersistentMicMuteState),
+        DECLARE_NAPI_FUNCTION("isPersistentMicMute", GetPersistentMicMuteState),
         DECLARE_NAPI_FUNCTION("isVolumeUnadjustable", IsVolumeUnadjustable),
         DECLARE_NAPI_FUNCTION("adjustVolumeByStep", AdjustVolumeByStep),
         DECLARE_NAPI_FUNCTION("adjustSystemVolumeByStep", AdjustSystemVolumeByStep),

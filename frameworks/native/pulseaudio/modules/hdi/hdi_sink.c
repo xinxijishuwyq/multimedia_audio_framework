@@ -476,7 +476,7 @@ static ssize_t RenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memchunk 
             count = -1 - count;
             break;
         } else {
-            count += writeLen;
+            count += (ssize_t)writeLen;
             index += writeLen;
             length -= writeLen;
             if (length == 0) {
@@ -1328,10 +1328,10 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag =
             EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled ? "1" : "0");
+        bool sceneTypeFlag = EffectChainManagerSceneCheck(sinkSceneType, sceneType);
         if ((IsInnerCapturer(sinkIn) && isCaptureSilently) || !InputIsPrimary(sinkIn)) {
             continue;
-        } else if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
-            (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
+        } else if ((sceneTypeFlag && existFlag) || (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
             pa_sink_input_assert_ref(sinkIn);
             updateResampler(sinkIn, sinkSceneType, false);
 
@@ -1427,8 +1427,8 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
-    if (!a2dpFlag) {
+    bool effectOffloadFlag = EffectChainManagerCheckEffectOffload();
+    if (!effectOffloadFlag) {
         return 0;
     }
 
@@ -1987,8 +1987,8 @@ static bool InputIsOffload(pa_sink_input *i)
 
 static bool InputIsMultiChannel(pa_sink_input *i)
 {
-    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
-    if (a2dpFlag) {
+    bool effectOffloadFlag = EffectChainManagerCheckEffectOffload();
+    if (effectOffloadFlag) {
         int32_t sinkChannels = i->sample_spec.channels;
         const char *sinkSceneType = pa_proplist_gets(i->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(i->proplist, "scene.mode");
@@ -2321,8 +2321,8 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
         tchunk.length = PA_MIN(length, blockSize - tchunk.index);
 
         PaSinkRenderIntoOffload(i->sink, infoInputs, nInputs, &tchunk);
-        d += tchunk.length;
-        l -= tchunk.length;
+        d += (int64_t)tchunk.length;
+        l -= (int64_t)tchunk.length;
     }
     if (l < 0) {
         chunk->length += -l;
@@ -2826,13 +2826,14 @@ void PaInputVolumeChangeCb(pa_sink_input *i)
     struct Userdata *u;
 
     pa_sink_input_assert_ref(i);
-    if (!strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER)) {
+    if (!strcmp(i->sink->name, SINK_NAME_INNER_CAPTURER) ||
+        !strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER)) {
         AUDIO_INFO_LOG("PaInputVolumeChangeCb inner_cap return");
         return;
     }
     pa_assert_se(u = i->sink->userdata);
 
-    if (u->offload_enable && InputIsOffload(i)) {
+    if (u->offload_enable && InputIsOffload(i) && u->offload.sinkAdapter) {
         float left;
         float right;
         u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
@@ -2933,8 +2934,8 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
-    if (!a2dpFlag) {
+    bool effectOffloadFlag = EffectChainManagerCheckEffectOffload();
+    if (!effectOffloadFlag) {
         return;
     }
     uint32_t sinkChannel = DEFAULT_MULTICHANNEL_NUM;
@@ -3635,7 +3636,7 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
 
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT ||
         newState == PA_SINK_RUNNING) {
-        if (EffectChainManagerCheckA2dpOffload() && (!strcmp(u->sink->name, "Speaker"))) {
+        if (EffectChainManagerCheckEffectOffload() && (!strcmp(u->sink->name, "Speaker"))) {
             SinkSetStateInIoThreadCbStartMultiChannel(u, newState);
         }
         if (strcmp(u->sink->name, BT_SINK_NAME) || newState == PA_SINK_RUNNING) {
@@ -3658,15 +3659,10 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
             u->primary.isHDISinkStarted = false;
         }
 
-        if (u->multiChannel.isHDISinkInited) {
-            if (u->multiChannel.isHDISinkStarted) {
-                u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
-                AUDIO_INFO_LOG("MultiChannel Stopped HDI renderer");
-                u->multiChannel.isHDISinkStarted = false;
-            }
-            u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
-            u->multiChannel.isHDISinkInited = false;
-            AUDIO_INFO_LOG("MultiChannel Deinit HDI renderer");
+        if (u->multiChannel.isHDISinkStarted) {
+            u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
+            AUDIO_INFO_LOG("MultiChannel Stopped HDI renderer");
+            u->multiChannel.isHDISinkStarted = false;
         }
     }
 

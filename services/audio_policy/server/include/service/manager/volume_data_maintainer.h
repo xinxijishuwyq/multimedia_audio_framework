@@ -69,7 +69,6 @@ public:
         bool muteStatus);
     bool GetMuteStatus(DeviceType deviceType, AudioStreamType streamType);
     bool GetStreamMute(AudioStreamType streamType);
-    void UpdateMuteStatusForVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
 
     bool GetMuteAffected(int32_t &affected);
     bool GetMuteTransferStatus(bool &status);
@@ -99,13 +98,13 @@ private:
     bool SaveMuteStatusInternal(DeviceType deviceType, AudioStreamType streamType, bool muteStatus);
     bool GetMuteStatusInternal(DeviceType deviceType, AudioStreamType streamType);
     bool GetStreamMuteInternal(AudioStreamType streamType);
-    void UpdateMuteStatusForVolumeInternal(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
     int32_t GetStreamVolumeInternal(AudioStreamType streamType);
 
     std::mutex muteStatusMutex_;
     std::mutex volumeMutex_;
     std::unordered_map<AudioStreamType, bool> muteStatusMap_; // save volume Mutestatus map
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_; // save volume map
+    bool isSettingsCloneHaveStarted_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -4796,6 +4796,7 @@ std::string AudioPolicyService::GetGroupName(const std::string& deviceName, cons
 
 void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected)
 {
+    Trace trace("AudioPolicyService::WriteDeviceChangedSysEvents");
     for (auto deviceDescriptor : desc) {
         if (deviceDescriptor != nullptr) {
             if ((deviceDescriptor->deviceType_ == DEVICE_TYPE_WIRED_HEADSET)
@@ -6646,7 +6647,6 @@ void AudioPolicyService::UpdateAllActiveSessions(std::vector<Bluetooth::A2dpStre
 int32_t AudioPolicyService::HandleA2dpDeviceOutOffload(BluetoothOffloadState a2dpOffloadFlag)
 {
 #ifdef BLUETOOTH_ENABLE
-    GetA2dpOffloadCodecAndSendToDsp();
     std::vector<int32_t> allSessions;
     GetAllRunningStreamSession(allSessions);
     OffloadStopPlaying(allSessions);
@@ -6794,17 +6794,6 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
         if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             ClearScoDeviceSuspendState(desc.macAddress_);
-        }
-        unique_ptr<AudioDeviceDescriptor> userSelectMediaDevice =
-            AudioStateManager::GetAudioStateManager().GetPreferredMediaRenderDevice();
-        unique_ptr<AudioDeviceDescriptor> userSelectCallDevice =
-            AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
-        if ((userSelectMediaDevice->deviceType_ == desc.deviceType_ &&
-            userSelectMediaDevice->macAddress_ == desc.macAddress_) ||
-            (userSelectCallDevice->deviceType_ == desc.deviceType_ &&
-            userSelectCallDevice->macAddress_ == desc.macAddress_)) {
-            AUDIO_INFO_LOG("Current enable state has been set true during user selection, no need to be set again.");
-            return;
         }
     } else if (command == ENABLE_UPDATE && !desc.isEnable_ && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
         currentActiveDevice_.macAddress_ == desc.macAddress_) {
