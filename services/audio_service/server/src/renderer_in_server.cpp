@@ -1083,6 +1083,10 @@ int32_t RendererInServer::OffloadSetVolume(float volume)
     Volume vol = {false, 0.0f, 0};
     PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
     float systemVol = vol.isMute ? 0.0f : vol.volumeFloat;
+    if (PolicyHandler::GetInstance().IsAbsVolumeSupported() &&
+        PolicyHandler::GetInstance().GetActiveOutPutDevice() == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        systemVol = 1.0f; // 1.0f for a2dp abs volume
+    }
     AUDIO_INFO_LOG("sessionId %{public}u set volume:%{public}f [volumeType:%{public}d deviceType:%{public}d systemVol:"
         "%{public}f]", streamIndex_, volume, volumeType, deviceType, systemVol);
     return stream_->OffloadSetVolume(systemVol * volume);

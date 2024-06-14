@@ -2826,13 +2826,14 @@ void PaInputVolumeChangeCb(pa_sink_input *i)
     struct Userdata *u;
 
     pa_sink_input_assert_ref(i);
-    if (!strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER)) {
+    if (!strcmp(i->sink->name, SINK_NAME_INNER_CAPTURER) ||
+        !strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER)) {
         AUDIO_INFO_LOG("PaInputVolumeChangeCb inner_cap return");
         return;
     }
     pa_assert_se(u = i->sink->userdata);
 
-    if (u->offload_enable && InputIsOffload(i)) {
+    if (u->offload_enable && InputIsOffload(i) && u->offload.sinkAdapter) {
         float left;
         float right;
         u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
