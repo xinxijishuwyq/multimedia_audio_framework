@@ -124,25 +124,30 @@ int32_t ClockTime::RelativeSleep(int64_t nanoTime)
     return ret;
 }
 
-void Trace::Count(const std::string &value, int64_t count, bool isEnable)
+void Trace::Count(const std::string &value, int64_t count)
 {
 #ifdef FEATURE_HITRACE_METER
-    CountTraceDebug(isEnable, HITRACE_TAG_ZAUDIO, value, count);
+    CountTrace(HITRACE_TAG_ZAUDIO, value, count);
 #endif
 }
 
-Trace::Trace(const std::string &value, bool isShowLog, bool isEnable)
+void Trace::CountVolume(const std::string &value, uint8_t data)
+{
+#ifdef FEATURE_HITRACE_METER
+    if (data == 0) {
+        CountTrace(HITRACE_TAG_ZAUDIO, value, PCM_MAYBE_SILENT);
+    } else {
+        CountTrace(HITRACE_TAG_ZAUDIO, value, PCM_MAYBE_NOT_SILENT);
+    }
+#endif
+}
+
+Trace::Trace(const std::string &value)
 {
     value_ = value;
-    isShowLog_ = isShowLog;
-    isEnable_ = isEnable;
     isFinished_ = false;
 #ifdef FEATURE_HITRACE_METER
-    if (isShowLog) {
-        isShowLog_ = true;
-        AUDIO_INFO_LOG("%{public}s start.", value_.c_str());
-    }
-    StartTraceDebug(isEnable_, HITRACE_TAG_ZAUDIO, value);
+    StartTrace(HITRACE_TAG_ZAUDIO, value_);
 #endif
 }
 
@@ -150,11 +155,8 @@ void Trace::End()
 {
 #ifdef FEATURE_HITRACE_METER
     if (!isFinished_) {
-        FinishTraceDebug(isEnable_, HITRACE_TAG_ZAUDIO);
+        FinishTrace(HITRACE_TAG_ZAUDIO);
         isFinished_ = true;
-        if (isShowLog_) {
-            AUDIO_INFO_LOG("%{public}s end.", value_.c_str());
-        }
     }
 #endif
 }

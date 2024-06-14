@@ -726,11 +726,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
             switchCV_.notify_all();
         }
     }
-    if (*reinterpret_cast<int8_t*>(&data) == 0) {
-        Trace::Count("AudioRendererSinkInner::RenderFrame", PCM_MAYBE_SILENT);
-    } else {
-        Trace::Count("AudioRendererSinkInner::RenderFrame", PCM_MAYBE_NOT_SILENT);
-    }
+    Trace::CountVolume("AudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
 
     Trace traceRenderFrame("AudioRendererSinkInner::RenderFrame");
@@ -1504,7 +1500,7 @@ int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList, size_t len
 
 int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
 {
-    Trace trace("AudioRendererSinkInner::SetPaPower flag:%d", flag);
+    Trace trace("AudioRendererSinkInner::SetPaPower flag:" + std::to_string(flag));
     int32_t ret = ERROR;
     char keyValueList[DEVICE_PARAM_MAX_LEN] = {0};
     const char keyValueList1[] = "zero_volume=false";

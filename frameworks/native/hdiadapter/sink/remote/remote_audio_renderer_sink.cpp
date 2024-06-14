@@ -353,6 +353,7 @@ int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint
         return ERR_OPERATION_FAILED;
     }
 
+    Trace::CountVolume("RemoteAudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     ret = audioRender_->RenderFrame(frameHal, writeLen);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "Render frame fail, ret %{public}x.", ret);
     writeLen = len;

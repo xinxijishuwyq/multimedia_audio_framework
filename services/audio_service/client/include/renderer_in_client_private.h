@@ -380,6 +380,7 @@ private:
     uint64_t lastFramePosition_ = 0;
     uint64_t lastFrameTimestamp_ = 0;
 
+    std::string traceTag_;
     std::string spatializationEnabled_ = "Invalid";
     std::string headTrackingEnabled_ = "Invalid";
     uint32_t spatializationRegisteredSessionID_ = 0;
