@@ -260,7 +260,7 @@ int32_t AudioInterruptService::UnsetAudioInterruptCallback(const int32_t zoneId,
 
 int32_t AudioInterruptService::ActivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
 
     AudioStreamType streamType = audioInterrupt.audioFocusType.streamType;
     uint32_t incomingSessionId = audioInterrupt.sessionId;
@@ -287,6 +287,10 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(const int32_t zoneId, cons
     CHECK_AND_RETURN_RET_LOG(!ret, ERR_FOCUS_DENIED, "request rejected");
 
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+
+    // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
+    // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
+    lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
