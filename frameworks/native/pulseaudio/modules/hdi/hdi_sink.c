@@ -2629,9 +2629,9 @@ static void StartPrimaryHdiIfRunning(struct Userdata *u)
         return;
     }
 
-    unsigned nPrimary;
-    unsigned nOffload;
-    unsigned nMultiChannel;
+    unsigned nPrimary = 0;
+    unsigned nOffload = 0;
+    unsigned nMultiChannel = 0;
     GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
     if (nPrimary == 0) {
         return;
@@ -2917,9 +2917,9 @@ static void ThreadFuncRendererTimerOffloadFlag(struct Userdata *u, pa_usec_t now
             flag = false;
             *sleepForUsec = delta;
         } else {
-            unsigned nPrimary;
-            unsigned nOffload;
-            unsigned nMultiChannel;
+            unsigned nPrimary = 0;
+            unsigned nOffload = 0;
+            unsigned nMultiChannel = 0;
             GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
             if (nOffload == 0) {
                 flag = false;
