@@ -6732,6 +6732,17 @@ void AudioPolicyService::OnScoStateChanged(const std::string &macAddress, bool i
     FetchDevice(false);
 }
 
+void AudioPolicyService::UpdateAllUserSelectDevice(vector<unique_ptr<AudioDeviceDescriptor>> userSelectDeviceMap,
+    const sptr<AudioDeviceDescriptor> desc)
+{
+    for (auto &userSelectDevice : userSelectDeviceMap) {
+        if (userSelectDevice->deviceType_ == desc.deviceType_ &&
+            userSelectDevice->macAddress_ == desc.macAddress_) {
+            audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
+        }
+    }
+}
+
 void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     const DeviceInfoUpdateCommand updateCommand)
 {
@@ -6749,12 +6760,7 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     if (updateCommand == CATEGORY_UPDATE) {
         if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
             reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
-            for (auto &userSelectDevice : userSelectDeviceMap) {
-                if (userSelectDevice->deviceType_ == desc.deviceType_ &&
-                    userSelectDevice->macAddress_ == desc.macAddress_) {
-                    audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
-                }
-            }
+            UpdateAllUserSelectDevice(userSelectDeviceMap, new(std::nothrow) AudioDeviceDescriptor());
 #ifdef BLUETOOTH_ENABLE
             if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
                 desc.macAddress_ == currentActiveDevice_.macAddress_) {
@@ -6773,12 +6779,7 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             }
         }
     } else if (updateCommand == ENABLE_UPDATE) {
-        for (auto &userSelectDevice : userSelectDeviceMap) {
-            if (userSelectDevice->deviceType_ == desc.deviceType_ &&
-                userSelectDevice->macAddress_ == desc.macAddress_) {
-                audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
-            }
-        }
+        UpdateAllUserSelectDevice(userSelectDeviceMap, new(std::nothrow) AudioDeviceDescriptor());
         reason = desc.isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
             AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     }
