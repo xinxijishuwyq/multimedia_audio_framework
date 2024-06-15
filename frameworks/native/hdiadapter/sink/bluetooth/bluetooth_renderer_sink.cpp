@@ -616,6 +616,8 @@ int32_t BluetoothRendererSinkInner::Start(void)
                 usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
             }
         }
+        AUDIO_ERR_LOG("Start bluetooth render failed for three times, return");
+        return ERR_NOT_STARTED;
     }
     return SUCCESS;
 }
