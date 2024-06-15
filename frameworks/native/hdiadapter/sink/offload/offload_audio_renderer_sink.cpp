@@ -390,10 +390,11 @@ void OffloadAudioRendererSinkInner::DeInit()
 {
     Trace trace("OffloadSink::DeInit");
     std::lock_guard<std::mutex> lock(renderMutex_);
-    AUDIO_DEBUG_LOG("DeInit.");
+    AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     rendererInited_ = false;
     if (audioAdapter_ != nullptr) {
+        AUDIO_INFO_LOG("DestroyRender rendererid: %{public}u", renderId_);
         audioAdapter_->DestroyRender(audioAdapter_, renderId_);
     }
     audioRender_ = nullptr;
@@ -524,12 +525,16 @@ int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &rend
     deviceDesc.desc = const_cast<char *>("");
     deviceDesc.pins = PIN_OUT_SPEAKER;
     AudioXCollie audioXCollie("audioAdapter_->CreateRender", TIME_OUT_SECONDS);
+
+    AUDIO_INFO_LOG("Create offload render format: %{public}d, sampleRate:%{public}u channel%{public}u",
+        param.format, param.sampleRate, param.channelCount);
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("not started failed.");
         audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
         return ERR_NOT_STARTED;
     }
+    AUDIO_INFO_LOG("Create success rendererid: %{public}u", renderId_);
 
     return 0;
 }

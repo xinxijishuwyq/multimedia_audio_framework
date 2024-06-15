@@ -542,12 +542,14 @@ void AudioRendererSinkInner::DeInit()
     sinkInited_ = false;
 
     if (audioAdapter_ != nullptr) {
+        AUDIO_INFO_LOG("DestroyRender rendererid: %{public}u", renderId_);
         audioAdapter_->DestroyRender(audioAdapter_, renderId_);
     }
     audioRender_ = nullptr;
     renderInited_ = false;
 
     if (audioManager_ != nullptr) {
+        AUDIO_INFO_LOG("UnloadAdapter");
         audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
     }
     audioAdapter_ = nullptr;
@@ -668,6 +670,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
         adapterInited_ = false;
         return ERR_NOT_STARTED;
     }
+    AUDIO_INFO_LOG("Create success rendererid: %{public}u", renderId_);
 
     return 0;
 }
