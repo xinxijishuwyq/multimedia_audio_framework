@@ -6741,24 +6741,19 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     unique_ptr<AudioDeviceDescriptor> userSelectCallCaptureDevice = stateManager.GetPerferredCallCaptureDevice();
     unique_ptr<AudioDeviceDescriptor> userSelectRecordCaptureDevice = stateManager.GetPerferredRecordCaptureDevice();
     AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    vector<unique_ptr<AudioDeviceDescriptor>> userSelectDeviceMap;
+    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectMediaRenderDevice));
+    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectCallRenderDevice));
+    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectCallCaptureDevice));
+    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectRecordCaptureDevice));
     if (updateCommand == CATEGORY_UPDATE) {
         if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
             reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
-            if (userSelectMediaRenderDevice->deviceType_ == desc.deviceType_ &&
-                userSelectMediaRenderDevice->macAddress_ == desc.macAddress_) {
-                audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
-            }
-            if (userSelectCallRenderDevice->deviceType_ == desc.deviceType_ &&
-                userSelectCallRenderDevice->macAddress_ == desc.macAddress_) {
-                audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
-            }
-            if (userSelectCallCaptureDevice->deviceType_ == desc.deviceType_ &&
-                userSelectCallCaptureDevice->macAddress_ == desc.macAddress_) {
-                audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
-            }
-            if (userSelectRecordCaptureDevice->deviceType_ == desc.deviceType_ &&
-                userSelectRecordCaptureDevice->macAddress_ == desc.macAddress_) {
-                audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
+            for (auto &userSelectDevice : userSelectDeviceMap) {
+                if (userSelectDevice->deviceType_ == desc.deviceType_ &&
+                    userSelectDevice->macAddress_ == desc.macAddress_) {
+                    audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+                }
             }
 #ifdef BLUETOOTH_ENABLE
             if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
@@ -6778,21 +6773,11 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             }
         }
     } else if (updateCommand == ENABLE_UPDATE) {
-        if (userSelectMediaRenderDevice->deviceType_ == desc.deviceType_ &&
-            userSelectMediaRenderDevice->macAddress_ == desc.macAddress_) {
-            audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
-        }
-        if (userSelectCallRenderDevice->deviceType_ == desc.deviceType_ &&
-            userSelectCallRenderDevice->macAddress_ == desc.macAddress_) {
-            audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
-        }
-        if (userSelectCallCaptureDevice->deviceType_ == desc.deviceType_ &&
-            userSelectCallCaptureDevice->macAddress_ == desc.macAddress_) {
-            audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
-        }
-        if (userSelectRecordCaptureDevice->deviceType_ == desc.deviceType_ &&
-            userSelectRecordCaptureDevice->macAddress_ == desc.macAddress_) {
-            audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
+        for (auto &userSelectDevice : userSelectDeviceMap) {
+            if (userSelectDevice->deviceType_ == desc.deviceType_ &&
+                userSelectDevice->macAddress_ == desc.macAddress_) {
+                audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
+            }
         }
         reason = desc.isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
             AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
