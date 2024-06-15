@@ -2327,7 +2327,7 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
         l -= (int64_t)tchunk.length;
     }
     if (l < 0) {
-        chunk->length += -l;
+        chunk->length += (size_t)-l;
     }
 
     int32_t appsUid[MAX_MIX_CHANNELS];

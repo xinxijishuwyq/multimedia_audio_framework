@@ -616,7 +616,7 @@ napi_value NapiAudioRenderer::GetAudioTimeSync(napi_env env, napi_callback_info 
     CHECK_AND_RETURN_RET_LOG(ret, result, "GetAudioTime failure!");
 
     const uint64_t secToNanosecond = 1000000000;
-    uint64_t time = timestamp.time.tv_nsec + timestamp.time.tv_sec * secToNanosecond;
+    uint64_t time = static_cast<uint64_t>(timestamp.time.tv_nsec + timestamp.time.tv_sec * secToNanosecond);
 
     NapiParamUtils::SetValueInt64(env, time, result);
     return result;

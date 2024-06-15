@@ -1851,7 +1851,7 @@ void CapturerInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.frameMarkPosition = capturerMarkPosition_;
     info.capturePositionCb = capturerPositionCallback_;
 
-    info.framePeriodNumber = capturerPeriodSize_;
+    info.framePeriodNumber = static_cast<uint64_t>(capturerPeriodSize_);
     info.capturePeriodPositionCb = capturerPeriodPositionCallback_;
 
     info.capturerReadCallback = readCb_;

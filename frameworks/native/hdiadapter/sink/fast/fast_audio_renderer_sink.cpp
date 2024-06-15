@@ -371,7 +371,7 @@ int32_t FastAudioRendererSinkInner::PrepareMmapBuffer()
         desc.transferFrameSize <= periodFrameMaxSize, ERR_OPERATION_FAILED,
         "ReqMmapBuffer invalid values: totalBufferFrames[%{public}d] transferFrameSize[%{public}d]",
         desc.totalBufferFrames, desc.transferFrameSize);
-    bufferTotalFrameSize_ = desc.totalBufferFrames; // 1440 ~ 3840
+    bufferTotalFrameSize_ = static_cast<uint32_t>(desc.totalBufferFrames); // 1440 ~ 3840
     eachReadFrameSize_ = desc.transferFrameSize; // 240
 
     CHECK_AND_RETURN_RET_LOG(frameSizeInByte_ <= ULLONG_MAX / bufferTotalFrameSize_, ERR_OPERATION_FAILED,
