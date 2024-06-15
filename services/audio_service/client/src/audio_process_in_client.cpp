@@ -1363,6 +1363,10 @@ int32_t AudioProcessInClientInner::RecordPrepareCurrent(uint64_t curReadPos)
         && tryCount > 0) {
         AUDIO_WARNING_LOG("%{public}s unready, curReadSpan %{public}" PRIu64", curSpanStatus %{public}d, wait 2ms.",
             __func__, curReadPos, curReadSpan->spanStatus.load());
+        if (curReadSpan->spanStatus.load() == SpanStatus::SPAN_READING) {
+            AUDIO_WARNING_LOG("Change status to reading while status is already reading!");
+            return SUCCESS;
+        }
         targetStatus = SpanStatus::SPAN_WRITE_DONE;
         tryCount--;
         ClockTime::RelativeSleep(RECORD_RESYNC_SLEEP_NANO);
