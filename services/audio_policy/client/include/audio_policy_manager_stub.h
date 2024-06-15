@@ -43,8 +43,6 @@ private:
     void GetAudioSceneInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMuteAudioConfigInternal(MessageParcel &data, MessageParcel &reply);
-    void SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
-    void GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
     void IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
@@ -152,6 +150,8 @@ private:
     void UnsetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateAudioConcurrencyInternal(MessageParcel &data, MessageParcel &reply);
     void SetRingerStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
+    void SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
+    void GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -172,8 +172,6 @@ private:
         &AudioPolicyManagerStub::GetAudioSceneInternal,
         &AudioPolicyManagerStub::SetMicrophoneMuteInternal,
         &AudioPolicyManagerStub::SetMicrophoneMuteAudioConfigInternal,
-        &AudioPolicyManagerStub::SetMicrophoneMutePersistentInternal,
-        &AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal,
         &AudioPolicyManagerStub::IsMicrophoneMuteInternal,
         &AudioPolicyManagerStub::SetInterruptCallbackInternal,
         &AudioPolicyManagerStub::UnsetInterruptCallbackInternal,
@@ -278,6 +276,8 @@ private:
         &AudioPolicyManagerStub::UnsetConcurrencyCallbackInternal,
         &AudioPolicyManagerStub::ActivateAudioConcurrencyInternal,
         &AudioPolicyManagerStub::SetRingerStreamMuteInternal,
+        &AudioPolicyManagerStub::SetMicrophoneMutePersistentInternal,
+        &AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),
