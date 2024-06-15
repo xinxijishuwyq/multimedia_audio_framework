@@ -463,7 +463,7 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_
     return SUCCESS;
 }
 
-int32_t AudioStreamCollector::UpdateRendererPipeInfo(int32_t sessionId, AudioPipeType &pipeType)
+int32_t AudioStreamCollector::UpdateRendererPipeInfo(const int32_t sessionId, const AudioPipeType pipeType)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     bool pipeTypeUpdated = false;
