@@ -6732,8 +6732,8 @@ void AudioPolicyService::OnScoStateChanged(const std::string &macAddress, bool i
     FetchDevice(false);
 }
 
-void AudioPolicyService::UpdateAllUserSelectDevice(vector<unique_ptr<AudioDeviceDescriptor>> userSelectDeviceMap,
-    const sptr<AudioDeviceDescriptor> desc)
+void AudioPolicyService::UpdateAllUserSelectDevice(vector<unique_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap,
+    const sptr<AudioDeviceDescriptor> &desc)
 {
     for (auto &userSelectDevice : userSelectDeviceMap) {
         if (userSelectDevice->deviceType_ == desc.deviceType_ &&
@@ -6779,7 +6779,7 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             }
         }
     } else if (updateCommand == ENABLE_UPDATE) {
-        UpdateAllUserSelectDevice(userSelectDeviceMap, new(std::nothrow) AudioDeviceDescriptor());
+        UpdateAllUserSelectDevice(userSelectDeviceMap, new(std::nothrow) AudioDeviceDescriptor(desc));
         reason = desc.isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
             AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     }
