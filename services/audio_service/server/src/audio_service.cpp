@@ -215,8 +215,8 @@ bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
     AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
         "supportLowLatency: %{public}d", deviceInfo.deviceType, deviceInfo.isLowLatencyDevice);
     if (deviceInfo.deviceType == DEVICE_TYPE_WIRED_HEADSET || deviceInfo.deviceType == DEVICE_TYPE_WIRED_HEADPHONES ||
-        deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_SCO || deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        deviceInfo.deviceType == DEVICE_TYPE_USB_HEADSET || deviceInfo.deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+        deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceInfo.deviceType == DEVICE_TYPE_USB_HEADSET ||
+        deviceInfo.deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
         switch (config.rendererInfo.streamUsage) {
             case STREAM_USAGE_ALARM:
             case STREAM_USAGE_VOICE_RINGTONE:
