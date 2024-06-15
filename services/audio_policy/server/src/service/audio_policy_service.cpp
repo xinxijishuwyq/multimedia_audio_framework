@@ -7755,11 +7755,15 @@ void AudioPolicyService::DealAudioSceneOutputDevices(const AudioScene &audioScen
     switch (audioScene) {
         case AUDIO_SCENE_RINGING:
             descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_RINGTONE, -1);
-            currentActiveDevice_.deviceType_ = descs.front()->getType();
+            if (!descs.empty()) {
+                currentActiveDevice_.deviceType_ = descs.front()->getType();
+            }
             break;
         case AUDIO_SCENE_VOICE_RINGING:
             descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_RINGTONE, -1);
-            currentActiveDevice_.deviceType_ = descs.front()->getType();
+            if (!descs.empty()) {
+                currentActiveDevice_.deviceType_ = descs.front()->getType();
+            }
             break;
         default:
             AUDIO_INFO_LOG("No ringing scene:%{public}d", audioScene);
