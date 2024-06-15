@@ -44,7 +44,7 @@ public:
     int32_t UpdateTracker(const AudioMode &mode, DeviceInfo &deviceInfo);
     AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &outputDeviceInfo);
-    int32_t UpdateRendererPipeInfo(int32_t sessionId, AudioPipeType &pipeType);
+    int32_t UpdateRendererPipeInfo(const int32_t sessionId, const AudioPipeType pipeType);
     int32_t UpdateCapturerDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &inputDeviceInfo);
     int32_t GetCurrentRendererChangeInfos(std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);

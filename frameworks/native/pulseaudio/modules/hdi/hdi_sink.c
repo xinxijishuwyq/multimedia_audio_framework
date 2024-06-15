@@ -87,6 +87,7 @@
 #define BYTE_LEN_FOR_16BIT 2
 #define BYTE_LEN_FOR_24BIT 3
 #define BYTE_LEN_FOR_32BIT 4
+#define MIN_SLEEP_FOR_USEC 2000
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 
@@ -208,6 +209,7 @@ struct Userdata {
     } offload;
     struct {
         pa_usec_t timestamp;
+        pa_usec_t lastProcessDataTime; // The timestamp from the last time the data was prepared to HDI
         pa_thread *thread;
         pa_thread *thread_hdi;
         pa_asyncmsgq *msgq;
@@ -3110,14 +3112,22 @@ static void ProcessNormalData(struct Userdata *u)
     }
 
     if (flag) {
-        if (u->primary.timestamp <= now + u->primary.prewrite && pa_atomic_load(&u->primary.dflag) == 0) {
-            pa_atomic_add(&u->primary.dflag, 1);
-            ProcessRenderUseTiming(u, now);
-        }
         pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-        sleepForUsec = blockTime - (pa_rtclock_now() - now);
-        if (u->primary.timestamp <= now + u->primary.prewrite) {
-            sleepForUsec = PA_MIN(sleepForUsec, (int64_t)u->primary.writeTime);
+        if (pa_atomic_load(&u->primary.dflag) == 1) {
+            sleepForUsec = blockTime - (pa_rtclock_now() - u->primary.lastProcessDataTime);
+            if (sleepForUsec < MIN_SLEEP_FOR_USEC) {
+                sleepForUsec = MIN_SLEEP_FOR_USEC;
+            }
+        } else {
+            if (u->primary.timestamp <= now + u->primary.prewrite) {
+                pa_atomic_add(&u->primary.dflag, 1);
+                u->primary.lastProcessDataTime = pa_rtclock_now();
+                ProcessRenderUseTiming(u, now);
+            }
+            sleepForUsec = blockTime - (pa_rtclock_now() - now);
+            if (u->primary.timestamp <= now + u->primary.prewrite) {
+                sleepForUsec = PA_MIN(sleepForUsec, (int64_t)u->primary.writeTime);
+            }
         }
         sleepForUsec = PA_MAX(sleepForUsec, 0);
     }
@@ -3240,11 +3250,10 @@ static void ThreadFuncRendererTimerBus(void *userdata)
         u->offload.sinkAdapter->RendererSinkOffloadRunningLockInit(u->offload.sinkAdapter);
     }
     while (true) {
-        AUTO_CTRACE("ProcessDataLoop");
         int ret;
         pthread_rwlock_wrlock(&u->rwlockSleep);
 
-        int64_t sleepForUsec;
+        int64_t sleepForUsec = 0;
 
         if (u->timestampSleep == -1) {
             pa_rtpoll_set_timer_disabled(u->rtpoll); // sleep forever
@@ -3254,6 +3263,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
             pa_rtpoll_set_timer_relative(u->rtpoll, sleepForUsec);
         }
 
+        AUTO_CTRACE("ProcessDataLoop sleep:%lld us", sleepForUsec);
         // Hmm, nothing to do. Let's sleep
         if ((ret = pa_rtpoll_run(u->rtpoll)) < 0) {
             AUDIO_ERR_LOG("Thread %s(use timing bus) shutting down, error %d, pid %d, tid %d",
