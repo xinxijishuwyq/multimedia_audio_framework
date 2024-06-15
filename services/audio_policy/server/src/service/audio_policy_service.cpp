@@ -68,7 +68,10 @@ static const std::string PIPE_FAST_DISTRIBUTED_INPUT = "fast_distributed_input";
 std::string PIPE_WAKEUP_INPUT = "wakeup_input";
 static const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_S = 3; // 3s
-
+static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
+static const int64_t SELECT_DEVICE_MUTE_MS = 200000; // 200ms
+static const int64_t NEW_DEVICE_AVALIABLE_MUTE_MS = 300000; // 300ms
+static const int64_t ARM_USB_DEVICE_MUTE_MS = 40000; // 40ms
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
     STREAM_RING,
@@ -2012,12 +2015,16 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
         GetEncryptAddr(rendererChangeInfo->outputDeviceInfo.macAddress).c_str(),
         outputDevices.front()->deviceType_, GetEncryptAddr(outputDevices.front()->macAddress_).c_str(), reason);
 
+    DeviceType oldDevice = rendererChangeInfo->outputDeviceInfo.deviceType;
+    DeviceType newDevice = outputDevices.front()->deviceType_;
+
     UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo,
         new AudioDeviceDescriptor(*outputDevices.front()), true, true);
 
     if (needTriggerCallback) {
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
+        MuteSinkPort(oldDevice, newDevice, reason);
     }
 
     // MoveSinkInputByIndexOrName
@@ -2026,7 +2033,7 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
                 : MoveToRemoteOutputDevice(targetSinkInputs, new AudioDeviceDescriptor(*outputDevices.front()));
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move sink input %{public}d to device %{public}d failed!",
         rendererChangeInfo->sessionId, outputDevices.front()->deviceType_);
-    SetVolumeForSwitchDevice(outputDevices.front()->deviceType_);
+    SetVolumeForSwitchDevice(newDevice);
     if (isUpdateRouteSupported_) {
         UpdateRoute(rendererChangeInfo, outputDevices);
     }
@@ -2147,12 +2154,32 @@ bool AudioPolicyService::NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor
     return false;
 }
 
-void AudioPolicyService::MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc)
+void AudioPolicyService::MuteSinkPort(DeviceType deviceType, int32_t duration, bool isSync)
 {
-    int32_t duration = 1000000; // us
-    string portName = GetSinkPortName(desc->deviceType_);
-    thread switchThread(&AudioPolicyService::KeepPortMute, this, duration, portName, desc->deviceType_);
+    string portName = GetSinkPortName(deviceType);
+    audioPolicyManager_.SetSinkMute(portName, true, isSync);
+    thread switchThread(&AudioPolicyService::KeepPortMute, this, duration, portName, deviceType);
     switchThread.detach(); // add another sleep before switch local can avoid pop in some case
+}
+
+void AudioPolicyService::MuteSinkPort(DeviceType oldDevice, DeviceType newDevice,
+    AudioStreamDeviceChangeReasonExt reason)
+{
+    if (reason == AudioStreamDeviceChangeReason::OVERRODE) {
+        MuteSinkPort(newDevice, SELECT_DEVICE_MUTE_MS, true);
+        MuteSinkPort(oldDevice, SELECT_DEVICE_MUTE_MS, true);
+        if (oldDevice == DEVICE_TYPE_SPEAKER && (newDevice == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_)) {
+            usleep(ARM_USB_DEVICE_MUTE_MS); // spk->arm_usb sleep 40 ms fix pop
+        }
+    } else if (reason == AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE) {
+        if (oldDevice == DEVICE_TYPE_SPEAKER && newDevice == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            MuteSinkPort(newDevice, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
+            MuteSinkPort(oldDevice, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
+            usleep(ARM_USB_DEVICE_MUTE_MS); // ->arm_usb or arm_usb-> sleep 40 ms fix pop
+        }
+    } else if (reason.IsOldDeviceUnavaliable() && audioScene_ == AUDIO_SCENE_DEFAULT) {
+        MuteSinkPort(newDevice, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
+    }
 }
 
 int32_t AudioPolicyService::HandleDeviceChangeForFetchOutputDevice(unique_ptr<AudioDeviceDescriptor> &desc,
@@ -2179,10 +2206,6 @@ bool AudioPolicyService::UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         currentActiveDevice_ = AudioDeviceDescriptor(*desc);
         AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
         return true;
-    }
-    if (reason.IsOldDeviceUnavaliable() && audioScene_ == AUDIO_SCENE_DEFAULT &&
-        !IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo)) {
-        MuteSinkPort(desc);
     }
     return false;
 }
@@ -2949,6 +2972,7 @@ int32_t AudioPolicyService::ActivateNormalNewDevice(DeviceType deviceType, bool 
                 ERR_OPERATION_FAILED,
                 "Invalid port %{public}s",
                 sinkPortName.c_str());
+            audioPolicyManager_.SetSinkMute(sinkPortName, true);
             std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, sinkPortName, deviceType);
             switchThread.detach();
             int32_t beforSwitchDelay = 300000; // 300 ms
@@ -2974,7 +2998,6 @@ void AudioPolicyService::KeepPortMute(int32_t muteDuration, std::string portName
 {
     Trace trace("AudioPolicyService::KeepPortMute:" + portName + " for " + std::to_string(muteDuration) + "us");
     AUDIO_INFO_LOG("%{public}d us for device type[%{public}d]", muteDuration, deviceType);
-    audioPolicyManager_.SetSinkMute(portName, true);
     usleep(muteDuration);
     audioPolicyManager_.SetSinkMute(portName, false);
 }
@@ -3494,12 +3517,13 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
     } else {
         UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
+        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+        FetchDevice(true, reason); // fix pop, fetch device before unload module
         result = HandleLocalDeviceDisconnected(updatedDesc);
         if (devType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
             isArmUsbDevice_ = false;
         }
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
-        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     }
 
     TriggerDeviceChangedCallback(descForCb, isConnected);
@@ -3552,6 +3576,8 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDes
         reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
     } else {
         UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
+        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+        FetchDevice(true, reason); //  fix pop, fetch device before unload module
         int32_t result = HandleLocalDeviceDisconnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;

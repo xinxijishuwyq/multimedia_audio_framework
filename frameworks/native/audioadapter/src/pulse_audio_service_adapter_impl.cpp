@@ -247,17 +247,36 @@ int32_t PulseAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, 
     return SUCCESS;
 }
 
-bool PulseAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool isMute)
+bool PulseAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool isMute, bool isSync)
 {
     AUDIO_INFO_LOG("MuteAudioDevice: [%{public}s] : [%{public}d]", sinkName.c_str(), isMute);
+
+    unique_ptr<UserData> userData = make_unique<UserData>();
+    userData->thiz = this;
+
     pa_threaded_mainloop_lock(mMainLoop);
 
     int muteFlag = isMute ? 1 : 0;
-    pa_operation *operation = pa_context_set_sink_mute_by_name(mContext, sinkName.c_str(), muteFlag, nullptr, nullptr);
+
+    pa_operation *operation = nullptr;
+    if (isSync) {
+        operation = pa_context_set_sink_mute_by_name(mContext, sinkName.c_str(), muteFlag,
+            PulseAudioServiceAdapterImpl::PaSinkMuteCb, reinterpret_cast<void *>(userData.get()));
+    } else {
+        operation = pa_context_set_sink_mute_by_name(mContext, sinkName.c_str(), muteFlag,
+            nullptr, nullptr);
+    }
+
     if (operation == nullptr) {
         AUDIO_ERR_LOG("pa_context_suspend_sink_by_name failed!");
         pa_threaded_mainloop_unlock(mMainLoop);
         return false;
+    }
+
+    if (isSync) {
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(mMainLoop);
+        }
     }
 
     pa_operation_unref(operation);
@@ -644,6 +663,13 @@ void PulseAudioServiceAdapterImpl::PaMoveSourceOutputCb(pa_context *c, int succe
     pa_threaded_mainloop_signal(userData->thiz->mMainLoop, 0);
 
     return;
+}
+
+void PulseAudioServiceAdapterImpl::PaSinkMuteCb(pa_context *c, int success, void *userdata)
+{
+    UserData *userData = reinterpret_cast<UserData *>(userdata);
+    AUDIO_DEBUG_LOG("result[%{public}d]", success);
+    pa_threaded_mainloop_signal(userData->thiz->mMainLoop, 0);
 }
 
 void PulseAudioServiceAdapterImpl::PaContextStateCb(pa_context *c, void *userdata)

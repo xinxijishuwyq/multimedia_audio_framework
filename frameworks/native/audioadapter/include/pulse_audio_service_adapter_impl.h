@@ -38,7 +38,7 @@ public:
     int32_t SetVolumeDb(AudioStreamType streamType, float volumeDb) override;
     int32_t SetSourceOutputMute(int32_t uid, bool setMute) override;
     int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) override;
-    bool SetSinkMute(const std::string &sinkName, bool isMute) override;
+    bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) override;
     std::vector<SinkInput> GetAllSinkInputs() override;
     std::vector<SourceOutput> GetAllSourceOutputs() override;
     void Disconnect() override;
@@ -64,6 +64,7 @@ public:
     static void PaGetAllSourceOutputsCb(pa_context *c, const pa_source_output_info *i, int eol, void *userdata);
     static void PaGetSourceOutputCb(pa_context *c, const pa_source_output_info *i, int eol, void *userdata);
     static void ProcessSourceOutputEvent(pa_context *c, pa_subscription_event_type_t t, uint32_t idx, void *userdata);
+    static void PaSinkMuteCb(pa_context *c, int success, void *userdata);
 private:
     struct UserData {
         PulseAudioServiceAdapterImpl *thiz;
