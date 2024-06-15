@@ -656,7 +656,6 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
 int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEffectMode audioEnhanceMode)
 {
     PaLockGuard lock(mainLoop_);
-    const std::string enhanceModeName = GetEnhanceModeName(audioEnhanceMode);
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
         AUDIO_ERR_LOG("pa_proplist_new failed.");
