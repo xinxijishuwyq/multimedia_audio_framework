@@ -370,6 +370,7 @@ void MultiChannelRendererSinkInner::DeInit()
     sinkInited_ = false;
 
     if (audioAdapter_ != nullptr) {
+        AUDIO_INFO_LOG("DestroyRender rendererid: %{public}u", renderId_);
         audioAdapter_->DestroyRender(audioAdapter_, renderId_);
     }
     audioRender_ = nullptr;
@@ -466,11 +467,14 @@ int32_t MultiChannelRendererSinkInner::CreateRender(const struct AudioPort &rend
     if (halName_ == "usb") {
         deviceDesc.pins = PIN_OUT_USB_HEADSET;
     }
+    AUDIO_INFO_LOG("Create render halname: %{public}s format: %{public}d, sampleRate:%{public}u channel%{public}u",
+        halName_.c_str(), param.format, param.sampleRate, param.channelCount);
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed.");
         return ERR_NOT_STARTED;
     }
+    AUDIO_INFO_LOG("Create success rendererid: %{public}u", renderId_);
 
     return 0;
 }
