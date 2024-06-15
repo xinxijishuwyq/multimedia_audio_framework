@@ -1520,9 +1520,9 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
         return SUCCESS;
     }
 
-    AUDIO_DEBUG_LOG("keyValueList %{public}s befor get.", keyValueList);
+    AUDIO_INFO_LOG("Get keyValueList %{public}s before get.", keyValueList);
     GetCurDeviceParam(keyValueList, DEVICE_PARAM_MAX_LEN);
-    AUDIO_DEBUG_LOG("Get keyValueList for openpa: %{public}s", keyValueList);
+    AUDIO_INFO_LOG("Get keyValueList for openpa: %{public}s", keyValueList);
 
     if (flag == 1 && g_paStatus == 0) {
         ret = audioRender_->SetExtraParams(audioRender_, keyValueList);
@@ -1535,7 +1535,7 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
         return SUCCESS;
     }
 
-    AUDIO_DEBUG_LOG("receive invalid flag");
+    AUDIO_INFO_LOG("receive invalid flag");
     return ret;
 }
 
