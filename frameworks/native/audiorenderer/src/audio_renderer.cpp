@@ -644,6 +644,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
         return false;
     }
 
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audio stream is null");
     if (!audioStream_->GetSilentModeAndMixWithOthers()) {
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
