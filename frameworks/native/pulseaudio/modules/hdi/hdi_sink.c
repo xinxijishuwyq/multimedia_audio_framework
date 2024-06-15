@@ -953,8 +953,8 @@ static int32_t SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
 
         nSinkInput = SinkRenderPrimaryPeekCap(si, &chunk);
 
-        d += chunk.length;
-        l -= chunk.length;
+        d += (size_t)chunk.length;
+        l -= (size_t)chunk.length;
     }
 
     pa_sink_unref(si);
@@ -2311,7 +2311,7 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
     chunk->length = length;
     int64_t l;
     int64_t d;
-    l = chunk->length;
+    l = (int64_t)chunk->length;
     size_t blockSize = pa_memblock_get_length(u->offload.chunk.memblock);
     blockSize = PA_MAX(blockSize, pa_usec_to_bytes(0.6 * OFFLOAD_HDI_CACHE1 * PA_USEC_PER_MSEC, // 0.6 40% is hdi limit
         &u->sink->sample_spec));
@@ -3117,7 +3117,7 @@ static void ProcessNormalData(struct Userdata *u)
         pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
         sleepForUsec = blockTime - (pa_rtclock_now() - now);
         if (u->primary.timestamp <= now + u->primary.prewrite) {
-            sleepForUsec = PA_MIN(sleepForUsec, u->primary.writeTime);
+            sleepForUsec = PA_MIN(sleepForUsec, (int64_t)u->primary.writeTime);
         }
         sleepForUsec = PA_MAX(sleepForUsec, 0);
     }
