@@ -691,9 +691,7 @@ int32_t RendererInServer::Pause()
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
-    if (isNeedFade_) {
-        oldAppliedVolume_ = MIN_FLOAT_VOLUME;
-    }
+
     return SUCCESS;
 }
 
@@ -815,9 +813,6 @@ int32_t RendererInServer::Stop()
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
-    if (isNeedFade_) {
-        oldAppliedVolume_ = MIN_FLOAT_VOLUME;
-    }
     return SUCCESS;
 }
 
