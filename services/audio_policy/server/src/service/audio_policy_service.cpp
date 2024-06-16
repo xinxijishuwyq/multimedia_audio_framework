@@ -2168,13 +2168,14 @@ void AudioPolicyService::MuteSinkPort(DeviceType oldDevice, DeviceType newDevice
     if (reason == AudioStreamDeviceChangeReason::OVERRODE) {
         MuteSinkPort(newDevice, SELECT_DEVICE_MUTE_MS, true);
         MuteSinkPort(oldDevice, SELECT_DEVICE_MUTE_MS, true);
-        if (oldDevice == DEVICE_TYPE_SPEAKER && (newDevice == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_)) {
-            usleep(ARM_USB_DEVICE_MUTE_MS); // spk->arm_usb sleep 40 ms fix pop
+        if (oldDevice == DEVICE_TYPE_SPEAKER &&
+            (newDevice == DEVICE_TYPE_BLUETOOTH_A2DP || (newDevice == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_))) {
+            usleep(ARM_USB_DEVICE_MUTE_MS); // spk->arm_usb or spk->a2dp sleep 40 ms fix pop
         }
     } else if (reason == AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE) {
-        if (oldDevice == DEVICE_TYPE_SPEAKER && newDevice == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            MuteSinkPort(newDevice, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
-            MuteSinkPort(oldDevice, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
+        MuteSinkPort(newDevice, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
+        MuteSinkPort(oldDevice, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
+        if ((oldDevice == DEVICE_TYPE_USB_HEADSET || newDevice == DEVICE_TYPE_USB_HEADSET) && isArmUsbDevice_) {
             usleep(ARM_USB_DEVICE_MUTE_MS); // ->arm_usb or arm_usb-> sleep 40 ms fix pop
         }
     } else if (reason.IsOldDeviceUnavaliable() && audioScene_ == AUDIO_SCENE_DEFAULT) {
