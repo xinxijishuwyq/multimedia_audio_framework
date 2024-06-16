@@ -1605,6 +1605,8 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
     std::shared_ptr<AudioRendererOutputDeviceChangeCallback> cb = callback_.lock();
 
     if (cb != nullptr) {
+        AUDIO_INFO_LOG("sessionId: %{public}u, deviceType: %{public}d reason: %{public}d",
+            sessionId, static_cast<int>(deviceInfo.deviceType), static_cast<int>(reason));
         cb->OnOutputDeviceChange(deviceInfo, reason);
     }
 }
