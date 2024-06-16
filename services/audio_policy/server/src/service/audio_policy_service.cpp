@@ -6777,14 +6777,14 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
                 audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
                 audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
             } else {
-#ifdef BLUETOOTH_ENABLE
-                if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && !audioDeviceManager_.GetScoState()) {
-                    Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc.macAddress_);
-                }
-#endif
                 audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
                 audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
                 ClearScoDeviceSuspendState(desc.macAddress_);
+#ifdef BLUETOOTH_ENABLE
+            if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && !audioDeviceManager_.GetScoState()) {
+                Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc.macAddress_);
+            }
+#endif
             }
         }
     } else if (updateCommand == ENABLE_UPDATE) {
