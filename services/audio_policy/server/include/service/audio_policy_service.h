@@ -922,6 +922,9 @@ private:
 
     bool IsA2dpOrArmUsbDevice(const InternalDeviceType &deviceType);
 
+    void UpdateAllUserSelectDevice(vector<unique_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap,
+        const sptr<AudioDeviceDescriptor> &desc);
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;

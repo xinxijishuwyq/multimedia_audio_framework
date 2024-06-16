@@ -722,6 +722,16 @@ void AudioDeviceManager::UpdateScoState(const std::string &macAddress, bool isCo
     }
 }
 
+bool AudioDeviceManager::GetScoState()
+{
+    for (const auto &desc : connectedDevices_) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->connectState_ == CONNECTED) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void AudioDeviceManager::UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor> &d,
     const DeviceInfoUpdateCommand updateCommand)
 {

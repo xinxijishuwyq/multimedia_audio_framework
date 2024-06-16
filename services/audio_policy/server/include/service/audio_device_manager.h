@@ -68,6 +68,7 @@ public:
     vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableBluetoothDevice(DeviceType devType,
         const std::string &macAddress);
     void UpdateScoState(const std::string &macAddress, bool isConnnected);
+    bool GetScoState();
     void UpdateEarpieceStatus(const bool hasEarPiece);
     vector<shared_ptr<AudioDeviceDescriptor>> GetDevicesByFilter(DeviceType devType, DeviceRole devRole,
         const string &macAddress, const string &networkId, ConnectState connectState);
