@@ -1769,14 +1769,14 @@ static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
     PA_IDXSET_FOREACH(s, c->sinks, idx) {
         bool isHdiSink = !strncmp(s->driver, "module_hdi_sink", 15); // 15 cmp length
         if (isHdiSink && strcmp(s->name, "Speaker")) {
-            AUDIO_INFO_LOG("Have new routing:[%{public}s] on primary, dont close it.", s->name);
+            AUDIO_DEBUG_LOG("Have new routing:[%{public}s] on primary, dont close it.", s->name);
             g_onlyPrimarySpeakerPaLoading = false;
             break;
         }
     }
 
     if (strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), "primary")) {
-        AUDIO_INFO_LOG("Sink[%{public}s] -- no primary, dont close it.",
+        AUDIO_DEBUG_LOG("Sink[%{public}s] -- no primary, dont close it.",
             GetDeviceClass(u->primary.sinkAdapter->deviceClass));
         g_onlyPrimarySpeakerPaLoading = false;
     }
