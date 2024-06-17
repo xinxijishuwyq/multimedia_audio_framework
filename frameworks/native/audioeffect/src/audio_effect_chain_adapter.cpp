@@ -332,7 +332,7 @@ bool EffectChainManagerGetSpatializationEnabled()
     return audioEffectChainManager->GetCurSpatializationEnabled();
 }
 
-void EffectChainManagerFlush()
+void EffectChainManagerFlush(void)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");

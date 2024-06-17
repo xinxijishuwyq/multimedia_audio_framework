@@ -121,7 +121,7 @@ public:
      * @since 9
      */
     virtual bool Release() = 0;
-    virtual ~TonePlayer();
+    virtual ~TonePlayer() = default;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
