@@ -329,7 +329,7 @@ struct AudioRendererInfo {
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
     uint8_t encodingType = 0;
     uint64_t channelLayout = 0ULL;
-    AudioSampleFormat format = INVALID_WIDTH;
+    AudioSampleFormat format = SAMPLE_S16LE;
 
     bool Marshalling(Parcel &parcel) const
     {
