@@ -110,6 +110,7 @@ private:
     std::condition_variable statusCv_;
     std::shared_ptr<IRendererStream> stream_ = nullptr;
     uint32_t streamIndex_ = -1;
+    std::string traceTag_;
     IOperation operation_ = OPERATION_INVALID;
     IStatus status_ = I_STATUS_IDLE;
 

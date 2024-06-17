@@ -106,7 +106,7 @@ public:
 
     int32_t SuspendAudioDevice(std::string &name, bool isSuspend);
 
-    bool SetSinkMute(const std::string &sinkName, bool isMute);
+    bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false);
 
     float CalculateVolumeDb(int32_t volumeLevel);
 

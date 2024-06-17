@@ -789,7 +789,7 @@ int32_t AudioServer::OffloadSetVolume(float volume)
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
     }
-    return audioRendererSinkInstance->SetVolume(volume, 0);
+    return audioRendererSinkInstance->SetVolume(volume, volume);
 }
 
 int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,

@@ -644,6 +644,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
         return false;
     }
 
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audio stream is null");
     if (!audioStream_->GetSilentModeAndMixWithOthers()) {
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
@@ -667,7 +668,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
-    Trace trace("Write");
+    Trace trace("AudioRenderer::Write");
     MockPcmData(buffer, bufferSize);
     int32_t size = audioStream_->Write(buffer, bufferSize);
     if (size > 0) {
@@ -1114,6 +1115,7 @@ int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc) const
 
 int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc) const
 {
+    Trace trace("AudioRenderer::Enqueue");
     MockPcmData(bufDesc.buffer, bufDesc.bufLength);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
     if (!switchStreamMutex_.try_lock()) {
@@ -1227,11 +1229,7 @@ int32_t AudioRendererPrivate::SetOffloadMode(int32_t state, bool isAppBack) cons
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_CONCEDE_INCOMING_STREAM,
         "session %{public}u deny offload", sessionID_);
 
-    ret = AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_OFFLOAD);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("move into offload pipe failed.");
-        return ERROR;
-    }
+    AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_OFFLOAD);
     return audioStream_->SetOffloadMode(state, isAppBack);
 }
 
@@ -1603,6 +1601,8 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
     std::shared_ptr<AudioRendererOutputDeviceChangeCallback> cb = callback_.lock();
 
     if (cb != nullptr) {
+        AUDIO_INFO_LOG("sessionId: %{public}u, deviceType: %{public}d reason: %{public}d",
+            sessionId, static_cast<int>(deviceInfo.deviceType), static_cast<int>(reason));
         cb->OnOutputDeviceChange(deviceInfo, reason);
     }
 }

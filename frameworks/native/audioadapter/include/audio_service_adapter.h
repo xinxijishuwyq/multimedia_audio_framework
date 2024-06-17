@@ -156,7 +156,7 @@ public:
      * @param sinkName Name of the audio sink
      * @return Returns {@link true} if mute is success; returns false otherwise.
      */
-    virtual bool SetSinkMute(const std::string &sinkName, bool isMute) = 0;
+    virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
 
     /**
      * @brief returns the list of all sink inputs

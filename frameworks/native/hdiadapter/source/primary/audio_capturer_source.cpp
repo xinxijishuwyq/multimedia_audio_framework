@@ -1104,7 +1104,9 @@ int32_t AudioCapturerSourceInner::InitManagerAndAdapter()
     int32_t ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
     CHECK_AND_RETURN_RET_LOG(size <= MAX_AUDIO_ADAPTER_NUM && size != 0 && ret == 0,
         ERR_NOT_STARTED, "Get adapters Fail");
-
+    if (adapterNameCase_ == "" && halName_ == "primary") {
+        adapterNameCase_ = "primary";
+    }
     // Get qualified sound card and port
     int32_t index = SwitchAdapterCapture((struct AudioAdapterDescriptor *)&descs,
         size, adapterNameCase_, PORT_IN, audioPort_);

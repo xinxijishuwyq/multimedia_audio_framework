@@ -591,7 +591,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
 {
     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(),
         -1, "ReadInterfaceToken failed");
-
+    Trace trace("AudioServer::Handle::" + std::to_string(code));
     CHECK_AND_RETURN_RET(code > static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX),
         (this->*handlers[code])(data, reply));
     AUDIO_ERR_LOG("default case, need check AudioManagerStub");

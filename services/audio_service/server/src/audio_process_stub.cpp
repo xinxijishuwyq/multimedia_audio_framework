@@ -18,6 +18,7 @@
 #include "audio_process_stub.h"
 #include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -56,6 +57,7 @@ int AudioProcessStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
 {
     bool ret = CheckInterfaceToken(data);
     CHECK_AND_RETURN_RET(ret, AUDIO_ERR);
+    Trace trace("AudioProcess::Handle::" + std::to_string(code));
     if (code >= IAudioProcessMsg::PROCESS_MAX_MSG) {
         AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

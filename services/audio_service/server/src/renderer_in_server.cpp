@@ -157,6 +157,7 @@ int32_t RendererInServer::Init()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
         "Construct rendererInServer failed: %{public}d", ret);
     streamIndex_ = stream_->GetStreamIndex();
+    traceTag_ = "RendererInServer::sessionid:" + std::to_string(streamIndex_);
     ret = ConfigServerBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
         "Construct rendererInServer failed: %{public}d", ret);
@@ -483,8 +484,7 @@ int32_t RendererInServer::WriteData()
 {
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
-    Trace::Count("RendererInServer::WriteData", (currentWriteFrame - currentReadFrame) / spanSizeInFrame_);
-    Trace trace1("RendererInServer::WriteData");
+    Trace trace1(traceTag_ + " WriteData"); // RendererInServer::sessionid:100001 WriteData
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
         if (underRunLogFlag_ == 0) {
             AUDIO_INFO_LOG("near underrun");
@@ -507,6 +507,7 @@ int32_t RendererInServer::WriteData()
             DoFadingOut(bufferDesc);
             CheckFadingOutDone(fadeoutFlag_, bufferDesc);
         }
+        Trace::CountVolume(traceTag_, *bufferDesc.buffer);
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
 
@@ -690,9 +691,7 @@ int32_t RendererInServer::Pause()
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
-    if (isNeedFade_) {
-        oldAppliedVolume_ = MIN_FLOAT_VOLUME;
-    }
+
     return SUCCESS;
 }
 
@@ -814,9 +813,6 @@ int32_t RendererInServer::Stop()
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
-    if (isNeedFade_) {
-        oldAppliedVolume_ = MIN_FLOAT_VOLUME;
-    }
     return SUCCESS;
 }
 
@@ -984,8 +980,8 @@ int32_t RendererInServer::DisableDualTone()
         return ERR_INVALID_OPERATION;
     }
     isDualToneEnabled_ = false;
-    AUDIO_INFO_LOG("Disable dual tone renderer %{public}u with status: %{public}d", streamIndex_, status_);
-    IStreamManager::GetDupPlaybackManager().ReleaseRender(dupStreamIndex_);
+    AUDIO_INFO_LOG("Disable dual tone renderer %{public}u with status: %{public}d", dualToneStreamIndex_, status_);
+    IStreamManager::GetDupPlaybackManager().ReleaseRender(dualToneStreamIndex_);
     dupStream_ = nullptr;
 
     return ERROR;
@@ -1007,7 +1003,7 @@ int32_t RendererInServer::InitDualToneStream()
     isDualToneEnabled_ = true;
 
     if (status_ == I_STATUS_STARTED) {
-        AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dual stream", streamIndex_);
+        AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dual stream", dualToneStreamIndex_);
         dualToneStream_->Start();
     }
     return SUCCESS;
@@ -1083,6 +1079,10 @@ int32_t RendererInServer::OffloadSetVolume(float volume)
     Volume vol = {false, 0.0f, 0};
     PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
     float systemVol = vol.isMute ? 0.0f : vol.volumeFloat;
+    if (PolicyHandler::GetInstance().IsAbsVolumeSupported() &&
+        PolicyHandler::GetInstance().GetActiveOutPutDevice() == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        systemVol = 1.0f; // 1.0f for a2dp abs volume
+    }
     AUDIO_INFO_LOG("sessionId %{public}u set volume:%{public}f [volumeType:%{public}d deviceType:%{public}d systemVol:"
         "%{public}f]", streamIndex_, volume, volumeType, deviceType, systemVol);
     return stream_->OffloadSetVolume(systemVol * volume);

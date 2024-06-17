@@ -510,6 +510,8 @@ public:
 
     int32_t ResetRingerModeMute();
     bool IsRingerModeMute();
+
+    void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -795,7 +797,9 @@ private:
 
     bool NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor> &desc);
 
-    void MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc);
+    void MuteSinkPort(DeviceType deviceType, int32_t duration, bool isSync = false);
+
+    void MuteSinkPort(DeviceType oldDevice, DeviceType newDevice, AudioStreamDeviceChangeReasonExt reason);
 
     void RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::list<AudioModuleInfo> &moduleInfoList,
         SourceInfo &targetInfo);
@@ -917,6 +921,9 @@ private:
         bool &haveArmUsbDevice);
 
     bool IsA2dpOrArmUsbDevice(const InternalDeviceType &deviceType);
+
+    void UpdateAllUserSelectDevice(vector<unique_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap,
+        const sptr<AudioDeviceDescriptor> &desc);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;

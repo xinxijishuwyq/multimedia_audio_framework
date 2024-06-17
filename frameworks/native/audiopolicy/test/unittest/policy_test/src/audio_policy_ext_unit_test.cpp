@@ -33,6 +33,10 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+    constexpr uint32_t MAX_RENDERER_INSTANCES = 128;
+}
+
 class AudioPolicyExtUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -239,5 +243,29 @@ HWTEST(AudioPolicyExtUnitTest, SetClientCallbacksEnable_005, TestSize.Level1)
     ret = AudioPolicyManager::GetInstance().SetClientCallbacksEnable(CALLBACK_CAPTURER_STATE_CHANGE, true);
     EXPECT_EQ(AUDIO_OK, ret);
 }
+
+/**
+ * @tc.name  : Test GetMaxRendererInstances via legal state
+ * @tc.number: GetMaxRendererInstances_001
+ * @tc.desc  : Test GetMaxRendererInstances interface.Get max renderer instances and return ret.
+ */
+HWTEST(AudioPolicyExtUnitTest, GetMaxRendererInstances_001, TestSize.Level1)
+{
+    int32_t ret = AudioPolicyManager::GetInstance().GetMaxRendererInstances();
+    EXPECT_EQ(MAX_RENDERER_INSTANCES, ret);
+}
+
+/**
+ * @tc.name  : Test QueryEffectSceneMode via legal state
+ * @tc.number: QueryEffectSceneMode_001
+ * @tc.desc  : Test QueryEffectSceneMode interface.Query effect scene mode and return ret.
+ */
+HWTEST(AudioPolicyExtUnitTest, QueryEffectSceneMode_001, TestSize.Level1)
+{
+    SupportedEffectConfig supportedEffectConfig;
+    int32_t ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
+    EXPECT_EQ(0, ret);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

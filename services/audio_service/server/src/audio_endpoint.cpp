@@ -313,6 +313,16 @@ private:
     bool isVolumeAlreadyZero_ = false;
 };
 
+std::string AudioEndpoint::GenerateEndpointKey(DeviceInfo &deviceInfo, int32_t endpointFlag)
+{
+    // All primary sinks share one endpoint
+    int32_t endpointId = 0;
+    if (deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        endpointId = deviceInfo.deviceId;
+    }
+    return deviceInfo.networkId + "_" + std::to_string(endpointId) + "_" + std::to_string(endpointFlag);
+}
+
 std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, uint64_t id,
     AudioStreamType streamType, const DeviceInfo &deviceInfo)
 {
@@ -339,9 +349,7 @@ AudioEndpointInner::AudioEndpointInner(EndpointType type, uint64_t id) : endpoin
 
 std::string AudioEndpointInner::GetEndpointName()
 {
-    // temp method to get device key, should be same with AudioService::GetAudioEndpointForDevice.
-    return deviceInfo_.networkId + std::to_string(deviceInfo_.deviceType) + "_" +
-        std::to_string(deviceInfo_.deviceId) + "_" + std::to_string(id_);
+    return GenerateEndpointKey(deviceInfo_, id_);
 }
 
 int32_t AudioEndpointInner::SetVolume(AudioStreamType streamType, float volume)
@@ -837,7 +845,8 @@ bool AudioEndpointInner::IsAnyProcessRunning()
     std::lock_guard<std::mutex> lock(listLock_);
     bool isRunning = false;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
-        if (processBufferList_[i]->GetStreamStatus()->load() == STREAM_RUNNING) {
+        if (processBufferList_[i]->GetStreamStatus() &&
+            processBufferList_[i]->GetStreamStatus()->load() == STREAM_RUNNING) {
             isRunning = true;
             break;
         }
@@ -1206,7 +1215,8 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             uint64_t eachCurReadPos = processBufferList_[i]->GetCurReadFrame();
             lastHandleProcessTime_ = checkTime;
             processBufferList_[i]->SetHandleInfo(eachCurReadPos, lastHandleProcessTime_); // update handle info
-            if (tempBuffer->GetStreamStatus()->load() != StreamStatus::STREAM_RUNNING) {
+            if (tempBuffer->GetStreamStatus() &&
+                tempBuffer->GetStreamStatus()->load() != StreamStatus::STREAM_RUNNING) {
                 // Process is not running, server will continue to check the same location in the next cycle.
                 int64_t duration = 5000000; // 5ms
                 processBufferList_[i]->SetHandleInfo(eachCurReadPos, lastHandleProcessTime_ + duration);
@@ -1538,7 +1548,8 @@ bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTi
                 memset_s(bufferReadDone.buffer, bufferReadDone.bufLength, 0, bufferReadDone.bufLength);
             }
             processBufferList_[i]->SetCurReadFrame(eachCurReadPos + dstSpanSizeInframe_); // use client span size
-        } else if (processBufferList_[i]->GetStreamStatus()->load() == StreamStatus::STREAM_RUNNING) {
+        } else if (processBufferList_[i]->GetStreamStatus() &&
+            processBufferList_[i]->GetStreamStatus()->load() == StreamStatus::STREAM_RUNNING) {
             AUDIO_DEBUG_LOG("Current %{public}" PRIu64" span not ready:%{public}d", eachCurReadPos, targetStatus);
         }
     }
@@ -1715,7 +1726,8 @@ void AudioEndpointInner::WriteToProcessBuffers(const BufferDesc &readBuf)
     for (size_t i = 0; i < processBufferList_.size(); i++) {
         CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr,
             "process buffer %{public}zu is null.", i);
-        if (processBufferList_[i]->GetStreamStatus()->load() != STREAM_RUNNING) {
+        if (processBufferList_[i]->GetStreamStatus() &&
+            processBufferList_[i]->GetStreamStatus()->load() != STREAM_RUNNING) {
             AUDIO_WARNING_LOG("process buffer %{public}zu not running, stream status %{public}d.",
                 i, processBufferList_[i]->GetStreamStatus()->load());
             continue;

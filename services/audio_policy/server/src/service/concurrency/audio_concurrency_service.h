@@ -40,7 +40,7 @@ public:
         AUDIO_ERR_LOG("dtor");
     }
     void Init();
-    void DispatchConcurrencyEventWithSessionId(uint32_t sessionId) override;
+    void DispatchConcurrencyEventWithSessionId(uint32_t sessionID) override;
     int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);

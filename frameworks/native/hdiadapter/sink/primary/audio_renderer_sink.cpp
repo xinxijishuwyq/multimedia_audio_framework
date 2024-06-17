@@ -542,12 +542,14 @@ void AudioRendererSinkInner::DeInit()
     sinkInited_ = false;
 
     if (audioAdapter_ != nullptr) {
+        AUDIO_INFO_LOG("DestroyRender rendererid: %{public}u", renderId_);
         audioAdapter_->DestroyRender(audioAdapter_, renderId_);
     }
     audioRender_ = nullptr;
     renderInited_ = false;
 
     if (audioManager_ != nullptr) {
+        AUDIO_INFO_LOG("UnloadAdapter");
         audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
     }
     audioAdapter_ = nullptr;
@@ -668,6 +670,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
         adapterInited_ = false;
         return ERR_NOT_STARTED;
     }
+    AUDIO_INFO_LOG("Create success rendererid: %{public}u", renderId_);
 
     return 0;
 }
@@ -726,11 +729,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
             switchCV_.notify_all();
         }
     }
-    if (*reinterpret_cast<int8_t*>(&data) == 0) {
-        Trace::Count("AudioRendererSinkInner::RenderFrame", PCM_MAYBE_SILENT);
-    } else {
-        Trace::Count("AudioRendererSinkInner::RenderFrame", PCM_MAYBE_NOT_SILENT);
-    }
+    Trace::CountVolume("AudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
 
     Trace traceRenderFrame("AudioRendererSinkInner::RenderFrame");
@@ -1307,7 +1306,8 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &usbInfoStr)
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
         AUDIO_ERR_LOG("check attr failed channel[%{public}d] sampleRate[%{public}d]", attr_.channel, attr_.sampleRate);
     } else {
-        formatByte = stoi(bufferSize) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS / attr_.channel / attr_.sampleRate;
+        formatByte = static_cast<uint32_t>(stoi(bufferSize)) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS
+            / attr_.channel / attr_.sampleRate;
     }
     
     attr_.format = static_cast<HdiAdapterFormat>(ConvertByteToAudioFormat(formatByte));
@@ -1434,7 +1434,7 @@ void AudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len)
         return;
     }
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
-    uint32_t byteSize = GetFormatByteSize(attr_.format);
+    uint32_t byteSize = static_cast<uint32_t>(GetFormatByteSize(attr_.format));
     size_t newlyCheckedTime = len / (attr_.sampleRate / MILLISECOND_PER_SECOND) /
         (byteSize * sizeof(uint8_t) * attr_.channel);
     detectedTime_ += newlyCheckedTime;
@@ -1503,7 +1503,7 @@ int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList, size_t len
 
 int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
 {
-    Trace trace("AudioRendererSinkInner::SetPaPower flag:%d", flag);
+    Trace trace("AudioRendererSinkInner::SetPaPower flag:" + std::to_string(flag));
     int32_t ret = ERROR;
     char keyValueList[DEVICE_PARAM_MAX_LEN] = {0};
     const char keyValueList1[] = "zero_volume=false";
@@ -1523,9 +1523,9 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
         return SUCCESS;
     }
 
-    AUDIO_DEBUG_LOG("keyValueList %{public}s befor get.", keyValueList);
+    AUDIO_INFO_LOG("Get keyValueList %{public}s before get.", keyValueList);
     GetCurDeviceParam(keyValueList, DEVICE_PARAM_MAX_LEN);
-    AUDIO_DEBUG_LOG("Get keyValueList for openpa: %{public}s", keyValueList);
+    AUDIO_INFO_LOG("Get keyValueList for openpa: %{public}s", keyValueList);
 
     if (flag == 1 && g_paStatus == 0) {
         ret = audioRender_->SetExtraParams(audioRender_, keyValueList);
@@ -1538,7 +1538,7 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
         return SUCCESS;
     }
 
-    AUDIO_DEBUG_LOG("receive invalid flag");
+    AUDIO_INFO_LOG("receive invalid flag");
     return ret;
 }
 

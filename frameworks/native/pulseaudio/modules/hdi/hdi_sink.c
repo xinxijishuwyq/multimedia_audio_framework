@@ -88,6 +88,7 @@
 #define BYTE_LEN_FOR_24BIT 3
 #define BYTE_LEN_FOR_32BIT 4
 #define PRINT_INTERVAL_FRAME_COUNT 100
+#define MIN_SLEEP_FOR_USEC 2000
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 
@@ -96,7 +97,7 @@ const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
-const char *SINK_NAME_INNER_CAPTURER = "InnerCapturer";
+const char *SINK_NAME_INNER_CAPTURER = "InnerCapturerSink";
 const char *SINK_NAME_REMOTE_CAST_INNER_CAPTURER = "RemoteCastInnerCapturer";
 const char *DUP_STEAM_NAME = "DupStream"; // should be same with DUP_STEAM in audio_info.h
 const char *MCH_SINK_NAME = "MCH_Speaker";
@@ -104,10 +105,13 @@ const char *BT_SINK_NAME = "Bt_Speaker";
 const char *OFFLOAD_SINK_NAME = "Offload_Speaker";
 
 const int32_t WAIT_CLOSE_PA_OR_EFFECT_TIME = 4; // secs
+const int32_t MONITOR_CLOSE_PA_TIME_SEC = 5 * 60; // 5min
 bool g_speakerPaAllStreamVolumeZero = false;
 bool g_onlyPrimarySpeakerPaLoading = false;
 bool g_paHaveDisabled = false;
 time_t g_speakerPaAllStreamStartVolZeroTime = 0;
+bool g_speakerPaHaveClosed = false;
+time_t g_speakerPaClosedTime = 0;
 bool g_effectAllStreamVolumeZeroMap[SCENE_TYPE_NUM] = {false, false, false, false, false, false, false};
 bool g_effectHaveDisabledMap[SCENE_TYPE_NUM] = {false, false, false, false, false, false, false};
 time_t g_effectStartVolZeroTimeMap[SCENE_TYPE_NUM] = {0, 0, 0, 0, 0, 0, 0};
@@ -206,6 +210,7 @@ struct Userdata {
     } offload;
     struct {
         pa_usec_t timestamp;
+        pa_usec_t lastProcessDataTime; // The timestamp from the last time the data was prepared to HDI
         pa_thread *thread;
         pa_thread *thread_hdi;
         pa_asyncmsgq *msgq;
@@ -478,7 +483,7 @@ static ssize_t RenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memchunk 
             count = -1 - count;
             break;
         } else {
-            count += writeLen;
+            count += (ssize_t)writeLen;
             index += writeLen;
             length -= writeLen;
             if (length == 0) {
@@ -952,8 +957,8 @@ static int32_t SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
 
         nSinkInput = SinkRenderPrimaryPeekCap(si, &chunk);
 
-        d += chunk.length;
-        l -= chunk.length;
+        d += (size_t)chunk.length;
+        l -= (size_t)chunk.length;
     }
 
     pa_sink_unref(si);
@@ -1342,11 +1347,10 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         bool existFlag =
             EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled ? "1" : "0");
         RecordEffectChainStatus(existFlag, sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled);
-        
+        bool sceneTypeFlag = EffectChainManagerSceneCheck(sinkSceneType, sceneType);
         if ((IsInnerCapturer(sinkIn) && IsCaptureSilently()) || !InputIsPrimary(sinkIn)) {
             continue;
-        } else if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
-            (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
+        } else if ((sceneTypeFlag && existFlag) || (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
             pa_sink_input_assert_ref(sinkIn);
             updateResampler(sinkIn, sinkSceneType, false);
 
@@ -1737,19 +1741,22 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
             g_effectAllStreamVolumeZeroMap[i] = false;
             g_effectStartVolZeroTimeMap[i] = 0;
             AUDIO_DEBUG_LOG("SCENE_TYPE_SET[%{public}d]:%{public}s for streamtype:[%{public}s]'s"
-                " volume is not zero, this effect all streamtype is not zero volume.", i,
+                " volume is non zero, this effect all streamtype is non zero volume.", i,
                 SCENE_TYPE_SET[i], streamType);
             break;
         }
     }
 
-    if (g_effectAllStreamVolumeZeroMap[i] && !g_effectHaveDisabledMap[i] && g_effectStartVolZeroTimeMap[i] == 0) {
+    if (g_effectAllStreamVolumeZeroMap[i] && !g_effectHaveDisabledMap[i] && (g_effectStartVolZeroTimeMap[i] == 0) &&
+        PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
+        AUDIO_INFO_LOG("Timing begins, will close [%{public}s] effect after [%{public}d]s", SCENE_TYPE_SET[i],
+            WAIT_CLOSE_PA_OR_EFFECT_TIME);
         time(&g_effectStartVolZeroTimeMap[i]);
     }
 
     char *sinkSceneType = SCENE_TYPE_SET[i];
-    if (g_effectAllStreamVolumeZeroMap[i] && difftime(currentTime, g_effectStartVolZeroTimeMap[i]) >
-        WAIT_CLOSE_PA_OR_EFFECT_TIME) {
+    if (g_effectAllStreamVolumeZeroMap[i] && PA_SINK_IS_RUNNING(u->sink->thread_info.state) &&
+        difftime(currentTime, g_effectStartVolZeroTimeMap[i]) > WAIT_CLOSE_PA_OR_EFFECT_TIME) {
         sinkSceneType = SCENE_TYPE_SET[SCENE_TYPE_NUM - 1]; // EFFECT_NONE
         if (!g_effectHaveDisabledMap[i]) {
             AUDIO_INFO_LOG("volume change to zero over %{public}ds, close effect:%{public}s success.",
@@ -1761,7 +1768,7 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
         sinkSceneType = SCENE_TYPE_SET[i];
         if (g_effectHaveDisabledMap[i]) {
             g_effectHaveDisabledMap[i] = false;
-            AUDIO_INFO_LOG("volume change to not zero, open effect:%{public}s success. ", SCENE_TYPE_SET[i]);
+            AUDIO_INFO_LOG("volume change to non zero, open effect:%{public}s success. ", SCENE_TYPE_SET[i]);
         }
     }
     return sinkSceneType;
@@ -1776,37 +1783,29 @@ static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
     PA_IDXSET_FOREACH(s, c->sinks, idx) {
         bool isHdiSink = !strncmp(s->driver, "module_hdi_sink", 15); // 15 cmp length
         if (isHdiSink && strcmp(s->name, "Speaker")) {
+            AUDIO_INFO_LOG("Have new routing:[%{public}s] on primary, dont close it.", s->name);
             g_onlyPrimarySpeakerPaLoading = false;
             break;
         }
     }
 
     if (strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), "primary")) {
-        AUDIO_DEBUG_LOG("Sink[%{public}s] -- no primary, dont close it.",
+        AUDIO_INFO_LOG("Sink[%{public}s] -- no primary, dont close it.",
             GetDeviceClass(u->primary.sinkAdapter->deviceClass));
         g_onlyPrimarySpeakerPaLoading = false;
     }
 
-    if (!g_onlyPrimarySpeakerPaLoading && g_paHaveDisabled) {
-        AUDIO_INFO_LOG("PA have disable, open it.");
-        if (strcmp(u->sink->name, "Speaker") && g_paHaveDisabled) {
-            if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1) == 0) {
-                AUDIO_INFO_LOG("Have new pa routing. open %{public}s pa success", u->sink->name);
-            }
-            g_paHaveDisabled = false;
-        }
-        if (g_paHaveDisabled) {
-            if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1) == 0) {
-                AUDIO_INFO_LOG("Speaker all streamtype volume not zero, open %{public}s pa success", u->sink->name);
-            }
-            g_paHaveDisabled = false;
-        }
+    if (PA_SINK_IS_RUNNING(u->sink->thread_info.state) && !g_onlyPrimarySpeakerPaLoading && g_paHaveDisabled) {
+        int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1);
+        AUDIO_INFO_LOG("sink running, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d", u->sink->name,
+            (ret == 0 ? "success" : "failed"), ret);
+        g_paHaveDisabled = false;
+        g_speakerPaHaveClosed = false;
     }
 }
 
 static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTime)
 {
-    CheckOnlyPrimarySpeakerPaLoading(u);
     if (!g_onlyPrimarySpeakerPaLoading) {
         AUDIO_DEBUG_LOG("Not only the speaker pa, dont deal speaker pa.");
         return;
@@ -1826,32 +1825,36 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
             break;
         }
     }
-    if (g_speakerPaAllStreamVolumeZero && !g_paHaveDisabled && g_speakerPaAllStreamStartVolZeroTime == 0) {
+
+    if (g_speakerPaAllStreamVolumeZero && !g_paHaveDisabled && (g_speakerPaAllStreamStartVolZeroTime == 0) &&
+        PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
+        AUDIO_INFO_LOG("Timing begins, will close speaker after [%{public}d]s", WAIT_CLOSE_PA_OR_EFFECT_TIME);
         time(&g_speakerPaAllStreamStartVolZeroTime);
     }
-    if (g_speakerPaAllStreamVolumeZero && difftime(currentTime, g_speakerPaAllStreamStartVolZeroTime) >
-        WAIT_CLOSE_PA_OR_EFFECT_TIME) {
+    if (g_speakerPaAllStreamVolumeZero && PA_SINK_IS_RUNNING(u->sink->thread_info.state) &&
+        difftime(currentTime, g_speakerPaAllStreamStartVolZeroTime) > WAIT_CLOSE_PA_OR_EFFECT_TIME) {
         if (!g_paHaveDisabled) {
-            if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0) == 0) {
-                AUDIO_INFO_LOG("Speaker all streamtype volume change to zero over %{public}ds,"
-                    "close %{public}s pa success", WAIT_CLOSE_PA_OR_EFFECT_TIME, u->sink->name);
-            }
+            int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0);
+            AUDIO_INFO_LOG("Speaker pa volume change to zero over [%{public}d]s, close %{public}s pa [%{public}s], "
+                "ret:%{public}d", WAIT_CLOSE_PA_OR_EFFECT_TIME, u->sink->name, (ret == 0 ? "success" : "failed"), ret);
             g_paHaveDisabled = true;
             g_speakerPaAllStreamStartVolZeroTime = 0;
+            g_speakerPaHaveClosed = true;
+            time(&g_speakerPaClosedTime);
         }
     } else {
-        if (strcmp(u->sink->name, "Speaker") && g_paHaveDisabled) {
-            if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1) == 0) {
-                AUDIO_INFO_LOG("Have new pa routing. open %{public}s pa success", u->sink->name);
-            }
-            g_paHaveDisabled = false;
-        }
         if (g_paHaveDisabled) {
-            if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1) == 0) {
-                AUDIO_INFO_LOG("Speaker all streamtype volume not zero, open %{public}s pa success", u->sink->name);
-            }
+            int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1);
+            AUDIO_INFO_LOG("volume change to non zero, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d",
+                u->sink->name, (ret == 0 ? "success" : "failed"), ret);
             g_paHaveDisabled = false;
+            g_speakerPaHaveClosed = false;
         }
+    }
+
+    if (g_speakerPaHaveClosed && difftime(currentTime, g_speakerPaClosedTime) >= MONITOR_CLOSE_PA_TIME_SEC) {
+        time(&g_speakerPaClosedTime);
+        AUDIO_INFO_LOG("Speaker pa have closed [%{public}d]s.", MONITOR_CLOSE_PA_TIME_SEC);
     }
 }
 
@@ -2324,7 +2327,7 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
     chunk->length = length;
     int64_t l;
     int64_t d;
-    l = chunk->length;
+    l = (int64_t)chunk->length;
     size_t blockSize = pa_memblock_get_length(u->offload.chunk.memblock);
     blockSize = PA_MAX(blockSize, pa_usec_to_bytes(0.6 * OFFLOAD_HDI_CACHE1 * PA_USEC_PER_MSEC, // 0.6 40% is hdi limit
         &u->sink->sample_spec));
@@ -2336,11 +2339,11 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
         tchunk.length = PA_MIN(length, blockSize - tchunk.index);
 
         PaSinkRenderIntoOffload(i->sink, infoInputs, nInputs, &tchunk);
-        d += tchunk.length;
-        l -= tchunk.length;
+        d += (int64_t)tchunk.length;
+        l -= (int64_t)tchunk.length;
     }
     if (l < 0) {
-        chunk->length += -l;
+        chunk->length += (size_t)-l;
     }
 
     int32_t appsUid[MAX_MIX_CHANNELS];
@@ -2642,9 +2645,9 @@ static void StartPrimaryHdiIfRunning(struct Userdata *u)
         return;
     }
 
-    unsigned nPrimary;
-    unsigned nOffload;
-    unsigned nMultiChannel;
+    unsigned nPrimary = 0;
+    unsigned nOffload = 0;
+    unsigned nMultiChannel = 0;
     GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
     if (nPrimary == 0) {
         return;
@@ -2841,13 +2844,14 @@ void PaInputVolumeChangeCb(pa_sink_input *i)
     struct Userdata *u;
 
     pa_sink_input_assert_ref(i);
-    if (!strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER)) {
+    if (!strcmp(i->sink->name, SINK_NAME_INNER_CAPTURER) ||
+        !strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER)) {
         AUDIO_INFO_LOG("PaInputVolumeChangeCb inner_cap return");
         return;
     }
     pa_assert_se(u = i->sink->userdata);
 
-    if (u->offload_enable && InputIsOffload(i)) {
+    if (u->offload_enable && InputIsOffload(i) && u->offload.sinkAdapter) {
         float left;
         float right;
         u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
@@ -2929,9 +2933,9 @@ static void ThreadFuncRendererTimerOffloadFlag(struct Userdata *u, pa_usec_t now
             flag = false;
             *sleepForUsec = delta;
         } else {
-            unsigned nPrimary;
-            unsigned nOffload;
-            unsigned nMultiChannel;
+            unsigned nPrimary = 0;
+            unsigned nOffload = 0;
+            unsigned nMultiChannel = 0;
             GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
             if (nOffload == 0) {
                 flag = false;
@@ -3122,14 +3126,22 @@ static void ProcessNormalData(struct Userdata *u)
     }
 
     if (flag) {
-        if (u->primary.timestamp <= now + u->primary.prewrite && pa_atomic_load(&u->primary.dflag) == 0) {
-            pa_atomic_add(&u->primary.dflag, 1);
-            ProcessRenderUseTiming(u, now);
-        }
         pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-        sleepForUsec = blockTime - (pa_rtclock_now() - now);
-        if (u->primary.timestamp <= now + u->primary.prewrite) {
-            sleepForUsec = PA_MIN(sleepForUsec, u->primary.writeTime);
+        if (pa_atomic_load(&u->primary.dflag) == 1) {
+            sleepForUsec = blockTime - (pa_rtclock_now() - u->primary.lastProcessDataTime);
+            if (sleepForUsec < MIN_SLEEP_FOR_USEC) {
+                sleepForUsec = MIN_SLEEP_FOR_USEC;
+            }
+        } else {
+            if (u->primary.timestamp <= now + u->primary.prewrite) {
+                pa_atomic_add(&u->primary.dflag, 1);
+                u->primary.lastProcessDataTime = pa_rtclock_now();
+                ProcessRenderUseTiming(u, now);
+            }
+            sleepForUsec = blockTime - (pa_rtclock_now() - now);
+            if (u->primary.timestamp <= now + u->primary.prewrite) {
+                sleepForUsec = PA_MIN(sleepForUsec, (int64_t)u->primary.writeTime);
+            }
         }
         sleepForUsec = PA_MAX(sleepForUsec, 0);
     }
@@ -3224,6 +3236,7 @@ static void ThreadFuncRendererTimerProcessData(struct Userdata *u)
         logCnt = 0;
     }
 
+    CheckOnlyPrimarySpeakerPaLoading(u);
     if (!strcmp(u->sink->name, MCH_SINK_NAME)) {
         ProcessMCHData(u);
     } else if (!strcmp(u->sink->name, OFFLOAD_SINK_NAME) && u->offload_enable && u->offload.msgq) {
@@ -3251,11 +3264,10 @@ static void ThreadFuncRendererTimerBus(void *userdata)
         u->offload.sinkAdapter->RendererSinkOffloadRunningLockInit(u->offload.sinkAdapter);
     }
     while (true) {
-        AUTO_CTRACE("ProcessDataLoop");
         int ret;
         pthread_rwlock_wrlock(&u->rwlockSleep);
 
-        int64_t sleepForUsec;
+        int64_t sleepForUsec = 0;
 
         if (u->timestampSleep == -1) {
             pa_rtpoll_set_timer_disabled(u->rtpoll); // sleep forever
@@ -3265,6 +3277,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
             pa_rtpoll_set_timer_relative(u->rtpoll, sleepForUsec);
         }
 
+        AUTO_CTRACE("ProcessDataLoop sleep:%lld us", sleepForUsec);
         // Hmm, nothing to do. Let's sleep
         if ((ret = pa_rtpoll_run(u->rtpoll)) < 0) {
             AUDIO_ERR_LOG("Thread %s(use timing bus) shutting down, error %d, pid %d, tid %d",

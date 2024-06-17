@@ -31,6 +31,9 @@ const std::string AUDIO_SAFE_VOLUME_STATE_BT = "audio_safe_volume_state_bt";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS = "unsafe_volume_music_active_ms";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS_BT = "unsafe_volume_music_active_ms_bt";
 const std::string SETTINGS_CLONED = "settingsCloneStatus";
+const int32_t INVALIAD_SETTINGS_CLONE_STATUS = -1;
+const int32_t SETTINGS_CLONING_STATUS = 1;
+const int32_t SETTINGS_CLONED_STATUS = 0;
 
 static const std::vector<VolumeDataMaintainer::VolumeDataMaintainerStreamType> VOLUME_MUTE_STREAM_TYPE = {
     // all volume types except STREAM_ALL
@@ -271,28 +274,6 @@ bool VolumeDataMaintainer::GetStreamMuteInternal(AudioStreamType streamType)
     return muteStatusMap_[streamForVolumeMap];
 }
 
-void VolumeDataMaintainer::UpdateMuteStatusForVolume(DeviceType deviceType,
-    AudioStreamType streamType, int32_t volumeLevel)
-{
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
-    UpdateMuteStatusForVolumeInternal(deviceType, streamType, volumeLevel);
-}
-
-void VolumeDataMaintainer::UpdateMuteStatusForVolumeInternal(DeviceType deviceType,
-    AudioStreamType streamType, int32_t volumeLevel)
-{
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
-
-    // The mute status is automatically updated based on the stream volume
-    if (volumeLevel > 0 && GetStreamMuteInternal(streamType)) {
-        muteStatusMap_[streamForVolumeMap] = false;
-        SaveMuteStatusInternal(deviceType, streamType, false);
-    } else if (volumeLevel == 0 && !GetStreamMuteInternal(streamType)) {
-        muteStatusMap_[streamForVolumeMap] = true;
-        SaveMuteStatusInternal(deviceType, streamType, true);
-    }
-}
-
 bool VolumeDataMaintainer::GetMuteAffected(int32_t &affected)
 {
     AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
@@ -510,12 +491,18 @@ void VolumeDataMaintainer::RegisterCloned()
 {
     AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     AudioSettingObserver::UpdateFunc updateFunc = [&](const std::string& key) {
-        int32_t value = 0;
+        int32_t value = INVALIAD_SETTINGS_CLONE_STATUS;
         ErrCode result =
             AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID).GetIntValue(SETTINGS_CLONED, value);
-        if ((value == 0) && (result == SUCCESS)) {
-            AUDIO_INFO_LOG("Get SETTINGS_CLONED success");
+        if (!isSettingsCloneHaveStarted_ && (value == SETTINGS_CLONING_STATUS) && (result == SUCCESS)) {
+            AUDIO_INFO_LOG("clone staring");
+            isSettingsCloneHaveStarted_ = true;
+        }
+
+        if (isSettingsCloneHaveStarted_ && (value == SETTINGS_CLONED_STATUS) && (result == SUCCESS)) {
+            AUDIO_INFO_LOG("Get SETTINGS_CLONED success, clone done, restore.");
             AudioPolicyManagerFactory::GetAudioPolicyManager().DoRestoreData();
+            isSettingsCloneHaveStarted_ = false;
         }
     };
     sptr<AudioSettingObserver> observer = settingProvider.CreateObserver(SETTINGS_CLONED, updateFunc);

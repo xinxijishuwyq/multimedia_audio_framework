@@ -29,6 +29,9 @@ unique_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetMediaRenderDevice(Str
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
     if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
         descs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
+        if (descs.size() == 0) {
+            descs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
+        }
     } else {
         descs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
     }

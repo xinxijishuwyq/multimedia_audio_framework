@@ -18,6 +18,7 @@
 #include "audio_policy_server_handler.h"
 #include "audio_policy_service.h"
 #include "audio_policy_manager_factory.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,9 +41,16 @@ void AudioPolicyServerHandler::Init(std::shared_ptr<IAudioInterruptEventDispatch
 void AudioPolicyServerHandler::AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb)
 {
     std::lock_guard<std::mutex> lock(runnerMutex_);
-    audioPolicyClientProxyAPSCbsMap_.emplace(clientPid, cb);
-    AUDIO_INFO_LOG("AddAudioPolicyClientProxyMap, group data num [%{public}zu]",
-        audioPolicyClientProxyAPSCbsMap_.size());
+    auto [it, res] = audioPolicyClientProxyAPSCbsMap_.try_emplace(clientPid, cb);
+    if (!res) {
+        if (cb == it->second) {
+            AUDIO_WARNING_LOG("Duplicate registration");
+        } else {
+            AUDIO_ERR_LOG("client registers multiple callbacks, the callback may be lost.");
+        }
+    }
+    AUDIO_INFO_LOG("group data num [%{public}zu] pid [%{public}d]",
+        audioPolicyClientProxyAPSCbsMap_.size(), clientPid);
 }
 
 void AudioPolicyServerHandler::RemoveAudioPolicyClientProxyMap(pid_t clientPid)
@@ -134,6 +142,7 @@ void AudioPolicyServerHandler::AddConcurrencyEventDispatcher(std::shared_ptr<IAu
 bool AudioPolicyServerHandler::SendDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
     bool isConnected)
 {
+    Trace trace("AudioPolicyServerHandler::SendDeviceChangedCallback");
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->deviceChangeAction.type = isConnected ? DeviceChangeType::CONNECT : DeviceChangeType::DISCONNECT;

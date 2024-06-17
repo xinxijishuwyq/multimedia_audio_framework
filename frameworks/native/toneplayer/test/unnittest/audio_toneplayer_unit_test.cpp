@@ -14,7 +14,7 @@
  */
 
 #include <gtest/gtest.h>
-#include "tone_player_private.h"
+#include "tone_player_impl.h"
 
 using namespace testing::ext;
 namespace OHOS {

@@ -82,13 +82,10 @@ HWTEST(AudioUtilsUnitTest, ClockTime_001, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, Trace_001, TestSize.Level1)
 {
     std::string value = "Test";
-    bool isShowLog = true;
-    bool isEnable = true;
-    std::shared_ptr<Trace> trace = std::make_shared<Trace>(value, isShowLog, isEnable);
+    std::shared_ptr<Trace> trace = std::make_shared<Trace>(value);
     trace->End();
     int64_t count = 1;
-    Trace::Count(value, count, isEnable);
-    EXPECT_EQ(isEnable, isShowLog);
+    Trace::Count(value, count);
 }
 
 /**

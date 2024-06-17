@@ -215,8 +215,8 @@ bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
     AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
         "supportLowLatency: %{public}d", deviceInfo.deviceType, deviceInfo.isLowLatencyDevice);
     if (deviceInfo.deviceType == DEVICE_TYPE_WIRED_HEADSET || deviceInfo.deviceType == DEVICE_TYPE_WIRED_HEADPHONES ||
-        deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_SCO || deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        deviceInfo.deviceType == DEVICE_TYPE_USB_HEADSET || deviceInfo.deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+        deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceInfo.deviceType == DEVICE_TYPE_USB_HEADSET ||
+        deviceInfo.deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
         switch (config.rendererInfo.streamUsage) {
             case STREAM_USAGE_ALARM:
             case STREAM_USAGE_VOICE_RINGTONE:
@@ -478,6 +478,7 @@ void AudioService::CheckInnerCapForProcess(sptr<AudioProcessInServer> process, s
 int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
 {
     int32_t ret = SUCCESS;
+    std::lock_guard<std::mutex> lockEndpoint(processListMutex_);
     for (auto item : endpointList_) {
         std::string endpointName = item.second->GetEndpointName();
         if (endpointName == item.first) {
@@ -519,9 +520,11 @@ int32_t AudioService::UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process
 
 void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs)
 {
+    std::unique_lock<std::mutex> lockEndpoint(processListMutex_);
     AUDIO_INFO_LOG("Delay release endpoint [%{public}s] start.", endpointName.c_str());
     CHECK_AND_RETURN_LOG(endpointList_.count(endpointName),
         "Find no such endpoint: %{public}s", endpointName.c_str());
+    lockEndpoint.unlock();
     std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
     releaseEndpointCV_.wait_for(lock, std::chrono::milliseconds(delayInMs), [this, endpointName] {
         if (releasingEndpointSet_.count(endpointName)) {
@@ -539,6 +542,7 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t de
     releasingEndpointSet_.erase(endpointName);
 
     std::shared_ptr<AudioEndpoint> temp = nullptr;
+    std::unique_lock<std::mutex> lockEndptr(processListMutex_);
     CHECK_AND_RETURN_LOG(endpointList_.find(endpointName) != endpointList_.end() &&
         endpointList_[endpointName] != nullptr, "Endpoint %{public}s not available, stop call release",
         endpointName.c_str());
@@ -596,8 +600,7 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInf
         if (isVoipStream) {
             endpointFlag = AUDIO_FLAG_VOIP_FAST;
         }
-        std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceType) + "_" +
-            std::to_string(deviceInfo.deviceId) + "_" + std::to_string(endpointFlag);
+        std::string deviceKey = AudioEndpoint::GenerateEndpointKey(deviceInfo, endpointFlag);
         if (endpointList_.find(deviceKey) != endpointList_.end()) {
             AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
             return endpointList_[deviceKey];
@@ -632,10 +635,12 @@ void AudioService::Dump(std::string &dumpString)
         paired.first->Dump(dumpString);
     }
     // dump endpoint
+    std::unique_lock<std::mutex> lockEndpoint(processListMutex_);
     for (auto item : endpointList_) {
         AppendFormat(dumpString, "  - Endpoint device id: %s\n", item.first.c_str());
         item.second->Dump(dumpString);
     }
+    lockEndpoint.unlock();
     PolicyHandler::GetInstance().Dump(dumpString);
 }
 

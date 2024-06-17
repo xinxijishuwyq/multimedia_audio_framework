@@ -61,6 +61,7 @@ const uint64_t SECOND_TO_MICROSECOND = 1000000;
 const uint64_t SECOND_TO_MILLISECOND = 1000;
 const uint32_t BIT_IN_BYTE = 8;
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
+const unsigned int TIME_OUT_SECONDS = 10;
 }
 
 struct AudioCallbackService {
@@ -389,10 +390,11 @@ void OffloadAudioRendererSinkInner::DeInit()
 {
     Trace trace("OffloadSink::DeInit");
     std::lock_guard<std::mutex> lock(renderMutex_);
-    AUDIO_DEBUG_LOG("DeInit.");
+    AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     rendererInited_ = false;
     if (audioAdapter_ != nullptr) {
+        AUDIO_INFO_LOG("DestroyRender rendererid: %{public}u", renderId_);
         audioAdapter_->DestroyRender(audioAdapter_, renderId_);
     }
     audioRender_ = nullptr;
@@ -522,12 +524,17 @@ int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &rend
     deviceDesc.portId = renderPort.portId;
     deviceDesc.desc = const_cast<char *>("");
     deviceDesc.pins = PIN_OUT_SPEAKER;
+    AudioXCollie audioXCollie("audioAdapter_->CreateRender", TIME_OUT_SECONDS);
+
+    AUDIO_INFO_LOG("Create offload render format: %{public}d, sampleRate:%{public}u channel%{public}u",
+        param.format, param.sampleRate, param.channelCount);
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("not started failed.");
         audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
         return ERR_NOT_STARTED;
     }
+    AUDIO_INFO_LOG("Create success rendererid: %{public}u", renderId_);
 
     return 0;
 }
@@ -588,6 +595,7 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AdjustAudioBalance(&data, len);
     }
 
+    Trace::CountVolume("OffloadAudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     Trace trace("OffloadSink::RenderFrame");
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
@@ -652,6 +660,7 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
         }
     }
 
+    AudioXCollie audioXCollie("audioRender_->Start", TIME_OUT_SECONDS);
     int32_t ret = audioRender_->Start(audioRender_);
     if (ret) {
         AUDIO_ERR_LOG("Start failed! ret %d", ret);
@@ -781,6 +790,7 @@ int32_t OffloadAudioRendererSinkInner::Stop(void)
 
     if (started_) {
         CHECK_AND_RETURN_RET_LOG(!Flush(), ERR_OPERATION_FAILED, "Flush failed!");
+        AudioXCollie audioXCollie("audioRender_->Stop", TIME_OUT_SECONDS);
         int32_t ret = audioRender_->Stop(audioRender_);
         if (!ret) {
             started_ = false;
@@ -959,7 +969,7 @@ void OffloadAudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len
         return;
     }
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
-    int32_t byteSize = GetFormatByteSize(attr_.format);
+    size_t byteSize = static_cast<size_t>(GetFormatByteSize(attr_.format));
     size_t newlyCheckedTime = len / (attr_.sampleRate / MILLISECOND_PER_SECOND) /
         (byteSize * sizeof(uint8_t) * attr_.channel);
     detectedTime_ += newlyCheckedTime;
