@@ -87,7 +87,7 @@
 #define BYTE_LEN_FOR_16BIT 2
 #define BYTE_LEN_FOR_24BIT 3
 #define BYTE_LEN_FOR_32BIT 4
-#define MAX_AUDIO_FRAME_NUM 100
+#define MAX_FRAME_INTERVAL 100
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 
