@@ -87,7 +87,7 @@
 #define BYTE_LEN_FOR_16BIT 2
 #define BYTE_LEN_FOR_24BIT 3
 #define BYTE_LEN_FOR_32BIT 4
-#define MAX_FRAME_INTERVAL 100
+#define PRINT_INTERVAL_FRAME_COUNT 100
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 
@@ -1304,13 +1304,13 @@ static void SafeRendererSinkUpdateAppsUid(struct RendererSinkAdapter *sinkAdapte
     }
 }
 
-static void CheckAduioFrameInfo(bool existFlag, const char *sinkSceneType, const char *sinkSceneMode,
+static void RecordEffectChainStatus(bool existFlag, const char *sinkSceneType, const char *sinkSceneMode,
     bool actualSpatializationEnabled)
 {
-    g_audioFrameNum++;
-    if (g_audioFrameNum == MAX_AUDIO_FRAME_NUM) {
-        g_audioFrameNum = 0;
-        AUDIO_DEBUG_LOG("existFlag is %{public}d, "
+    g_effectProcessFrameCount++;
+    if (g_effectProcessFrameCount == PRINT_INTERVAL_FRAME_COUNT) {
+        g_effectProcessFrameCount = 0;
+        AUDIO_DEBUG_LOG("Effect Chain Status is %{public}d, "
             "scene type is %{public}s, scene mode is %{public}s, spatializationEnabled is %{public}d.",
             existFlag, sinkSceneType, sinkSceneMode, actualSpatializationEnabled);
     }
@@ -1341,7 +1341,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag =
             EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled ? "1" : "0");
-        CheckAduioFrameInfo(existFlag, sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled);
+        RecordEffectChainStatus(existFlag, sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled);
         
         if ((IsInnerCapturer(sinkIn) && IsCaptureSilently()) || !InputIsPrimary(sinkIn)) {
             continue;
