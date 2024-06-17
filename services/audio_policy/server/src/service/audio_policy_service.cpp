@@ -7672,16 +7672,15 @@ void AudioPolicyService::UpdateRoute(unique_ptr<AudioRendererChangeInfo> &render
 {
     StreamUsage streamUsage = rendererChangeInfo->rendererInfo.streamUsage;
     InternalDeviceType deviceType = outputDevices.front()->deviceType_;
+    AUDIO_INFO_LOG("update route, streamUsage:%{public}d, 1st devicetype:%{public}d", streamUsage, deviceType);
     if (IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType)) {
         if (!SelectRingerOrAlarmDevices(outputDevices, rendererChangeInfo->sessionId)) {
             UpdateActiveDeviceRoute(outputDevices.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
         }
-        vector<std::unique_ptr<AudioDeviceDescriptor>> descs =
-            audioRouterCenter_.FetchOutputDevices(streamUsage, rendererChangeInfo->clientUID);
 
         AudioRingerMode ringerMode = audioPolicyManager_.GetRingerMode();
-        if (ringerMode != RINGER_MODE_NORMAL && IsRingerOrAlarmerDualDevicesRange(descs.front()->getType()) &&
-            descs.front()->getType() != DEVICE_TYPE_SPEAKER) {
+        if (ringerMode != RINGER_MODE_NORMAL && IsRingerOrAlarmerDualDevicesRange(outputDevices.front()->getType()) &&
+            outputDevices.front()->getType() != DEVICE_TYPE_SPEAKER) {
             audioPolicyManager_.SetStreamMute(STREAM_RING, false);
             ringerModeMute_ = false;
         } else {
@@ -7754,6 +7753,7 @@ bool AudioPolicyService::SelectRingerOrAlarmDevices(const vector<std::unique_ptr
                 haveSpeakerDevice = true;
             }
             activeDevices.push_back(make_pair(descs[i]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG));
+            AUDIO_INFO_LOG("select ringer/alarm devices devicetype[%{public}zu]:%{public}d", i, descs[i]->deviceType_);
         } else {
             allDevicesInDualDevicesRange = false;
             break;
@@ -7763,6 +7763,9 @@ bool AudioPolicyService::SelectRingerOrAlarmDevices(const vector<std::unique_ptr
     if (!descs.empty() && allDevicesInDualDevicesRange && haveSpeakerDevice) {
         UpdateActiveDevicesRoute(activeDevices);
         if (IsA2dpOrArmUsbDevice(descs.front()->deviceType_)) {
+            std::vector<std::pair<InternalDeviceType, DeviceFlag>> defaultDevices;
+            defaultDevices.push_back(
+                make_pair(InternalDeviceType::DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG));
             UpdateDualToneState(true, sessionId);
         } else {
             UpdateDualToneState(false, sessionId);

@@ -980,8 +980,8 @@ int32_t RendererInServer::DisableDualTone()
         return ERR_INVALID_OPERATION;
     }
     isDualToneEnabled_ = false;
-    AUDIO_INFO_LOG("Disable dual tone renderer %{public}u with status: %{public}d", streamIndex_, status_);
-    IStreamManager::GetDupPlaybackManager().ReleaseRender(dupStreamIndex_);
+    AUDIO_INFO_LOG("Disable dual tone renderer %{public}u with status: %{public}d", dualToneStreamIndex_, status_);
+    IStreamManager::GetDupPlaybackManager().ReleaseRender(dualToneStreamIndex_);
     dupStream_ = nullptr;
 
     return ERROR;
@@ -1003,7 +1003,7 @@ int32_t RendererInServer::InitDualToneStream()
     isDualToneEnabled_ = true;
 
     if (status_ == I_STATUS_STARTED) {
-        AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dual stream", streamIndex_);
+        AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dual stream", dualToneStreamIndex_);
         dualToneStream_->Start();
     }
     return SUCCESS;
