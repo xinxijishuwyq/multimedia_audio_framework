@@ -1304,8 +1304,8 @@ static void SafeRendererSinkUpdateAppsUid(struct RendererSinkAdapter *sinkAdapte
     }
 }
 
-static void CheckAduioStreamInfo(bool existFlag, char *sinkSceneType, char * sinkSceneMode, bool actualSpatializationEnabled, 
-    int32_t audioFrameNum) 
+static void CheckAduioFrameInfo(bool existFlag, const char *sinkSceneType, const char *sinkSceneMode,
+    bool actualSpatializationEnabled, int32_t audioFrameNum) 
 {
     if (audioFrameNum == MAX_AUDIO_FRAME_NUM) {
         g_audioFrameNum = 0;
@@ -1338,8 +1338,9 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         CheckAndPushUidToArr(sinkIn, appsUid, &count);
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
-        bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled ? "1" : "0");
-        CheckAduioStreamInfo(existFlag, sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled, ++g_audioFrameNum)
+        bool existFlag =
+            EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled ? "1" : "0");
+        CheckAduioFrameInfo(existFlag, sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled, ++g_audioFrameNum);
         
         if ((IsInnerCapturer(sinkIn) && IsCaptureSilently()) || !InputIsPrimary(sinkIn)) {
             continue;
