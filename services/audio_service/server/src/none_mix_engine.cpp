@@ -239,7 +239,7 @@ bool NoneMixEngine::IsPlaybackEngineRunning() const noexcept
 
 void NoneMixEngine::StandbySleep()
 {
-    int64_t writeTime = static_cast<int64_t>(fwkSyncTime_ + writeCount_ * PERIOD_NS + DELTA_TIME);
+    int64_t writeTime = static_cast<int64_t>(fwkSyncTime_) + static_cast<int64_t>(writeCount_) * PERIOD_NS + DELTA_TIME;
     ClockTime::AbsoluteSleep(writeTime);
 }
 
