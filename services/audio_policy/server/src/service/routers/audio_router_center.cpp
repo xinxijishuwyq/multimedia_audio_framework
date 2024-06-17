@@ -101,7 +101,8 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     AUDIO_INFO_LOG("streamUsage %{public}d clientUID %{public}d start fetch device", streamUsage, clientUID);
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
     RouterType routerType = ROUTER_TYPE_NONE;
-    if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS) {
+    if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
+        renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
         AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
         unique_ptr<AudioDeviceDescriptor> desc = make_unique<AudioDeviceDescriptor>();
         if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
@@ -123,8 +124,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
             desc = FetchMediaRenderDevice(streamUsage, clientUID, routerType);
         }
         descs.push_back(move(desc));
-    } else if (renderConfigMap_[streamUsage] == RING_RENDER_ROUTERS ||
-        renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
+    } else if (renderConfigMap_[streamUsage] == RING_RENDER_ROUTERS) {
         descs = FetchRingRenderDevices(streamUsage, clientUID, routerType);
     } else if (renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS) {
         descs.push_back(FetchCallRenderDevice(streamUsage, clientUID, routerType));
