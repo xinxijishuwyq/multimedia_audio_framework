@@ -595,7 +595,7 @@ int32_t RemoteAudioRendererSinkInner::OpenOutput(DeviceType outputDevice)
     source.ext.mix.moduleId = 0;
     source.ext.mix.streamId = REMOTE_OUTPUT_STREAM_ID;
 
-    sink.portId = audioPort_.portId;
+    sink.portId = static_cast<int32_t>(audioPort_.portId);
     sink.role = AudioPortRole::AUDIO_PORT_SINK_ROLE;
     sink.type = AudioPortType::AUDIO_PORT_DEVICE_TYPE;
     sink.ext.device.moduleId = 0;
