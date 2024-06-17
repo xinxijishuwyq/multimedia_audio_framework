@@ -1305,7 +1305,7 @@ static void SafeRendererSinkUpdateAppsUid(struct RendererSinkAdapter *sinkAdapte
 }
 
 static void CheckAduioFrameInfo(bool existFlag, const char *sinkSceneType, const char *sinkSceneMode,
-    bool actualSpatializationEnabled, int32_t audioFrameNum) 
+    bool actualSpatializationEnabled, int32_t audioFrameNum)
 {
     if (audioFrameNum == MAX_AUDIO_FRAME_NUM) {
         g_audioFrameNum = 0;
