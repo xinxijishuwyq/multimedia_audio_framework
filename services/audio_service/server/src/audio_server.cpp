@@ -1120,7 +1120,7 @@ bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
 int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice)
 {
     AUDIO_INFO_LOG("CheckRemoteDeviceState: device[%{public}s] deviceRole[%{public}d] isStartDevice[%{public}s]",
-        networkId.c_str(), static_cast<int32_t>(deviceRole), (isStartDevice ? "true" : "false"));
+        GetEncryptStr(networkId).c_str(), static_cast<int32_t>(deviceRole), (isStartDevice ? "true" : "false"));
 
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
