@@ -506,10 +506,8 @@ int32_t AudioManagerProxy::IsWhispering()
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
-    int32_t error = Remote()->SendRequest(
+    int32_t result = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::IS_WHISPERING), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
-    int32_t result = reply.ReadInt32();
     return result;
 }
 
