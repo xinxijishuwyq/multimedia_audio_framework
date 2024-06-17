@@ -243,7 +243,7 @@ struct Userdata {
     } multiChannel;
 };
 
-static int32_t g_audioFrameNum = 0;
+static int32_t g_effectProcessFrameCount = 0;
 static void UserdataFree(struct Userdata *u);
 static int32_t PrepareDevice(struct Userdata *u, const char *filePath);
 
