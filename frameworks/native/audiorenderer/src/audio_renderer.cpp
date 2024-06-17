@@ -1229,11 +1229,7 @@ int32_t AudioRendererPrivate::SetOffloadMode(int32_t state, bool isAppBack) cons
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_CONCEDE_INCOMING_STREAM,
         "session %{public}u deny offload", sessionID_);
 
-    ret = AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_OFFLOAD);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("move into offload pipe failed.");
-        return ERROR;
-    }
+    AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_OFFLOAD);
     return audioStream_->SetOffloadMode(state, isAppBack);
 }
 
