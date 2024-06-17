@@ -87,6 +87,7 @@
 #define BYTE_LEN_FOR_16BIT 2
 #define BYTE_LEN_FOR_24BIT 3
 #define BYTE_LEN_FOR_32BIT 4
+#define MAX_AUDIO_FRAME_NUM 100
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 
@@ -242,7 +243,7 @@ struct Userdata {
     } multiChannel;
 };
 
-static int32_t audioFrameNum = 0;
+static int32_t g_audioFrameNum = 0;
 static void UserdataFree(struct Userdata *u);
 static int32_t PrepareDevice(struct Userdata *u, const char *filePath);
 
@@ -1303,6 +1304,17 @@ static void SafeRendererSinkUpdateAppsUid(struct RendererSinkAdapter *sinkAdapte
     }
 }
 
+static void CheckAduioStreamInfo(bool existFlag, char *sinkSceneType, char * sinkSceneMode, bool actualSpatializationEnabled, 
+    int32_t audioFrameNum) 
+{
+    if (audioFrameNum == MAX_AUDIO_FRAME_NUM) {
+        g_audioFrameNum = 0;
+        AUDIO_DEBUG_LOG("existFlag is %{public}d, "
+            "scene type is %{public}s, scene mode is %{public}s, spatializationEnabled is %{public}d.",
+            existFlag, sinkSceneType, sinkSceneMode, actualSpatializationEnabled);
+    }
+}
+
 static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
     unsigned maxInfo, char *sceneType)
 {
@@ -1320,23 +1332,16 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     pa_sink_assert_io_context(si);
     pa_assert(infoIn);
 
-    bool isCaptureSilently = IsCaptureSilently();
     int32_t appsUid[MAX_MIX_CHANNELS];
     size_t count = 0;
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         CheckAndPushUidToArr(sinkIn, appsUid, &count);
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
-        bool existFlag =
-            EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled ? "1" : "0");
-        audioFrameNum++;
-        if (audioFrameNum == 100) {
-            audioFrameNum = 0;
-            AUDIO_DEBUG_LOG("existFlag is %{public}d, "
-                "scene type is %{public}s, scene mode is %{public}s, spatializationEnabled is %{public}d.",
-                existFlag, sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled);
-        }
-        if ((IsInnerCapturer(sinkIn) && isCaptureSilently) || !InputIsPrimary(sinkIn)) {
+        bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled ? "1" : "0");
+        CheckAduioStreamInfo(existFlag, sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled, ++g_audioFrameNum)
+        
+        if ((IsInnerCapturer(sinkIn) && IsCaptureSilently()) || !InputIsPrimary(sinkIn)) {
             continue;
         } else if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
             (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
