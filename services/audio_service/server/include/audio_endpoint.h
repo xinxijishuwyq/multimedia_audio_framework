@@ -62,7 +62,8 @@ public:
     };
 
     static std::shared_ptr<AudioEndpoint> CreateEndpoint(EndpointType type, uint64_t id,
-         AudioStreamType streamType, const DeviceInfo &deviceInfo);
+        AudioStreamType streamType, const DeviceInfo &deviceInfo);
+    static std::string GenerateEndpointKey(DeviceInfo &deviceInfo, int32_t endpointFlag);
 
     virtual std::string GetEndpointName() = 0;
 
