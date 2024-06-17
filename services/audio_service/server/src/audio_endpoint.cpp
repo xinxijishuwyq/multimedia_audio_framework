@@ -313,6 +313,16 @@ private:
     bool isVolumeAlreadyZero_ = false;
 };
 
+std::string AudioEndpoint::GenerateEndpointKey(DeviceInfo &deviceInfo, int32_t endpointFlag)
+{
+    // All primary sinks share one endpoint
+    int32_t endpointId = 0;
+    if (deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        endpointId = deviceInfo.deviceId;
+    }
+    return deviceInfo.networkId + "_" + std::to_string(endpointId) + "_" + std::to_string(endpointFlag);
+}
+
 std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, uint64_t id,
     AudioStreamType streamType, const DeviceInfo &deviceInfo)
 {
@@ -339,9 +349,7 @@ AudioEndpointInner::AudioEndpointInner(EndpointType type, uint64_t id) : endpoin
 
 std::string AudioEndpointInner::GetEndpointName()
 {
-    // temp method to get device key, should be same with AudioService::GetAudioEndpointForDevice.
-    return deviceInfo_.networkId + std::to_string(deviceInfo_.deviceType) + "_" +
-        std::to_string(deviceInfo_.deviceId) + "_" + std::to_string(id_);
+    return GenerateEndpointKey(deviceInfo_, id_);
 }
 
 int32_t AudioEndpointInner::SetVolume(AudioStreamType streamType, float volume)
