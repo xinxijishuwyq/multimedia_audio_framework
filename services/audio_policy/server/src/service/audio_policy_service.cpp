@@ -3093,7 +3093,7 @@ int32_t AudioPolicyService::SetRingerMode(AudioRingerMode ringMode)
     if (result == SUCCESS) {
         Volume vol = {false, 1.0f, 0};
         vol.isMute = (ringMode == RINGER_MODE_NORMAL) ? false : true;
-        vol.volumeInt = GetSystemVolumeLevel(STREAM_RING);
+        vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevel(STREAM_RING));
         vol.volumeFloat = GetSystemVolumeInDb(STREAM_RING, vol.volumeInt, currentActiveDevice_.deviceType_);
         SetSharedVolume(STREAM_RING, currentActiveDevice_.deviceType_, vol);
     }
