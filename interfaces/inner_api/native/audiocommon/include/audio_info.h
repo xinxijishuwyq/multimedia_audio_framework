@@ -754,6 +754,7 @@ public:
     AudioRendererInfo rendererInfo;
     RendererState rendererState;
     DeviceInfo outputDeviceInfo;
+    bool prerunningState = false;
 
     AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)
     {
