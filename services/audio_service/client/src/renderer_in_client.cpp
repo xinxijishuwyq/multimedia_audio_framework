@@ -1356,6 +1356,7 @@ bool RendererInClientInner::StopAudioStream()
 
 bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
+    AUDIO_INFO_LOG("Enter");
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already released, do nothing");
