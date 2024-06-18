@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 // should be same with IAudioSinkAttr in i_audio_renderer_sink.h
-typedef struct SinkAttr{
+typedef struct SinkAttr {
     const char *adapterName = nullptr;
     uint32_t openMicSpeaker = 0;
     enum HdiAdapterFormat format = HdiAdapterFormat::INVALID_WIDTH;
