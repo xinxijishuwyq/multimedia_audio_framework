@@ -24,14 +24,14 @@ extern "C" {
 
 // should be same with IAudioSinkAttr in i_audio_renderer_sink.h
 typedef struct SinkAttr {
-    const char *adapterName = nullptr;
+    const char *adapterName = NULL;
     uint32_t openMicSpeaker = 0;
     enum HdiAdapterFormat format = HdiAdapterFormat::INVALID_WIDTH;
     uint32_t sampleRate = 0;
     uint32_t channel = 0;
     float volume = 0.0f;
-    const char *filePath = nullptr;
-    const char *deviceNetworkId = nullptr;
+    const char *filePath = NULL;
+    const char *deviceNetworkId = NULL;
     int32_t deviceType = 0;
     uint64_t channelLayout = 0;
 } SinkAttr;
