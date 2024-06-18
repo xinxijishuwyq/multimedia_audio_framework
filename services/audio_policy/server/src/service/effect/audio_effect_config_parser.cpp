@@ -75,7 +75,7 @@ static int32_t ParseEffectConfigFile(xmlDoc* &doc)
         if (cfgFiles->paths[i] && *(cfgFiles->paths[i]) != '\0') {
             AUDIO_INFO_LOG("effect config file path:%{public}s", cfgFiles->paths[i]);
             doc = xmlReadFile(cfgFiles->paths[i], nullptr,
-                static_cast<uint32_t>(XML_PARSE_NOERROR) | XML_PARSE_NOWARNING);
+                XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
             break;
         }
     }
@@ -83,7 +83,7 @@ static int32_t ParseEffectConfigFile(xmlDoc* &doc)
 #else
     AUDIO_INFO_LOG("use default audio effect config file path: %{public}s", AUDIO_EFFECT_CONFIG_FILE);
     doc = xmlReadFile(AUDIO_EFFECT_CONFIG_FILE, nullptr,
-        static_cast<uint32_t>(XML_PARSE_NOERROR) | XML_PARSE_NOWARNING);
+        XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
 #endif
     if (doc == nullptr) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
