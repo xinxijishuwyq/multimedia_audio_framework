@@ -387,7 +387,7 @@ int32_t AudioManagerProxy::GetAsrAecMode(AsrAecMode &asrAecMode)
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
     int32_t result = reply.ReadInt32();
-    asrAecMode = static_cast<AsrAecMode> (result);
+    asrAecMode = static_cast<AsrAecMode>(result);
     return 0;
 }
 
@@ -422,7 +422,7 @@ int32_t AudioManagerProxy::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &a
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_NOISE_SUPPRESSION_MODE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
     int32_t result = reply.ReadInt32();
-    asrNoiseSuppressionMode = static_cast<AsrNoiseSuppressionMode> (result);
+    asrNoiseSuppressionMode = static_cast<AsrNoiseSuppressionMode>(result);
     return 0;
 }
 
@@ -457,7 +457,7 @@ int32_t AudioManagerProxy::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &a
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_WHISPER_DETECTION_MODE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
     int32_t result = reply.ReadInt32();
-    asrWhisperDetectionMode = static_cast<AsrWhisperDetectionMode> (result);
+    asrWhisperDetectionMode = static_cast<AsrWhisperDetectionMode>(result);
     return 0;
 }
 
