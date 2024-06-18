@@ -463,7 +463,7 @@ enum AudioScene : int32_t {
     AUDIO_SCENE_MAX,
 };
 
-enum AudioDeviceUsage : int32_t {
+enum AudioDeviceUsage : uint32_t {
     /**
      * Media output devices.
      * @syscap SystemCapability.Multimedia.Audio.Device
