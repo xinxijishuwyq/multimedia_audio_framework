@@ -320,7 +320,7 @@ template<typename T> std::set<T> UnmarshallingSetInt32(Parcel &parcel,
 
 struct DeviceStreamInfo {
     AudioEncodingType encoding = AudioEncodingType::ENCODING_PCM;
-    AudioSampleFormat format;
+    AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
     AudioChannelLayout channelLayout  = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
     std::set<AudioSamplingRate> samplingRate;
     std::set<AudioChannel> channels;

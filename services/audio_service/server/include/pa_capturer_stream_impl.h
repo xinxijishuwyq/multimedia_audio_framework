@@ -64,10 +64,10 @@ private:
     std::weak_ptr<IStatusCallback> statusCallback_;
     std::weak_ptr<IReadCallback> readCallback_;
     std::mutex streamImplLock_;
-    int32_t streamCmdStatus_;
-    int32_t streamFlushStatus_;
+    int32_t streamCmdStatus_ = 0;
+    int32_t streamFlushStatus_ = 0;
     State state_ = INVALID;
-    uint32_t underFlowCount_;
+    uint32_t underFlowCount_ = 0;
     pa_threaded_mainloop *mainloop_;
 
     size_t byteSizePerFrame_ = 0;

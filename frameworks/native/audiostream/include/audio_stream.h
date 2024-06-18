@@ -187,7 +187,7 @@ private:
 
     float speed_ = 1.0;
 #ifdef SONIC_ENABLE
-    size_t bufferSize_;
+    size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
 #endif
     std::unique_ptr<AudioSpatialChannelConverter> converter_;
