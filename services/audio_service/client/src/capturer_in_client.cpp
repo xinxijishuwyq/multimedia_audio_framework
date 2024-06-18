@@ -1808,7 +1808,7 @@ int32_t CapturerInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
 void CapturerInClientInner::SetApplicationCachePath(const std::string cachePath)
 {
     cachePath_ = cachePath;
-    AUDIO_INFO_LOG("SetApplicationCachePath to %{publid}s", cachePath_.c_str());
+    AUDIO_INFO_LOG("SetApplicationCachePath to %{public}s", cachePath_.c_str());
 }
 
 int32_t CapturerInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)

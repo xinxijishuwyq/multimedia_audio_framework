@@ -2005,7 +2005,7 @@ void RendererInClientInner::UnsetCapturerPeriodPositionCallback()
 
 int32_t RendererInClientInner::SetRendererSamplingRate(uint32_t sampleRate)
 {
-    AUDIO_ERR_LOG("SetRendererSamplingRate to %{publid}d is not supported", sampleRate);
+    AUDIO_ERR_LOG("SetRendererSamplingRate to %{public}d is not supported", sampleRate);
     return ERROR;
 }
 
