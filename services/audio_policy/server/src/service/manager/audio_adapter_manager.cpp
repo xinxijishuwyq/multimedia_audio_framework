@@ -385,6 +385,11 @@ int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType)
     return volumeDataMaintainer_.GetStreamVolume(streamType);
 }
 
+int32_t AudioAdapterManager::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
+{
+    return volumeDataMaintainer_.GetStreamVolume(streamType);
+}
+
 float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
 {
     int32_t volumeLevel = volumeDataMaintainer_.GetStreamVolume(streamType);
