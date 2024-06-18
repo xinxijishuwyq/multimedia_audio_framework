@@ -45,7 +45,7 @@ private:
     float FindRampVolume(float time);
 
     int32_t duration_ = 0;
-    RampDirection rampDirection_;
+    RampDirection rampDirection_ = RAMP_UP;
     std::mutex curveMapMutex_;
     std::map<float, float> curvePoints_;
     int64_t initTime_ = 0;

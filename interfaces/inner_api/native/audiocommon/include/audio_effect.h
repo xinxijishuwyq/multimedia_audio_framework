@@ -235,7 +235,7 @@ struct AudioBuffer {
         int16_t*  s16;
         uint8_t*  u8;
     };
-    void *metaData;
+    void *metaData = nullptr;
 };
 
 struct AudioBufferConfig {

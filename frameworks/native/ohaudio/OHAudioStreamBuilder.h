@@ -77,7 +77,7 @@ private:
     OH_AudioCapturer_Callbacks capturerCallbacks_ = {
         NULL
     };
-    WriteDataCallbackType writeDataCallbackType_;
+    WriteDataCallbackType writeDataCallbackType_ = CALLBACKS_ON_WRITE_DATA;
     RendererCallback rendererCallbacks_ = {
         {nullptr},
 
