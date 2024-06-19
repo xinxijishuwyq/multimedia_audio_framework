@@ -46,7 +46,7 @@ public:
 
 private:
     OH_AudioRenderer_Callbacks callbacks_ = {};
-    OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback_ = AUDIO_DATA_CALLBACK_RESULT_INVALID;
+    OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback_ = nullptr;
     OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback_ = nullptr;
     OH_AudioRenderer *ohAudioRenderer_ = nullptr;
     void *userData_ = nullptr;
