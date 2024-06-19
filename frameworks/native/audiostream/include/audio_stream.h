@@ -147,11 +147,11 @@ private:
 
     int32_t NotifyCapturerAdded(uint32_t sessionID) override;
 
-    AudioStreamType eStreamType_;
+    AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     AudioMode eMode_;
-    State state_;
-    bool resetTime_;
-    uint64_t resetTimestamp_;
+    State state_ = State::INVALID;
+    bool resetTime_ = false;
+    uint64_t resetTimestamp_ = 0;
     struct timespec baseTimestamp_ = {0};
     AudioRenderMode renderMode_;
     AudioCaptureMode captureMode_;
@@ -161,26 +161,26 @@ private:
     std::array<std::unique_ptr<uint8_t[]>, MAX_READCB_NUM_BUFFERS> readBufferPool_ = {};
     std::unique_ptr<std::thread> writeThread_ = nullptr;
     std::unique_ptr<std::thread> readThread_ = nullptr;
-    bool isReadyToWrite_;
-    bool isReadyToRead_;
+    bool isReadyToWrite_ = false;
+    bool isReadyToRead_ = false;
     void WriteCbTheadLoop();
     void ReadCbThreadLoop();
-    std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
-    AudioRendererInfo rendererInfo_;
-    AudioCapturerInfo capturerInfo_;
+    std::unique_ptr<AudioStreamTracker> audioStreamTracker_ = nullptr;
+    AudioRendererInfo rendererInfo_ = {};
+    AudioCapturerInfo capturerInfo_ = {};
     uint32_t sessionId_ = 0;
 
-    bool isFirstRead_;
-    bool isFirstWrite_;
-    bool isPausing_;
+    bool isFirstRead_ = false;
+    bool isFirstWrite_ = false;
+    bool isPausing_ = false;
 
     std::mutex bufferQueueLock_;
     std::condition_variable bufferQueueCV_;
-    AudioStreamParams streamParams_;
-    AudioStreamParams streamOriginParams_;
+    AudioStreamParams streamParams_ = {};
+    AudioStreamParams streamOriginParams_ = {};
     AudioBlend audioBlend_;
     VolumeRamp volumeRamp_;
-    FILE *pfd_;
+    FILE *pfd_ = nullptr;
     bool streamTrackerRegistered_ = false;
     std::time_t startMuteTime_ = 0;
     bool isUpEvent_ = false;

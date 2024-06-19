@@ -256,8 +256,8 @@ private:
 
     void ResetRingerModeMute();
 private:
-    AudioStreamType eStreamType_;
-    int32_t appUid_;
+    AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid_ = 0;
     uint32_t sessionId_ = 0;
     int32_t clientPid_ = -1;
     int32_t clientUid_ = -1;
@@ -266,8 +266,8 @@ private:
 
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
 
-    AudioRendererInfo rendererInfo_;
-    AudioCapturerInfo capturerInfo_; // not in use
+    AudioRendererInfo rendererInfo_ = {};
+    AudioCapturerInfo capturerInfo_ = {}; // not in use
 
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     bool streamTrackerRegistered_ = false;
@@ -292,8 +292,8 @@ private:
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
     uint32_t bufferSizeInMsec_ = 20; // 20ms
-    std::string cachePath_;
-    std::string dumpOutFile_;
+    std::string cachePath_ = "";
+    std::string dumpOutFile_ = "";
     FILE *dumpOutFd_ = nullptr;
 
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> firstFrameWritingCb_ = nullptr;

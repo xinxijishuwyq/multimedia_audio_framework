@@ -265,14 +265,14 @@ private:
 
     uint32_t readLogTimes_ = 0;
 
-    std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
+    std::unique_ptr<AudioStreamTracker> audioStreamTracker_ = nullptr;
     bool streamTrackerRegistered_ = false;
 
-    AudioRendererInfo rendererInfo_; // not in use
-    AudioCapturerInfo capturerInfo_;
+    AudioRendererInfo rendererInfo_ = {}; // not in use
+    AudioCapturerInfo capturerInfo_ = {};
 
     int32_t bufferSizeInMsec_ = 20; // 20ms
-    std::string cachePath_;
+    std::string cachePath_ = "";
 
     // callback mode
     AudioCaptureMode capturerMode_ = CAPTURE_MODE_NORMAL;

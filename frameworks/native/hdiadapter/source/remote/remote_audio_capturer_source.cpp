@@ -111,8 +111,8 @@ private:
     bool startUpdate_ = false;
     int capFrameNum_ = 0;
 
-    IAudioSourceAttr attr_;
-    std::string deviceNetworkId_;
+    IAudioSourceAttr attr_ = {};
+    std::string deviceNetworkId_ = "";
     std::atomic<bool> capturerInited_ = false;
     std::atomic<bool> isCapturerCreated_ = false;
     std::atomic<bool> started_ = false;
@@ -122,7 +122,7 @@ private:
     std::shared_ptr<IAudioDeviceAdapter> audioAdapter_ = nullptr;
     IAudioSourceCallback *paramCb_ = nullptr;
     sptr<IAudioCapture> audioCapture_ = nullptr;
-    struct AudioPort audioPort_;
+    struct AudioPort audioPort_ = {};
     FILE *dumpFile_ = nullptr;
     bool muteState_ = false;
     std::mutex createCaptureMutex_;

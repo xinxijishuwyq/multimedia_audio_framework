@@ -45,13 +45,13 @@ public:
     void OnWriteData(size_t length) override;
 
 private:
-    OH_AudioRenderer_Callbacks callbacks_;
-    OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback_;
+    OH_AudioRenderer_Callbacks callbacks_ = {};
+    OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback_ = nullptr;
     OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback_ = nullptr;
-    OH_AudioRenderer *ohAudioRenderer_;
+    OH_AudioRenderer *ohAudioRenderer_ = nullptr;
     void *userData_ = nullptr;
     void *metadataUserData_ = nullptr;
-    AudioEncodingType encodingType_;
+    AudioEncodingType encodingType_ = ENCODING_INVALID;
 };
 
 class OHAudioRendererDeviceChangeCallback : public AudioRendererDeviceChangeCallback {
