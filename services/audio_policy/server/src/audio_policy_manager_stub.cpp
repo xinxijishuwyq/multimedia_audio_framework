@@ -121,20 +121,6 @@ void AudioPolicyManagerStub::SetMicrophoneMuteAudioConfigInternal(MessageParcel 
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply)
-{
-    bool isMute = data.ReadBool();
-    PolicyType type = static_cast<PolicyType>(data.ReadInt32());
-    int32_t result = SetMicrophoneMutePersistent(isMute, type);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply)
-{
-    bool result = GetPersistentMicMuteState();
-    reply.WriteBool(result);
-}
-
 void AudioPolicyManagerStub::IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply)
 {
     API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
@@ -1213,6 +1199,20 @@ void AudioPolicyManagerStub::SetRingerStreamMuteInternal(MessageParcel &data, Me
 {
     int32_t result = ResetRingerModeMute();
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isMute = data.ReadBool();
+    PolicyType type = static_cast<PolicyType>(data.ReadInt32());
+    int32_t result = SetMicrophoneMutePersistent(isMute, type);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool result = GetPersistentMicMuteState();
+    reply.WriteBool(result);
 }
 } // namespace audio_policy
 } // namespace OHOS

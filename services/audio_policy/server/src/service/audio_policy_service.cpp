@@ -2566,20 +2566,20 @@ int32_t AudioPolicyService::SetMicrophoneMute(bool isMute)
 int32_t AudioPolicyService::SetMicrophoneMutePersistent(const bool isMute)
 {
     AUDIO_DEBUG_LOG("state[%{public}d]", isMute);
-    int32_t ret = audioPolicyManager_.SetPersistMicMuteState(isMute);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Failed to save the persistent microphone mute status in setting database.");
-        return ERROR;
-    }
     isMicrophoneMutePersistent_ = isMute;
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    ret = gsp->SetMicrophoneMute(isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_);
+    int32_t ret = gsp->SetMicrophoneMute(isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_);
     IPCSkeleton::SetCallingIdentity(identity);
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("UpdateCapturerInfoMuteStatus when set mic mute state persistent.");
         streamCollector_.UpdateCapturerInfoMuteStatus(0, isMicrophoneMuteTemporary_|isMicrophoneMutePersistent_);
+    }
+    ret = audioPolicyManager_.SetPersistMicMuteState(isMicrophoneMutePersistent_);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to save the persistent microphone mute status in setting database.");
+        return ERROR;
     }
     return ret;
 }

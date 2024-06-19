@@ -1074,7 +1074,7 @@ void AudioPolicyServer::InitMicrophoneMute()
     bool isMute = false;
     int32_t ret = audioPolicyService_.InitPersistentMicrophoneMuteState(isMute);
     AUDIO_INFO_LOG("Get persistent mic ismute: %{public}d  state from setting db", isMute);
-    CHECK_AND_RETURN_LOG(ret != SUCCESS, "InitMicrophoneMute InitPersistentMicrophoneMuteState result %{public}d", ret);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "InitMicrophoneMute InitPersistentMicrophoneMuteState result %{public}d", ret);
     if (audioPolicyServerHandler_ != nullptr) {
         MicStateChangeEvent micStateChangeEvent;
         micStateChangeEvent.mute = isMute;
