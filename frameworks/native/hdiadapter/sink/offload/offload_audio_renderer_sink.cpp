@@ -130,7 +130,7 @@ private:
     float leftVolume_ = 0.0f;
     float rightVolume_ = 0.0f;
     uint32_t renderId_ = 0;
-    std::string adapterNameCase_= "";
+    std::string adapterNameCase_ = "";
     struct IAudioManager *audioManager_ = nullptr;
     struct IAudioAdapter *audioAdapter_ = nullptr;
     struct IAudioRender *audioRender_ = nullptr;
