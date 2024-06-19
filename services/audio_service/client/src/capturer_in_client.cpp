@@ -871,7 +871,8 @@ bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 
     int64_t deltaPos = writePos >= currentReadPos ? static_cast<int64_t>(writePos - currentReadPos) : 0;
     int64_t tempLatency = 25000000; // 25000000 -> 25 ms
-    int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
+    int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND /
+        static_cast<int64_t>(streamParams_.samplingRate) * AUDIO_US_PER_S;
 
     handleTime = handleTime + deltaTime + tempLatency;
     timestamp.time.tv_sec = static_cast<time_t>(handleTime / AUDIO_NS_PER_SECOND);

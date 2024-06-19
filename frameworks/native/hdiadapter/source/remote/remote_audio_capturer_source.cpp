@@ -549,7 +549,7 @@ int32_t RemoteAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
     int32_t ret = SetInputPortPin(inputDevice, source);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set input port pin fail, ret %{public}d", ret);
 
-    source.portId = audioPort_.portId;
+    source.portId = static_cast<int32_t>(audioPort_.portId);
     source.role = AudioPortRole::AUDIO_PORT_SOURCE_ROLE;
     source.type = AudioPortType::AUDIO_PORT_DEVICE_TYPE;
     source.ext.device.moduleId = 0;
