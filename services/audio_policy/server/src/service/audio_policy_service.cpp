@@ -131,6 +131,7 @@ const uint32_t PCM_32_BIT = 32;
 const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
+const uint32_t REHANDLE_DEVICE_RETRY_INTERVAL_IN_MICROSECONDS = 30000;
 const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
 #ifdef BLUETOOTH_ENABLE
 const uint32_t USER_NOT_SELECT_BT = 1;
@@ -2770,7 +2771,7 @@ int32_t AudioPolicyService::LoadUsbModule(string deviceInfo)
     for (auto &moduleInfo : moduleInfoList) {
         AUDIO_INFO_LOG("[module_load]::load module[%{public}s]", moduleInfo.name.c_str());
         GetUsbModuleInfo(deviceInfo, moduleInfo);
-        OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+        return OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
     }
 
     return SUCCESS;
@@ -2812,7 +2813,7 @@ int32_t AudioPolicyService::LoadDefaultUsbModule()
     }
     for (auto &moduleInfo : moduleInfoList) {
         AUDIO_INFO_LOG("[module_load]::load default module[%{public}s]", moduleInfo.name.c_str());
-        OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+        return OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
     }
 
     return SUCCESS;
@@ -2878,6 +2879,7 @@ int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType)
         }
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG ("load usb module failed");
+            isArmUsbDevice_ = false;
             return ERR_OPERATION_FAILED;
         }
         std::string activePort = GetSinkPortName(DEVICE_TYPE_USB_ARM_HEADSET);
@@ -2888,6 +2890,42 @@ int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType)
     }
 
     return SUCCESS;
+}
+
+int32_t AudioPolicyService::RehandlePnpDevice(DeviceType deviceType)
+{
+    Trace trace("AudioPolicyService::RehandlePnpDevice");
+
+    // Maximum number of attempts, preventing situations where hal has not yet finished coming online.
+    int32_t maxRetries = 3;
+    int32_t retryCount = 0;
+    int32_t ret = ERROR;
+    bool isConnected = true;
+    while (retryCount < maxRetries) {
+        retryCount++;
+        AUDIO_INFO_LOG("rehandle device[%{public}d], retry count[%{public}d]", deviceType, retryCount);
+
+        ret = HandleSpecialDeviceType(deviceType, isConnected);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Rehandle special device type failed");
+        if (deviceType == DEVICE_TYPE_USB_HEADSET && !isArmUsbDevice_) {
+            AUDIO_INFO_LOG("rehandle device is not arm usb device, nothing to do");
+            return SUCCESS;
+        }
+
+        if (deviceType == DEVICE_TYPE_USB_HEADSET) {
+            if (HandleArmUsbDevice(deviceType) == SUCCESS) {
+                return SUCCESS;
+            }
+        } else if (deviceType == DEVICE_TYPE_DP) {
+            if (HandleDpDevice(deviceType)  == SUCCESS) {
+                return SUCCESS;
+            }
+        }
+        usleep(REHANDLE_DEVICE_RETRY_INTERVAL_IN_MICROSECONDS);
+    }
+
+    AUDIO_ERR_LOG("rehandle device[%{public}d] failed", deviceType);
+    return ret;
 }
 
 int32_t AudioPolicyService::GetModuleInfo(ClassType classType, std::string &moduleInfoStr)
@@ -3381,11 +3419,17 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(const AudioDeviceDescript
 
     if (isArmUsbDevice_ && updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET) {
         int32_t result = HandleArmUsbDevice(updatedDesc.deviceType_);
+        if (result != SUCCESS) {
+            result = RehandlePnpDevice(updatedDesc.deviceType_);
+        }
         return result;
     }
 
     if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {
         int32_t result = HandleDpDevice(updatedDesc.deviceType_);
+        if (result != SUCCESS) {
+            result = RehandlePnpDevice(updatedDesc.deviceType_);
+        }
         return result;
     }
 
