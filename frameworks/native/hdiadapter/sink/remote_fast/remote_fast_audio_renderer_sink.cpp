@@ -140,9 +140,9 @@ private:
     std::shared_ptr<IAudioDeviceAdapter> audioAdapter_ = nullptr;
     IAudioSinkCallback *callback_ = nullptr;
     sptr<IAudioRender> audioRender_ = nullptr;
-    struct AudioPort audioPort_;
+    struct AudioPort audioPort_ = {};
     IAudioSinkAttr attr_ = {};
-    std::string deviceNetworkId_;
+    std::string deviceNetworkId_ = "";
 
     uint32_t bufferTotalFrameSize_ = 0;
     int32_t bufferFd_ = INVALID_FD;

@@ -45,7 +45,7 @@ public:
 private:
     static void HeadPostureDataProcCb(SensorEvent *event);
     static HeadPostureData headPostureData_;
-    SensorUser sensorUser_;
+    SensorUser sensorUser_ = {};
     int64_t sensorSamplingInterval_ = 30000000; // 30000000 ns = 30 ms
     static std::mutex headTrackerMutex_;
 };

@@ -119,18 +119,18 @@ private:
     int32_t InitAudioManager();
 
 private:
-    IAudioSinkAttr attr_;
-    bool rendererInited_;
-    bool started_;
-    bool paused_;
-    float leftVolume_;
-    float rightVolume_;
+    IAudioSinkAttr attr_ = {};
+    bool rendererInited_ = false;
+    bool started_ = false;
+    bool paused_ = false;
+    float leftVolume_ = 0.0f;
+    float rightVolume_ = 0.0f;
     int32_t routeHandle_ = -1;
-    std::string adapterNameCase_;
-    struct IAudioManager *audioManager_;
-    struct IAudioAdapter *audioAdapter_;
-    struct IAudioRender *audioRender_;
-    struct AudioAdapterDescriptor adapterDesc_;
+    std::string adapterNameCase_ = "";
+    struct IAudioManager *audioManager_ = nullptr;
+    struct IAudioAdapter *audioAdapter_ = nullptr;
+    struct IAudioRender *audioRender_ = nullptr;
+    struct AudioAdapterDescriptor adapterDesc_ = {};
     struct AudioPort audioPort_ = {};
     uint32_t renderId_ = 0;
 

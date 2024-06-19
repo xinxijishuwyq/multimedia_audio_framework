@@ -63,14 +63,14 @@ private:
     int32_t SetEffectParamToHandle(AudioEffectHandle handle, AudioEffectScene currSceneType, int32_t &replyData);
 
     std::mutex reloadMutex_;
-    std::string sceneType_;
-    std::string effectMode_;
+    std::string sceneType_ = "";
+    std::string effectMode_ = "";
     uint32_t latency_ = 0;
     std::vector<AudioEffectHandle> standByEffectHandles_;
     std::vector<AudioEffectLibrary *> libHandles_;
-    AudioEffectConfig ioBufferConfig_;
-    AudioBuffer audioBufIn_;
-    AudioBuffer audioBufOut_;
+    AudioEffectConfig ioBufferConfig_ = {};
+    AudioBuffer audioBufIn_ = {};
+    AudioBuffer audioBufOut_ = {};
     FILE *dumpFileInput_ = nullptr;
     FILE *dumpFileOutput_ = nullptr;
 

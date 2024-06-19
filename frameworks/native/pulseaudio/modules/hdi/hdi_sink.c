@@ -2712,9 +2712,9 @@ static void POSSIBLY_UNUSED StopPrimaryHdiIfNoRunning(struct Userdata *u)
         return;
     }
 
-    unsigned nPrimary;
-    unsigned nOffload;
-    unsigned nMultiChannel;
+    unsigned nPrimary = 0;
+    unsigned nOffload = 0;
+    unsigned nMultiChannel = 0;
     GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
     if (nPrimary > 0) {
         return;

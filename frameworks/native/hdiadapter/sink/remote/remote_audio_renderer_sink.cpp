@@ -125,7 +125,7 @@ private:
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
 private:
-    std::string deviceNetworkId_;
+    std::string deviceNetworkId_ = "";
     std::atomic<bool> rendererInited_ = false;
     std::atomic<bool> isRenderCreated_ = false;
     std::atomic<bool> started_ = false;
@@ -136,8 +136,8 @@ private:
     std::shared_ptr<IAudioDeviceAdapter> audioAdapter_ = nullptr;
     IAudioSinkCallback *callback_ = nullptr;
     sptr<IAudioRender> audioRender_ = nullptr;
-    struct AudioPort audioPort_;
-    IAudioSinkAttr attr_;
+    struct AudioPort audioPort_ = {};
+    IAudioSinkAttr attr_ = {};
     FILE *dumpFile_ = nullptr;
     std::mutex createRenderMutex_;
     uint32_t renderId_ = 0;
