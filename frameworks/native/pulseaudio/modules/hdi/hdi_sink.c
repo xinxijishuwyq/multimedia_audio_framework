@@ -1978,7 +1978,7 @@ static bool InputIsOffload(pa_sink_input *i)
         return false;
     }
     struct Userdata *u = i->sink->userdata;
-    if (!u->offload_enable || !u->offload.inited) {
+    if (!u->offload_enable) {
         return false;
     }
     const char *offloadEnableStr = pa_proplist_gets(i->proplist, "stream.offload.enable");
@@ -2574,6 +2574,9 @@ static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa
     const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
     const bool stopping = state == PA_SINK_INPUT_UNLINKED;
 
+    if (!u->offload.inited && PrepareDeviceOffload(u) == 0) {
+        u->offload.inited = true;
+    }
     if (starting) {
         StartOffloadHdi(u, i);
     } else if (corking) {
@@ -2816,9 +2819,9 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
         return;
     }
 
-    if (u->offload_enable && InputIsOffload(i)) {
+    if (u->offload_enable && !strcmp(i->sink->name, OFFLOAD_SINK_NAME)) {
         PaInputStateChangeCbOffload(u, i, state);
-    } else if (u->multichannel_enable && InputIsMultiChannel(i)) {
+    } else if (u->multichannel_enable && !strcmp(i->sink->name, MCH_SINK_NAME)) {
         PaInputStateChangeCbMultiChannel(u, i, state);
     } else {
         PaInputStateChangeCbPrimary(u, i, state);
@@ -2918,14 +2921,6 @@ static void ThreadFuncRendererTimerOffloadFlag(struct Userdata *u, pa_usec_t now
         if (delta > 0) {
             flag = false;
             *sleepForUsec = delta;
-        } else {
-            unsigned nPrimary = 0;
-            unsigned nOffload = 0;
-            unsigned nMultiChannel = 0;
-            GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
-            if (nOffload == 0) {
-                flag = false;
-            }
         }
     } else if (!PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
         OffloadUnlock(u);
@@ -3182,6 +3177,7 @@ static void ProcessOffloadData(struct Userdata *u)
 
     if (flag) {
         ThreadFuncRendererTimerOffloadProcess(u, now, &sleepForUsec);
+        sleepForUsec = PA_MAX(sleepForUsec, 0);
     }
 
     if (u->offload.fullTs != 0) {
@@ -3584,7 +3580,6 @@ static int32_t SinkSetStateInIoThreadCbStartMultiChannel(struct Userdata *u, pa_
 
 static void OffloadSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newState)
 {
-    pa_sink *s;
     struct Userdata *u = (struct Userdata *)(sink->userdata);
     const bool starting = PA_SINK_IS_OPENED(newState);
     const bool stopping = newState == PA_SINK_SUSPENDED;
@@ -3592,24 +3587,7 @@ static void OffloadSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newState)
         starting, stopping, u->offload_enable);
     if (starting && u->offload_enable && !u->offload.inited && PrepareDeviceOffload(u) == 0) {
         u->offload.inited = true;
-    } else if (stopping) {
-        pa_core *c = u->core;
-        uint32_t idx;
-        int32_t nOpened = 0;
-        PA_IDXSET_FOREACH(s, c->sinks, idx) {
-            AUDIO_INFO_LOG("sink name: %{public}s, driver: %{public}s", s->name, s->driver);
-            bool isHdiSink = !strncmp(s->driver, "module_hdi_sink", 15); // 15 cmp length
-            if (isHdiSink && ((struct Userdata *)(s->userdata))->offload_enable) {
-                u = s->userdata;
-            }
-            if (isHdiSink && s != sink && s->thread_info.state != PA_SINK_SUSPENDED) {
-                nOpened += 1;
-            }
-        }
-        AUDIO_INFO_LOG("nOpened: %{public}d, offload_enable: %{public}d", nOpened, u->offload_enable);
-        if (!u->offload_enable || nOpened > 0) {
-            return;
-        }
+    } else if (stopping && u->offload_enable) {
         if (u->offload.isHDISinkStarted) {
             u->offload.sinkAdapter->RendererSinkStop(u->offload.sinkAdapter);
             AUDIO_INFO_LOG("Stopped Offload HDI renderer, DeInit later");
@@ -3645,6 +3623,7 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
 
     if (!strcmp(u->sink->name, OFFLOAD_SINK_NAME)) {
         OffloadSinkStateChangeCb(s, newState);
+        return 0;
     }
 
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT ||
