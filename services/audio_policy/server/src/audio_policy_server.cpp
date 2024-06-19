@@ -509,21 +509,14 @@ void AudioPolicyServer::CheckSubscribePowerStateChange()
     }
 }
 
-void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
-    int64_t deactivateSessionId)
+void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, int64_t deactivateSessionId)
 {
     CheckSubscribePowerStateChange();
     if (deactivateSessionId != OFFLOAD_NO_SESSION_ID) {
         audioPolicyService_.OffloadStreamReleaseCheck(deactivateSessionId);
     }
     if (activateSessionId != OFFLOAD_NO_SESSION_ID) {
-        if (activateStreamType == AudioStreamType::STREAM_MUSIC ||
-            activateStreamType == AudioStreamType::STREAM_SPEECH) {
-            audioPolicyService_.OffloadStreamSetCheck(activateSessionId);
-        } else {
-            AUDIO_DEBUG_LOG("session:%{public}d not get offload stream, type is %{public}d",
-                (int32_t)activateSessionId, (int32_t)activateStreamType);
-        }
+        audioPolicyService_.OffloadStreamSetCheck(activateSessionId);
     }
 }
 
@@ -534,7 +527,6 @@ AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerSt
 void AudioPolicyServer::CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType,
     int64_t deactivateSessionId)
 {
-    OffloadStreamCheck(activateSessionId, activateStreamType, deactivateSessionId);
     audioPolicyService_.CheckStreamMode(activateSessionId, activateStreamType);
 }
 
@@ -1668,9 +1660,13 @@ int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo 
     if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_PAUSED ||
         streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_STOPPED ||
         streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
-        OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, STREAM_DEFAULT, streamChangeInfo.audioRendererChangeInfo.sessionId);
+        OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, streamChangeInfo.audioRendererChangeInfo.sessionId);
     }
-    return audioPolicyService_.UpdateTracker(mode, streamChangeInfo);
+    int32_t ret = audioPolicyService_.UpdateTracker(mode, streamChangeInfo);
+    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RUNNING) {
+        OffloadStreamCheck(streamChangeInfo.audioRendererChangeInfo.sessionId, OFFLOAD_NO_SESSION_ID);
+    }
+    return ret;
 }
 
 void AudioPolicyServer::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)

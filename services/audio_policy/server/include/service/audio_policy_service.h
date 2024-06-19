@@ -749,7 +749,7 @@ private:
 
     void SetOffloadMode();
 
-    void ResetOffloadMode();
+    void ResetOffloadMode(int32_t sessionId);
 
     bool GetOffloadAvailableFromXml() const;
 

@@ -811,7 +811,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
 
     UpdateAudioSceneFromInterrupt(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT);
 
-    policyServer_->OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, STREAM_DEFAULT, audioInterrupt.sessionId);
+    policyServer_->OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, audioInterrupt.sessionId);
     policyServer_->OffloadStopPlaying(audioInterrupt);
 
     // resume if other session was forced paused or ducked

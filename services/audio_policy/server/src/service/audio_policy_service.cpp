@@ -728,7 +728,7 @@ void AudioPolicyService::SetOffloadMode()
         currentOffloadSessionIsBackground_);
 }
 
-void AudioPolicyService::ResetOffloadMode()
+void AudioPolicyService::ResetOffloadMode(int32_t sessionId)
 {
     AUDIO_DEBUG_LOG("Doing reset offload mode!");
 
@@ -738,22 +738,7 @@ void AudioPolicyService::ResetOffloadMode()
         return;
     }
 
-    int32_t runningStreamId = streamCollector_.GetRunningStream(STREAM_MUSIC, AudioChannel::STEREO);
-    if (runningStreamId == -1) {
-        runningStreamId = streamCollector_.GetRunningStream(STREAM_MUSIC, AudioChannel::MONO);
-    }
-    if (runningStreamId == -1) {
-        AUDIO_DEBUG_LOG("No running STREAM_MUSIC, wont restart offload");
-        runningStreamId = streamCollector_.GetRunningStream(STREAM_SPEECH, AudioChannel::STEREO);
-        if (runningStreamId == -1) {
-            runningStreamId = streamCollector_.GetRunningStream(STREAM_SPEECH, AudioChannel::MONO);
-        }
-        if (runningStreamId == -1) {
-            AUDIO_DEBUG_LOG("No running STREAM_SPEECH, wont restart offload");
-            return;
-        }
-    }
-    OffloadStreamSetCheck(runningStreamId);
+    OffloadStreamSetCheck(sessionId);
 }
 
 void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
@@ -776,6 +761,7 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
     } else {
         if (sessionId == *(offloadSessionID_)) {
             AUDIO_DEBUG_LOG("sessionId[%{public}d] is already get offload stream", sessionId);
+            SetOffloadMode();
         } else {
             AUDIO_DEBUG_LOG("sessionId[%{public}d] no get offload, current offload sessionId[%{public}d]",
                 sessionId, *(offloadSessionID_));
@@ -798,6 +784,7 @@ void AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
         AUDIO_DEBUG_LOG("Doing unset offload mode!");
         streamCollector_.UnsetOffloadMode(*offloadSessionID_);
         AudioPipeType normalPipe = PIPE_TYPE_NORMAL_OUT;
+        MoveToNewPipe(sessionId, normalPipe);
         streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
         offloadSessionID_.reset();
         AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
@@ -1554,7 +1541,13 @@ std::string AudioPolicyService::GetSinkPortName(InternalDeviceType deviceType, A
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
             if (a2dpOffloadFlag_ == A2DP_OFFLOAD) {
-                portName = PRIMARY_SPEAKER;
+                if (pipeType == PIPE_TYPE_OFFLOAD) {
+                    portName = OFFLOAD_PRIMARY_SPEAKER;
+                } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
+                    portName = MCH_PRIMARY_SPEAKER;
+                } else {
+                    portName = PRIMARY_SPEAKER;
+                }
             } else {
                 portName = BLUETOOTH_SPEAKER;
             }
@@ -1749,7 +1742,6 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
     spatialDeviceMap_.insert(make_pair(deviceDescriptor.macAddress_, deviceDescriptor.deviceType_));
     UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
     AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
-    ResetOffloadMode();
 }
 
 void AudioPolicyService::OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId)
@@ -2040,8 +2032,6 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
 
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
         rendererChangeInfo->outputDeviceInfo);
-
-    ResetOffloadMode();
 }
 
 void AudioPolicyService::MoveToNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
@@ -2357,6 +2347,9 @@ void AudioPolicyService::FetchStreamForA2dpOffload(vector<unique_ptr<AudioRender
 {
     AUDIO_INFO_LOG("start for %{public}zu stream", rendererChangeInfos.size());
     for (auto &rendererChangeInfo : rendererChangeInfos) {
+        if (!IsRendererStreamRunning(rendererChangeInfo)) {
+            continue;
+        }
         vector<std::unique_ptr<AudioDeviceDescriptor>> descs =
             audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
             rendererChangeInfo->clientUID);
@@ -2373,6 +2366,7 @@ void AudioPolicyService::FetchStreamForA2dpOffload(vector<unique_ptr<AudioRender
                 IPCSkeleton::SetCallingIdentity(identity);
             }
             MoveToNewOutputDevice(rendererChangeInfo, descs);
+            ResetOffloadMode(rendererChangeInfo->sessionId);
         }
     }
 }
@@ -2390,6 +2384,11 @@ bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, D
 {
     if (desc->networkId_ == deviceInfo.networkId && desc->deviceType_ == deviceInfo.deviceType &&
         desc->macAddress_ == deviceInfo.macAddress && desc->connectState_ == deviceInfo.connectState) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+            deviceInfo.a2dpOffloadFlag == A2DP_OFFLOAD &&
+            deviceInfo.a2dpOffloadFlag != a2dpOffloadFlag_) {
+            return false;
+        }
         return true;
     } else {
         return false;
@@ -4093,7 +4092,6 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         hasModulesLoaded = true;
         unique_ptr<AudioDeviceDescriptor> outDevice = audioDeviceManager_.GetRenderDefaultDevice();
         currentActiveDevice_ = AudioDeviceDescriptor(*outDevice);
-        ResetOffloadMode();
         unique_ptr<AudioDeviceDescriptor> inDevice = audioDeviceManager_.GetCaptureDefaultDevice();
         currentActiveInputDevice_ = AudioDeviceDescriptor(*inDevice);
         SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
@@ -6688,7 +6686,6 @@ int32_t AudioPolicyService::HandleA2dpDeviceOutOffload(BluetoothOffloadState a2d
     DeviceType dev = GetActiveOutputDevice();
     UpdateEffectDefaultSink(dev);
     AUDIO_INFO_LOG("Handle A2dpDevice Out Offload");
-    ResetOffloadMode();
 
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
@@ -6713,7 +6710,6 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload(BluetoothOffloadState a2dp
     DeviceType dev = GetActiveOutputDevice();
     UpdateEffectDefaultSink(dev);
     AUDIO_INFO_LOG("Handle A2dpDevice In Offload");
-    ResetOffloadMode();
 
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
