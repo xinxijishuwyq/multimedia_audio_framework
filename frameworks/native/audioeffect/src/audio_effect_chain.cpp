@@ -282,7 +282,6 @@ bool AudioEffectChain::IsEmptyEffectHandles()
 
 int32_t AudioEffectChain::UpdateMultichannelIoBufferConfig(const uint32_t &channels, const uint64_t &channelLayout)
 {
-    std::lock_guard<std::mutex> lock(reloadMutex_);
     if (ioBufferConfig_.inputCfg.channels == channels && ioBufferConfig_.inputCfg.channelLayout == channelLayout) {
         return SUCCESS;
     }
@@ -291,6 +290,7 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfig(const uint32_t &chann
     if (IsEmptyEffectHandles()) {
         return SUCCESS;
     }
+    std::lock_guard<std::mutex> lock(reloadMutex_);
     int32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
