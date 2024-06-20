@@ -142,6 +142,7 @@ private:
     bool isNeedFade_ = false;
     float oldAppliedVolume_ = MAX_FLOAT_VOLUME;
     std::mutex updateIndexLock_;
+    uint32_t underrunCount_ = 0;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
     std::mutex writeLock_;
