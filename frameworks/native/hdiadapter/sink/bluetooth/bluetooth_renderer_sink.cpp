@@ -657,6 +657,7 @@ int32_t BluetoothRendererSinkInner::GetVolume(float &left, float &right)
 
 int32_t BluetoothRendererSinkInner::GetLatency(uint32_t *latency)
 {
+    Trace trace("BluetoothRendererSinkInner::GetLatency");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "GetLatency failed audio render null");
 

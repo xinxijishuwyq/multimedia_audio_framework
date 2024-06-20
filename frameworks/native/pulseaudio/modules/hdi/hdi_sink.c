@@ -3428,6 +3428,7 @@ static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t
     pa_memchunk *chunk)
 {
     AUDIO_DEBUG_LOG("SinkProcessMsg: code: %{public}d", code);
+    AUTO_CTRACE("hdi_sink::SinkProcessMsg code: %d", code);
     struct Userdata *u = PA_SINK(o)->userdata;
     pa_assert(u);
 
