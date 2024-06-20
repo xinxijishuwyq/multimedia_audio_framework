@@ -87,6 +87,7 @@
 #define BYTE_LEN_FOR_16BIT 2
 #define BYTE_LEN_FOR_24BIT 3
 #define BYTE_LEN_FOR_32BIT 4
+#define PRINT_INTERVAL_FRAME_COUNT 100
 #define MIN_SLEEP_FOR_USEC 2000
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
@@ -247,6 +248,7 @@ struct Userdata {
     } multiChannel;
 };
 
+static int32_t g_effectProcessFrameCount = 0;
 static void UserdataFree(struct Userdata *u);
 static int32_t PrepareDevice(struct Userdata *u, const char *filePath);
 
@@ -1307,6 +1309,18 @@ static void SafeRendererSinkUpdateAppsUid(struct RendererSinkAdapter *sinkAdapte
     }
 }
 
+static void RecordEffectChainStatus(bool existFlag, const char *sinkSceneType, const char *sinkSceneMode,
+    bool actualSpatializationEnabled)
+{
+    g_effectProcessFrameCount++;
+    if (g_effectProcessFrameCount == PRINT_INTERVAL_FRAME_COUNT) {
+        g_effectProcessFrameCount = 0;
+        AUDIO_DEBUG_LOG("Effect Chain Status is %{public}d, "
+            "scene type is %{public}s, scene mode is %{public}s, spatializationEnabled is %{public}d.",
+            existFlag, sinkSceneType, sinkSceneMode, actualSpatializationEnabled);
+    }
+}
+
 static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
     unsigned maxInfo, char *sceneType)
 {
@@ -1324,7 +1338,6 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     pa_sink_assert_io_context(si);
     pa_assert(infoIn);
 
-    bool isCaptureSilently = IsCaptureSilently();
     int32_t appsUid[MAX_MIX_CHANNELS];
     size_t count = 0;
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
@@ -1333,8 +1346,9 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag =
             EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled ? "1" : "0");
+        RecordEffectChainStatus(existFlag, sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled);
         bool sceneTypeFlag = EffectChainManagerSceneCheck(sinkSceneType, sceneType);
-        if ((IsInnerCapturer(sinkIn) && isCaptureSilently) || !InputIsPrimary(sinkIn)) {
+        if ((IsInnerCapturer(sinkIn) && IsCaptureSilently()) || !InputIsPrimary(sinkIn)) {
             continue;
         } else if ((sceneTypeFlag && existFlag) || (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
             pa_sink_input_assert_ref(sinkIn);
