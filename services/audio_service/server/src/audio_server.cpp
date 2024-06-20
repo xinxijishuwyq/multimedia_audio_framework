@@ -274,10 +274,10 @@ void AudioServer::OnStop()
 static void RssSceneType(const std::string &RssKey, const std::string &RssValue)
 {
     AUDIO_ERR_LOG("CXX key is %{public}s, and value is %{public}s", RssKey.c_str(), RssValue.c_str());
-    if(RssKey == "updateForegroundApp"){
+    if (RssKey == "updateForegroundApp") {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
-        AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
+            AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
         }
         audioEffectChainManager->UpdateEffectChainValue(RssValue);
     }
