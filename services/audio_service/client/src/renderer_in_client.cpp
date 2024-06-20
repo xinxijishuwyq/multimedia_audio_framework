@@ -1374,15 +1374,14 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
     }
 
     // no lock, call release in any case, include blocked case.
-    {
-        std::lock_guard<std::mutex> runnerlock(runnerMutex_);
-        if (releaseRunner && callbackHandler_ != nullptr) {
-            AUDIO_INFO_LOG("runner remove");
-            callbackHandler_->ReleaseEventRunner();
-            runnerReleased_ = true;
-            callbackHandler_ = nullptr;
-        }
+    std::unique_lock<std::mutex> runnerlock(runnerMutex_);
+    if (releaseRunner && callbackHandler_ != nullptr) {
+        AUDIO_INFO_LOG("runner remove");
+        callbackHandler_->ReleaseEventRunner();
+        runnerReleased_ = true;
+        callbackHandler_ = nullptr;
     }
+    runnerlock.unlock();
 
     // clear write callback
     if (renderMode_ == RENDER_MODE_CALLBACK) {
