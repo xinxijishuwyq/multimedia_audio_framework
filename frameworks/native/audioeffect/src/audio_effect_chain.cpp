@@ -26,7 +26,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const uint32_t NUM_SET_EFFECT_PARAM = 5;
+const uint32_t NUM_SET_EFFECT_PARAM = 6;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
 const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
@@ -120,6 +120,11 @@ void AudioEffectChain::SetEffectMode(const std::string &mode)
     effectMode_ = mode;
 }
 
+void AudioEffectChain::SetEffectRssScene(const std::string &rssScene)
+{
+    audioEffectChainValue_ = static_cast<int32_t>(std::stoi(rssScene));
+}
+
 void AudioEffectChain::ReleaseEffectChain()
 {
     for (uint32_t i = 0; i < standByEffectHandles_.size() && i < libHandles_.size(); ++i) {
@@ -171,6 +176,8 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, Audio
         *data++ = audioEffectVolume->GetApVolume(sceneType_);
     }
     AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
+    *data++ = audioEffectChainValue_;
+    AUDIO_DEBUG_LOG("CXX Set rss scene type %{public}d", audioEffectChainValue_);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     delete[] effectParam;
@@ -180,8 +187,10 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, Audio
 void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle,
     AudioEffectScene currSceneType)
 {
+    std::lock_guard<std::mutex> lock(reloadMutex_);
     int32_t ret;
     int32_t replyData = 0;
+    currSceneType_ = currSceneType;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     ret = (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
@@ -210,14 +219,31 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     latency_ += static_cast<uint32_t>(replyData);
 }
 
+int32_t AudioEffectChain::SetEffectValue(std::string rssValue)
+{
+    std::lock_guard<std::mutex> lock(reloadMutex_);
+    latency_ = 0;
+    audioEffectChainValue_ = static_cast<int32_t>(std::stoi(rssValue));
+    for (AudioEffectHandle handle : standByEffectHandles_) {
+        int32_t replyData;
+        int32_t ret = SetEffectParamToHandle(handle, currSceneType_, replyData);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "set EFFECT_CMD_SET_RSSVALUE fail");
+        AUDIO_DEBUG_LOG("CXX Set Effect Rss Value %{public}d Success", audioEffectChainValue_);
+        latency_ += static_cast<uint32_t>(replyData);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioEffectChain::SetEffectParam(AudioEffectScene currSceneType)
 {
     std::lock_guard<std::mutex> lock(reloadMutex_);
     latency_ = 0;
+    currSceneType_ = currSceneType;
     for (AudioEffectHandle handle : standByEffectHandles_) {
         int32_t replyData;
         int32_t ret = SetEffectParamToHandle(handle, currSceneType, replyData);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "set EFFECT_CMD_SET_PARAM fail");
+        AUDIO_DEBUG_LOG("Set Effect Param %{public}d Success", currSceneType_);
         latency_ += static_cast<uint32_t>(replyData);
     }
     return SUCCESS;

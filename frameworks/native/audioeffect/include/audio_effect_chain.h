@@ -45,6 +45,7 @@ public:
     ~AudioEffectChain();
     std::string GetEffectMode();
     void SetEffectMode(const std::string &mode);
+    void SetEffectRssScene(const std::string &rssScene);
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle, AudioEffectScene currSceneType);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
     bool IsEmptyEffectHandles();
@@ -55,6 +56,7 @@ public:
     void SetHeadTrackingDisabled();
     uint32_t GetLatency();
     int32_t SetEffectParam(AudioEffectScene currSceneType);
+    int32_t SetEffectValue(std::string rssValue);
     void ResetIoBufferConfig();
 
 private:
@@ -66,6 +68,8 @@ private:
     std::string sceneType_;
     std::string effectMode_;
     uint32_t latency_ = 0;
+    uint32_t audioEffectChainValue_ = 0;
+    AudioEffectScene currSceneType_ = SCENE_MUSIC;
     std::vector<AudioEffectHandle> standByEffectHandles_;
     std::vector<AudioEffectLibrary *> libHandles_;
     AudioEffectConfig ioBufferConfig_;

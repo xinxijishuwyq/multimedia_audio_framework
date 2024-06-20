@@ -131,6 +131,7 @@ public:
     bool CheckA2dpOffload();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
+    void UpdateEffectChainValue(const std::string &rssValue);
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
@@ -171,6 +172,7 @@ private:
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     std::string deviceClass_ = "";
+    std::string rssScene_ = "0";
     bool isInitialized_ = false;
     std::recursive_mutex dynamicMutex_;
     bool spatializationEnabled_ = false;

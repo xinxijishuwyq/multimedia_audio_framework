@@ -368,6 +368,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
     }
 
     audioEffectChain->SetEffectMode(effectMode);
+    audioEffectChain->SetEffectRssScene(rssScene_);
     for (std::string effect: EffectChainToEffectsMap_[effectChain]) {
         AudioEffectHandle handle = nullptr;
         AudioEffectDescriptor descriptor;
@@ -1037,6 +1038,24 @@ AudioEffectScene AudioEffectChainManager::GetSceneTypeFromSpatializationSceneTyp
         AUDIO_WARNING_LOG("wrong spatialization scene type: %{public}d", spatializationSceneType_);
     }
     return sceneType;
+}
+
+void AudioEffectChainManager::UpdateEffectChainValue(const std::string &RssValue)
+{
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    AUDIO_INFO_LOG("UpdateEffectChainValue")
+    rssScene_ = RssValue;
+    for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
+        auto audioEffectChain = it->second;
+        if (audioEffectChain == nullptr) {
+            continue;
+        }
+
+        if (audioEffectChain->SetEffectValue(RssValue) != SUCCESS) {
+            AUDIO_WARNING_LOG("set Rss value to effect chain failed");
+            continue;
+        }
+    }
 }
 
 void AudioEffectChainManager::UpdateEffectChainParams(AudioEffectScene sceneType)
