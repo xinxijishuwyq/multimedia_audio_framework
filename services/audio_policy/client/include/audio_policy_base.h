@@ -290,7 +290,7 @@ public:
 
     virtual int32_t UnsetAudioDeviceRefinerCallback() = 0;
 
-    virtual int32_t TriggerFetchDevice() = 0;
+    virtual int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) = 0;
 
     virtual int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) = 0;
 

@@ -2664,13 +2664,13 @@ int32_t AudioPolicyServer::UnsetAudioDeviceRefinerCallback()
     return audioRouterCenter_.UnsetAudioDeviceRefinerCallback();
 }
 
-int32_t AudioPolicyServer::TriggerFetchDevice()
+int32_t AudioPolicyServer::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_AUDIO) {
         return ERROR;
     }
-    return audioPolicyService_.TriggerFetchDevice();
+    return audioPolicyService_.TriggerFetchDevice(reason);
 }
 
 void AudioPolicyServer::NotifyAccountsChanged(const int &id)

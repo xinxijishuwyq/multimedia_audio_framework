@@ -1154,7 +1154,8 @@ void AudioPolicyManagerStub::UnsetAudioDeviceRefinerCallbackInternal(MessageParc
 
 void AudioPolicyManagerStub::TriggerFetchDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t result = TriggerFetchDevice();
+    AudioStreamDeviceChangeReasonExt reason(static_cast<AudioStreamDeviceChangeReasonExt::ExtEnum>(data.ReadInt32()));
+    int32_t result = TriggerFetchDevice(reason);
     reply.WriteInt32(result);
 }
 

@@ -467,7 +467,7 @@ public:
 
     int32_t ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo);
 
-    int32_t TriggerFetchDevice();
+    int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     int32_t DisableSafeMediaVolume();
 
@@ -615,7 +615,7 @@ private:
 
     void MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices,
-        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void MoveToNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
         unique_ptr<AudioDeviceDescriptor> &inputDevice);

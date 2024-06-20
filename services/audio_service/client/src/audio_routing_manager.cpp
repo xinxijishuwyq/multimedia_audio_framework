@@ -127,9 +127,9 @@ int32_t AudioRoutingManager::UnsetAudioDeviceRefinerCallback()
     return AudioPolicyManager::GetInstance().UnsetAudioDeviceRefinerCallback();
 }
 
-int32_t AudioRoutingManager::TriggerFetchDevice()
+int32_t AudioRoutingManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
-    return AudioPolicyManager::GetInstance().TriggerFetchDevice();
+    return AudioPolicyManager::GetInstance().TriggerFetchDevice(reason);
 }
 } // namespace AudioStandard
 } // namespace OHOS

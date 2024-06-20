@@ -484,7 +484,7 @@ public:
         OLD_DEVICE_UNAVALIABLE = 2,
         OVERRODE = 3,
         MIN = 1000,
-        OLD_DEVICE_UNAVALIABLE_EXT = 1000
+        OLD_DEVICE_UNAVALIABLE_EXT = 1000,
     };
 
     operator AudioStreamDeviceChangeReason() const

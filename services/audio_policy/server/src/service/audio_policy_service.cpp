@@ -1995,7 +1995,7 @@ void AudioPolicyService::UpdateDualToneState(const bool &enable, const int32_t &
 }
 
 void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices, const AudioStreamDeviceChangeReason reason)
+    vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     std::vector<SinkInput> targetSinkInputs = FilterSinkInputs(rendererChangeInfo->sessionId);
 
@@ -2006,7 +2006,8 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
     AUDIO_INFO_LOG("move session %{public}d [%{public}d][%{public}s]-->[%{public}d][%{public}s], reason %{public}d",
         rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo.deviceType,
         GetEncryptAddr(rendererChangeInfo->outputDeviceInfo.macAddress).c_str(),
-        outputDevices.front()->deviceType_, GetEncryptAddr(outputDevices.front()->macAddress_).c_str(), reason);
+        outputDevices.front()->deviceType_, GetEncryptAddr(outputDevices.front()->macAddress_).c_str(),
+        static_cast<int>(reason));
 
     DeviceType oldDevice = rendererChangeInfo->outputDeviceInfo.deviceType;
     DeviceType newDevice = outputDevices.front()->deviceType_;
@@ -7103,10 +7104,10 @@ void AudioPolicyService::HandleRemoteCastDevice(bool isConnected, AudioStreamInf
     TriggerFetchDevice();
 }
 
-int32_t AudioPolicyService::TriggerFetchDevice()
+int32_t AudioPolicyService::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
-    FetchDevice(true);
-    FetchDevice(false);
+    FetchDevice(true, reason);
+    FetchDevice(false, reason);
     return SUCCESS;
 }
 
