@@ -2086,10 +2086,10 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.clientUid = clientUid_;
     info.volume = clientVolume_;
 
-    info.frameMarkPosition = rendererMarkPosition_;
+    info.frameMarkPosition = static_cast<uint64_t>(rendererMarkPosition_);
     info.renderPositionCb = rendererPositionCallback_;
 
-    info.framePeriodNumber = rendererPeriodSize_;
+    info.framePeriodNumber = static_cast<uint64_t>(rendererPeriodSize_);
     info.renderPeriodPositionCb = rendererPeriodPositionCallback_;
 
     info.rendererWriteCallback = writeCb_;

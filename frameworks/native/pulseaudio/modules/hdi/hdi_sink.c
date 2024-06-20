@@ -1265,14 +1265,14 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         //do fading in
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
-        int32_t bitSize = pa_sample_size_of_format(sinkIn->sample_spec.format);
+        int32_t bitSize = (int32_t)pa_sample_size_of_format(sinkIn->sample_spec.format);
         DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 0);
         u->primary.primaryFadingInDone = 1;
         pa_memblock_release(infoIn->chunk.memblock);
     }
     if (pa_safe_streq(sinkFadeoutPause, "1")) {
         //do fading out
-        int32_t bitSize = pa_sample_size_of_format(sinkIn->sample_spec.format);
+        int32_t bitSize = (int32_t)pa_sample_size_of_format(sinkIn->sample_spec.format);
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
         DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 1);
@@ -1390,7 +1390,7 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
             return;
         }
         //do fading in
-        int32_t bitSize = pa_sample_size_of_format(sinkIn->sample_spec.format);
+        int32_t bitSize = (int32_t)pa_sample_size_of_format(sinkIn->sample_spec.format);
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
         DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 0);
@@ -1399,7 +1399,7 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
     }
     if (pa_safe_streq(sinkFadeoutPause, "1")) {
         //do fading out
-        int32_t bitSize = pa_sample_size_of_format(sinkIn->sample_spec.format);
+        int32_t bitSize = (int32_t)pa_sample_size_of_format(sinkIn->sample_spec.format);
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
         DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 1);
@@ -2321,7 +2321,7 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
     while (l > 0) {
         pa_memchunk tchunk;
         tchunk = *chunk;
-        tchunk.index += d;
+        tchunk.index += (size_t)d;
         tchunk.length = PA_MIN(length, blockSize - tchunk.index);
 
         PaSinkRenderIntoOffload(i->sink, infoInputs, nInputs, &tchunk);
@@ -3182,7 +3182,7 @@ static void ProcessOffloadData(struct Userdata *u)
 
     if (u->offload.fullTs != 0) {
         if (u->offload.fullTs + 10 * PA_USEC_PER_MSEC > now) { // 10 is min checking size
-            const int64_t s = (u->offload.fullTs + 10 * PA_USEC_PER_MSEC) - now;
+            const int64_t s = ((int64_t)(u->offload.fullTs) + 10 * PA_USEC_PER_MSEC) - (int64_t)now;
             sleepForUsec = sleepForUsec == -1 ? s : PA_MIN(s, sleepForUsec);
         } else if (pa_atomic_load(&u->offload.hdistate) == 1) {
             u->offload.fullTs = 0;

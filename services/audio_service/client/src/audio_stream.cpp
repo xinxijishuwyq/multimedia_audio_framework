@@ -240,8 +240,8 @@ bool AudioStream::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbas
             " mcrLatency: %{public}u ms", framePosition, timestampHdi, mcrLatency);
         timestamp.framePosition = framePosition;
         timestamp.time.tv_sec = static_cast<time_t>(timestampHdi / TIME_CONVERSION_NS_S);
-        timestamp.time.tv_nsec
-            = static_cast<long>(timestampHdi - (static_cast<uint64_t>(timestamp.time.tv_sec) * TIME_CONVERSION_NS_S));
+        timestamp.time.tv_nsec = static_cast<long>(timestampHdi) -
+            (static_cast<long>(timestamp.time.tv_sec) * TIME_CONVERSION_NS_S);
         return true;
     }
     return false;
