@@ -125,7 +125,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         }
         descs.push_back(move(desc));
     } else if (renderConfigMap_[streamUsage] == RING_RENDER_ROUTERS) {
-        descs = FetchRingRenderDevices(streamUsage, clientUID, routerType);
+        DealRingRenderRouters(descs, streamUsage, clientUID);
     } else if (renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS) {
         descs.push_back(FetchCallRenderDevice(streamUsage, clientUID, routerType));
     } else {
@@ -140,6 +140,32 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         " 1st device type:id %{public}d:%{public}d router:%{public}d ", streamUsage, clientUID, descs.size(),
         descs[0]->deviceType_, descs[0]->deviceId_, routerType);
     return descs;
+}
+
+void AudioRouterCenter::DealRingRenderRouters(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+    StreamUsage streamUsage, int32_t clientUID)
+{
+    RouterType routerType = ROUTER_TYPE_NONE;
+    AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
+    if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT) {
+        unique_ptr<AudioDeviceDescriptor> desc = make_unique<AudioDeviceDescriptor>();
+        auto isPresent = [] (const unique_ptr<RouterBase> &router) {
+            return router->name_ == "package_filter_router";
+        };
+        auto itr = find_if(mediaRenderRouters_.begin(), mediaRenderRouters_.end(), isPresent);
+        if (itr != mediaRenderRouters_.end()) {
+            desc = (*itr)->GetMediaRenderDevice(streamUsage, clientUID);
+            routerType = (*itr)->GetRouterType();
+        }
+        if (desc->deviceType_ == DEVICE_TYPE_NONE) {
+            streamUsage = audioScene == AUDIO_SCENE_PHONE_CALL ? STREAM_USAGE_VOICE_MODEM_COMMUNICATION
+                                                           : STREAM_USAGE_VOICE_COMMUNICATION;
+            desc = FetchCallRenderDevice(streamUsage, clientUID, routerType);
+        }
+        descs.push_back(move(desc));
+    } else {
+        descs = FetchRingRenderDevices(streamUsage, clientUID, routerType);
+    }
 }
 
 unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType sourceType, int32_t clientUID)

@@ -408,12 +408,12 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
         return SUCCESS;
     }
 
-    if (Util::IsDualToneStreamType(streamType)) {
-        AUDIO_INFO_LOG("Dual tone stream type %{public}d, mute %{public}d", streamType, mute);
-        volumeDataMaintainer_.SaveMuteStatus(DEVICE_TYPE_SPEAKER, streamType, mute);
-    } else {
-        volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
+    if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_SPEAKER) {
+        AUDIO_INFO_LOG("Dual tone stream type %{public}d, current active device:[%{public}d] is no speaker, dont mute",
+            streamType, mute);
+        return SUCCESS;
     }
+    volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
 
     // Achieve the purpose of adjusting the mute status by adjusting the stream volume.
     return SetVolumeDb(streamType);
