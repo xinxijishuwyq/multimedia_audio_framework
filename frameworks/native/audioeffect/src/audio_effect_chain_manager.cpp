@@ -1043,7 +1043,7 @@ AudioEffectScene AudioEffectChainManager::GetSceneTypeFromSpatializationSceneTyp
 void AudioEffectChainManager::UpdateEffectChainValue(const std::string &RssValue)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    AUDIO_INFO_LOG("UpdateEffectChainValue")
+    AUDIO_INFO_LOG("UpdateEffectChainValue");
     rssScene_ = RssValue;
     for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
         auto audioEffectChain = it->second;
