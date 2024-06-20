@@ -6802,6 +6802,7 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     AUDIO_INFO_LOG("[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] connectState[%{public}d] " \
         "isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_,
         command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
+    CheckForA2dpSuspend(desc);
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
         if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             ClearScoDeviceSuspendState(desc.macAddress_);
@@ -6829,6 +6830,19 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     OnPreferredStateUpdated(desc, command);
     FetchDevice(false);
     UpdateA2dpOffloadFlagForAllStream();
+}
+
+void AudioPolicyService::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
+{
+    if (desc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+        return;
+    }
+
+    if (desc.connectState_ == ConnectState::CONNECTED) {
+        GetAudioServerProxy()->SuspendRenderSink("a2dp");
+    } else {
+        GetAudioServerProxy()->RestoreRenderSink("a2dp");
+    }
 }
 
 void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()

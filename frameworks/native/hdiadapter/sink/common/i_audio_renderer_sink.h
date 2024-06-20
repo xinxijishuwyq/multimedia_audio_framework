@@ -60,6 +60,9 @@ public:
     virtual int32_t Start(void) = 0;
     virtual int32_t Stop(void) = 0;
 
+    virtual int32_t SuspendRenderSink(void) = 0;
+    virtual int32_t RestoreRenderSink(void) = 0;
+
     virtual int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) = 0;
     virtual int32_t GetLatency(uint32_t *latency) = 0;
 

@@ -425,6 +425,20 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
     return 0;
 }
 
+int32_t AudioServer::SuspendRenderSink(const std::string &sinkName)
+{
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance(sinkName, "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    return audioRendererSinkInstance->SuspendRenderSink();
+}
+
+int32_t AudioServer::RestoreRenderSink(const std::string &sinkName)
+{
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance(sinkName, "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    return audioRendererSinkInstance->RestoreRenderSink();
+}
+
 int32_t AudioServer::SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,

@@ -86,6 +86,8 @@ public:
     int32_t Reset(void) override;
     int32_t Pause(void) override;
     int32_t Resume(void) override;
+    int32_t SuspendRenderSink(void) override;
+    int32_t RestoreRenderSink(void) override;
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
@@ -120,6 +122,7 @@ private:
     bool rendererInited_;
     bool started_;
     bool paused_;
+    bool suspend_;
     float leftVolume_;
     float rightVolume_;
     struct HDI::Audio_Bluetooth::AudioProxyManager *audioManager_;
@@ -174,7 +177,7 @@ private:
 };
 
 BluetoothRendererSinkInner::BluetoothRendererSinkInner(bool isBluetoothLowLatency)
-    : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
+    : rendererInited_(false), started_(false), paused_(false), suspend_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
       rightVolume_(DEFAULT_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr),
       audioRender_(nullptr), handle_(nullptr), isBluetoothLowLatency_(isBluetoothLowLatency)
 {
@@ -486,6 +489,10 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
     CheckUpdateState(&data, len);
 
+    if (suspend_) {
+        return ret;
+    }
+
     Trace trace("BluetoothRendererSinkInner::RenderFrame");
     while (true) {
         if (*reinterpret_cast<int8_t*>(&data) == 0) {
@@ -795,6 +802,18 @@ int32_t BluetoothRendererSinkInner::Flush(void)
     }
 
     return ERR_OPERATION_FAILED;
+}
+
+int32_t BluetoothRendererSinkInner::SuspendRenderSink(void)
+{
+    suspend_ = true;
+    return SUCCESS;
+}
+
+int32_t BluetoothRendererSinkInner::RestoreRenderSink(void)
+{
+    suspend_ = false;
+    return SUCCESS;
 }
 
 void BluetoothRendererSinkInner::SetAudioMonoState(bool audioMono)

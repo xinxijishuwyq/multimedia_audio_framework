@@ -579,6 +579,22 @@ int AudioManagerStub::HandleResetAudioEndpoint(MessageParcel &data, MessageParce
     return AUDIO_OK;
 }
 
+int AudioManagerStub::SuspendRenderSink(MessageParcel &data, MessageParcel &reply)
+{
+    std::string sinkName = data.ReadString();
+    int32_t ret = SuspendRenderSink(sinkName);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::RestoreRenderSink(MessageParcel &data, MessageParcel &reply)
+{
+    std::string sinkName = data.ReadString();
+    int32_t ret = SuspendRenderSink(sinkName);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleUpdateLatencyTimestamp(MessageParcel &data, MessageParcel &reply)
 {
     std::string timestamp = data.ReadString();
