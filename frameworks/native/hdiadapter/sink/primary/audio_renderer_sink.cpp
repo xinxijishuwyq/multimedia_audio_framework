@@ -867,6 +867,7 @@ int32_t AudioRendererSinkInner::SetVoiceVolume(float volume)
 
 int32_t AudioRendererSinkInner::GetLatency(uint32_t *latency)
 {
+    Trace trace("AudioRendererSinkInner::GetLatency");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "GetLatency failed audio render null");
 

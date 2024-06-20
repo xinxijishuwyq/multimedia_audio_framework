@@ -671,6 +671,7 @@ int32_t MultiChannelRendererSinkInner::SetVoiceVolume(float volume)
 
 int32_t MultiChannelRendererSinkInner::GetLatency(uint32_t *latency)
 {
+    Trace trace("MultiChannelRendererSinkInner::GetLatency");
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("GetLatency failed audio render null");
         return ERR_INVALID_HANDLE;

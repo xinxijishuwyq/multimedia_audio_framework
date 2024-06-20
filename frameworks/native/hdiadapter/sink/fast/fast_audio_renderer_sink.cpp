@@ -771,6 +771,7 @@ int32_t FastAudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 
 int32_t FastAudioRendererSinkInner::GetLatency(uint32_t *latency)
 {
+    Trace trace("FastAudioRendererSinkInner::GetLatency");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "GetLatency failed audio render null");
 
