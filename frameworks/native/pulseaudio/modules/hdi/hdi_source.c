@@ -16,6 +16,7 @@
 #define LOG_TAG "HdiSource"
 
 #include <config.h>
+#include <inttypes.h>
 #include <pulse/rtclock.h>
 #include <pulse/timeval.h>
 #include <pulse/util.h>
@@ -28,20 +29,17 @@
 #include <pulsecore/rtpoll.h>
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
-
-#include <inttypes.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 
-#include "audio_types.h"
-#include "audio_manager.h"
-
+#include "audio_hdiadapter_info.h"
 #include "audio_log.h"
 #include "audio_source_type.h"
-#include "audio_hdiadapter_info.h"
-#include "capturer_source_adapter.h"
 #include "audio_utils_c.h"
+#include "capturer_source_adapter.h"
+#include "v3_0/audio_types.h"
+#include "v3_0/iaudio_manager.h"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"
 #define DEFAULT_DEVICE_CLASS "primary"
