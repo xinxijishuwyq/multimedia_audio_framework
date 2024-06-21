@@ -2048,6 +2048,11 @@ void AudioPolicyService::MoveToNewInputDevice(unique_ptr<AudioCapturerChangeInfo
                 : MoveToRemoteInputDevice(targetSourceOutputs, new AudioDeviceDescriptor(*inputDevice));
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move source output %{public}d to device %{public}d failed!",
         capturerChangeInfo->sessionId, inputDevice->deviceType_);
+    AUDIO_INFO_LOG("move session %{public}d [%{public}d][%{public}s]-->[%{public}d][%{public}s]",
+        capturerChangeInfo->sessionId, capturerChangeInfo->inputDeviceInfo.deviceType,
+        GetEncryptAddr(capturerChangeInfo->inputDeviceInfo.macAddress).c_str(),
+        inputDevice->deviceType_, GetEncryptAddr(inputDevice->macAddress_).c_str());
+
     if (isUpdateRouteSupported_ && inputDevice->networkId_ == LOCAL_NETWORK_ID) {
         UpdateActiveDeviceRoute(inputDevice->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
     }
@@ -2131,7 +2136,8 @@ bool AudioPolicyService::IsRendererStreamRunning(unique_ptr<AudioRendererChangeI
     StreamUsage usage = rendererChangeInfo->rendererInfo.streamUsage;
     RendererState rendererState = rendererChangeInfo->rendererState;
     if ((usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && audioScene_ != AUDIO_SCENE_PHONE_CALL) ||
-        (usage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION && rendererState != RENDERER_RUNNING)) {
+        (usage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+            (rendererState != RENDERER_RUNNING && !rendererChangeInfo->prerunningState))) {
         return false;
     }
     return true;
@@ -4649,6 +4655,11 @@ void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
     AUDIO_INFO_LOG("fetch device for track, sessionid:%{public}d start",
         streamChangeInfo.audioRendererChangeInfo.sessionId);
+
+    AudioMode mode = AudioMode::AUDIO_MODE_PLAYBACK;
+    // Set prerunningState true to refetch devices when device info change before update tracker to running
+    streamChangeInfo.audioRendererChangeInfo.prerunningState = true;
+    streamCollector_.UpdateTrackerInternal(mode, streamChangeInfo);
 
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
     rendererChangeInfo.push_back(
