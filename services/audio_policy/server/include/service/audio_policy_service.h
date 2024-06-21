@@ -917,7 +917,7 @@ private:
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
 
     bool SelectRingerOrAlarmDevices(const vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
-        const int32_t &sessionId);
+        const unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
 
     void DealAudioSceneOutputDevices(const AudioScene &audioScene, std::vector<DeviceType> &activeOutputDevices,
         bool &haveArmUsbDevice);

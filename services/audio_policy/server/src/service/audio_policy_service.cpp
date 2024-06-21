@@ -1894,7 +1894,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredOutputD
             audioRouterCenter_.FetchOutputDevices(rendererInfo.streamUsage, -1);
         for (size_t i = 0; i < descs.size(); i++) {
             sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*descs[i]);
-            AUDIO_DEBUG_LOG("streamUsage %{public}d fetch desc[%{public}zu]-device:%{public}d",
+            AUDIO_INFO_LOG("streamUsage %{public}d fetch desc[%{public}zu]-device:%{public}d",
                 rendererInfo.streamUsage, i, descs[i]->deviceType_);
             deviceList.push_back(devDesc);
         }
@@ -1986,6 +1986,7 @@ void AudioPolicyService::UpdateActiveDevicesRoute(std::vector<std::pair<Internal
 void AudioPolicyService::UpdateDualToneState(const bool &enable, const int32_t &sessionId)
 {
     CHECK_AND_RETURN_LOG(g_adProxy != nullptr, "Audio Server Proxy is null");
+    AUDIO_INFO_LOG("update dual tone state, enable:%{public}d, sessionId:%{public}d", enable, sessionId);
     auto ret = SUCCESS;
     Trace trace("AudioPolicyService::UpdateDualToneState sessionId:" + std::to_string(sessionId));
     std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -3129,6 +3130,10 @@ int32_t AudioPolicyService::SetRingerMode(AudioRingerMode ringMode)
 {
     int32_t result = audioPolicyManager_.SetRingerMode(ringMode);
     if (result == SUCCESS) {
+        if (audioScene_ == AUDIO_SCENE_RINGING ||audioScene_ == AUDIO_SCENE_VOICE_RINGING) {
+            AUDIO_INFO_LOG("fetch output device after switch new ringmode.");
+            FetchDevice(true);
+        }
         Volume vol = {false, 1.0f, 0};
         vol.isMute = (ringMode == RINGER_MODE_NORMAL) ? false : true;
         vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevel(STREAM_RING));
@@ -7726,7 +7731,7 @@ void AudioPolicyService::UpdateRoute(unique_ptr<AudioRendererChangeInfo> &render
     InternalDeviceType deviceType = outputDevices.front()->deviceType_;
     AUDIO_INFO_LOG("update route, streamUsage:%{public}d, 1st devicetype:%{public}d", streamUsage, deviceType);
     if (IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType)) {
-        if (!SelectRingerOrAlarmDevices(outputDevices, rendererChangeInfo->sessionId)) {
+        if (!SelectRingerOrAlarmDevices(outputDevices, rendererChangeInfo)) {
             UpdateActiveDeviceRoute(outputDevices.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
         }
 
@@ -7739,9 +7744,9 @@ void AudioPolicyService::UpdateRoute(unique_ptr<AudioRendererChangeInfo> &render
             ringerModeMute_ = true;
         }
     } else {
-        if (!IsA2dpOrArmUsbDevice(outputDevices.front()->deviceType_)) {
-            UpdateDualToneState(false, rendererChangeInfo->sessionId);
-        }
+        // try to disable dual hal tone.
+        AUDIO_INFO_LOG("try to disable dual hal tone.");
+        UpdateDualToneState(false, rendererChangeInfo->sessionId);
         ringerModeMute_ = true;
         UpdateActiveDeviceRoute(outputDevices.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
     }
@@ -7792,18 +7797,21 @@ bool AudioPolicyService::IsA2dpOrArmUsbDevice(const InternalDeviceType &deviceTy
 }
 
 bool AudioPolicyService::SelectRingerOrAlarmDevices(const vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
-    const int32_t &sessionId)
+    const unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     CHECK_AND_RETURN_RET_LOG(descs.size() > 0 && descs.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT, false,
         "audio devices not in range for ringer or alarmer.");
+    const int32_t sessionId = rendererChangeInfo->sessionId;
+    const StreamUsage streamUsage = rendererChangeInfo->rendererInfo.streamUsage;
     bool allDevicesInDualDevicesRange = true;
-    bool haveSpeakerDevice = false;
     std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
     for (size_t i = 0; i < descs.size(); i++) {
         if (IsRingerOrAlarmerDualDevicesRange(descs[i]->deviceType_)) {
-            if (descs[i]->deviceType_ == DEVICE_TYPE_SPEAKER) {
-                haveSpeakerDevice = true;
+            if (descs[i]->deviceType_ == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
+                AUDIO_INFO_LOG("usb headset is arm device, set it to arm.");
+                descs[i]->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
             }
+
             activeDevices.push_back(make_pair(descs[i]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG));
             AUDIO_INFO_LOG("select ringer/alarm devices devicetype[%{public}zu]:%{public}d", i, descs[i]->deviceType_);
         } else {
@@ -7812,15 +7820,18 @@ bool AudioPolicyService::SelectRingerOrAlarmDevices(const vector<std::unique_ptr
         }
     }
 
-    if (!descs.empty() && allDevicesInDualDevicesRange && haveSpeakerDevice) {
-        UpdateActiveDevicesRoute(activeDevices);
+    if (!descs.empty() && allDevicesInDualDevicesRange) {
+        // try to disable dual hal tone.
         if (IsA2dpOrArmUsbDevice(descs.front()->deviceType_)) {
-            std::vector<std::pair<InternalDeviceType, DeviceFlag>> defaultDevices;
-            defaultDevices.push_back(
-                make_pair(InternalDeviceType::DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG));
+            UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
+            if ((GetRingerMode() != RINGER_MODE_NORMAL) && (streamUsage != STREAM_USAGE_ALARM)) {
+                AUDIO_INFO_LOG("no normal ringer mode and no alarm, dont dual hal tone.");
+                UpdateDualToneState(false, sessionId);
+                return false;
+            }
             UpdateDualToneState(true, sessionId);
         } else {
-            UpdateDualToneState(false, sessionId);
+            UpdateActiveDevicesRoute(activeDevices);
         }
         return true;
     }
@@ -7852,6 +7863,7 @@ void AudioPolicyService::DealAudioSceneOutputDevices(const AudioScene &audioScen
     if (!descs.empty()) {
         for (size_t i = 0; i < descs.size(); i++) {
             if (descs[i]->getType() == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
+                AUDIO_INFO_LOG("usb headset is arm device.");
                 activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
                 haveArmUsbDevice = true;
             } else {
