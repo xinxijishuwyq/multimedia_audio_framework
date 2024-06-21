@@ -3823,7 +3823,7 @@ static int32_t PrepareDeviceMultiChannel(struct Userdata *u, struct RendererSink
     u->multiChannel.sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
     u->multiChannel.sample_attrs.filePath = filePath;
     u->multiChannel.sample_attrs.deviceNetworkId = u->deviceNetworkId;
-    u->multiChannel.sample_attrs.deviceType =  u->deviceType;
+    u->multiChannel.sample_attrs.deviceType = u->deviceType;
 
     ret = sinkAdapter->RendererSinkInit(sinkAdapter, &u->multiChannel.sample_attrs);
     if (ret != 0) {
@@ -3839,7 +3839,7 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
 {
     u->format = u->ss.format;
     u->processLen = IN_CHANNEL_NUM_MAX * DEFAULT_FRAMELEN;
-    u->processSize = (int64_t)u->processLen * sizeof(float);
+    u->processSize = (uint32_t)u->processLen * sizeof(float);
     u->bufferAttr = pa_xnew0(BufferAttr, 1);
     pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(u->processSize));
     pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(u->processSize));

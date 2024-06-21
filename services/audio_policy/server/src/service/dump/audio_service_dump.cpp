@@ -423,7 +423,7 @@ void AudioServiceDump::PlaybackStreamDump(std::string &dumpString)
 
     dumpString += "Playback Streams\n";
 
-    AppendFormat(dumpString, "- %d Playback stream (s) available:\n", audioData_.streamData.sinkInputs.size());
+    AppendFormat(dumpString, "- %zu Playback stream (s) available:\n", audioData_.streamData.sinkInputs.size());
 
     for (auto it = audioData_.streamData.sinkInputs.begin(); it != audioData_.streamData.sinkInputs.end(); it++) {
         InputOutputInfo sinkInputInfo = *it;
@@ -447,7 +447,7 @@ void AudioServiceDump::RecordStreamDump(std::string &dumpString)
 {
     char s[PA_SAMPLE_SPEC_SNPRINT_MAX];
     dumpString += "Record Streams \n";
-    AppendFormat(dumpString, "- %d Record stream (s) available:\n", audioData_.streamData.sourceOutputs.size());
+    AppendFormat(dumpString, "- %zu Record stream (s) available:\n", audioData_.streamData.sourceOutputs.size());
 
     for (auto it = audioData_.streamData.sourceOutputs.begin(); it != audioData_.streamData.sourceOutputs.end(); it++) {
         InputOutputInfo sourceOutputInfo = *it;
@@ -471,7 +471,7 @@ void AudioServiceDump::HDFModulesDump(std::string &dumpString)
     char s[PA_SAMPLE_SPEC_SNPRINT_MAX];
 
     dumpString += "\nHDF Input Modules\n";
-    AppendFormat(dumpString, "- %d HDF Input Modules (s) available:\n", audioData_.streamData.sourceDevices.size());
+    AppendFormat(dumpString, "- %zu HDF Input Modules (s) available:\n", audioData_.streamData.sourceDevices.size());
 
     for (auto it = audioData_.streamData.sourceDevices.begin(); it != audioData_.streamData.sourceDevices.end(); it++) {
         SinkSourceInfo sourceInfo = *it;
@@ -483,7 +483,7 @@ void AudioServiceDump::HDFModulesDump(std::string &dumpString)
     }
 
     dumpString += "HDF Output Modules\n";
-    AppendFormat(dumpString, "- %d HDF Output Modules (s) available:\n", audioData_.streamData.sinkDevices.size());
+    AppendFormat(dumpString, "- %zu HDF Output Modules (s) available:\n", audioData_.streamData.sinkDevices.size());
 
     for (auto it = audioData_.streamData.sinkDevices.begin(); it != audioData_.streamData.sinkDevices.end(); it++) {
         SinkSourceInfo sinkInfo = *it;
@@ -555,7 +555,7 @@ void AudioServiceDump::AudioFocusInfoDump(string &dumpString)
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = audioData_.policyData.audioFocusInfoList;
 
-    AppendFormat(dumpString, "- %d Audio Focus Info (s) available:\n", audioFocusInfoList.size());
+    AppendFormat(dumpString, "- %zu Audio Focus Info (s) available:\n", audioFocusInfoList.size());
     for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
         if ((iter->first).sessionId == invalidSessionId) {
             continue;
@@ -660,26 +660,26 @@ void AudioServiceDump::DumpXmlParsedDataMap(string &dumpString)
 void AudioServiceDump::AudioInterruptZoneDump(string &dumpString)
 {
     dumpString += "\nAudioInterrupt Zone:\n";
-    AppendFormat(dumpString, "- %d AudioInterruptZoneDump (s) available:\n",
+    AppendFormat(dumpString, "- %zu AudioInterruptZoneDump (s) available:\n",
         audioData_.policyData.audioInterruptZonesMapDump.size());
     for (const auto&[zoneID, audioInterruptZoneDump] : audioData_.policyData.audioInterruptZonesMapDump) {
         if (zoneID < 0) {
             continue;
         }
         AppendFormat(dumpString, "  - Zone ID: %d\n", zoneID);
-        AppendFormat(dumpString, "  - Pids size: %d\n", audioInterruptZoneDump->pids.size());
+        AppendFormat(dumpString, "  - Pids size: %zu\n", audioInterruptZoneDump->pids.size());
         for (auto pid : audioInterruptZoneDump->pids) {
             AppendFormat(dumpString, "    - pid: %d\n", pid);
         }
 
-        AppendFormat(dumpString, "  - Interrupt callback size: %d\n",
+        AppendFormat(dumpString, "  - Interrupt callback size: %zu\n",
             audioInterruptZoneDump->interruptCbSessionIdsMap.size());
         AppendFormat(dumpString, "    - The sessionIds as follow:\n");
         for (auto sessionId : audioInterruptZoneDump->interruptCbSessionIdsMap) {
             AppendFormat(dumpString, "      - SessionId: %d -- have interrupt callback.\n", sessionId);
         }
 
-        AppendFormat(dumpString, "  - Audio policy client proxy callback size: %d\n",
+        AppendFormat(dumpString, "  - Audio policy client proxy callback size: %zu\n",
             audioInterruptZoneDump->audioPolicyClientProxyCBClientPidMap.size());
         AppendFormat(dumpString, "    - The clientPids as follow:\n");
         for (auto pid : audioInterruptZoneDump->audioPolicyClientProxyCBClientPidMap) {
@@ -688,7 +688,7 @@ void AudioServiceDump::AudioInterruptZoneDump(string &dumpString)
 
         std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList
             = audioInterruptZoneDump->audioFocusInfoList;
-        AppendFormat(dumpString, "  - %d Audio Focus Info (s) available:\n", audioFocusInfoList.size());
+        AppendFormat(dumpString, "  - %zu Audio Focus Info (s) available:\n", audioFocusInfoList.size());
         uint32_t invalidSessionId = static_cast<uint32_t>(-1);
         for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
             if ((iter->first).sessionId == invalidSessionId) {
@@ -712,7 +712,7 @@ void AudioServiceDump::AudioInterruptZoneDump(string &dumpString)
 void AudioServiceDump::GroupInfoDump(std::string& dumpString)
 {
     dumpString += "\nGroupInfo:\n";
-    AppendFormat(dumpString, "- %d Group Infos (s) available :\n", audioData_.policyData.groupInfos.size());
+    AppendFormat(dumpString, "- %zu Group Infos (s) available :\n", audioData_.policyData.groupInfos.size());
 
     for (auto it = audioData_.policyData.groupInfos.begin(); it != audioData_.policyData.groupInfos.end(); it++) {
         GroupInfo groupInfo = *it;
@@ -726,7 +726,7 @@ void AudioServiceDump::GroupInfoDump(std::string& dumpString)
 void AudioServiceDump::DevicesInfoDump(string& dumpString)
 {
     dumpString += "\nInput Devices:\n";
-    AppendFormat(dumpString, "- %d Input Devices (s) available :\n", audioData_.policyData.inputDevices.size());
+    AppendFormat(dumpString, "- %zu Input Devices (s) available :\n", audioData_.policyData.inputDevices.size());
 
     for (auto it = audioData_.policyData.inputDevices.begin(); it != audioData_.policyData.inputDevices.end(); it++) {
         DevicesInfo devicesInfo = *it;
@@ -736,7 +736,7 @@ void AudioServiceDump::DevicesInfoDump(string& dumpString)
     }
 
     dumpString += "\nOutput Devices:\n";
-    AppendFormat(dumpString, "- %d Output Devices (s) available :\n", audioData_.policyData.outputDevices.size());
+    AppendFormat(dumpString, "- %zu Output Devices (s) available :\n", audioData_.policyData.outputDevices.size());
 
     for (auto it = audioData_.policyData.outputDevices.begin(); it != audioData_.policyData.outputDevices.end(); it++) {
         DevicesInfo devicesInfo = *it;
@@ -755,7 +755,7 @@ static void EffectManagerInfoDumpPart(string& dumpString, const AudioData &audio
 {
     int32_t count;
     // xml -- Preprocess
-    AppendFormat(dumpString, "- %d preProcess (s) available :\n",
+    AppendFormat(dumpString, "- %zu preProcess (s) available :\n",
         audioData_.policyData.oriEffectConfig.preProcess.size());
     for (Preprocess x : audioData_.policyData.oriEffectConfig.preProcess) {
         AppendFormat(dumpString, "  preProcess stream = %s \n", x.stream.c_str());
@@ -772,7 +772,7 @@ static void EffectManagerInfoDumpPart(string& dumpString, const AudioData &audio
     }
 
     // xml -- Postprocess
-    AppendFormat(dumpString, "- %d postProcess (s) available :\n",
+    AppendFormat(dumpString, "- %zu postProcess (s) available :\n",
         audioData_.policyData.oriEffectConfig.preProcess.size());
     for (EffectSceneStream x : audioData_.policyData.oriEffectConfig.postProcess.effectSceneStreams) {
         AppendFormat(dumpString, "  postprocess stream = %s \n", x.stream.c_str());
@@ -795,7 +795,7 @@ void AudioServiceDump::EffectManagerInfoDump(string& dumpString)
     dumpString += "\nEffect Manager INFO\n";
     AppendFormat(dumpString, "  XML version:%s \n", audioData_.policyData.oriEffectConfig.version.c_str());
     // xml -- Library
-    AppendFormat(dumpString, "- %d library (s) available :\n", audioData_.policyData.oriEffectConfig.libraries.size());
+    AppendFormat(dumpString, "- %zu library (s) available :\n", audioData_.policyData.oriEffectConfig.libraries.size());
     for (Library x : audioData_.policyData.oriEffectConfig.libraries) {
         count++;
         AppendFormat(dumpString, "  library%d\n", count);
@@ -805,7 +805,7 @@ void AudioServiceDump::EffectManagerInfoDump(string& dumpString)
     }
     // xml -- effect
     count = 0;
-    AppendFormat(dumpString, "- %d effect (s) available :\n", audioData_.policyData.oriEffectConfig.effects.size());
+    AppendFormat(dumpString, "- %zu effect (s) available :\n", audioData_.policyData.oriEffectConfig.effects.size());
     for (Effect x : audioData_.policyData.oriEffectConfig.effects) {
         count++;
         AppendFormat(dumpString, "  effect%d\n", count);
@@ -816,7 +816,7 @@ void AudioServiceDump::EffectManagerInfoDump(string& dumpString)
 
     // xml -- effectChain
     count = 0;
-    AppendFormat(dumpString, "- %d effectChain (s) available :\n",
+    AppendFormat(dumpString, "- %zu effectChain (s) available :\n",
         audioData_.policyData.oriEffectConfig.effectChains.size());
     for (EffectChain x : audioData_.policyData.oriEffectConfig.effectChains) {
         count++;
@@ -834,7 +834,7 @@ void AudioServiceDump::EffectManagerInfoDump(string& dumpString)
 
     // successful lib
     count = 0;
-    AppendFormat(dumpString, "- %d available Effect (s) available :\n",
+    AppendFormat(dumpString, "- %zu available Effect (s) available :\n",
         audioData_.policyData.availableEffects.size());
     for (Effect x : audioData_.policyData.availableEffects) {
         count++;
