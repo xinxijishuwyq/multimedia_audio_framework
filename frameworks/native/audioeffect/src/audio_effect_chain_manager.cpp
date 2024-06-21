@@ -1042,17 +1042,17 @@ AudioEffectScene AudioEffectChainManager::GetSceneTypeFromSpatializationSceneTyp
     return sceneType;
 }
 
-void AudioEffectChainManager::UpdateEffectChainRss(const std::string &RssValue)
+void AudioEffectChainManager::UpdateEffectChainRss(const std::string &rssScene)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     AUDIO_INFO_LOG("UpdateEffectChainRss");
-    rssScene_ = RssValue;
+    rssScene_ = rssScene;
     for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
         auto audioEffectChain = it->second;
         if (audioEffectChain == nullptr) {
             continue;
         }
-        audioEffectChain->SetEffectRssScene(RssValue);
+        audioEffectChain->SetEffectRssScene(rssScene);
         if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
             AUDIO_WARNING_LOG("Update Rss to effect chain failed");
             continue;

@@ -46,6 +46,7 @@ public:
     std::string GetEffectMode();
     void SetEffectMode(const std::string &mode);
     void SetEffectRssScene(const std::string &rssScene);
+    void SetEffectCurrSceneType(AudioEffectScene currSceneType);
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle, AudioEffectScene currSceneType);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
     bool IsEmptyEffectHandles();
@@ -62,7 +63,6 @@ private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
     int32_t SetEffectParamToHandle(AudioEffectHandle handle, int32_t &replyData);
-    int32_t SetEffectCurrSceneType(AudioEffectScene currSceneType);
 
     std::mutex reloadMutex_;
     std::string sceneType_;
