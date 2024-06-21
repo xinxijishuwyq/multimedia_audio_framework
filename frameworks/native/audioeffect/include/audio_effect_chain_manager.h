@@ -131,7 +131,7 @@ public:
     bool CheckA2dpOffload();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
-    void UpdateEffectChainValue(const std::string &rssValue);
+    void UpdateEffectChainRss(const std::string &rssValue);
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);

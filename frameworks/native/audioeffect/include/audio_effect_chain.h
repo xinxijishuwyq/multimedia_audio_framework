@@ -55,14 +55,14 @@ public:
     void InitEffectChain();
     void SetHeadTrackingDisabled();
     uint32_t GetLatency();
-    int32_t SetEffectParam(AudioEffectScene currSceneType);
-    int32_t SetEffectValue(std::string rssValue);
+    int32_t UpdateEffectParam();
     void ResetIoBufferConfig();
 
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
-    int32_t SetEffectParamToHandle(AudioEffectHandle handle, AudioEffectScene currSceneType, int32_t &replyData);
+    int32_t SetEffectParamToHandle(AudioEffectHandle handle, int32_t &replyData);
+    int32_t SetEffectCurrSceneType(AudioEffectScene currSceneType);
 
     std::mutex reloadMutex_;
     std::string sceneType_;

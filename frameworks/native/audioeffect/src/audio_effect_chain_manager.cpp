@@ -599,7 +599,8 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
                 currSceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(
                     GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, it->first)));
             }
-            int32_t ret = audioEffectChain->SetEffectParam(currSceneType);
+            audioEffectChain->SetEffectCurrSceneType(currSceneType);
+            int32_t ret = audioEffectChain->UpdateEffectParam();
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap volume failed");
             AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, volume changed to %{public}u",
                 it->first.c_str(), audioEffectChain->GetLatency(), volumeMax);
@@ -672,7 +673,8 @@ int32_t AudioEffectChainManager::EffectApRotationUpdate(std::shared_ptr<AudioEff
                 currSceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(
                     GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, it->first)));
             }
-            int32_t ret = audioEffectChain->SetEffectParam(currSceneType);
+            audioEffectChain->SetEffectCurrSceneType(currSceneType);
+            int32_t ret = audioEffectChain->UpdateEffectParam();
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap rotation failed");
             AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, rotation changed to %{public}u",
                 it->first.c_str(), audioEffectChain->GetLatency(), rotationState);
@@ -1040,19 +1042,19 @@ AudioEffectScene AudioEffectChainManager::GetSceneTypeFromSpatializationSceneTyp
     return sceneType;
 }
 
-void AudioEffectChainManager::UpdateEffectChainValue(const std::string &RssValue)
+void AudioEffectChainManager::UpdateEffectChainRss(const std::string &RssValue)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    AUDIO_INFO_LOG("UpdateEffectChainValue");
+    AUDIO_INFO_LOG("UpdateEffectChainRss");
     rssScene_ = RssValue;
     for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
         auto audioEffectChain = it->second;
         if (audioEffectChain == nullptr) {
             continue;
         }
-
-        if (audioEffectChain->SetEffectValue(RssValue) != SUCCESS) {
-            AUDIO_WARNING_LOG("set Rss value to effect chain failed");
+        audioEffectChain->SetEffectRssScene(RssValue);
+        if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
+            AUDIO_WARNING_LOG("Update Rss to effect chain failed");
             continue;
         }
     }
@@ -1060,14 +1062,15 @@ void AudioEffectChainManager::UpdateEffectChainValue(const std::string &RssValue
 
 void AudioEffectChainManager::UpdateEffectChainParams(AudioEffectScene sceneType)
 {
+    AUDIO_INFO_LOG("UpdateEffectChainParams");
     for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
         auto audioEffectChain = it->second;
         if (audioEffectChain == nullptr) {
             continue;
         }
-
-        if (audioEffectChain->SetEffectParam(sceneType) != SUCCESS) {
-            AUDIO_WARNING_LOG("set param to effect chain failed");
+        audioEffectChain->SetEffectCurrSceneType(sceneType);
+        if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
+            AUDIO_WARNING_LOG("Update param to effect chain failed");
             continue;
         }
     }
@@ -1129,7 +1132,8 @@ void AudioEffectChainManager::UpdateRealAudioEffect()
         std::shared_ptr<AudioEffectChain> audioEffectChain = SceneTypeToEffectChainMap_[key];
         AudioEffectScene currSceneType;
         UpdateCurrSceneType(currSceneType, sceneType);
-        audioEffectChain->SetEffectParam(currSceneType);
+        audioEffectChain->SetEffectCurrSceneType(currSceneType);
+        audioEffectChain->UpdateEffectParam();
     }
 }
 

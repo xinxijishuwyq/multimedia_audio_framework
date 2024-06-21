@@ -280,7 +280,7 @@ static void RssSceneType(const std::string &key, const std::string &RssKey, cons
         if (audioEffectChainManager == nullptr) {
             AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
         }
-        audioEffectChainManager->UpdateEffectChainValue(RssValue);
+        audioEffectChainManager->UpdateEffectChainRss(RssValue);
     }
 }
 
