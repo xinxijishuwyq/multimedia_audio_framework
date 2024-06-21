@@ -3123,7 +3123,8 @@ static void ProcessNormalData(struct Userdata *u)
     if (flag) {
         pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
         if (pa_atomic_load(&u->primary.dflag) == 1) {
-            sleepForUsec = blockTime - (pa_rtclock_now() - u->primary.lastProcessDataTime);
+            sleepForUsec = (int64_t)blockTime -
+                ((int64_t)pa_rtclock_now() - (int64_t)(u->primary.lastProcessDataTime));
             if (sleepForUsec < MIN_SLEEP_FOR_USEC) {
                 sleepForUsec = MIN_SLEEP_FOR_USEC;
             }
@@ -3133,7 +3134,7 @@ static void ProcessNormalData(struct Userdata *u)
                 u->primary.lastProcessDataTime = pa_rtclock_now();
                 ProcessRenderUseTiming(u, now);
             }
-            sleepForUsec = blockTime - (pa_rtclock_now() - now);
+            sleepForUsec = (int64_t)blockTime - ((int64_t)pa_rtclock_now() - (int64_t)now);
             if (u->primary.timestamp <= now + u->primary.prewrite) {
                 sleepForUsec = PA_MIN(sleepForUsec, (int64_t)u->primary.writeTime);
             }
