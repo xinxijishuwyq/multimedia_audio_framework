@@ -855,7 +855,7 @@ private:
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
         std::string &networkId);
 
-    bool NotifyRecreateRendererStream(bool isUpdateActiveDevice,
+    bool NotifyRecreateRendererStream(std::unique_ptr<AudioDeviceDescriptor> &desc,
         const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
 
     void TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag);

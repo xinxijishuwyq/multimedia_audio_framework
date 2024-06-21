@@ -2251,7 +2251,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             hasDirectChangeDevice = true;
             continue;
         }
-        if (NotifyRecreateRendererStream(isUpdateActiveDevice, rendererChangeInfo)) { continue; }
+        if (NotifyRecreateRendererStream(descs.front(), rendererChangeInfo)) { continue; }
         MoveToNewOutputDevice(rendererChangeInfo, descs, reason);
     }
     if (isUpdateActiveDevice) {
@@ -2288,24 +2288,24 @@ void AudioPolicyService::WriteOutputRouteChangeEvent(unique_ptr<AudioDeviceDescr
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-bool AudioPolicyService::NotifyRecreateRendererStream(bool isUpdateActiveDevice,
+bool AudioPolicyService::NotifyRecreateRendererStream(std::unique_ptr<AudioDeviceDescriptor> &desc,
     const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
-    AUDIO_INFO_LOG("Is update active device: %{public}d, current rendererFlag: %{public}d, origianl flag: %{public}d",
-        isUpdateActiveDevice, rendererChangeInfo->rendererInfo.rendererFlags,
+    AUDIO_INFO_LOG("New device type: %{public}d, current rendererFlag: %{public}d, origianl flag: %{public}d",
+        desc->deviceType_, rendererChangeInfo->rendererInfo.rendererFlags,
         rendererChangeInfo->rendererInfo.originalFlag);
-    CHECK_AND_RETURN_RET_LOG(isUpdateActiveDevice, false, "isUpdateActiveDevice is false");
+    CHECK_AND_RETURN_RET_LOG(rendererChangeInfo->outputDeviceInfo.deviceType != DEVICE_TYPE_INVALID &&
+        desc->deviceType_ != DEVICE_TYPE_INVALID, false, "isUpdateActiveDevice is false");
     CHECK_AND_RETURN_RET_LOG(rendererChangeInfo->rendererInfo.originalFlag != AUDIO_FLAG_NORMAL &&
         rendererChangeInfo->rendererInfo.originalFlag != AUDIO_FLAG_FORCED_NORMAL, false, "original flag is normal");
     // Switch between old and new stream as they have different hals
     std::string oldDevicePortName = rendererChangeInfo->outputDeviceInfo.isArmUsbDevice ?
         USB_SPEAKER : GetSinkPortName(rendererChangeInfo->outputDeviceInfo.deviceType);
-    if ((strcmp(oldDevicePortName.c_str(), GetSinkPortName(currentActiveDevice_.deviceType_).c_str())) ||
+    if ((strcmp(oldDevicePortName.c_str(), GetSinkPortName(desc->deviceType_).c_str())) ||
         ((rendererChangeInfo->outputDeviceInfo.networkId == LOCAL_NETWORK_ID) ^
-        (currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID))) {
+        (desc->networkId_ == LOCAL_NETWORK_ID))) {
         int32_t streamClass = GetPreferredOutputStreamTypeInner(rendererChangeInfo->rendererInfo.streamUsage,
-            currentActiveDevice_.deviceType_, rendererChangeInfo->rendererInfo.originalFlag,
-            currentActiveDevice_.networkId_);
+            desc->deviceType_, rendererChangeInfo->rendererInfo.originalFlag, desc->networkId_);
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, streamClass);
         return true;
