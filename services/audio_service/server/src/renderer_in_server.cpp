@@ -272,7 +272,7 @@ void RendererInServer::DoFadingOutFor8Bit(BufferDesc& bufferDesc, size_t byteLen
     if (length == 0) {
         return;
     }
-    int32_t numChannels = processConfig_.streamInfo.channels;
+    uint32_t numChannels = processConfig_.streamInfo.channels;
     for (size_t i = 0; i < length / numChannels; i++) {
         for (int32_t j = 0; j < numChannels; j++) {
             float fadeoutRatio = (float)(length - (i * numChannels + j)) / (length);
@@ -292,7 +292,7 @@ void RendererInServer::DoFadingOutFor16Bit(BufferDesc& bufferDesc, size_t byteLe
     if (length == 0) {
         return;
     }
-    int32_t numChannels = processConfig_.streamInfo.channels;
+    uint32_t numChannels = processConfig_.streamInfo.channels;
     size_t lastPos = 0;
     for (size_t i = 0; i < length / numChannels; i++) {
         for (int32_t j = 0; j < numChannels; j++) {
@@ -314,7 +314,7 @@ void RendererInServer::DoFadingOutFor24Bit(BufferDesc& bufferDesc, size_t byteLe
         return;
     }
 
-    int32_t numChannels = processConfig_.streamInfo.channels;
+    uint32_t numChannels = processConfig_.streamInfo.channels;
     size_t step = byteLen * numChannels;
     size_t lastPos = 0;
     for (size_t i = 0; i < length;) {
@@ -342,7 +342,7 @@ void RendererInServer::DoFadingOutFor32Bit(BufferDesc& bufferDesc, size_t byteLe
     if (length == 0) {
         return;
     }
-    int32_t numChannels = processConfig_.streamInfo.channels;
+    uint32_t numChannels = processConfig_.streamInfo.channels;
     size_t lastPos = 0;
     for (size_t i = 0; i < length / numChannels; i++) {
         for (int32_t j = 0; j < numChannels; j++) {

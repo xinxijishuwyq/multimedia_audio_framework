@@ -34,7 +34,9 @@ static int32_t GetOneFrameInputData(EnhanceBufferAttr *enhanceBufferAttr, std::v
 
     input.reserve(inputLen);
     std::vector<std::vector<uint8_t>> cache;
-    cache.resize(enhanceBufferAttr->batchLen);
+    if (enhanceBufferAttr->batchLen > 0) {
+        cache.resize(enhanceBufferAttr->batchLen);
+    }
     for (auto &it : cache) {
         it.resize(enhanceBufferAttr->byteLenPerFrame);
     }

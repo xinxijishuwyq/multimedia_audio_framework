@@ -1287,7 +1287,7 @@ static void CheckPrimaryFadeinIsDone(pa_sink *si, pa_sink_input *sinkIn)
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    if (u->primary.primaryFadingInDone && u->primary.primarySinkInIndex == sinkIn->index) {
+    if (u->primary.primaryFadingInDone && u->primary.primarySinkInIndex == (int32_t)sinkIn->index) {
         pa_atomic_store(&u->primary.fadingFlagForPrimary, 0);
     }
 }
@@ -1398,7 +1398,7 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
     }
 
     if (pa_atomic_load(&u->multiChannel.fadingFlagForMultiChannel) == 1 &&
-        u->multiChannel.multiChannelSinkInIndex == sinkIn->index) {
+        u->multiChannel.multiChannelSinkInIndex == (int32_t)sinkIn->index) {
         if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
             AUDIO_INFO_LOG("pa_memblock_is_silence");
             return;
@@ -3170,7 +3170,7 @@ static void ProcessMCHData(struct Userdata *u)
         ProcessRenderUseTimingMultiChannel(u, now);
     }
     pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-    sleepForUsec = PA_MIN(blockTime - (pa_rtclock_now() - now), u->multiChannel.writeTime);
+    sleepForUsec = (int64_t)PA_MIN(blockTime - (pa_rtclock_now() - now), u->multiChannel.writeTime);
     sleepForUsec = PA_MAX(sleepForUsec, 0);
     if (sleepForUsec != -1) {
         if (u->timestampSleep == -1) {
