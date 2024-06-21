@@ -160,7 +160,7 @@ private:
 
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
-    AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
+    AudioScene currentAudioScene_ = AudioScene::AUDIO_SCENE_INVALID;
 };
 
 MultiChannelRendererSinkInner::MultiChannelRendererSinkInner(const std::string &halName)
