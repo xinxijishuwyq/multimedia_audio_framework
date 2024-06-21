@@ -177,7 +177,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, Audio
     }
     AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
     *data++ = audioEffectChainValue_;
-    AUDIO_DEBUG_LOG("CXX Set rss scene type %{public}d", audioEffectChainValue_);
+    AUDIO_DEBUG_LOG("set rss scene type %{public}d", audioEffectChainValue_);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     delete[] effectParam;
@@ -228,7 +228,7 @@ int32_t AudioEffectChain::SetEffectValue(std::string rssValue)
         int32_t replyData;
         int32_t ret = SetEffectParamToHandle(handle, currSceneType_, replyData);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "set EFFECT_CMD_SET_RSSVALUE fail");
-        AUDIO_DEBUG_LOG("CXX Set Effect Rss Value %{public}d Success", audioEffectChainValue_);
+        AUDIO_DEBUG_LOG("Set Effect Rss Value %{public}d Success", audioEffectChainValue_);
         latency_ += static_cast<uint32_t>(replyData);
     }
     return SUCCESS;

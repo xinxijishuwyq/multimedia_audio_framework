@@ -273,7 +273,8 @@ void AudioServer::OnStop()
 
 static void RssSceneType(const std::string &key, const std::string &RssKey, const std::string &RssValue)
 {
-    AUDIO_ERR_LOG("CXX key is %{public}s, and value is %{public}s", RssKey.c_str(), RssValue.c_str());
+    AUDIO_DEBUG_LOG("key is %{public}s, RssKey is %{public}s, and RssValue is %{public}s",
+        key.c_str(), RssKey.c_str(), RssValue.c_str());
     if (key == "audioeffect" && RssKey == "updateAudioEffectType") {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
