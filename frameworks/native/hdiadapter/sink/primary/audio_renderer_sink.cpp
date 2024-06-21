@@ -1001,7 +1001,7 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &outputD
         ERR_INVALID_PARAM, "Invalid audio devices.");
     DeviceType outputDevice = outputDevices.front();
     if (outputDevice == currentActiveDevice_ &&
-        outputDevices.size() == currentDevicesSize_) {
+        outputDevices.size() == static_cast<uint32_t>(currentDevicesSize_)) {
         AUDIO_INFO_LOG("SetOutputRoutes output device not change");
         return SUCCESS;
     }
@@ -1093,8 +1093,8 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector
             currentAudioScene_ = audioScene;
             isAudioSceneUpdate = true;
         }
-        if (activeDevices.size() != currentDevicesSize_ || activeDevice != currentActiveDevice_ ||
-            (isAudioSceneUpdate &&
+        if (activeDevices.size() != static_cast<uint32_t>(currentDevicesSize_) ||
+            activeDevice != currentActiveDevice_ || (isAudioSceneUpdate &&
             (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT))) {
             std::vector<std::pair<DeviceType, AudioPortPin>> activeDevicesPortPin = {};
             for (auto device : activeDevices) {
