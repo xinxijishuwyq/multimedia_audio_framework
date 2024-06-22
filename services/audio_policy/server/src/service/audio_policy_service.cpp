@@ -5827,7 +5827,6 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     sptr<IRemoteObject> object = parameterChangeCbStub->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("listenerStub object is nullptr");
-        delete parameterChangeCbStub;
         return;
     }
     AUDIO_DEBUG_LOG("done");
