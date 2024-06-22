@@ -1040,6 +1040,7 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType
         if (ret != SUCCESS) {
             free(sinks);
             AUDIO_ERR_LOG("SetOutputRoutes FAILED: %{public}d", ret);
+            return ret;
         }
         outputDevices[i].second = sinks[i].ext.device.type;
         AUDIO_INFO_LOG("Output[%{public}zu] PIN is: 0x%{public}X DeviceType is %{public}d", i, outputDevices[i].second,
