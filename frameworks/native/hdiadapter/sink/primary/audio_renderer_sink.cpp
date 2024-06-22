@@ -1038,7 +1038,7 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType
     for (size_t i = 0; i < outputDevices.size(); i++) {
         int32_t ret = SetOutputPortPin(outputDevices[i].first, sinks[i]);
         if (ret != SUCCESS) {
-            free(sinks);
+            delete [] sinks;
             AUDIO_ERR_LOG("SetOutputRoutes FAILED: %{public}d", ret);
             return ret;
         }
