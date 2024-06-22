@@ -132,6 +132,7 @@ static void UserdataFree(struct Userdata *u)
 
 static int SourceProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk)
 {
+    AUTO_CTRACE("hdi_source::SourceProcessMsg code: %d", code);
     struct Userdata *u = PA_SOURCE(o)->userdata;
     pa_assert(u);
 
@@ -304,6 +305,7 @@ static void ThreadFuncCapturerTimer(void *userdata)
     AUDIO_DEBUG_LOG("HDI Source: u->timestamp : %{public}" PRIu64, u->timestamp);
 
     while (true) {
+        AUTO_CTRACE("FuncCapturerLoop");
         bool result = PaRtpollSetTimerFunc(u, timerElapsed);
         if (!result) {
             break;
