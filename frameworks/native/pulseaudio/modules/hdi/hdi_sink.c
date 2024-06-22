@@ -1259,7 +1259,8 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         return;
     }
 
-    if (pa_atomic_load(&u->primary.fadingFlagForPrimary) == 1 && u->primary.primarySinkInIndex == sinkIn->index) {
+    if (pa_atomic_load(&u->primary.fadingFlagForPrimary) == 1 &&
+        u->primary.primarySinkInIndex == (int32_t)sinkIn->index) {
         if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
             AUDIO_INFO_LOG("pa_memblock_is_silence");
             return;
@@ -1426,8 +1427,8 @@ static void CheckMultiChannelFadeinIsDone(pa_sink *si, pa_sink_input *sinkIn)
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    if (u->multiChannel.multiChannelFadingInDone
-        && u->multiChannel.multiChannelSinkInIndex == (int32_t)(sinkIn->index)) {
+    if (u->multiChannel.multiChannelFadingInDone &&
+        u->multiChannel.multiChannelSinkInIndex == (int32_t)sinkIn->index) {
         pa_atomic_store(&u->multiChannel.fadingFlagForMultiChannel, 0);
     }
 }

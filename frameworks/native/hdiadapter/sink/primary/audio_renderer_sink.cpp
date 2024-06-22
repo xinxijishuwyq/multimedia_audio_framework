@@ -1001,7 +1001,7 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &outputD
         ERR_INVALID_PARAM, "Invalid audio devices.");
     DeviceType outputDevice = outputDevices.front();
     if (outputDevice == currentActiveDevice_ &&
-        outputDevices.size() == currentDevicesSize_) {
+        outputDevices.size() == static_cast<uint32_t>(currentDevicesSize_)) {
         AUDIO_INFO_LOG("SetOutputRoutes output device not change");
         return SUCCESS;
     }

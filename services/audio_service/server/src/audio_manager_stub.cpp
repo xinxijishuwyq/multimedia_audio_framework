@@ -171,8 +171,8 @@ int AudioManagerStub::HandleSetAudioScene(MessageParcel &data, MessageParcel &re
     AudioScene audioScene = (static_cast<AudioScene>(data.ReadInt32()));
     std::vector<DeviceType> activeOutputDevices;
     int32_t vecSize = data.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(vecSize > 0 && vecSize <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT, AUDIO_ERR,
-        "HandleSetAudioScene failed");
+    CHECK_AND_RETURN_RET_LOG(vecSize > 0 && static_cast<size_t>(vecSize) <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+        AUDIO_ERR, "HandleSetAudioScene failed");
     for (int32_t i = 0; i < vecSize; i++) {
         DeviceType deviceType = (static_cast<DeviceType>(data.ReadInt32()));
         activeOutputDevices.push_back(deviceType);
@@ -196,8 +196,8 @@ int AudioManagerStub::HandleUpdateActiveDevicesRoute(MessageParcel &data, Messag
 {
     std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
     int32_t vecSize = data.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(vecSize > 0 && vecSize <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT, AUDIO_ERR,
-        "HandleUpdateActiveDevicesRoute failed");
+    CHECK_AND_RETURN_RET_LOG(vecSize > 0 && static_cast<size_t>(vecSize) <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+        AUDIO_ERR, "HandleUpdateActiveDevicesRoute failed");
     for (int32_t i = 0; i < vecSize; i++) {
         DeviceType deviceType = (static_cast<DeviceType>(data.ReadInt32()));
         DeviceFlag deviceFlag = (static_cast<DeviceFlag>(data.ReadInt32()));
