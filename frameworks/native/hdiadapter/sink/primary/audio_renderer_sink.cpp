@@ -1093,7 +1093,7 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector
             currentAudioScene_ = audioScene;
             isAudioSceneUpdate = true;
         }
-        if (activeDevices.size() != currentDevicesSize_ || activeDevice != currentActiveDevice_ ||
+        if (activeDevices.size() != static_cast<size_t>(currentDevicesSize_) || activeDevice != currentActiveDevice_ ||
             (isAudioSceneUpdate &&
             (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT))) {
             std::vector<std::pair<DeviceType, AudioPortPin>> activeDevicesPortPin = {};
