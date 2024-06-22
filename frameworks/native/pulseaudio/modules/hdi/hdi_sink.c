@@ -2620,7 +2620,7 @@ static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa
             AUDIO_INFO_LOG("store fadingFlagForPrimary for 1");
             pa_proplist_sets(i->proplist, "fadeoutPause", "0");
             u->primary.primaryFadingInDone = 0;
-            u->primary.primarySinkInIndex = i->index;
+            u->primary.primarySinkInIndex = (int32_t)(i->index);
             AUDIO_INFO_LOG("PaInputStateChangeCb, HDI renderer already started");
             return;
         }
@@ -2637,7 +2637,7 @@ static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa
             AUDIO_INFO_LOG("store fadingFlagForPrimary for 1");
             pa_proplist_sets(i->proplist, "fadeoutPause", "0");
             u->primary.primaryFadingInDone = 0;
-            u->primary.primarySinkInIndex = i->index;
+            u->primary.primarySinkInIndex = (int32_t)(i->index);
             AUDIO_INFO_LOG("PaInputStateChangeCb, Successfully restarted HDI renderer");
         }
     }
@@ -2924,7 +2924,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
         }
     }
     if (nInput != 0 && blockTime != -1) {
-        *sleepForUsec = (int64_t)PA_MAX(blockTime, 0) - (int64_t)(pa_rtclock_now() - now);
+        *sleepForUsec = (int64_t)PA_MAX(blockTime, 0) - (int64_t)(pa_rtclock_now() - (int64_t)now);
         *sleepForUsec = PA_MAX(*sleepForUsec, 0);
     }
 }
@@ -3125,7 +3125,8 @@ static void ProcessNormalData(struct Userdata *u)
     if (flag) {
         pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
         if (pa_atomic_load(&u->primary.dflag) == 1) {
-            sleepForUsec = blockTime - (pa_rtclock_now() - u->primary.lastProcessDataTime);
+            sleepForUsec = (int64_t)blockTime -
+                ((int64_t)pa_rtclock_now() - (int64_t)(u->primary.lastProcessDataTime));
             if (sleepForUsec < MIN_SLEEP_FOR_USEC) {
                 sleepForUsec = MIN_SLEEP_FOR_USEC;
             }
@@ -3135,7 +3136,7 @@ static void ProcessNormalData(struct Userdata *u)
                 u->primary.lastProcessDataTime = pa_rtclock_now();
                 ProcessRenderUseTiming(u, now);
             }
-            sleepForUsec = blockTime - (pa_rtclock_now() - now);
+            sleepForUsec = (int64_t)blockTime - ((int64_t)pa_rtclock_now() - (int64_t)now);
             if (u->primary.timestamp <= now + u->primary.prewrite) {
                 sleepForUsec = PA_MIN(sleepForUsec, (int64_t)u->primary.writeTime);
             }
@@ -3172,7 +3173,8 @@ static void ProcessMCHData(struct Userdata *u)
         ProcessRenderUseTimingMultiChannel(u, now);
     }
     pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-    sleepForUsec = (int64_t)PA_MIN(blockTime - (pa_rtclock_now() - now), u->multiChannel.writeTime);
+    sleepForUsec = PA_MIN((int64_t)blockTime - ((int64_t)pa_rtclock_now() - (int64_t)now),
+        (int64_t)(u->multiChannel.writeTime));
     sleepForUsec = PA_MAX(sleepForUsec, 0);
     if (sleepForUsec != -1) {
         if (u->timestampSleep == -1) {
