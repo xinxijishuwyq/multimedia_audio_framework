@@ -274,7 +274,7 @@ void RendererInServer::DoFadingOutFor8Bit(BufferDesc& bufferDesc, size_t byteLen
     }
     uint32_t numChannels = processConfig_.streamInfo.channels;
     for (size_t i = 0; i < length / numChannels; i++) {
-        for (int32_t j = 0; j < numChannels; j++) {
+        for (uint32_t j = 0; j < numChannels; j++) {
             float fadeoutRatio = (float)(length - (i * numChannels + j)) / (length);
             data[i * numChannels + j] =
                 (data[i * numChannels + j] - UINT8_SILENCE_VALUE) * fadeoutRatio + UINT8_SILENCE_VALUE;
@@ -295,7 +295,7 @@ void RendererInServer::DoFadingOutFor16Bit(BufferDesc& bufferDesc, size_t byteLe
     uint32_t numChannels = processConfig_.streamInfo.channels;
     size_t lastPos = 0;
     for (size_t i = 0; i < length / numChannels; i++) {
-        for (int32_t j = 0; j < numChannels; j++) {
+        for (uint32_t j = 0; j < numChannels; j++) {
             float fadeoutRatio = (float)(length - (i * numChannels + j)) / (length);
             lastPos = i * numChannels + j;
             data[lastPos] *= fadeoutRatio;
@@ -345,7 +345,7 @@ void RendererInServer::DoFadingOutFor32Bit(BufferDesc& bufferDesc, size_t byteLe
     uint32_t numChannels = processConfig_.streamInfo.channels;
     size_t lastPos = 0;
     for (size_t i = 0; i < length / numChannels; i++) {
-        for (int32_t j = 0; j < numChannels; j++) {
+        for (uint32_t j = 0; j < numChannels; j++) {
             float fadeoutRatio = (float)(length - (i * numChannels + j)) / (length);
             lastPos = i * numChannels + j;
             data[lastPos] *= fadeoutRatio;
