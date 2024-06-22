@@ -196,7 +196,7 @@ int AudioManagerStub::HandleUpdateActiveDevicesRoute(MessageParcel &data, Messag
 {
     std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
     int32_t vecSize = data.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(vecSize > 0 && static_cast<uint32_t>(vecSize) <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+    CHECK_AND_RETURN_RET_LOG(vecSize > 0 && static_cast<size_t>(vecSize) <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         AUDIO_ERR, "HandleUpdateActiveDevicesRoute failed");
     for (int32_t i = 0; i < vecSize; i++) {
         DeviceType deviceType = (static_cast<DeviceType>(data.ReadInt32()));
