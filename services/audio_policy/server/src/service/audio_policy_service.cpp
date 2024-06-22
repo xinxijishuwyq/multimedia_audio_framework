@@ -3205,6 +3205,7 @@ void AudioPolicyService::AddEarpiece()
     }
     sptr<AudioDeviceDescriptor> audioDescriptor =
         new (std::nothrow) AudioDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE);
+    CHECK_AND_RETURN_LOG(audioDescriptor != nullptr, "Create earpiect device descriptor failed");
 
     std::lock_guard<std::shared_mutex> lock(deviceStatusUpdateSharedMutex_);
     // Use speaker streaminfo for earpiece cap
@@ -3384,6 +3385,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
     }
 
     sptr<AudioDeviceDescriptor> devDesc = new (std::nothrow) AudioDeviceDescriptor(updatedDesc);
+    CHECK_AND_RETURN_LOG(devDesc != nullptr, "Create device descriptor failed");
     audioDeviceManager_.RemoveNewDevice(devDesc);
     RemoveMicrophoneDescriptor(devDesc);
     if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -6315,6 +6317,7 @@ void AudioPolicyService::AddMicrophoneDescriptor(sptr<AudioDeviceDescriptor> &de
         if (iter == connectedMicrophones_.end()) {
             sptr<MicrophoneDescriptor> micDesc = new (std::nothrow) MicrophoneDescriptor(startMicrophoneId++,
                 deviceDescriptor->deviceType_);
+            CHECK_AND_RETURN_LOG(micDesc != nullptr, "new MicrophoneDescriptor failed");
             connectedMicrophones_.push_back(micDesc);
         }
     }
@@ -6358,6 +6361,10 @@ vector<sptr<MicrophoneDescriptor>> AudioPolicyService::GetAudioCapturerMicrophon
     const auto desc = audioCaptureMicrophoneDescriptor_.find(sessionId);
     if (desc != audioCaptureMicrophoneDescriptor_.end()) {
         sptr<MicrophoneDescriptor> micDesc = new (std::nothrow) MicrophoneDescriptor(desc->second);
+        if (micDesc == nullptr) {
+            AUDIO_ERR_LOG("Create microphone device descriptor failed");
+            return descList;
+        }
         descList.push_back(micDesc);
     }
     return descList;

@@ -26,11 +26,19 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint32_t MAX_BATCH_LEN = 20; // Number of input channel, ec(8) + onBoardMic(4) + headsetMic(2) + buffer(6)
+constexpr uint32_t MAX_BYTE_LEN_PER_FRAME = 19200;
+constexpr uint32_t MAX_BIT_DEPTH = 8;
 
 static int32_t GetOneFrameInputData(EnhanceBufferAttr *enhanceBufferAttr, std::vector<uint8_t> &input,
     uint32_t inputLen)
 {
-    CHECK_AND_RETURN_RET_LOG(enhanceBufferAttr->bitDepth != 0, ERROR, "bitDepth is zero");
+    CHECK_AND_RETURN_RET_LOG(enhanceBufferAttr->bitDepth != 0 &&
+        enhanceBufferAttr->bitDepth < MAX_BIT_DEPTH, ERROR, "bitDepth is invalid");
+    CHECK_AND_RETURN_RET_LOG(enhanceBufferAttr->byteLenPerFrame != 0 &&
+        enhanceBufferAttr->byteLenPerFrame < MAX_BYTE_LEN_PER_FRAME, ERROR, "byteLenPerFrame is out of range");
+    CHECK_AND_RETURN_RET_LOG(enhanceBufferAttr->batchLen != 0 &&
+        enhanceBufferAttr->batchLen < MAX_BATCH_LEN, ERROR, "batchLen is out of range");
 
     input.reserve(inputLen);
     std::vector<std::vector<uint8_t>> cache;
