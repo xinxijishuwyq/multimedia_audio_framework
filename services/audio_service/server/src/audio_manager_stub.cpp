@@ -171,7 +171,7 @@ int AudioManagerStub::HandleSetAudioScene(MessageParcel &data, MessageParcel &re
     AudioScene audioScene = (static_cast<AudioScene>(data.ReadInt32()));
     std::vector<DeviceType> activeOutputDevices;
     int32_t vecSize = data.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(vecSize > 0 && static_cast<uint32_t>(vecSize) <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+    CHECK_AND_RETURN_RET_LOG(vecSize > 0 && static_cast<size_t>(vecSize) <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         AUDIO_ERR, "HandleSetAudioScene failed");
     for (int32_t i = 0; i < vecSize; i++) {
         DeviceType deviceType = (static_cast<DeviceType>(data.ReadInt32()));
