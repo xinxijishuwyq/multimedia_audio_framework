@@ -81,7 +81,6 @@ private:
     void HandleUpdateRouteSupportParsed(std::string &value);
     PAConfigType GetPaConfigType(std::string &name);
 
-    void SplitStringToSet(std::string &str, std::set<uint32_t> &result);
     void SplitStringToList(std::string &str, std::list<std::string> &result);
     void SplitChannelStringToSet(std::string &str, std::set<uint32_t> &result);
 
