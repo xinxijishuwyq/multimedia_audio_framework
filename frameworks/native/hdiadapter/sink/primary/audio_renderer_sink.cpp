@@ -1108,7 +1108,7 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector
             if (ret < 0) {
                 AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
             }
-            currentDevicesSize_ = activeDevices.size();
+            currentDevicesSize_ = static_cast<int32_t>(activeDevices.size());
         }
     }
     return SUCCESS;
@@ -1306,7 +1306,7 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &usbInfoStr)
         sinkChannel_end - sinkChannel_begin - std::strlen("channels="));
 
     attr_.sampleRate = stoi(sampleRateStr);
-    attr_.channel = stoi(channeltStr);
+    attr_.channel = static_cast<uint32_t>(stoi(channeltStr));
     uint32_t formatByte = 0;
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
         AUDIO_ERR_LOG("check attr failed channel[%{public}d] sampleRate[%{public}d]", attr_.channel, attr_.sampleRate);

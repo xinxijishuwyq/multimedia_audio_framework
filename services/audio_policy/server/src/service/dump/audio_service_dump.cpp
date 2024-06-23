@@ -1150,7 +1150,7 @@ void AudioServiceDump::DeviceVolumeInfosDump(std::string& dumpString, DeviceVolu
         AppendFormat(dumpString, "    %s : {", GetDeviceVolumeTypeName(iter->first).c_str());
         auto volumePoints = iter->second->volumePoints;
         for (auto volPoint = volumePoints.cbegin(); volPoint != volumePoints.cend(); ++volPoint) {
-            AppendFormat(dumpString, "[%d, %d]", volPoint->index, volPoint->dbValue);
+            AppendFormat(dumpString, "[%u, %d]", volPoint->index, volPoint->dbValue);
             if (volPoint + 1 != volumePoints.cend()) {
                 dumpString += ", ";
             }

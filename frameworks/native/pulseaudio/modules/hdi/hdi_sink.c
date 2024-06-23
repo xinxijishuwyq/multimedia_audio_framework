@@ -2764,7 +2764,7 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
         uint32_t sinkChannel = DEFAULT_MULTICHANNEL_NUM;
         uint64_t sinkChannelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
         EffectChainManagerReturnMultiChannelInfo(&sinkChannel, &sinkChannelLayout);
-        u->multiChannel.multiChannelTmpSinkInIndex = i->index;
+        u->multiChannel.multiChannelTmpSinkInIndex = (int32_t)(i->index);
         ResetMultiChannelHdiState(u, sinkChannel, sinkChannelLayout);
     } else if (stopping) {
         // Continuously dropping data clear counter on entering suspended state.

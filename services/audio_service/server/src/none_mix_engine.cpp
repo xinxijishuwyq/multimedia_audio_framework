@@ -151,7 +151,7 @@ void NoneMixEngine::DoFadeinOut(bool isFadeOut, char *pBuffer, size_t bufferSize
 {
     CHECK_AND_RETURN_LOG(pBuffer != nullptr && bufferSize > 0 && uChannel_ > 0, "buffer is null.");
     int32_t *dstPtr = reinterpret_cast<int32_t *>(pBuffer);
-    size_t dataLength = bufferSize / (uFormat_ * uChannel_);
+    size_t dataLength = bufferSize / (static_cast<uint32_t>(uFormat_) * uChannel_);
     float fadeStep = 1.0f / dataLength;
     for (size_t i = 0; i < dataLength; i++) {
         float fadeFactor;
