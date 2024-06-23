@@ -425,6 +425,8 @@ public:
         DeviceType deviceType = DEVICE_TYPE_NONE);
 
     void UpdateAllActiveSessions(std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions);
+
+    void CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc);
 #endif
     void GetA2dpOffloadCodecAndSendToDsp();
 

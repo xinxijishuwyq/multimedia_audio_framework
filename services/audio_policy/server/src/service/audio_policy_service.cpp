@@ -6871,9 +6871,7 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
                 audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
                 ClearScoDeviceSuspendState(desc.macAddress_);
 #ifdef BLUETOOTH_ENABLE
-            if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && !audioDeviceManager_.GetScoState()) {
-                Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc.macAddress_);
-            }
+                CheckAndActiveHfpDevice(desc);
 #endif
             }
         }
@@ -6884,6 +6882,15 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     }
     FetchDevice(true, reason);
 }
+
+#ifdef BLUETOOTH_ENABLE
+void AudioPolicyService::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
+{
+    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && !audioDeviceManager_.GetScoState()) {
+        Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc.macAddress_);
+    }
+}
+#endif
 
 void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
