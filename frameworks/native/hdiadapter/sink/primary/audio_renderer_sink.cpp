@@ -1023,14 +1023,13 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType
         std::to_string(outputDevice));
     currentActiveDevice_ = outputDevice;
 
-    AudioRouteNode source = {
-        .portId = static_cast<int32_t>(0),
-        .role = AUDIO_PORT_SOURCE_ROLE,
-        .type = AUDIO_PORT_MIX_TYPE,
-        .ext.mix.moduleId = static_cast<int32_t>(0),
-        .ext.mix.streamId = PRIMARY_OUTPUT_STREAM_ID,
-        .ext.device.desc = (char *)"",
-    };
+    AudioRouteNode source = {};
+    source.portId = static_cast<int32_t>(0);
+    source.role = AUDIO_PORT_SOURCE_ROLE;
+    source.type = AUDIO_PORT_MIX_TYPE;
+    source.ext.mix.moduleId = static_cast<int32_t>(0);
+    source.ext.mix.streamId = PRIMARY_OUTPUT_STREAM_ID;
+    source.ext.device.desc = (char *)"";
 
     int32_t sinksSize = static_cast<int32_t>(outputDevices.size());
     AudioRouteNode* sinks = new AudioRouteNode[sinksSize];
@@ -1052,12 +1051,11 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType
         sinks[i].ext.device.desc = (char *)"";
     }
 
-    AudioRoute route = {
-        .sources = &source,
-        .sourcesLen = 1,
-        .sinks = sinks,
-        .sinksLen = sinksSize,
-    };
+    AudioRoute route = {};
+    route.sources = &source;
+    route.sourcesLen = 1;
+    route.sinks = sinks;
+    route.sinksLen = sinksSize;
 
     return SetAudioRoute(outputDevice, route);
 }
