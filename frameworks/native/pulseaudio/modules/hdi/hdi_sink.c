@@ -1268,14 +1268,14 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         //do fading in
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
-        int32_t bitSize = (int32_t)pa_sample_size_of_format(sinkIn->sample_spec.format);
+        int32_t bitSize = (int32_t)pa_sample_size_of_format(u->format);
         DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 0);
         u->primary.primaryFadingInDone = 1;
         pa_memblock_release(infoIn->chunk.memblock);
     }
     if (pa_safe_streq(sinkFadeoutPause, "1")) {
         //do fading out
-        int32_t bitSize = (int32_t)pa_sample_size_of_format(sinkIn->sample_spec.format);
+        int32_t bitSize = (int32_t)pa_sample_size_of_format(u->format);
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
         DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 1);
@@ -1405,7 +1405,7 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
             return;
         }
         //do fading in
-        int32_t bitSize = (int32_t)pa_sample_size_of_format(sinkIn->sample_spec.format);
+        int32_t bitSize = (int32_t)pa_sample_size_of_format(u->format);
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
         DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 0);
@@ -1414,7 +1414,7 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
     }
     if (pa_safe_streq(sinkFadeoutPause, "1")) {
         //do fading out
-        int32_t bitSize = (int32_t)pa_sample_size_of_format(sinkIn->sample_spec.format);
+        int32_t bitSize = (int32_t)pa_sample_size_of_format(u->format);
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
         DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 1);
