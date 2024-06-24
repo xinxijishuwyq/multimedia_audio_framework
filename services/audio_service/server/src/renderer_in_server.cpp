@@ -22,6 +22,7 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "audio_service.h"
+#include "futex_tool.h"
 #include "i_stream_manager.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
@@ -228,7 +229,8 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             }
             break;
         case OPERATION_UNDERFLOW:
-            stateListener->OnOperationHandled(UNDERFLOW_COUNT_ADD, 0);
+            underrunCount_++;
+            audioServerBuffer_->SetUnderrunCount(underrunCount_);
             break;
         case OPERATION_SET_OFFLOAD_ENABLE:
         case OPERATION_UNSET_OFFLOAD_ENABLE:
@@ -495,7 +497,7 @@ int32_t RendererInServer::WriteData()
         Trace trace2("RendererInServer::Underrun");
         std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
         CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_OPERATION_FAILED, "IStreamListener is nullptr");
-        stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
+        FutexTool::FutexWake(audioServerBuffer_->GetFutex());
         return ERR_OPERATION_FAILED;
     }
 
@@ -526,7 +528,7 @@ int32_t RendererInServer::WriteData()
     }
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, SUCCESS, "IStreamListener is nullptr");
-    stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
+    FutexTool::FutexWake(audioServerBuffer_->GetFutex());
     return SUCCESS;
 }
 

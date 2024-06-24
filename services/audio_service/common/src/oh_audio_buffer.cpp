@@ -25,6 +25,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "futex_tool.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -268,6 +269,8 @@ int32_t OHAudioBuffer::Init(int dataFd, int infoFd)
     basicBufferInfo_->curReadFrame.store(0);
     basicBufferInfo_->curWriteFrame.store(0);
 
+    basicBufferInfo_->underrunCount.store(0);
+
     basicBufferInfo_->streamVolume.store(MAX_FLOAT_VOLUME);
     basicBufferInfo_->duckFactor.store(MAX_FLOAT_VOLUME);
 
@@ -449,6 +452,22 @@ bool OHAudioBuffer::SetDuckFactor(float duckFactor)
         return false;
     }
     basicBufferInfo_->duckFactor.store(duckFactor);
+    return true;
+}
+
+
+uint32_t OHAudioBuffer::GetUnderrunCount()
+{
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, 0,
+        "Get nullptr, buffer is not inited.");
+    return basicBufferInfo_->underrunCount.load();
+}
+
+bool OHAudioBuffer::SetUnderrunCount(uint32_t count)
+{
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, false,
+        "Get nullptr, buffer is not inited.");
+    basicBufferInfo_->underrunCount.store(count);
     return true;
 }
 
@@ -640,6 +659,11 @@ SpanInfo *OHAudioBuffer::GetSpanInfoByIndex(uint32_t spanIndex)
 uint32_t OHAudioBuffer::GetSpanCount()
 {
     return spanConut_;
+}
+
+std::atomic<uint32_t> *OHAudioBuffer::GetFutex()
+{
+    return &basicBufferInfo_->futexObj;
 }
 
 uint8_t *OHAudioBuffer::GetDataBase()
