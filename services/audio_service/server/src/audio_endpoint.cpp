@@ -554,24 +554,24 @@ void AudioEndpointInner::Dump(std::string &dumpString)
     // dump endpoint stream info
     dumpString += "Endpoint stream info:\n";
     AppendFormat(dumpString, "  - samplingRate: %d\n", dstStreamInfo_.samplingRate);
-    AppendFormat(dumpString, "  - channels: %d\n", dstStreamInfo_.channels);
-    AppendFormat(dumpString, "  - format: %d\n", dstStreamInfo_.format);
+    AppendFormat(dumpString, "  - channels: %zu\n", dstStreamInfo_.channels);
+    AppendFormat(dumpString, "  - format: %zu\n", dstStreamInfo_.format);
     AppendFormat(dumpString, "  - sink type: %d\n", fastSinkType_);
     AppendFormat(dumpString, "  - source type: %d\n", fastSourceType_);
 
     // dump status info
     AppendFormat(dumpString, "  - Current endpoint status: %s\n", GetStatusStr(endpointStatus_).c_str());
     if (dstAudioBuffer_ != nullptr) {
-        AppendFormat(dumpString, "  - Currend hdi read position: %d\n", dstAudioBuffer_->GetCurReadFrame());
-        AppendFormat(dumpString, "  - Currend hdi write position: %d\n", dstAudioBuffer_->GetCurWriteFrame());
+        AppendFormat(dumpString, "  - Currend hdi read position: %zu\n", dstAudioBuffer_->GetCurReadFrame());
+        AppendFormat(dumpString, "  - Currend hdi write position: %zu\n", dstAudioBuffer_->GetCurWriteFrame());
     }
 
     // dump linked process info
     std::lock_guard<std::mutex> lock(listLock_);
-    AppendFormat(dumpString, "  - linked process:: %d\n", processBufferList_.size());
+    AppendFormat(dumpString, "  - linked process:: %zu\n", processBufferList_.size());
     for (auto item : processBufferList_) {
-        AppendFormat(dumpString, "  - process read position: %d\n", item->GetCurReadFrame());
-        AppendFormat(dumpString, "  - process write position: %d\n", item->GetCurWriteFrame());
+        AppendFormat(dumpString, "  - process read position: %zu\n", item->GetCurReadFrame());
+        AppendFormat(dumpString, "  - process write position: %zu\n", item->GetCurWriteFrame());
     }
     dumpString += "\n";
 }

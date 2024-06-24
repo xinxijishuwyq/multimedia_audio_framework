@@ -1705,8 +1705,8 @@ void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
     AppendFormat(dumpString, "  - SafeVolume: %d\n", safeVolume_);
     AppendFormat(dumpString, "  - BtSafeStatus: %s\n", statusBt.c_str());
     AppendFormat(dumpString, "  - SafeStatus: %s\n", status.c_str());
-    AppendFormat(dumpString, "  - ActiveBtSafeTime: %llu\n", safeActiveBtTime_);
-    AppendFormat(dumpString, "  - ActiveSafeTime: %llu\n", safeActiveTime_);
+    AppendFormat(dumpString, "  - ActiveBtSafeTime: %lld\n", safeActiveBtTime_);
+    AppendFormat(dumpString, "  - ActiveSafeTime: %lld\n", safeActiveTime_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

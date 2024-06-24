@@ -438,7 +438,7 @@ void AudioServerDump::PlaybackSinkDump(std::string &dumpString)
 
     dumpString += "Playback Streams\n";
 
-    AppendFormat(dumpString, "- %d Playback stream (s) available:\n", streamData_.sinkInputs.size());
+    AppendFormat(dumpString, "- %zu Playback stream (s) available:\n", streamData_.sinkInputs.size());
 
     for (auto it = streamData_.sinkInputs.begin(); it != streamData_.sinkInputs.end(); it++) {
         InputOutputInfo sinkInputInfo = *it;
@@ -447,7 +447,7 @@ void AudioServerDump::PlaybackSinkDump(std::string &dumpString)
         AppendFormat(dumpString, "  - Stream Id: %s\n", (sinkInputInfo.sessionId).c_str());
         AppendFormat(dumpString, "  - Application Name: %s\n", ((sinkInputInfo.applicationName).c_str()));
         AppendFormat(dumpString, "  - Process Id: %s\n", (sinkInputInfo.processId).c_str());
-        AppendFormat(dumpString, "  - User Id: %u\n", sinkInputInfo.userId);
+        AppendFormat(dumpString, "  - User Id: %zu\n", sinkInputInfo.userId);
         AppendFormat(dumpString, "  - stream can be captured: %s\n",
             sinkInputInfo.privacyType == "0" ? "true" : "false");
 
@@ -464,7 +464,7 @@ void AudioServerDump::RecordSourceDump(std::string &dumpString)
 {
     char s[PA_SAMPLE_SPEC_SNPRINT_MAX];
     dumpString += "Record Streams \n";
-    AppendFormat(dumpString, "- %d Record stream (s) available:\n", streamData_.sourceOutputs.size());
+    AppendFormat(dumpString, "- %zu Record stream (s) available:\n", streamData_.sourceOutputs.size());
 
     for (auto it = streamData_.sourceOutputs.begin(); it != streamData_.sourceOutputs.end(); it++) {
         InputOutputInfo sourceOutputInfo = *it;
@@ -472,7 +472,7 @@ void AudioServerDump::RecordSourceDump(std::string &dumpString)
         AppendFormat(dumpString, "  - Stream Id: %s\n", (sourceOutputInfo.sessionId).c_str());
         AppendFormat(dumpString, "  - Application Name: %s\n", (sourceOutputInfo.applicationName).c_str());
         AppendFormat(dumpString, "  - Process Id: %s\n", sourceOutputInfo.processId.c_str());
-        AppendFormat(dumpString, "  - User Id: %d\n", sourceOutputInfo.userId);
+        AppendFormat(dumpString, "  - User Id: %zu\n", sourceOutputInfo.userId);
 
         char *outputSampleSpec = pa_sample_spec_snprint(s, sizeof(s), &(sourceOutputInfo.sampleSpec));
         AppendFormat(dumpString, "  - Stream Configuration: %s\n", outputSampleSpec);

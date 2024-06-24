@@ -2924,7 +2924,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
         }
     }
     if (nInput != 0 && blockTime != -1) {
-        *sleepForUsec = (int64_t)PA_MAX(blockTime, 0) - (int64_t)(pa_rtclock_now() - (int64_t)now);
+        *sleepForUsec = PA_MAX(blockTime, 0) - (int64_t)(pa_rtclock_now() - now);
         *sleepForUsec = PA_MAX(*sleepForUsec, 0);
     }
 }

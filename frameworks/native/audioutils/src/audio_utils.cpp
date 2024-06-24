@@ -785,7 +785,7 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
     for (size_t index = 0; index < frameCount; index++) {
         int32_t tempMax = SHRT_MIN;
         int32_t tempMin = SHRT_MAX;
-        for (uint32_t channel = 0; channel < channels_; channel++) {
+        for (uint32_t channel = 0; channel < static_cast<uint32_t>(channels_); channel++) {
             int32_t temp = buffer[index * static_cast<uint32_t>(channels_) + channel];
             tempMax = temp > tempMax ? temp : tempMax;
             tempMin = temp < tempMin ? temp : tempMin;
