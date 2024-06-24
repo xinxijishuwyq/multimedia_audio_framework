@@ -427,14 +427,14 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
 
 int32_t AudioServer::SuspendRenderSink(const std::string &sinkName)
 {
-    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance(sinkName, "");
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance(sinkName.c_str(), "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
     return audioRendererSinkInstance->SuspendRenderSink();
 }
 
 int32_t AudioServer::RestoreRenderSink(const std::string &sinkName)
 {
-    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance(sinkName, "");
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance(sinkName.c_str(), "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
     return audioRendererSinkInstance->RestoreRenderSink();
 }

@@ -579,7 +579,7 @@ int AudioManagerStub::HandleResetAudioEndpoint(MessageParcel &data, MessageParce
     return AUDIO_OK;
 }
 
-int AudioManagerStub::SuspendRenderSink(MessageParcel &data, MessageParcel &reply)
+int AudioManagerStub::HandleSuspendRenderSink(MessageParcel &data, MessageParcel &reply)
 {
     std::string sinkName = data.ReadString();
     int32_t ret = SuspendRenderSink(sinkName);
@@ -587,7 +587,7 @@ int AudioManagerStub::SuspendRenderSink(MessageParcel &data, MessageParcel &repl
     return AUDIO_OK;
 }
 
-int AudioManagerStub::RestoreRenderSink(MessageParcel &data, MessageParcel &reply)
+int AudioManagerStub::HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply)
 {
     std::string sinkName = data.ReadString();
     int32_t ret = SuspendRenderSink(sinkName);
