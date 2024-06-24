@@ -2301,9 +2301,11 @@ bool AudioPolicyService::NotifyRecreateRendererStream(std::unique_ptr<AudioDevic
     // Switch between old and new stream as they have different hals
     std::string oldDevicePortName = rendererChangeInfo->outputDeviceInfo.isArmUsbDevice ?
         USB_SPEAKER : GetSinkPortName(rendererChangeInfo->outputDeviceInfo.deviceType);
+    bool isOldDeviceLocal = rendererChangeInfo->outputDeviceInfo.networkId == "" ||
+        rendererChangeInfo->outputDeviceInfo.networkId == LOCAL_NETWORK_ID;
+    bool isNewDeviceLocal = desc->networkId_ == "" || desc->networkId_ == LOCAL_NETWORK_ID;
     if ((strcmp(oldDevicePortName.c_str(), GetSinkPortName(desc->deviceType_).c_str())) ||
-        ((rendererChangeInfo->outputDeviceInfo.networkId == LOCAL_NETWORK_ID) ^
-        (desc->networkId_ == LOCAL_NETWORK_ID))) {
+        (isOldDeviceLocal ^ isNewDeviceLocal)) {
         int32_t streamClass = GetPreferredOutputStreamTypeInner(rendererChangeInfo->rendererInfo.streamUsage,
             desc->deviceType_, rendererChangeInfo->rendererInfo.originalFlag, desc->networkId_);
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid,
