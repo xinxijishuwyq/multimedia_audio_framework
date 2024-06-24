@@ -42,6 +42,10 @@ private:
     static napi_value GetAsrAecMode(napi_env env, napi_callback_info info);
     static napi_value SetAsrNoiseSuppressionMode(napi_env env, napi_callback_info info);
     static napi_value GetAsrNoiseSuppressionMode(napi_env env, napi_callback_info info);
+    static napi_value SetAsrWhisperDetectionMode(napi_env env, napi_callback_info info);
+    static napi_value GetAsrWhisperDetectionMode(napi_env env, napi_callback_info info);
+    static napi_value SetAsrVoiceControlMode(napi_env env, napi_callback_info info);
+    static napi_value SetAsrVoiceMuteMode(napi_env env, napi_callback_info info);
     static napi_value IsWhispering(napi_env env, napi_callback_info info);
 
     AudioSystemManager* audioMngr_;

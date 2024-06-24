@@ -395,7 +395,7 @@ int32_t AudioManagerProxy::GetAsrAecMode(AsrAecMode &asrAecMode)
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
     int32_t result = reply.ReadInt32();
-    asrAecMode = static_cast<AsrAecMode> (result);
+    asrAecMode = static_cast<AsrAecMode>(result);
     return 0;
 }
 
@@ -430,8 +430,79 @@ int32_t AudioManagerProxy::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &a
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_NOISE_SUPPRESSION_MODE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
     int32_t result = reply.ReadInt32();
-    asrNoiseSuppressionMode = static_cast<AsrNoiseSuppressionMode> (result);
+    asrNoiseSuppressionMode = static_cast<AsrNoiseSuppressionMode>(result);
     return 0;
+}
+
+int32_t AudioManagerProxy::SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisperDetectionMode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(asrWhisperDetectionMode));
+
+    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(
+        AudioServerInterfaceCode::SET_ASR_WHISPER_DETECTION_MODE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(asrWhisperDetectionMode));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_WHISPER_DETECTION_MODE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
+    int32_t result = reply.ReadInt32();
+    asrWhisperDetectionMode = static_cast<AsrWhisperDetectionMode>(result);
+    return 0;
+}
+
+int32_t AudioManagerProxy::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(asrVoiceControlMode));
+    data.WriteBool(on);
+
+    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_VOICE_CONTROL_MODE),
+        data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(asrVoiceMuteMode));
+    data.WriteBool(on);
+
+    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_VOICE_MUTE_MODE),
+        data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
+    int32_t result = reply.ReadInt32();
+    return result;
 }
 
 int32_t AudioManagerProxy::IsWhispering()
@@ -443,10 +514,8 @@ int32_t AudioManagerProxy::IsWhispering()
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
-    int32_t error = Remote()->SendRequest(
+    int32_t result = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::IS_WHISPERING), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
-    int32_t result = reply.ReadInt32();
     return result;
 }
 
