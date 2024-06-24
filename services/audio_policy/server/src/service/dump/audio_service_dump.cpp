@@ -432,7 +432,7 @@ void AudioServiceDump::PlaybackStreamDump(std::string &dumpString)
         AppendFormat(dumpString, "  - Stream Id: %s\n", (sinkInputInfo.sessionId).c_str());
         AppendFormat(dumpString, "  - Application Name: %s\n", ((sinkInputInfo.applicationName).c_str()));
         AppendFormat(dumpString, "  - Process Id: %s\n", (sinkInputInfo.processId).c_str());
-        AppendFormat(dumpString, "  - User Id: %u\n", sinkInputInfo.userId);
+        AppendFormat(dumpString, "  - User Id: %zu\n", sinkInputInfo.userId);
 
         char *inputSampleSpec = pa_sample_spec_snprint(s, sizeof(s), &(sinkInputInfo.sampleSpec));
         AppendFormat(dumpString, "  - Stream Configuration: %s\n", inputSampleSpec);
@@ -455,7 +455,7 @@ void AudioServiceDump::RecordStreamDump(std::string &dumpString)
         AppendFormat(dumpString, "  - Stream Id: %s\n", (sourceOutputInfo.sessionId).c_str());
         AppendFormat(dumpString, "  - Application Name: %s\n", (sourceOutputInfo.applicationName).c_str());
         AppendFormat(dumpString, "  - Process Id: %s\n", sourceOutputInfo.processId.c_str());
-        AppendFormat(dumpString, "  - User Id: %d\n", sourceOutputInfo.userId);
+        AppendFormat(dumpString, "  - User Id: %zu\n", sourceOutputInfo.userId);
 
         char *outputSampleSpec = pa_sample_spec_snprint(s, sizeof(s), &(sourceOutputInfo.sampleSpec));
         AppendFormat(dumpString, "  - Stream Configuration: %s\n", outputSampleSpec);

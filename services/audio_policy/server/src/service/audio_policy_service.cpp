@@ -7629,7 +7629,7 @@ void AudioPolicyService::AudioStreamDump(std::string &dumpString)
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
 
-    AppendFormat(dumpString, " - audiorenderer stream size : %d\n", audioRendererChangeInfos.size());
+    AppendFormat(dumpString, " - audiorenderer stream size : %zu\n", audioRendererChangeInfos.size());
     for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
         if ((*it)->rendererInfo.rendererFlags == STREAM_FLAG_NORMAL) {
             AppendFormat(dumpString, " - normal AudioCapturer stream:\n");

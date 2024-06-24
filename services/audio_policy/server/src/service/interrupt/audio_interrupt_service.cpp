@@ -1198,26 +1198,26 @@ void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> audioInterruptZonesMapDump;
     AddDumpInfo(audioInterruptZonesMapDump);
     dumpString += "\nAudioInterrupt Zone:\n";
-    AppendFormat(dumpString, "- %d AudioInterruptZoneDump (s) available:\n",
+    AppendFormat(dumpString, "- %zu AudioInterruptZoneDump (s) available:\n",
         zonesMap_.size());
     for (const auto&[zoneID, audioInterruptZoneDump] : audioInterruptZonesMapDump) {
         if (zoneID < 0) {
             continue;
         }
         AppendFormat(dumpString, "  - Zone ID: %d\n", zoneID);
-        AppendFormat(dumpString, "  - Pids size: %d\n", audioInterruptZoneDump->pids.size());
+        AppendFormat(dumpString, "  - Pids size: %zu\n", audioInterruptZoneDump->pids.size());
         for (auto pid : audioInterruptZoneDump->pids) {
             AppendFormat(dumpString, "    - pid: %d\n", pid);
         }
 
-        AppendFormat(dumpString, "  - Interrupt callback size: %d\n",
+        AppendFormat(dumpString, "  - Interrupt callback size: %zu\n",
             audioInterruptZoneDump->interruptCbSessionIdsMap.size());
         AppendFormat(dumpString, "    - The sessionIds as follow:\n");
         for (auto sessionId : audioInterruptZoneDump->interruptCbSessionIdsMap) {
-            AppendFormat(dumpString, "      - SessionId: %d -- have interrupt callback.\n", sessionId);
+            AppendFormat(dumpString, "      - SessionId: %zu -- have interrupt callback.\n", sessionId);
         }
 
-        AppendFormat(dumpString, "  - Audio policy client proxy callback size: %d\n",
+        AppendFormat(dumpString, "  - Audio policy client proxy callback size: %zu\n",
             audioInterruptZoneDump->audioPolicyClientProxyCBClientPidMap.size());
         AppendFormat(dumpString, "    - The clientPids as follow:\n");
         for (auto pid : audioInterruptZoneDump->audioPolicyClientProxyCBClientPidMap) {
@@ -1226,7 +1226,7 @@ void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
 
         std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList
             = audioInterruptZoneDump->audioFocusInfoList;
-        AppendFormat(dumpString, "  - %d Audio Focus Info (s) available:\n", audioFocusInfoList.size());
+        AppendFormat(dumpString, "  - %zu Audio Focus Info (s) available:\n", audioFocusInfoList.size());
         uint32_t invalidSessionId = static_cast<uint32_t>(-1);
         for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
             if ((iter->first).sessionId == invalidSessionId) {
