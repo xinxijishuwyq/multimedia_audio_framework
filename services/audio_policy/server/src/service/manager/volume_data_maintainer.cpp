@@ -37,8 +37,6 @@ const int32_t SETTINGS_CLONED_STATUS = 0;
 
 static const std::vector<VolumeDataMaintainer::VolumeDataMaintainerStreamType> VOLUME_MUTE_STREAM_TYPE = {
     // all volume types except STREAM_ALL
-    VolumeDataMaintainer::VT_STREAM_RING,
-    VolumeDataMaintainer::VT_STREAM_MUSIC,
     VolumeDataMaintainer::VT_STREAM_ALARM,
     VolumeDataMaintainer::VT_STREAM_DTMF,
     VolumeDataMaintainer::VT_STREAM_TTS,
@@ -55,8 +53,6 @@ static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
 };
 
 static std::map<VolumeDataMaintainer::VolumeDataMaintainerStreamType, AudioStreamType> AUDIO_STREAMTYPE_MAP = {
-    {VolumeDataMaintainer::VT_STREAM_RING, STREAM_RING},
-    {VolumeDataMaintainer::VT_STREAM_MUSIC, STREAM_MUSIC},
     {VolumeDataMaintainer::VT_STREAM_ALARM, STREAM_ALARM},
     {VolumeDataMaintainer::VT_STREAM_DTMF, STREAM_DTMF},
     {VolumeDataMaintainer::VT_STREAM_TTS, STREAM_VOICE_ASSISTANT},
