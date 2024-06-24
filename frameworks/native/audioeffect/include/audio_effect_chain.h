@@ -68,7 +68,7 @@ private:
     std::string sceneType_;
     std::string effectMode_;
     uint32_t latency_ = 0;
-    uint32_t audioEffectChainValue_ = 0;
+    uint32_t effectChainRssSence_ = 0;
     AudioEffectScene currSceneType_ = SCENE_MUSIC;
     std::vector<AudioEffectHandle> standByEffectHandles_;
     std::vector<AudioEffectLibrary *> libHandles_;

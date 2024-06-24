@@ -122,7 +122,7 @@ void AudioEffectChain::SetEffectMode(const std::string &mode)
 
 void AudioEffectChain::SetEffectRssScene(const std::string &rssScene)
 {
-    audioEffectChainValue_ = static_cast<int32_t>(std::stoi(rssScene));
+    effectChainRssSence_ = static_cast<int32_t>(std::stoi(rssScene));
 }
 
 void AudioEffectChain::SetEffectCurrSceneType(AudioEffectScene currSceneType)
@@ -180,8 +180,8 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
         *data++ = audioEffectVolume->GetApVolume(sceneType_);
     }
     AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
-    *data++ = audioEffectChainValue_;
-    AUDIO_DEBUG_LOG("set rss scene type %{public}d", audioEffectChainValue_);
+    *data++ = effectChainRssSence_;
+    AUDIO_DEBUG_LOG("set rss scene type %{public}d", effectChainRssSence_);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     delete[] effectParam;
