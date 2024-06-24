@@ -511,6 +511,11 @@ public:
         return ((reason_ == ExtEnum::OLD_DEVICE_UNAVALIABLE) || (reason_ == ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT));
     }
 
+    bool isOverride() const
+    {
+        return reason_ == ExtEnum::OVERRODE;
+    }
+
 private:
     ExtEnum reason_;
 };

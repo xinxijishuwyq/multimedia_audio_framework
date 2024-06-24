@@ -72,6 +72,7 @@ static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
 static const int64_t SELECT_DEVICE_MUTE_MS = 200000; // 200ms
 static const int64_t NEW_DEVICE_AVALIABLE_MUTE_MS = 300000; // 300ms
 static const int64_t ARM_USB_DEVICE_MUTE_MS = 40000; // 40ms
+static const int64_t DEVICE_TYPE_REMOTE_CAST_MS = 40000; // 40ms
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
     STREAM_RING,
@@ -2164,12 +2165,16 @@ void AudioPolicyService::MuteSinkPort(DeviceType deviceType, int32_t duration, b
 void AudioPolicyService::MuteSinkPort(DeviceType oldDevice, DeviceType newDevice,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    if (reason == AudioStreamDeviceChangeReason::OVERRODE) {
+    if (reason.isOverride()) {
         MuteSinkPort(newDevice, SELECT_DEVICE_MUTE_MS, true);
         MuteSinkPort(oldDevice, SELECT_DEVICE_MUTE_MS, true);
         if (oldDevice == DEVICE_TYPE_SPEAKER &&
             (newDevice == DEVICE_TYPE_BLUETOOTH_A2DP || (newDevice == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_))) {
             usleep(ARM_USB_DEVICE_MUTE_MS); // spk->arm_usb or spk->a2dp sleep 40 ms fix pop
+        }
+
+        if (oldDevice == DEVICE_TYPE_REMOTE_CAST) {
+            usleep(DEVICE_TYPE_REMOTE_CAST_MS); // remote cast -> spk or other device 40 ms fix pop
         }
     } else if (reason == AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE) {
         MuteSinkPort(newDevice, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
@@ -2179,6 +2184,9 @@ void AudioPolicyService::MuteSinkPort(DeviceType oldDevice, DeviceType newDevice
         }
     } else if (reason.IsOldDeviceUnavaliable() && audioScene_ == AUDIO_SCENE_DEFAULT) {
         MuteSinkPort(newDevice, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
+        if (oldDevice == DEVICE_TYPE_REMOTE_CAST) {
+            usleep(DEVICE_TYPE_REMOTE_CAST_MS); // remote cast -> spk or other device 40 ms fix pop
+        }
     }
 }
 
