@@ -275,7 +275,7 @@ static void RssSceneType(const std::string &key, const std::string &RssKey, cons
 {
     AUDIO_DEBUG_LOG("key is %{public}s, RssKey is %{public}s, and RssValue is %{public}s",
         key.c_str(), RssKey.c_str(), RssValue.c_str());
-    if (key == "audioeffect" && RssKey == "updateAudioEffectType") {
+    if (key == "audio_effect" && RssKey == "update_audio_effect_type") {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
