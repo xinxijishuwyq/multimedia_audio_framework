@@ -18,6 +18,7 @@
 #include "audio_policy_client_stub_impl.h"
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -330,6 +331,7 @@ int32_t AudioPolicyClientStubImpl::RemoveDeviceChangeWithInfoCallback(const uint
 void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t sessionId,
     const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason)
 {
+    Trace trace("AudioPolicyClientStubImpl::OnRendererDeviceChange");
     std::shared_ptr<DeviceChangeWithInfoCallback> callback = nullptr;
     {
         std::lock_guard<std::mutex> lockCbMap(deviceChangeWithInfoCallbackMutex_);
@@ -339,6 +341,8 @@ void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t sessionId,
         callback = deviceChangeWithInfoCallbackMap_.at(sessionId);
     }
     if (callback != nullptr) {
+        Trace traceCallback("callback->OnDeviceChangeWithInfo sessionid:" + std::to_string(sessionId)
+            + " reason:" + std::to_string(static_cast<int>(reason)));
         callback->OnDeviceChangeWithInfo(sessionId, deviceInfo, reason);
     }
 }
@@ -347,7 +351,9 @@ void AudioPolicyClientStubImpl::OnRendererStateChange(
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
+    Trace trace("AudioPolicyClientStubImpl::OnRendererStateChange");
     for (auto it = rendererStateChangeCallbackList_.begin(); it != rendererStateChangeCallbackList_.end(); ++it) {
+        Trace traceCallback("OnRendererStateChange");
         (*it)->OnRendererStateChange(audioRendererChangeInfos);
     }
 }
