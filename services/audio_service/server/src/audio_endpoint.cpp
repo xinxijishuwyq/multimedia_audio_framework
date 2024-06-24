@@ -320,7 +320,8 @@ std::string AudioEndpoint::GenerateEndpointKey(DeviceInfo &deviceInfo, int32_t e
     if (deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         endpointId = deviceInfo.deviceId;
     }
-    return deviceInfo.networkId + "_" + std::to_string(endpointId) + "_" + std::to_string(endpointFlag);
+    return deviceInfo.networkId + "_" + std::to_string(endpointId) + "_" +
+        std::to_string(deviceInfo.deviceRole) + "_" + std::to_string(endpointFlag);
 }
 
 std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, uint64_t id,
