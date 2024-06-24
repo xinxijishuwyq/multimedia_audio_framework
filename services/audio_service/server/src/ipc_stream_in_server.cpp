@@ -418,5 +418,14 @@ int32_t IpcStreamInServer::SetSilentModeAndMixWithOthers(bool on)
     }
     return rendererInServer_->SetSilentModeAndMixWithOthers(on);
 }
+
+int32_t IpcStreamInServer::SetClientVolume()
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->SetClientVolume();
+    }
+    AUDIO_ERR_LOG("mode is not playback or renderer is null");
+    return ERR_OPERATION_FAILED;
+}
 } // namespace AudioStandard
 } // namespace OHOS

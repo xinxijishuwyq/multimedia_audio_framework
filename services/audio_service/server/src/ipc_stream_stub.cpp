@@ -309,5 +309,12 @@ int32_t IpcStreamStub::HandleSetSilentModeAndMixWithOthers(MessageParcel &data, 
 
     return AUDIO_OK;
 }
+
+int32_t IpcStreamStub::HandleSetClientVolume(MessageParcel &data, MessageParcel &reply)
+{
+    (void)data;
+    reply.WriteInt32(SetClientVolume());
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

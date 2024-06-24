@@ -92,6 +92,7 @@ public:
 
     int32_t GetStreamManagerType() const noexcept;
     int32_t SetSilentModeAndMixWithOthers(bool on);
+    int32_t SetClientVolume();
 public:
     const AudioProcessConfig processConfig_;
 private:

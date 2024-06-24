@@ -92,6 +92,8 @@ public:
     virtual int32_t GetStreamManagerType() = 0;
 
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
+
+    virtual int32_t SetClientVolume() = 0;
     // IPC code.
     enum IpcStreamMsg : uint32_t {
         ON_REGISTER_STREAM_LISTENER = 0,
@@ -123,6 +125,7 @@ public:
         ON_UPDATE_SPATIALIZATION_STATE,
         ON_GET_STREAM_MANAGER_TYPE,
 	ON_SET_SILENT_MODE_AND_MIX_WITH_OTHERS,
+        ON_SET_CLIENT_VOLUME,
         IPC_STREAM_MAX_MSG
     };
 
