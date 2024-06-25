@@ -537,7 +537,8 @@ std::shared_ptr<IRendererStream> PaAdapterManager::CreateRendererStream(AudioPro
     std::shared_ptr<PaRendererStreamImpl> rendererStream =
         std::make_shared<PaRendererStreamImpl>(paStream, processConfig, mainLoop_);
     if (rendererStream->InitParams() != SUCCESS) {
-        AUDIO_ERR_LOG("Create rendererStream Failed");
+        int32_t error = pa_context_errno(context_);
+        AUDIO_ERR_LOG("Create rendererStream Failed, error: %{public}d", error);
         return nullptr;
     }
     return rendererStream;
@@ -550,7 +551,8 @@ std::shared_ptr<ICapturerStream> PaAdapterManager::CreateCapturerStream(AudioPro
     std::shared_ptr<PaCapturerStreamImpl> capturerStream =
         std::make_shared<PaCapturerStreamImpl>(paStream, processConfig, mainLoop_);
     if (capturerStream->InitParams() != SUCCESS) {
-        AUDIO_ERR_LOG("Create capturerStream Failed");
+        int32_t error = pa_context_errno(context_);
+        AUDIO_ERR_LOG("Create capturerStream Failed, error: %{public}d", error);
         return nullptr;
     }
     return capturerStream;
