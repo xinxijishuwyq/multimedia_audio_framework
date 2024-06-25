@@ -6736,17 +6736,6 @@ void AudioPolicyService::OnScoStateChanged(const std::string &macAddress, bool i
     FetchDevice(false);
 }
 
-void AudioPolicyService::UpdateAllUserSelectDevice(vector<unique_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap,
-    const sptr<AudioDeviceDescriptor> &desc)
-{
-    for (auto &userSelectDevice : userSelectDeviceMap) {
-        if (userSelectDevice->deviceType_ == desc->deviceType_ &&
-            userSelectDevice->macAddress_ == desc->macAddress_) {
-            audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
-        }
-    }
-}
-
 void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     const DeviceInfoUpdateCommand updateCommand)
 {
@@ -6756,15 +6745,25 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     unique_ptr<AudioDeviceDescriptor> userSelectCallCaptureDevice = stateManager.GetPerferredCallCaptureDevice();
     unique_ptr<AudioDeviceDescriptor> userSelectRecordCaptureDevice = stateManager.GetPerferredRecordCaptureDevice();
     AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    vector<unique_ptr<AudioDeviceDescriptor>> userSelectDeviceMap;
-    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectMediaRenderDevice));
-    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectCallRenderDevice));
-    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectCallCaptureDevice));
-    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectRecordCaptureDevice));
     if (updateCommand == CATEGORY_UPDATE) {
         if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
             reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
-            UpdateAllUserSelectDevice(userSelectDeviceMap, new(std::nothrow) AudioDeviceDescriptor());
+            if (userSelectMediaRenderDevice->deviceType_ == desc.deviceType_ &&
+                userSelectMediaRenderDevice->macAddress_ == desc.macAddress_) {
+                audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+            }
+            if (userSelectCallRenderDevice->deviceType_ == desc.deviceType_ &&
+                userSelectCallRenderDevice->macAddress_ == desc.macAddress_) {
+                audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+            }
+            if (userSelectCallCaptureDevice->deviceType_ == desc.deviceType_ &&
+                userSelectCallCaptureDevice->macAddress_ == desc.macAddress_) {
+                audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
+            }
+            if (userSelectRecordCaptureDevice->deviceType_ == desc.deviceType_ &&
+                userSelectRecordCaptureDevice->macAddress_ == desc.macAddress_) {
+                audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
+            }
 #ifdef BLUETOOTH_ENABLE
             if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
                 desc.macAddress_ == currentActiveDevice_.macAddress_) {
@@ -6788,7 +6787,22 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             }
         }
     } else if (updateCommand == ENABLE_UPDATE) {
-        UpdateAllUserSelectDevice(userSelectDeviceMap, new(std::nothrow) AudioDeviceDescriptor(desc));
+        if (userSelectMediaRenderDevice->deviceType_ == desc.deviceType_ &&
+            userSelectMediaRenderDevice->macAddress_ == desc.macAddress_) {
+            audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
+        }
+        if (userSelectCallRenderDevice->deviceType_ == desc.deviceType_ &&
+            userSelectCallRenderDevice->macAddress_ == desc.macAddress_) {
+            audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
+        }
+        if (userSelectCallCaptureDevice->deviceType_ == desc.deviceType_ &&
+            userSelectCallCaptureDevice->macAddress_ == desc.macAddress_) {
+            audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
+        }
+        if (userSelectRecordCaptureDevice->deviceType_ == desc.deviceType_ &&
+            userSelectRecordCaptureDevice->macAddress_ == desc.macAddress_) {
+            audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor(desc));
+        }
         reason = desc.isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
             AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     }
@@ -6802,7 +6816,6 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     AUDIO_INFO_LOG("[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] connectState[%{public}d] " \
         "isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_,
         command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
-    CheckForA2dpSuspend(desc);
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
         if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             ClearScoDeviceSuspendState(desc.macAddress_);
@@ -6826,6 +6839,7 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     }
     sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(desc);
     audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command);
+    CheckForA2dpSuspend(desc);
 
     OnPreferredStateUpdated(desc, command);
     FetchDevice(false);
@@ -6838,7 +6852,7 @@ void AudioPolicyService::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
         return;
     }
 
-    if (desc.connectState_ == ConnectState::CONNECTED) {
+    if (audioDeviceManager_.GetScoState()) {
         GetAudioServerProxy()->SuspendRenderSink("a2dp");
     } else {
         GetAudioServerProxy()->RestoreRenderSink("a2dp");
