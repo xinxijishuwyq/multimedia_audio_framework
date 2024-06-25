@@ -67,6 +67,20 @@ PaRendererStreamImpl::~PaRendererStreamImpl()
 {
     AUDIO_DEBUG_LOG("~PaRendererStreamImpl");
     rendererStreamInstanceMap_.Erase(this);
+
+    PaLockGuard lock(mainloop_);
+    if (paStream_) {
+        pa_stream_set_state_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_write_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_started_callback(paStream_, nullptr, nullptr);
+
+        pa_stream_disconnect(paStream_);
+        pa_stream_unref(paStream_);
+        paStream_ = nullptr;
+    }
 }
 
 int32_t PaRendererStreamImpl::InitParams()
@@ -257,19 +271,6 @@ int32_t PaRendererStreamImpl::Release()
         statusCallback->OnStatusUpdate(OPERATION_RELEASED);
     }
     state_ = RELEASED;
-    PaLockGuard lock(mainloop_);
-    if (paStream_) {
-        pa_stream_set_state_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_write_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_started_callback(paStream_, nullptr, nullptr);
-
-        pa_stream_disconnect(paStream_);
-        pa_stream_unref(paStream_);
-        paStream_ = nullptr;
-    }
     return SUCCESS;
 }
 
