@@ -87,6 +87,10 @@ AudioRendererPrivate::~AudioRendererPrivate()
         Release();
     }
 
+    if (rendererProxyObj_ != nullptr) {
+        rendererProxyObj_->UnsetRendererObj();
+    }
+
     RemoveRendererPolicyServiceDiedCallback();
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
