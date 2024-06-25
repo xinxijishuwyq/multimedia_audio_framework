@@ -55,6 +55,8 @@ public:
     virtual int32_t OffloadDrain() = 0;
     virtual int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) = 0;
     virtual int32_t OffloadSetBufferSize(uint32_t sizeMs) = 0;
+    virtual int32_t SuspendRenderSink(const std::string &sinkName) = 0;
+    virtual int32_t RestoreRenderSink(const std::string &sinkName) = 0;
 
     /**
      * Sets Audio modes.
