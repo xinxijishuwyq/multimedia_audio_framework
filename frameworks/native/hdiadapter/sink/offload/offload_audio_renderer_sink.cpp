@@ -613,7 +613,7 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     renderPos_ += writeLen;
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    int64_t stampThreshold = 20;  // 20ms
+    int64_t stampThreshold = 50;  // 50ms
     if (stamp >= stampThreshold) {
         AUDIO_WARNING_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
     }
