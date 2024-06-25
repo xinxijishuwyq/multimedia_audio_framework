@@ -488,7 +488,7 @@ void AudioServerDump::HDFModulesDump(std::string &dumpString)
     char s[PA_SAMPLE_SPEC_SNPRINT_MAX];
 
     dumpString += "\nHDF Input Modules\n";
-    AppendFormat(dumpString, "- %d HDF Input Modules (s) available:\n", streamData_.sourceDevices.size());
+    AppendFormat(dumpString, "- %zu HDF Input Modules (s) available:\n", streamData_.sourceDevices.size());
 
     for (auto it = streamData_.sourceDevices.begin(); it != streamData_.sourceDevices.end(); it++) {
         SinkSourceInfo sourceInfo = *it;
@@ -500,7 +500,7 @@ void AudioServerDump::HDFModulesDump(std::string &dumpString)
     }
 
     dumpString += "HDF Output Modules\n";
-    AppendFormat(dumpString, "- %d HDF Output Modules (s) available:\n", streamData_.sinkDevices.size());
+    AppendFormat(dumpString, "- %zu HDF Output Modules (s) available:\n", streamData_.sinkDevices.size());
 
     for (auto it = streamData_.sinkDevices.begin(); it != streamData_.sinkDevices.end(); it++) {
         SinkSourceInfo sinkInfo = *it;

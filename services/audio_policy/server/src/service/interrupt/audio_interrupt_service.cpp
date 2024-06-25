@@ -1233,7 +1233,7 @@ void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
                 continue;
             }
             AppendFormat(dumpString, "    - Pid: %d\n", (iter->first).pid);
-            AppendFormat(dumpString, "    - SessionId: %d\n", (iter->first).sessionId);
+            AppendFormat(dumpString, "    - SessionId: %u\n", (iter->first).sessionId);
             AppendFormat(dumpString, "    - Audio Focus isPlay Id: %d\n", (iter->first).audioFocusType.isPlay);
             AppendFormat(dumpString, "    - Stream Name: %s\n",
                 AudioInfoDumpUtils::GetStreamName((iter->first).audioFocusType.streamType).c_str());

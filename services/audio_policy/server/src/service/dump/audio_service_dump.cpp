@@ -560,7 +560,7 @@ void AudioServiceDump::AudioFocusInfoDump(string &dumpString)
         if ((iter->first).sessionId == invalidSessionId) {
             continue;
         }
-        AppendFormat(dumpString, "  - Session Id: %d\n", (iter->first).sessionId);
+        AppendFormat(dumpString, "  - Session Id: %u\n", (iter->first).sessionId);
         AppendFormat(dumpString, "  - AudioFocus isPlay Id: %d\n", (iter->first).audioFocusType.isPlay);
         AppendFormat(dumpString, "  - Stream Name: %s\n",
             GetStreamName((iter->first).audioFocusType.streamType).c_str());

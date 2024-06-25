@@ -7542,7 +7542,7 @@ void AudioPolicyService::GetGroupInfoDump(std::string &dumpString)
     dumpString += "\nVolume GroupInfo:\n";
     // Get group info
     std::vector<sptr<VolumeGroupInfo>> groupInfos = GetVolumeGroupInfos();
-    AppendFormat(dumpString, "- %d Group Infos (s) available :\n", groupInfos.size());
+    AppendFormat(dumpString, "- %zu Group Infos (s) available :\n", groupInfos.size());
 
     for (auto it = groupInfos.begin(); it != groupInfos.end(); it++) {
         AppendFormat(dumpString, "  Group Infos %d\n", it - groupInfos.begin() + 1);
