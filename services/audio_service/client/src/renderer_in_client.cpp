@@ -959,7 +959,10 @@ void RendererInClientInner::WriteCallbackFunc()
         if (!WaitForRunning()) {
             continue;
         }
-        if (!cbBufferQueue_.IsEmpty()) {
+        if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
+            AUDIO_WARNING_LOG("The queue is too long, reducing data through loops");
+        }
+        while (!cbBufferQueue_.IsEmpty()) {
             Trace traceQueuePop("RendererInClientInner::QueueWaitPop");
             // If client didn't call Enqueue in OnWriteData, pop will block here.
             BufferDesc temp = cbBufferQueue_.Pop();
@@ -967,7 +970,7 @@ void RendererInClientInner::WriteCallbackFunc()
                 AUDIO_WARNING_LOG("Queue pop error: get nullptr.");
                 break;
             }
-            if (state_ != RUNNING) { continue; }
+            if (state_ != RUNNING) { break; }
             traceQueuePop.End();
             // call write here.
             ProcessWriteInner(temp);
