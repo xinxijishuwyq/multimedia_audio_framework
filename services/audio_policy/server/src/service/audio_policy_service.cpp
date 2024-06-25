@@ -7220,19 +7220,19 @@ void AudioPolicyService::DevicesInfoDump(std::string &dumpString)
 
     dumpString += "\nInput local Devices:\n";
     audioDeviceDescriptors = GetDumpDeviceInfo(dumpString, INPUT_DEVICES_FLAG);
-    AppendFormat(dumpString, "- %d Input Devices (s) available\n", audioDeviceDescriptors.size());
+    AppendFormat(dumpString, "- %zu Input Devices (s) available\n", audioDeviceDescriptors.size());
 
     dumpString += "\nOutput local Devices:\n";
     audioDeviceDescriptors = GetDumpDeviceInfo(dumpString, OUTPUT_DEVICES_FLAG);
-    AppendFormat(dumpString, "- %d output Devices (s) available\n", audioDeviceDescriptors.size());
+    AppendFormat(dumpString, "- %zu output Devices (s) available\n", audioDeviceDescriptors.size());
 
     dumpString += "\nInput distributed Devices:\n";
     audioDeviceDescriptors = GetDumpDeviceInfo(dumpString, DISTRIBUTED_INPUT_DEVICES_FLAG);
-    AppendFormat(dumpString, "- %d output Devices (s) available\n", audioDeviceDescriptors.size());
+    AppendFormat(dumpString, "- %zu output Devices (s) available\n", audioDeviceDescriptors.size());
 
     dumpString += "\nOutput distributed Devices:\n";
     audioDeviceDescriptors = GetDumpDeviceInfo(dumpString, DISTRIBUTED_OUTPUT_DEVICES_FLAG);
-    AppendFormat(dumpString, "- %d output Devices (s) available\n", audioDeviceDescriptors.size());
+    AppendFormat(dumpString, "- %zu output Devices (s) available\n", audioDeviceDescriptors.size());
 
     priorityOutputDevice_ = GetActiveOutputDevice();
     priorityInputDevice_ = GetActiveInputDevice();
@@ -7463,7 +7463,7 @@ void AudioPolicyService::XmlParsedDataMapDump(std::string &dumpString)
 static void StreamEffectSceneInfoDump(string &dumpString, const ProcessNew &processNew, const string processType)
 {
     int32_t count;
-    AppendFormat(dumpString, "- %d %s supported :\n", processNew.stream.size(), processType.c_str());
+    AppendFormat(dumpString, "- %zu %s supported :\n", processNew.stream.size(), processType.c_str());
 
     for (Stream x : processNew.stream) {
         AppendFormat(dumpString, "  %s stream scene = %s \n", processType.c_str(), x.scene.c_str());
@@ -7542,7 +7542,7 @@ void AudioPolicyService::GetGroupInfoDump(std::string &dumpString)
     dumpString += "\nVolume GroupInfo:\n";
     // Get group info
     std::vector<sptr<VolumeGroupInfo>> groupInfos = GetVolumeGroupInfos();
-    AppendFormat(dumpString, "- %d Group Infos (s) available :\n", groupInfos.size());
+    AppendFormat(dumpString, "- %zu Group Infos (s) available :\n", groupInfos.size());
 
     for (auto it = groupInfos.begin(); it != groupInfos.end(); it++) {
         AppendFormat(dumpString, "  Group Infos %d\n", it - groupInfos.begin() + 1);
@@ -7664,7 +7664,7 @@ void AudioPolicyService::GetCapturerStreamDump(std::string &dumpString)
     dumpString += "\nAudioCapturer stream:\n";
     vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     streamCollector_.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
-    AppendFormat(dumpString, " - audiocapturer stream size : %d\n", audioCapturerChangeInfos.size());
+    AppendFormat(dumpString, " - audiocapturer stream size : %zu\n", audioCapturerChangeInfos.size());
     for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
         if ((*it)->capturerInfo.capturerFlags == STREAM_FLAG_NORMAL) {
             AppendFormat(dumpString, " - normal AudioCapturer stream:\n");
