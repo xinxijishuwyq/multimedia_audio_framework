@@ -1214,7 +1214,7 @@ void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
             audioInterruptZoneDump->interruptCbSessionIdsMap.size());
         AppendFormat(dumpString, "    - The sessionIds as follow:\n");
         for (auto sessionId : audioInterruptZoneDump->interruptCbSessionIdsMap) {
-            AppendFormat(dumpString, "      - SessionId: %zu -- have interrupt callback.\n", sessionId);
+            AppendFormat(dumpString, "      - SessionId: %u -- have interrupt callback.\n", sessionId);
         }
 
         AppendFormat(dumpString, "  - Audio policy client proxy callback size: %zu\n",
