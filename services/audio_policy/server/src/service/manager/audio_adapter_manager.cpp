@@ -568,6 +568,13 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
 {
+    if (!isLoaded_) {
+        AUDIO_ERR_LOG("The data base is not loaded. Can not load new volume for new device!");
+        // The ring volume is also saved in audio_config.para.
+        // So the boot animation can still play with right volume.
+        return;
+    }
+
     std::lock_guard<std::mutex> lock(muteStatusMutex_);
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
         SetVolumeDb(STREAM_MUSIC);
