@@ -427,10 +427,16 @@ IAudioStream::StreamClass AudioRendererPrivate::GetPreferredStreamClass(AudioStr
     if (rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {
         return IAudioStream::PA_STREAM;
     }
+    if (rendererInfo_.originalFlag == AUDIO_FLAG_MMAP &&
+        !IAudioStream::IsStreamSupported(rendererInfo_.originalFlag, audioStreamParams)) {
+        AUDIO_WARNING_LOG("Unsupported stream params, will create normal stream");
+        rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    }
 
     int32_t flag = AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo_);
     AUDIO_INFO_LOG("Preferred renderer flag: %{public}d", flag);
-    if (flag == AUDIO_FLAG_MMAP && IAudioStream::IsStreamSupported(rendererInfo_.originalFlag, audioStreamParams)) {
+    if (flag == AUDIO_FLAG_MMAP) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
         isFastRenderer_ = true;
         return IAudioStream::FAST_STREAM;
