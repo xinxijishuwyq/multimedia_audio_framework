@@ -5449,7 +5449,7 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
     // Use GetPreferredOutputDeviceDescriptors instead of currentActiveDevice, if prefer != current, recreate stream
     std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList = GetPreferredOutputDeviceDescriptors(rendererInfo);
     if (preferredDeviceList.size() == 0) {
-        return AUDIO_FLAG_INVALID;
+        return AUDIO_FLAG_NORMAL;
     }
     return GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
         rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_);
@@ -5487,7 +5487,7 @@ int32_t AudioPolicyService::GetPreferredOutputStreamTypeInner(StreamUsage stream
         }
     }
     if (adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sinkPortName])) == adapterInfoMap_.end()) {
-        return AUDIO_FLAG_INVALID;
+        return AUDIO_FLAG_NORMAL;
     }
     AudioAdapterInfo adapterInfo;
     auto it = adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sinkPortName]));
@@ -5495,11 +5495,11 @@ int32_t AudioPolicyService::GetPreferredOutputStreamTypeInner(StreamUsage stream
         adapterInfo = it->second;
     } else {
         AUDIO_ERR_LOG("Invalid adapter");
-        return AUDIO_FLAG_INVALID;
+        return AUDIO_FLAG_NORMAL;
     }
 
     AudioPipeDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByDeviceType(deviceType);
-    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_INVALID, "Device type is not supported");
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_NORMAL, "Device type is not supported");
     for (auto &supportPipe : deviceInfo->supportPipes_) {
         PipeInfo* pipeInfo = adapterInfo.GetPipeByName(supportPipe);
         if (pipeInfo == nullptr) {
@@ -5521,7 +5521,7 @@ int32_t AudioPolicyService::GetPreferredInputStreamType(AudioCapturerInfo &captu
     // Use GetPreferredInputDeviceDescriptors instead of currentActiveDevice, if prefer != current, recreate stream
     std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList = GetPreferredInputDeviceDescriptors(capturerInfo);
     if (preferredDeviceList.size() == 0) {
-        return AUDIO_FLAG_INVALID;
+        return AUDIO_FLAG_NORMAL;
     }
     return GetPreferredInputStreamTypeInner(capturerInfo.sourceType, preferredDeviceList[0]->deviceType_,
         capturerInfo.originalFlag, preferredDeviceList[0]->networkId_);
@@ -5538,7 +5538,7 @@ int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceTy
         return AUDIO_FLAG_VOIP_FAST;
     }
     if (adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sourcePortName])) == adapterInfoMap_.end()) {
-        return AUDIO_FLAG_INVALID;
+        return AUDIO_FLAG_NORMAL;
     }
     AudioAdapterInfo adapterInfo;
     auto it = adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sourcePortName]));
@@ -5546,10 +5546,10 @@ int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceTy
         adapterInfo = it->second;
     } else {
         AUDIO_ERR_LOG("Invalid adapter");
-        return AUDIO_FLAG_INVALID;
+        return AUDIO_FLAG_NORMAL;
     }
     AudioPipeDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByDeviceType(deviceType);
-    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_INVALID, "Device type is not supported");
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_NORMAL, "Device type is not supported");
     for (auto &supportPipe : deviceInfo->supportPipes_) {
         PipeInfo* pipeInfo = adapterInfo.GetPipeByName(supportPipe);
         if (pipeInfo == nullptr) {
