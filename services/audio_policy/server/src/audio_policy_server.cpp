@@ -180,7 +180,7 @@ void AudioPolicyServer::OnStart()
     if (iRes < 0) {
         AUDIO_ERR_LOG("fail to call RegisterPermStateChangeCallback.");
     }
-    RegisterCommonEventReceiver();
+    
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
@@ -2004,6 +2004,7 @@ void AudioPolicyServer::RegisterBluetoothListener()
 {
     AUDIO_INFO_LOG("RegisterBluetoothListener");
     audioPolicyService_.RegisterBluetoothListener();
+    RegisterCommonEventReceiver();
 }
 
 void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
@@ -2724,6 +2725,10 @@ void BluetoothEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &e
 
 void AudioPolicyServer::RegisterCommonEventReceiver()
 {
+    if (bluetoothEventSubscriberOb_ != nullptr) {
+        AUDIO_WARNING_LOG("bluetoothEvent is already registed");
+        return;
+    }
     AUDIO_INFO_LOG("register bluetooth remote device name receiver");
     EventFwk::MatchingSkills matchingSkills;
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_BLUETOOTH_REMOTEDEVICE_NAME_UPDATE);

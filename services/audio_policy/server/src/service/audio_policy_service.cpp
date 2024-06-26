@@ -7936,6 +7936,7 @@ bool AudioPolicyService::IsRingerModeMute()
 void AudioPolicyService::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
 {
     std::lock_guard<std::shared_mutex> lock(deviceStatusUpdateSharedMutex_);
+    audioDeviceManager_.OnReceiveBluetoothEvent(macAddress, deviceName);
     for (auto device : connectedDevices_) {
         if (device->macAddress_ == macAddress) {
             device->deviceName_ = deviceName;

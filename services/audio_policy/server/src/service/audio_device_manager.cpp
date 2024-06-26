@@ -967,5 +967,14 @@ DeviceUsage AudioDeviceManager::GetDeviceUsage(const AudioDeviceDescriptor &desc
 
     return usage;
 }
+
+void AudioDeviceManager::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
+{
+    for (auto device : connectedDevices_) {
+        if (device->macAddress_ == macAddress) {
+            device->deviceName_ = deviceName;
+        }
+    }
+}
 }
 }
