@@ -52,7 +52,7 @@ public:
 
     virtual int32_t Flush() = 0;
 
-    virtual int32_t Drain() = 0;
+    virtual int32_t Drain(bool stopFlag = false) = 0;
 
     virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) = 0;
 

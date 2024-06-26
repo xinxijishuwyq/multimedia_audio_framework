@@ -668,7 +668,7 @@ bool AudioStream::FlushAudioStream()
     return true;
 }
 
-bool AudioStream::DrainAudioStream()
+bool AudioStream::DrainAudioStream(bool stopFlag)
 {
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false,
         "State is not RUNNING. Illegal  state:%{public}u, sessionId: %{public}u", state_, sessionId_);

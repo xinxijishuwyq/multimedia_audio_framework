@@ -169,14 +169,14 @@ int32_t IpcStreamProxy::Flush()
     return reply.ReadInt32();
 }
 
-int32_t IpcStreamProxy::Drain()
+int32_t IpcStreamProxy::Drain(bool stopFlag)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
-
+    data.WriteBool(stopFlag);
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_DRAIN, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "Drain failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();

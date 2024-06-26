@@ -45,7 +45,7 @@ public:
 
     int32_t Flush() override;
 
-    int32_t Drain() override;
+    int32_t Drain(bool stopFlag = false) override;
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
 
