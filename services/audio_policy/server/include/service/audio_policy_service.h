@@ -927,7 +927,7 @@ private:
     bool IsA2dpOrArmUsbDevice(const InternalDeviceType &deviceType);
 
     void UpdateAllUserSelectDevice(vector<unique_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap,
-        const sptr<AudioDeviceDescriptor> &desc);
+        AudioDeviceDescriptor &desc, const sptr<AudioDeviceDescriptor> &selectDesc);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
