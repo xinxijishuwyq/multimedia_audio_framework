@@ -700,6 +700,7 @@ int32_t RendererInServer::Pause()
 int32_t RendererInServer::Flush()
 {
     AUDIO_INFO_LOG("Flush.");
+    Trace trace(traceTag_ + " Flush");
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_STARTED) {
         status_ = I_STATUS_FLUSHING_WHEN_STARTED;
