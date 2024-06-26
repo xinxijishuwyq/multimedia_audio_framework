@@ -175,6 +175,7 @@ private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;
+    static uint32_t paDaemonTid_;
     static std::unordered_map<int, float> AudioStreamVolumeMap;
     static std::map<std::string, std::string> audioParameters;
     static std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> audioParameterKeys;

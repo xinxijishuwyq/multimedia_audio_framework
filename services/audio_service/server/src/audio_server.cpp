@@ -61,6 +61,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+uint32_t AudioServer::paDaemonTid_;
 std::map<std::string, std::string> AudioServer::audioParameters;
 std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> AudioServer::audioParameterKeys;
 const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
@@ -229,7 +230,7 @@ void *AudioServer::paDaemonThread(void *arg)
     char *argv[] = {
         (char*)"pulseaudio",
     };
-
+    paDaemonTid_ = gettid();
     AUDIO_INFO_LOG("Calling ohos_pa_main\n");
     ohos_pa_main(PA_ARG_COUNT, argv);
     AUDIO_INFO_LOG("Exiting ohos_pa_main\n");
@@ -270,6 +271,7 @@ void AudioServer::OnStart()
         WriteServiceStartupError();
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
+    AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
 #ifdef PA
     int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
     pthread_setname_np(m_paDaemonThread, "OS_PaDaemon");
@@ -310,6 +312,9 @@ void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string&
             AUDIO_INFO_LOG("input service start");
             RegisterPolicyServerDeathRecipient();
             break;
+        case RES_SCHED_SYS_ABILITY_ID:
+            AUDIO_INFO_LOG("ressched service start");
+            ScheduleReportData(getpid(), paDaemonTid_, "audio_server");
         default:
             AUDIO_ERR_LOG("unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
