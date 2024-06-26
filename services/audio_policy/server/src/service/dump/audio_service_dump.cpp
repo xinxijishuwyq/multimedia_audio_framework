@@ -676,7 +676,7 @@ void AudioServiceDump::AudioInterruptZoneDump(string &dumpString)
             audioInterruptZoneDump->interruptCbSessionIdsMap.size());
         AppendFormat(dumpString, "    - The sessionIds as follow:\n");
         for (auto sessionId : audioInterruptZoneDump->interruptCbSessionIdsMap) {
-            AppendFormat(dumpString, "      - SessionId: %d -- have interrupt callback.\n", sessionId);
+            AppendFormat(dumpString, "      - SessionId: %u -- have interrupt callback.\n", sessionId);
         }
 
         AppendFormat(dumpString, "  - Audio policy client proxy callback size: %zu\n",
@@ -695,7 +695,7 @@ void AudioServiceDump::AudioInterruptZoneDump(string &dumpString)
                 continue;
             }
             AppendFormat(dumpString, "    - Pid: %d\n", (iter->first).pid);
-            AppendFormat(dumpString, "    - SessionId: %d\n", (iter->first).sessionId);
+            AppendFormat(dumpString, "    - SessionId: %u\n", (iter->first).sessionId);
             AppendFormat(dumpString, "    - AudioFocus isPlay Id: %d\n", (iter->first).audioFocusType.isPlay);
             AppendFormat(dumpString, "    - Stream Name: %s\n",
                 GetStreamName((iter->first).audioFocusType.streamType).c_str());

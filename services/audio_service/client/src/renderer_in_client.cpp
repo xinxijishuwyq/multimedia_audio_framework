@@ -1732,19 +1732,19 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain)
 
     OptResult result = ringCache_->GetReadableSize();
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_OPERATION_FAILED, "ring cache unreadable");
-    size_t readableSize = result.size;
-    if (readableSize == 0) {
+    if (result.size == 0) {
         AUDIO_WARNING_LOG("Readable size is already zero");
         return SUCCESS;
     }
-    size_t targetSize = isDrain ? std::min(readableSize, clientSpanSizeInByte_) : clientSpanSizeInByte_;
+    size_t targetSize = isDrain ? std::min(result.size, clientSpanSizeInByte_) : clientSpanSizeInByte_;
 
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
 
     int32_t tryCount = 3; // try futex wait for 3 times.
     FutexCode futexRes = FUTEX_OPERATION_FAILED;
-    while (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_ && tryCount-- > 0) {
+    while (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_ && tryCount > 0) {
+        tryCount--;
         int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
         futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) *
             AUDIO_US_PER_SECOND);
