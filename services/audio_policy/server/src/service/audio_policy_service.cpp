@@ -6756,7 +6756,7 @@ void AudioPolicyService::UpdateAllUserSelectDevice(vector<unique_ptr<AudioDevice
         audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor(selectDesc));
     }
     if (userSelectDeviceMap[RECORD_CAPTURE_ID]->deviceType_ == desc.deviceType_ &&
-        userSelectDeviceMap[RECORD_CAPTURE_IR]->macAddress_ == desc.macAddress_) {
+        userSelectDeviceMap[RECORD_CAPTURE_ID]->macAddress_ == desc.macAddress_) {
         audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor(selectDesc));
     }
 }
