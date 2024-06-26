@@ -1364,9 +1364,9 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
                 AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
                 pa_sink_input_handle_ohos_underrun(sinkIn);
             } else {
+                AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
                 pa_atomic_store(&sinkIn->isFirstReaded, 1);
             }
-            AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
 
             infoIn->userdata = pa_sink_input_ref(sinkIn);
             pa_assert(infoIn->chunk.memblock);
