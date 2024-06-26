@@ -72,6 +72,7 @@ struct Userdata {
     SourceAttr attrs;
     bool IsCapturerStarted;
     struct CapturerSourceAdapter *sourceAdapter;
+    pa_usec_t delayTime;
 };
 
 static int PaHdiCapturerInit(struct Userdata *u);
@@ -160,6 +161,7 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
 
     if ((s->thread_info.state == PA_SOURCE_SUSPENDED || s->thread_info.state == PA_SOURCE_INIT) &&
         PA_SOURCE_IS_OPENED(newState)) {
+        u->delayTime = 0;
         u->timestamp = pa_rtclock_now();
         if (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) {
             u->timestamp -= HDI_WAKEUP_BUFFER_TIME;
@@ -278,7 +280,12 @@ static bool PaRtpollSetTimerFunc(struct Userdata *u, bool timerElapsed)
         u->sourceAdapter->CapturerSourceAppsUid(u->sourceAdapter->wapper, appsUid, count);
     }
 
-    pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp + u->block_usec);
+    pa_usec_t costTime = pa_rtclock_now() - now;
+    if (costTime > u->block_usec) {
+        u->delayTime += (costTime - u->block_usec);
+    }
+
+    pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp + u->block_usec + u->delayTime);
     return true;
 }
 
