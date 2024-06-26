@@ -7076,24 +7076,14 @@ float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId)
 
     if (deviceId == currentActiveDevice_.deviceId_) {
         std::string identity = IPCSkeleton::ResetCallingIdentity();
-        float outputMaxAmplitude = 0;
-        if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
-            outputMaxAmplitude = gsp->GetMaxAmplitude(true, DEVICE_TYPE_USB_ARM_HEADSET);
-        } else {
-            outputMaxAmplitude = gsp->GetMaxAmplitude(true, currentActiveDevice_.deviceType_);
-        }
+        float outputMaxAmplitude = gsp->GetMaxAmplitude(true, currentActiveDevice_.deviceType_);
         IPCSkeleton::SetCallingIdentity(identity);
         return outputMaxAmplitude;
     }
 
     if (deviceId == currentActiveInputDevice_.deviceId_) {
         std::string identity = IPCSkeleton::ResetCallingIdentity();
-        float inputMaxAmplitude = 0;
-        if (currentActiveInputDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
-            inputMaxAmplitude = gsp->GetMaxAmplitude(false, DEVICE_TYPE_USB_ARM_HEADSET);
-        } else {
-            inputMaxAmplitude = gsp->GetMaxAmplitude(false, currentActiveInputDevice_.deviceType_);
-        }
+        float inputMaxAmplitude = gsp->GetMaxAmplitude(false, currentActiveInputDevice_.deviceType_);
         IPCSkeleton::SetCallingIdentity(identity);
         return inputMaxAmplitude;
     }
