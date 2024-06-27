@@ -55,7 +55,8 @@ namespace {
     std::mutex g_mutex;
     std::condition_variable g_condVar;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> g_audioFocusInfoList;
-    static constexpr char CONFIG_FILE[] = "/vendor/etc/audio/audio_policy_config_new.xml";
+    static constexpr char CONFIG_FILE[] = "/vendor/etc/audio/audio_policy_config.xml";
+    static constexpr char CONFIG_FILE_NEW[] = "/chip_prod/etc/audio/audio_policy_config_new.xml";
     constexpr int32_t OFFLOAD_HDI_CACHE1 = 200;
 }
 
@@ -2754,17 +2755,23 @@ HWTEST(AudioManagerUnitTest, SetDistributedRoutingRoleCallback_002, TestSize.Lev
 bool GetOffloadAvailable()
 {
     cout << "GetOffloadAvailable enter" << endl;
-    ifstream ifs(CONFIG_FILE, ios::in);
-    if (!ifs) {
-        cout << "open CONFIG_FILE failed!" << endl;
-        return false;
+    ifstream ifs;
+    ifs.open(CONFIG_FILE_NEW, ios::in);
+    if (!ifs.is_open()) {
+        ifs.open(CONFIG_FILE, ios::in);
+        if (!ifs.is_open()) {
+            cout << "open CONFIG_FILE failed!" << endl;
+            return false;
+        }
     }
     string s;
     while (getline(ifs, s)) {
-        if (s.find("sink name=\"offload out\"") != string::npos) {
+        if (s.find("pipe name=\"offload_output\"") != string::npos) {
+            ifs.close();
             return true;
         }
     }
+    ifs.close();
     return false;
 }
 
