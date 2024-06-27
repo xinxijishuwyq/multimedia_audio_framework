@@ -44,6 +44,8 @@ const uint64_t AUDIO_NS_PER_US = 1000;
 const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t AUDIO_NS_PER_S = 1000000000;
+const float MIN_VOLUME = 0.0;
+const float MAX_VOLUME = 1.0;
 
 static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t retVal)
 {
@@ -1111,5 +1113,32 @@ int32_t PaRendererStreamImpl::ReturnIndex(int32_t index)
     return SUCCESS;
 }
 // offload end
+
+int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
+{
+    if (clientVolume < MIN_VOLUME || clientVolume > MAX_VOLUME) {
+        AUDIO_ERR_LOG("SetClientVolume with invalid clientVolume %{public}f", clientVolume);
+        return ERR_INVALID_PARAM;
+    }
+    
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        return ERR_OPERATION_FAILED;
+    }
+
+    if (clientVolume == MIN_VOLUME) {
+        pa_proplist_sets(propList, "clientVolumeIsZero", "true");
+    } else {
+        pa_proplist_sets(propList, "clientVolumeIsZero", "false");
+    }
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+    AUDIO_INFO_LOG("set client volume success");
+
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

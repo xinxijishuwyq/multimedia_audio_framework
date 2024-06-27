@@ -1735,10 +1735,12 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
         pa_sink_input_assert_ref(input);
         const char *sinkSceneTypeTmp = pa_proplist_gets(input->proplist, "scene.type");
         const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
+        const char *clientVolumeIsZero = safeProplistGets(input->proplist, "clientVolumeIsZero", "false");
         pa_cvolume vol;
         pa_sink_input_get_volume(input, &vol, true);
         pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
-        bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol);
+        bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol) ||
+            pa_safe_streq(clientVolumeIsZero, "true");
         if (pa_safe_streq(sinkSceneTypeTmp, SCENE_TYPE_SET[i]) && !isZeroVolume) {
             g_effectAllStreamVolumeZeroMap[i] = false;
             g_effectStartVolZeroTimeMap[i] = 0;
@@ -1806,6 +1808,30 @@ static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
     }
 }
 
+static void HandleClosePa(struct Userdata *u)
+{
+    if (!g_paHaveDisabled) {
+        int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0);
+        AUDIO_INFO_LOG("Speaker pa volume change to zero over [%{public}d]s, close %{public}s pa [%{public}s], "
+            "ret:%{public}d", WAIT_CLOSE_PA_OR_EFFECT_TIME, u->sink->name, (ret == 0 ? "success" : "failed"), ret);
+        g_paHaveDisabled = true;
+        g_speakerPaAllStreamStartVolZeroTime = 0;
+        g_speakerPaHaveClosed = true;
+        time(&g_speakerPaClosedTime);
+    }
+}
+
+static void HandleOpenPa(struct Userdata *u)
+{
+    if (g_paHaveDisabled) {
+        int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1);
+        AUDIO_INFO_LOG("volume change to non zero, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d",
+            u->sink->name, (ret == 0 ? "success" : "failed"), ret);
+        g_paHaveDisabled = false;
+        g_speakerPaHaveClosed = false;
+    }
+}
+
 static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTime)
 {
     if (!g_onlyPrimarySpeakerPaLoading) {
@@ -1817,10 +1843,12 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
     g_speakerPaAllStreamVolumeZero = true;
     while ((input = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
         pa_sink_input_assert_ref(input);
+        const char *clientVolumeIsZero = safeProplistGets(input->proplist, "clientVolumeIsZero", "false");
         pa_cvolume vol;
         pa_sink_input_get_volume(input, &vol, true);
         pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
-        bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol);
+        bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol) ||
+            pa_safe_streq(clientVolumeIsZero, "true");
         if (!strcmp(u->sink->name, "Speaker") && !isZeroVolume) {
             g_speakerPaAllStreamVolumeZero = false;
             g_speakerPaAllStreamStartVolZeroTime = 0;
@@ -1835,23 +1863,9 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
     }
     if (g_speakerPaAllStreamVolumeZero && PA_SINK_IS_RUNNING(u->sink->thread_info.state) &&
         difftime(currentTime, g_speakerPaAllStreamStartVolZeroTime) > WAIT_CLOSE_PA_OR_EFFECT_TIME) {
-        if (!g_paHaveDisabled) {
-            int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0);
-            AUDIO_INFO_LOG("Speaker pa volume change to zero over [%{public}d]s, close %{public}s pa [%{public}s], "
-                "ret:%{public}d", WAIT_CLOSE_PA_OR_EFFECT_TIME, u->sink->name, (ret == 0 ? "success" : "failed"), ret);
-            g_paHaveDisabled = true;
-            g_speakerPaAllStreamStartVolZeroTime = 0;
-            g_speakerPaHaveClosed = true;
-            time(&g_speakerPaClosedTime);
-        }
+        HandleClosePa(u);
     } else {
-        if (g_paHaveDisabled) {
-            int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1);
-            AUDIO_INFO_LOG("volume change to non zero, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d",
-                u->sink->name, (ret == 0 ? "success" : "failed"), ret);
-            g_paHaveDisabled = false;
-            g_speakerPaHaveClosed = false;
-        }
+        HandleOpenPa(u);
     }
 
     if (g_speakerPaHaveClosed && difftime(currentTime, g_speakerPaClosedTime) >= MONITOR_CLOSE_PA_TIME_SEC) {

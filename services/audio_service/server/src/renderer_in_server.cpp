@@ -1121,5 +1121,16 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
     silentModeAndMixWithOthers_ = on;
     return SUCCESS;
 }
+
+int32_t RendererInServer::SetClientVolume()
+{
+    if (audioServerBuffer_ == nullptr) {
+        AUDIO_WARNING_LOG("buffer in not inited");
+        return ERROR;
+    }
+    float clientVolume = audioServerBuffer_->GetStreamVolume();
+    int32_t ret = stream_->SetClientVolume(clientVolume);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

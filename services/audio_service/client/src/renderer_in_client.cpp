@@ -688,6 +688,13 @@ int32_t RendererInClientInner::SetInnerVolume(float volume)
 {
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
     clientBuffer_->SetStreamVolume(volume);
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetClientVolume();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Set Client Volume failed:%{public}u", ret);
+        return -1;
+    }
+    AUDIO_INFO_LOG("SetClientVolume success, volume: %{public}f", volume);
     return SUCCESS;
 }
 
