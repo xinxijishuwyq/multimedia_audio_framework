@@ -1226,20 +1226,23 @@ int32_t AudioRendererPrivate::SetOffloadAllowed(bool isAllowed)
 int32_t AudioRendererPrivate::SetOffloadMode(int32_t state, bool isAppBack) const
 {
     AUDIO_INFO_LOG("set offload mode for session %{public}u", sessionID_);
+    uint32_t sessionId = static_cast<uint32_t>(-1);
+    int32_t ret = GetAudioStreamId(sessionId);
+    CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get sessionId failed");
 
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.pipeType == PIPE_TYPE_NORMAL_OUT, ERR_CONCEDE_INCOMING_STREAM,
-        "session %{public}u pipe type is %{public}d, deny offload", sessionID_, rendererInfo_.pipeType);
+        "session %{public}u pipe type is %{public}d, deny offload", sessionId, rendererInfo_.pipeType);
     if (!isOffloadAllowed_) {
         AUDIO_INFO_LOG("offload is not allowed");
         return ERR_NOT_SUPPORTED;
     }
 
     AudioPipeType offload = PIPE_TYPE_OFFLOAD;
-    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioConcurrency(offload);
+    ret = AudioPolicyManager::GetInstance().ActivateAudioConcurrency(offload);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_CONCEDE_INCOMING_STREAM,
-        "session %{public}u deny offload", sessionID_);
+        "session %{public}u deny offload", sessionId);
 
-    AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_OFFLOAD);
+    AudioPolicyManager::GetInstance().MoveToNewPipe(sessionId, PIPE_TYPE_OFFLOAD);
     return audioStream_->SetOffloadMode(state, isAppBack);
 }
 
@@ -1881,6 +1884,10 @@ void AudioRendererPrivate::ActivateAudioConcurrency(const AudioStreamParams &aud
 void AudioRendererPrivate::ConcedeStream()
 {
     AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", sessionID_, rendererInfo_.pipeType);
+    uint32_t sessionId = static_cast<uint32_t>(-1);
+    int32_t ret = GetAudioStreamId(sessionId);
+    CHECK_AND_RETURN_LOG(!ret, "Get sessionId failed");
+
     AudioPipeType pipeType = PIPE_TYPE_NORMAL_OUT;
     audioStream_->GetAudioPipeType(pipeType);
     rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
@@ -1888,12 +1895,12 @@ void AudioRendererPrivate::ConcedeStream()
     switch (pipeType) {
         case PIPE_TYPE_LOWLATENCY_OUT:
         case PIPE_TYPE_DIRECT_MUSIC:
-            SwitchStream(sessionID_, IAudioStream::PA_STREAM);
+            SwitchStream(sessionId, IAudioStream::PA_STREAM);
             break;
         case PIPE_TYPE_OFFLOAD:
             isOffloadAllowed_ = false;
             UnsetOffloadMode();
-            AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_NORMAL_OUT);
+            AudioPolicyManager::GetInstance().MoveToNewPipe(sessionId, PIPE_TYPE_NORMAL_OUT);
             break;
         default:
             break;
