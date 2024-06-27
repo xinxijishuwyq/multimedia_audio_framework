@@ -2194,6 +2194,8 @@ void AudioPolicyService::MuteSinkPort(DeviceType oldDevice, DeviceType newDevice
         if (oldDevice == DEVICE_TYPE_REMOTE_CAST) {
             usleep(DEVICE_TYPE_REMOTE_CAST_MS); // remote cast -> spk or other device 40 ms fix pop
         }
+    } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN && oldDevice == DEVICE_TYPE_REMOTE_CAST) {
+        MuteSinkPort(newDevice, NEW_DEVICE_AVALIABLE_MUTE_MS, true); // remote cast -> earpiece 300ms fix sound leak
     }
 }
 
