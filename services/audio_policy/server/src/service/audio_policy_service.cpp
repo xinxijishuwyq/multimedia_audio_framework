@@ -33,6 +33,7 @@
 #include "datashare_result_set.h"
 #include "data_share_observer_callback.h"
 #include "device_init_callback.h"
+#include "audio_inner_call.h"
 #ifdef FEATURE_DEVICE_MANAGER
 #include "device_manager.h"
 #include "device_manager_impl.h"
@@ -2168,6 +2169,10 @@ bool AudioPolicyService::NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor
 void AudioPolicyService::MuteSinkPort(DeviceType deviceType, int32_t duration, bool isSync)
 {
     string portName = GetSinkPortName(deviceType);
+    if (portName == PRIMARY_SPEAKER) {
+        // Currently only operating primary hal
+        AudioInnerCall::GetInstance()->GetIAudioServerInnerCall()->SetSinkRenderEmpty(PRIMARY_CLASS, duration);
+    }
     audioPolicyManager_.SetSinkMute(portName, true, isSync);
     thread switchThread(&AudioPolicyService::KeepPortMute, this, duration, portName, deviceType);
     switchThread.detach(); // add another sleep before switch local can avoid pop in some case

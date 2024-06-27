@@ -265,6 +265,7 @@ void AudioServer::OnStart()
 {
     audioUid_ = static_cast<int32_t>(getuid());
     AUDIO_INFO_LOG("OnStart uid:%{public}d", audioUid_);
+    AudioInnerCall::GetInstance()->RegisterAudioServer(this);
     bool res = Publish(this);
     if (!res) {
         AUDIO_ERR_LOG("start err");
@@ -1847,6 +1848,17 @@ int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId)
     } else {
         return AudioService::GetInstance()->DisableDualToneList(static_cast<uint32_t>(sessionId));
     }
+}
+
+int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs)
+{
+    if (durationUs <= 0) {
+        return SUCCESS;
+    }
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+
+    return audioRendererSinkInstance->SetRenderEmpty(durationUs);
 }
 } // namespace AudioStandard
 } // namespace OHOS

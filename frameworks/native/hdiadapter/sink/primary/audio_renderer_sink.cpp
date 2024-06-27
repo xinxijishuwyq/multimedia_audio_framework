@@ -180,6 +180,8 @@ public:
         const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
+    int32_t SetRenderEmpty(int32_t durationUs) final;
+
     std::string GetDPDeviceAttrInfo(const std::string &condition);
 
     explicit AudioRendererSinkInner(const std::string &halName = "primary");
@@ -972,7 +974,7 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
 
 int32_t AudioRendererSinkInner::SetAudioRoute(DeviceType outputDevice, AudioRoute route)
 {
-    renderEmptyFrameCount_ = 3; // preRender 3 frames
+    CasWithCompare(renderEmptyFrameCount_, 3, std::less<int32_t>()); // preRender 3 frames
     std::unique_lock<std::mutex> lock(switchMutex_);
     switchCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_FOR_RENDER_EMPTY), [this] {
         if (renderEmptyFrameCount_ == 0) {
@@ -989,7 +991,7 @@ int32_t AudioRendererSinkInner::SetAudioRoute(DeviceType outputDevice, AudioRout
     inSwitch_.store(false);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_INFO_LOG("deviceType : %{public}d UpdateAudioRoute cost[%{public}" PRId64 "]ms", outputDevice, stamp);
-    renderEmptyFrameCount_ = 3; // render 3 empty frame
+    CasWithCompare(renderEmptyFrameCount_, 3, std::less<int32_t>()); // render 3 empty frame
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
 
     return SUCCESS;
@@ -1570,6 +1572,14 @@ int32_t AudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &appsUi
     runningLockManager_->UpdateAppsUidToPowerMgr();
 #endif
 
+    return SUCCESS;
+}
+
+int32_t AudioRendererSinkInner::SetRenderEmpty(int32_t durationUs)
+{
+    int32_t emptyCount = durationUs / 1000 / BUFFER_CALC_20MS; // 1000 us->ms
+    AUDIO_INFO_LOG("render %{public}d empty", emptyCount);
+    CasWithCompare(renderEmptyFrameCount_, emptyCount, std::less<int32_t>());
     return SUCCESS;
 }
 } // namespace AudioStandard

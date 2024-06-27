@@ -19,7 +19,10 @@ ohos_fuzztest("AudioServerBalanceFuzzTest") {
   module_out_path = "audio_framework/audio_framework"
   fuzz_config_file = "../audioserverbalance_fuzzer"
 
-  include_dirs = [ "../../../services/audio_service/server/include" ]
+  include_dirs = [
+    "../../../frameworks/native/audioinnercall/include",
+    "../../../services/audio_service/server/include",
+  ]
 
   cflags = [
     "-g",
