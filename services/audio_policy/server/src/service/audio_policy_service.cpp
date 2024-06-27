@@ -810,7 +810,11 @@ void AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
 
 bool AudioPolicyService::CheckActiveOutputDeviceSupportOffload()
 {
-    DeviceType dev = GetActiveOutputDevice();
+    DeviceType dev = currentActiveDevice_.deviceType_;
+    if (currentActiveDevice_.networkId_ != LOCAL_NETWORK_ID || dev == DEVICE_TYPE_REMOTE_CAST) {
+        return false;
+    }
+
     return dev == DEVICE_TYPE_SPEAKER || (dev == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag_ == A2DP_OFFLOAD) ||
         (dev == DEVICE_TYPE_USB_HEADSET && !isArmUsbDevice_);
 }
@@ -5958,6 +5962,11 @@ int32_t AudioPolicyService::UnloadOffloadModule()
 
 bool AudioPolicyService::CheckStreamMultichannelMode(int64_t activateSessionId, AudioStreamType streamType)
 {
+    if (currentActiveDevice_.networkId_ != LOCAL_NETWORK_ID ||
+        currentActiveDevice_.deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
+        return false;
+    }
+
     // Multi-channel mode only when the number of channels is greater than 2.
     int32_t channelCount = GetChannelCount(activateSessionId);
     if (channelCount < AudioChannel::CHANNEL_3) {
