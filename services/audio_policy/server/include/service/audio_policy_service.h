@@ -929,6 +929,8 @@ private:
     void UpdateAllUserSelectDevice(vector<unique_ptr<AudioDeviceDescriptor>> &userSelectDeviceMap,
         AudioDeviceDescriptor &desc, const sptr<AudioDeviceDescriptor> &selectDesc);
 
+    void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support);
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;

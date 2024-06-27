@@ -73,6 +73,8 @@ static const int64_t SELECT_DEVICE_MUTE_MS = 200000; // 200ms
 static const int64_t NEW_DEVICE_AVALIABLE_MUTE_MS = 300000; // 300ms
 static const int64_t ARM_USB_DEVICE_MUTE_MS = 40000; // 40ms
 static const int64_t DEVICE_TYPE_REMOTE_CAST_MS = 40000; // 40ms
+static const int64_t SET_BT_ABS_SCENE_DELAY_MS = 120000; // 120ms
+
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
     STREAM_RING,
@@ -860,6 +862,7 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute)
             AUDIO_WARNING_LOG("Set failed for macAddress:[%{public}s]", GetEncryptAddr(activeBTDevice_).c_str());
         } else {
             configInfoPos->second.mute = mute;
+            audioPolicyManager_.SetStreamMute(streamType, mute);
 #ifdef BLUETOOTH_ENABLE
             // set to avrcp device
             if (mute) {
@@ -2692,11 +2695,7 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
             GetEncryptAddr(activeBTDevice_).c_str(), GetEncryptAddr(lastActiveA2dpDevice).c_str());
         return result;
     }
-    {
-        std::unique_lock<std::mutex> lock(a2dpDeviceMapMutex_);
-        A2dpDeviceConfigInfo configInfo = connectedA2dpDeviceMap_[activeBTDevice_];
-        audioPolicyManager_.SetAbsVolumeScene(configInfo.absVolumeSupport);
-    }
+
     result = LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadA2dpModule failed %{public}d", result);
 #endif
@@ -5100,6 +5099,19 @@ void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<sptr<AudioDeviceDes
     }
 }
 
+void AudioPolicyService::SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support)
+{
+    usleep(SET_BT_ABS_SCENE_DELAY_MS);
+    AUDIO_INFO_LOG("success for macAddress:[%{public}s], support: %{public}d, active bt:[%{public}s]",
+        GetEncryptAddr(macAddress).c_str(), support, GetEncryptAddr(activeBTDevice_).c_str());
+
+    if (activeBTDevice_ == macAddress) {
+        audioPolicyManager_.SetAbsVolumeScene(support);
+        int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
+        audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
+    }
+}
+
 int32_t AudioPolicyService::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support)
 {
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
@@ -5111,7 +5123,6 @@ int32_t AudioPolicyService::SetDeviceAbsVolumeSupported(const std::string &macAd
         auto configInfoPos = connectedA2dpDeviceMap_.find(macAddress);
         if (configInfoPos != connectedA2dpDeviceMap_.end()) {
             configInfoPos->second.absVolumeSupport = support;
-            audioPolicyManager_.SetAbsVolumeScene(support);
             break;
         }
         CHECK_AND_RETURN_RET_LOG(retryCount != maxRetries, ERROR,
@@ -5119,13 +5130,10 @@ int32_t AudioPolicyService::SetDeviceAbsVolumeSupported(const std::string &macAd
         usleep(ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS);
     }
 
-    AUDIO_INFO_LOG("success for macAddress:[%{public}s], support: %{public}d, active bt:[%{public}s]",
-        GetEncryptAddr(macAddress).c_str(), support, GetEncryptAddr(activeBTDevice_).c_str());
+    // The delay setting is due to move a2dp sink after this
+    std::thread setAbsSceneThrd(&AudioPolicyService::SetAbsVolumeSceneAsync, this, macAddress, support);
+    setAbsSceneThrd.detach();
 
-    if (activeBTDevice_ == macAddress) {
-        int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_MUSIC);
-        audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
-    }
     return SUCCESS;
 }
 
@@ -5349,10 +5357,12 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
         }
     }
     configInfoPos->second.volumeLevel = sVolumeLevel;
-    if (sVolumeLevel > 0) {
-        configInfoPos->second.mute = false;
+    bool mute = sVolumeLevel == 0 ? true : false;
+    if (configInfoPos->second.mute != mute) {
+        configInfoPos->second.mute = mute;
+        audioPolicyManager_.SetStreamMute(STREAM_MUSIC, configInfoPos->second.mute);
     }
-    AUDIO_DEBUG_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
+    AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
         GetEncryptAddr(macAddress).c_str(), sVolumeLevel);
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_UNKNOWN, "safevolume did not deal");
     return SUCCESS;
