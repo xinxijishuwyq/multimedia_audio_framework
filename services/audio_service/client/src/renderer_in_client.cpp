@@ -124,6 +124,8 @@ RendererInClientInner::~RendererInClientInner()
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
+    AUDIO_INFO_LOG("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_, operation,
+        result);
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
         if (!offloadEnable_ && static_cast<bool>(result)) {
@@ -133,8 +135,6 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
         return SUCCESS;
     }
-
-    AUDIO_INFO_LOG("OnOperationHandled() recv operation:%{public}d result:%{public}" PRId64".", operation, result);
 
     std::unique_lock<std::mutex> lock(callServerMutex_);
     notifiedOperation_ = operation;
@@ -1653,9 +1653,9 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 {
     // eg: RendererInClient::sessionId:100001 WriteSize:3840
     Trace trace(traceTag_+ " WriteSize:" + std::to_string(bufferSize));
-    Trace::CountVolume(traceTag_, *buffer);
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
+    Trace::CountVolume(traceTag_, *buffer);
     CHECK_AND_RETURN_RET_LOG(gServerProxy_ != nullptr, ERROR, "server is died");
     std::lock_guard<std::mutex> lock(writeMutex_);
 
