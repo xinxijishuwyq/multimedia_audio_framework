@@ -191,6 +191,7 @@ void AudioPolicyServer::OnStop()
 {
     audioPolicyService_.Deinit();
     UnRegisterPowerStateListener();
+    UnRegisterSyncHibernateListener();
     UnregisterCommonEventReceiver();
     return;
 }
@@ -231,6 +232,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
             SubscribePowerStateChangeEvents();
             RegisterPowerStateListener();
+            RegisterSyncHibernateListener();
             break;
         case SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN:
             AUDIO_INFO_LOG("OnAddSystemAbility os_account service start");
@@ -2332,6 +2334,44 @@ void AudioPolicyServer::UnRegisterPowerStateListener()
     } else {
         powerStateListener_ = nullptr;
         AUDIO_INFO_LOG("unregister sync sleep callback success");
+    }
+}
+
+void AudioPolicyServer::RegisterSyncHibernateListener()
+{
+    if (syncHibernateListener_ == nullptr) {
+        syncHibernateListener_ = new (std::nothrow) SyncHibernateListener(this);
+    }
+
+    if (syncHibernateListener_ == nullptr) {
+        AUDIO_ERR_LOG("create sync hibernate listener failed");
+        return;
+    }
+
+    auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
+    bool ret = powerMgrClient.RegisterSyncHibernateCallback(syncHibernateListener_);
+    if (!ret) {
+        AUDIO_ERR_LOG("register sync hibernate callback failed");
+    } else {
+        AUDIO_INFO_LOG("register sync hibernate callback success");
+    }
+}
+
+void AudioPolicyServer::UnRegisterSyncHibernateListener()
+{
+    if (syncHibernateListener_ == nullptr) {
+        AUDIO_ERR_LOG("sync hibernate listener is null");
+        return;
+    }
+
+    auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
+    bool ret = powerMgrClient.UnRegisterSyncHibernateCallback(syncHibernateListener_);
+    if (!ret) {
+        AUDIO_WARNING_LOG("unregister sync hibernate callback failed");
+    } else {
+        delete syncHibernateListener_;
+        syncHibernateListener_ = nullptr;
+        AUDIO_INFO_LOG("unregister sync hibernate callback success");
     }
 }
 

@@ -511,6 +511,8 @@ private:
     void RegisterDataObserver();
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();
+    void RegisterSyncHibernateListener();
+    void UnRegisterSyncHibernateListener();
     void RegisterCommonEventReceiver();
     void UnregisterCommonEventReceiver();
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
@@ -532,6 +534,7 @@ private:
 #endif
     std::vector<pid_t> clientDiedListenerState_;
     sptr<PowerStateListener> powerStateListener_;
+    sptr<SyncHibernateListener> syncHibernateListener_;
     bool powerStateCallbackRegister_;
 
     std::mutex keyEventMutex_;
