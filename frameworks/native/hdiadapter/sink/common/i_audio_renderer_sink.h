@@ -94,6 +94,12 @@ public:
         const size_t size) = 0;
 
     virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
+
+    virtual int32_t SetRenderEmpty(int32_t durationUs)
+    {
+        // Only operate on primary for now
+        return 0;
+    }
 };
 
 class IMmapAudioRendererSink : public IAudioRendererSink {

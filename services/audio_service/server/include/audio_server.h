@@ -29,6 +29,7 @@
 #include "audio_server_death_recipient.h"
 #include "audio_server_dump.h"
 #include "audio_system_manager.h"
+#include "audio_inner_call.h"
 #include "i_audio_renderer_sink.h"
 #include "i_audio_capturer_source.h"
 #include "audio_effect_server.h"
@@ -36,7 +37,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback, IAudioSourceCallback {
+class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback, IAudioSourceCallback,
+    public IAudioServerInnerCall {
     DECLARE_SYSTEM_ABILITY(AudioServer);
 public:
     DISALLOW_COPY_AND_MOVE(AudioServer);
@@ -145,6 +147,9 @@ public:
     bool GetEffectOffloadEnabled() override;
 
     void OnCapturerState(bool isActive, int32_t num);
+
+    // IAudioServerInnerCall
+    int32_t SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs) final;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
