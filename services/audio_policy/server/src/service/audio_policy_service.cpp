@@ -6838,11 +6838,16 @@ void AudioPolicyService::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
         return;
     }
 
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
     if (audioDeviceManager_.GetScoState()) {
-        GetAudioServerProxy()->SuspendRenderSink("a2dp");
+        gsp->SuspendRenderSink("a2dp");
     } else {
-        GetAudioServerProxy()->RestoreRenderSink("a2dp");
+        gsp->RestoreRenderSink("a2dp");
     }
+    IPCSkeleton::SetCallingIdentity(identity);
 }
 
 void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
