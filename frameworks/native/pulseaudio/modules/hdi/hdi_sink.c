@@ -2008,7 +2008,7 @@ static bool InputIsOffload(pa_sink_input *i)
         return false;
     }
     struct Userdata *u = i->sink->userdata;
-    if (!u->offload_enable) {
+    if (!u->offload_enable || !u->offload.inited) {
         return false;
     }
     const char *offloadEnableStr = pa_proplist_gets(i->proplist, "stream.offload.enable");
@@ -3697,7 +3697,10 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
 static pa_hook_result_t SinkInputMoveStartCb(pa_core *core, pa_sink_input *i, struct Userdata *u)
 {
     pa_sink_input_assert_ref(i);
-    if (u->offload_enable) {
+    char str[SPRINTF_STR_LEN] = {0};
+    GetSinkInputName(i, str, SPRINTF_STR_LEN);
+    AUDIO_INFO_LOG("SinkInputMoveStartCb sink[%{public}s] - %{public}s", i->sink->name, str);
+    if (u->offload_enable && !strcmp(i->sink->name, OFFLOAD_SINK_NAME)) {
         const bool maybeOffload = pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) != 0;
         if (maybeOffload || InputIsOffload(i)) {
             OffloadRewindAndFlush(u, i, false);
@@ -3710,7 +3713,10 @@ static pa_hook_result_t SinkInputMoveStartCb(pa_core *core, pa_sink_input *i, st
 static pa_hook_result_t SinkInputStateChangedCb(pa_core *core, pa_sink_input *i, struct Userdata *u)
 {
     pa_sink_input_assert_ref(i);
-    if (u->offload_enable && InputIsOffload(i)) {
+    char str[SPRINTF_STR_LEN] = {0};
+    GetSinkInputName(i, str, SPRINTF_STR_LEN);
+    AUDIO_INFO_LOG("SinkInputStateChangedCb sink[%{public}s] - %{public}s", i->sink->name, str);
+    if (u->offload_enable && !strcmp(i->sink->name, OFFLOAD_SINK_NAME)) {
         if (i->state == PA_SINK_INPUT_CORKED) {
             pa_atomic_store(&u->offload.hdistate, 0);
         }
