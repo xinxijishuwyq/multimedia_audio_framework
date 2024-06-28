@@ -81,8 +81,7 @@ const uint32_t DEVICE_PARAM_MAX_LEN = 40;
 const std::string VOIP_HAL_NAME = "voip";
 const std::string DIRECT_HAL_NAME = "direct";
 #ifdef FEATURE_POWER_MANAGER
-const std::string PRIMARY_LOCK_NAME = "AudioPrimaryBackgroundPlay";
-const std::string DIRECT_LOCK_NAME = "AudioDirectBackgroundPlay";
+const std::string PRIMARY_LOCK_NAME_BASE = "AudioBackgroundPlay";
 #endif
 }
 
@@ -203,7 +202,7 @@ private:
     struct IAudioManager *audioManager_ = nullptr;
     struct IAudioAdapter *audioAdapter_ = nullptr;
     struct IAudioRender *audioRender_ = nullptr;
-    std::string halName_ = "";
+    const std::string halName_ = "";
     struct AudioAdapterDescriptor adapterDesc_ = {};
     struct AudioPort audioPort_ = {};
     bool audioMonoState_ = false;
@@ -784,13 +783,10 @@ int32_t AudioRendererSinkInner::Start(void)
     AUDIO_INFO_LOG("Start. sinkName %{public}s", halName_.c_str());
     Trace trace("AudioRendererSinkInner::Start");
 #ifdef FEATURE_POWER_MANAGER
-    std::string lockName = PRIMARY_LOCK_NAME;
-    if (halName_ == DIRECT_HAL_NAME) {
-        lockName = DIRECT_LOCK_NAME;
-    }
     AudioXCollie audioXCollie("AudioRendererSinkInner::CreateRunningLock", TIME_OUT_SECONDS);
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
     if (runningLockManager_ == nullptr) {
+        std::string lockName = PRIMARY_LOCK_NAME_BASE + halName_;
         keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock(
             lockName, PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
         if (keepRunningLock) {
