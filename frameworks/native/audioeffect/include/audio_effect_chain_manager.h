@@ -56,6 +56,7 @@ const std::string BLUETOOTH_DEVICE_SINK = "Bt_Speaker";
 const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 const uint32_t HDI_ROOM_MODE_INDEX_TWO = 2;
 const uint32_t DEFAULT_NUM_EFFECT_INSTANCES = 1;
+const std::string COMMON_SCENE_TYPE = "SCENE_MUSIC";
 
 struct SessionEffectInfo {
     std::string sceneMode;

@@ -117,6 +117,7 @@ bool g_effectHaveDisabledMap[SCENE_TYPE_NUM] = {false, false, false, false, fals
 time_t g_effectStartVolZeroTimeMap[SCENE_TYPE_NUM] = {0, 0, 0, 0, 0, 0, 0};
 char *const SCENE_TYPE_SET[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE", "SCENE_SPEECH", "SCENE_RING",
     "SCENE_OTHERS", "EFFECT_NONE"};
+const int32_t COMMON_SCENE_TYPE_INDEX = 0;
 
 enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_MULTICHANNEL };
 
@@ -1750,7 +1751,10 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
             break;
         }
     }
-
+    if (!g_effectAllStreamVolumeZeroMap[u->sinkSceneType] &&
+        EffectChainManagerSceneCheck(SCENE_TYPE_SET[u->sinkSceneType], SCENE_TYPE_SET[COMMON_SCENE_TYPE_INDEX])) {
+        g_effectAllStreamVolumeZeroMap[COMMON_SCENE_TYPE_INDEX] = false;
+    }
     if (g_effectAllStreamVolumeZeroMap[i] && !g_effectHaveDisabledMap[i] && (g_effectStartVolZeroTimeMap[i] == 0) &&
         PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
         AUDIO_INFO_LOG("Timing begins, will close [%{public}s] effect after [%{public}d]s", SCENE_TYPE_SET[i],
