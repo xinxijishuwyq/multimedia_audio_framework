@@ -112,6 +112,7 @@ int32_t NoneMixEngine::Stop()
 
 void NoneMixEngine::PauseAsync()
 {
+    // stop thread when failed 5 times,do not add logic inside.
     if (playbackThread_ && playbackThread_->CheckThreadIsRunning()) {
         playbackThread_->PauseAsync();
         isPause_ = true;
@@ -176,7 +177,7 @@ void NoneMixEngine::MixStreams()
 
     if (failedCount_ >= MAX_ERROR_COUNT) {
         AUDIO_WARNING_LOG("failed count is overflow.");
-        PauseAsync(); // stop thread when failed 5 times,do not add logic inside.
+        PauseAsync();
         return;
     }
     std::vector<char> audioBuffer;
