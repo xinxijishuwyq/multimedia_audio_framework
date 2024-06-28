@@ -66,7 +66,7 @@ int32_t NoneMixEngine::Start()
     AUDIO_INFO_LOG("Enter in");
     int32_t ret = SUCCESS;
     CHECK_AND_RETURN_RET_LOG(renderSink_ != nullptr, ERR_INVALID_HANDLE, "null sink");
-    CHECK_AND_RETURN_RET_LOG(renderSink_->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first\n");
+    CHECK_AND_RETURN_RET_LOG(renderSink_->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first");
     fwkSyncTime_ = static_cast<uint64_t>(ClockTime::GetCurNano());
     writeCount_ = 0;
     failedCount_ = 0;
@@ -176,7 +176,7 @@ void NoneMixEngine::MixStreams()
 
     if (failedCount_ >= MAX_ERROR_COUNT) {
         AUDIO_WARNING_LOG("failed count is overflow.");
-        PauseAsync();
+        PauseAsync(); // stop thread when failed 5 times,do not add logic inside.
         return;
     }
     std::vector<char> audioBuffer;
