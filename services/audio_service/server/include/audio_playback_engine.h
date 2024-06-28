@@ -24,7 +24,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioPlaybackEngine : public IAudioEngine {
 public:
-    AudioPlaybackEngine() = default;
+    AudioPlaybackEngine();
     virtual ~AudioPlaybackEngine() override;
     virtual int32_t AddRenderer(const std::shared_ptr<IRendererStream> &stream);
     virtual void RemoveRenderer(const std::shared_ptr<IRendererStream> &stream);

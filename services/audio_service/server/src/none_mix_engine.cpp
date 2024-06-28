@@ -65,6 +65,8 @@ int32_t NoneMixEngine::Start()
 {
     AUDIO_INFO_LOG("Enter in");
     int32_t ret = SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(renderSink_ != nullptr, ERR_INVALID_HANDLE, "null sink");
+    CHECK_AND_RETURN_RET_LOG(renderSink_->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first");
     fwkSyncTime_ = static_cast<uint64_t>(ClockTime::GetCurNano());
     writeCount_ = 0;
     failedCount_ = 0;
@@ -110,16 +112,11 @@ int32_t NoneMixEngine::Stop()
 
 void NoneMixEngine::PauseAsync()
 {
-    if (playbackThread_) {
-        // wait until fadeout complete
-        startFadein_ = false;
-        startFadeout_ = true;
-        std::unique_lock fadingLock(fadingMutex_);
-        cvFading_.wait_for(
-            fadingLock, std::chrono::milliseconds(FADING_MS), [this] { return (!(startFadein_ || startFadeout_)); });
+    // stop thread when failed 5 times,do not add logic inside.
+    if (playbackThread_ && playbackThread_->CheckThreadIsRunning()) {
         playbackThread_->PauseAsync();
+        isPause_ = true;
     }
-    isPause_ = true;
 }
 
 int32_t NoneMixEngine::Pause()
@@ -213,9 +210,12 @@ int32_t NoneMixEngine::AddRenderer(const std::shared_ptr<IRendererStream> &strea
 {
     AUDIO_INFO_LOG("Enter add");
     if (!stream_) {
-        stream_ = stream;
         AudioProcessConfig config = stream->GetAudioProcessConfig();
-        return InitSink(config.streamInfo);
+        int32_t result = InitSink(config.streamInfo);
+        if (result == SUCCESS) {
+            stream_ = stream;
+        }
+        return result;
     } else if (stream->GetStreamIndex() != stream_->GetStreamIndex()) {
         return ERROR_UNSUPPORTED;
     }
