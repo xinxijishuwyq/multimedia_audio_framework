@@ -429,7 +429,7 @@ int32_t AudioServer::SuspendRenderSink(const std::string &sinkName)
 {
     int32_t audio_policy_server_id = 1041;
     if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
-        return;
+        return ERR_OPERATION_FAILED;
     }
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance(sinkName.c_str(), "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
@@ -440,7 +440,7 @@ int32_t AudioServer::RestoreRenderSink(const std::string &sinkName)
 {
     int32_t audio_policy_server_id = 1041;
     if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
-        return;
+        return ERR_OPERATION_FAILED;
     }
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance(sinkName.c_str(), "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
