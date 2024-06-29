@@ -47,6 +47,9 @@ namespace AudioStandard {
 namespace {
 const int32_t HALF_FACTOR = 2;
 const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
+const int32_t MAX_GET_POSITOIN_TRY_COUNT = 50;
+const int32_t MAX_GET_POSITION_HANDLE_TIME = 10000000; // 1000000us
+const int32_t MAX_GET_POSITION_WAIT_TIME = 2000000; // 2000000us
 const int32_t RENDER_FRAME_NUM = -4;
 const float DEFAULT_VOLUME_LEVEL = 1.0f;
 const uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -144,6 +147,7 @@ private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
+    int32_t CheckPositionTime();
 
     bool isBluetoothLowLatency_ = false;
     uint32_t bufferTotalFrameSize_ = 0;
@@ -617,6 +621,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
             ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
             if (!ret) {
                 started_ = true;
+                CHECK_AND_RETURN_RET_LOG(CheckPositionTime() == SUCCESS, ERR_NOT_STARTED, "CheckPositionTime failed!");
                 return SUCCESS;
             } else {
                 AUDIO_ERR_LOG("Start failed, remaining %{public}d attempt(s)", tryCount);
@@ -627,6 +632,29 @@ int32_t BluetoothRendererSinkInner::Start(void)
         return ERR_NOT_STARTED;
     }
     return SUCCESS;
+}
+
+int32_t BluetoothRendererSinkInner::CheckPositionTime()
+{
+    int32_t tryCount = MAX_GET_POSITOIN_TRY_COUNT;
+    uint64_t frames = 0;
+    int64_t timeSec = 0;
+    int64_t timeNanoSec = 0;
+    while (tryCount-- > 0) {
+        ClockTime::RelativeSleep(MAX_GET_POSITION_WAIT_TIME);
+        int32_t ret = GetMmapHandlePosition(frames, timeSec, timeNanoSec);
+        int64_t curTime = ClockTime::GetCurNano();
+        int64_t curSec = curTime / AUDIO_NS_PER_SECOND;
+        int64_t curNanoSec = curTime - curSec * AUDIO_NS_PER_SECOND;
+        if (ret != SUCCESS || curSec != timeSec || curNanoSec - timeNanoSec > MAX_GET_POSITION_HANDLE_TIME) {
+            AUDIO_WARNING_LOG("Try count %{public}d, ret %{public}d", tryCount, ret);
+            continue;
+        } else {
+            AUDIO_INFO_LOG("Finished.");
+            return SUCCESS;
+        }
+    }
+    return ERROR;
 }
 
 int32_t BluetoothRendererSinkInner::SetVolume(float left, float right)
