@@ -946,6 +946,8 @@ private:
     uint32_t sinkLatencyInMsec_ {0};
     bool isOffloadAvailable_ = false;
     bool enableFastVoip_ = false;
+    bool enableDualHalToneState_ = false;
+    int32_t enableDualHalToneSessionId_ = -1;
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 
