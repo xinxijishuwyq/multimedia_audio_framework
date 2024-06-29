@@ -134,7 +134,7 @@ public:
     bool FlushAudioStream() override;
 
     // Playback related APIs
-    bool DrainAudioStream() override;
+    bool DrainAudioStream(bool stopFlag = false) override;
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize) override;
     void SetPreferredFrameSize(int32_t frameSize) override;

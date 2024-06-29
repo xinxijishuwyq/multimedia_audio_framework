@@ -229,10 +229,10 @@ int32_t IpcStreamInServer::Flush()
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::Drain()
+int32_t IpcStreamInServer::Drain(bool stopFlag)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-        return rendererInServer_->Drain();
+        return rendererInServer_->Drain(stopFlag);
     }
     AUDIO_ERR_LOG("Drain failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return ERR_OPERATION_FAILED;

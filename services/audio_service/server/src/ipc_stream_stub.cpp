@@ -128,8 +128,9 @@ int32_t IpcStreamStub::HandleFlush(MessageParcel &data, MessageParcel &reply)
 
 int32_t IpcStreamStub::HandleDrain(MessageParcel &data, MessageParcel &reply)
 {
-    (void)data;
-    reply.WriteInt32(Drain());
+    bool stopFlag = data.ReadBool();
+    AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);
+    reply.WriteInt32(Drain(stopFlag));
     return AUDIO_OK;
 }
 

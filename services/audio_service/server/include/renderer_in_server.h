@@ -48,7 +48,7 @@ public:
     int32_t Start();
     int32_t Pause();
     int32_t Flush();
-    int32_t Drain();
+    int32_t Drain(bool stopFlag = false);
     int32_t Stop();
     int32_t Release();
 

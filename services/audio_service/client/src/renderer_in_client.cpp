@@ -1294,7 +1294,7 @@ bool RendererInClientInner::StopAudioStream()
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     ResetRingerModeMute();
     if (!offloadEnable_) {
-        DrainAudioStream();
+        DrainAudioStream(true);
     }
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == STOPPED) {
@@ -1477,7 +1477,7 @@ int32_t RendererInClientInner::DrainRingCache()
     return SUCCESS;
 }
 
-bool RendererInClientInner::DrainAudioStream()
+bool RendererInClientInner::DrainAudioStream(bool stopFlag)
 {
     Trace trace("RendererInClientInner::DrainAudioStream " + std::to_string(sessionId_));
     std::lock_guard<std::mutex> statusLock(statusMutex_);
@@ -1489,7 +1489,8 @@ bool RendererInClientInner::DrainAudioStream()
     CHECK_AND_RETURN_RET_LOG(WriteCacheData(true) == SUCCESS, false, "Drain cache failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->Drain();
+    AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);
+    int32_t ret = ipcStream_->Drain(stopFlag);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Drain call server failed:%{public}u", ret);
         return false;
