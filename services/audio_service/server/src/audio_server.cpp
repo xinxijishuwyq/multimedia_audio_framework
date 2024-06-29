@@ -77,8 +77,10 @@ static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
 static const int32_t MODERN_INNER_API_VERSION = 12;
 const int32_t API_VERSION_REMAINDER = 1000;
 static constexpr int32_t VM_MANAGER_UID = 7700;
+constexpr int32_t UID_CAMERA = 1047;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
-    VM_MANAGER_UID
+    VM_MANAGER_UID,
+    UID_CAMERA
 };
 // using pass-in appInfo for uids:
 constexpr int32_t UID_MEDIA_SA = 1013;

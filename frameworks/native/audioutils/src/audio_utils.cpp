@@ -49,7 +49,6 @@ constexpr int32_t UID_CAAS_SA = 5527;
 constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
-constexpr int32_t UID_CAMERA = 1047;
 
 constexpr size_t FIRST_CHAR = 1;
 constexpr size_t MIN_LEN = 8;
@@ -65,8 +64,7 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_CAAS_SA,
     UID_DISTRIBUTED_AUDIO_SA,
     UID_FOUNDATION_SA,
-    UID_DISTRIBUTED_CALL_SA,
-    UID_CAMERA
+    UID_DISTRIBUTED_CALL_SA
 };
 
 const std::set<SourceType> NO_BACKGROUND_CHECK_SOURCE_TYPE = {
