@@ -267,6 +267,7 @@ static void StopPrimaryHdiIfNoRunning(struct Userdata *u);
 static void StartPrimaryHdiIfRunning(struct Userdata *u);
 static void StartMultiChannelHdiIfRunning(struct Userdata *u);
 static void CheckInputChangeToOffload(struct Userdata *u, pa_sink_input *i);
+static void CheckIfCommonSceneTypeZeroVolume(int32_t i);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f
