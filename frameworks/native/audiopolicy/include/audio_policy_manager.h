@@ -171,10 +171,13 @@ public:
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
 
-    int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
-        const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
+    int32_t RegisterAudioRendererEventListener(const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
-    int32_t UnregisterAudioRendererEventListener(const int32_t clientPid);
+    int32_t UnregisterAudioRendererEventListener(
+        const std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> &callbacks);
+
+    int32_t UnregisterAudioRendererEventListener(
+        const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
     int32_t RegisterAudioCapturerEventListener(const int32_t clientPid,
         const std::shared_ptr<AudioCapturerStateChangeCallback> &callback);

@@ -37,13 +37,49 @@ int32_t AudioStreamManager::RegisterAudioRendererEventListener(const int32_t cli
 {
     AUDIO_INFO_LOG("client id: %{public}d", clientPid);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
-    return AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientPid, callback);
+
+    std::lock_guard<std::mutex> lock(rendererStateChangeCallbacksMutex_);
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(callback);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ret: %{public}d", ret);
+
+    rendererStateChangeCallbacks_.push_back(callback);
+    return ret;
 }
 
 int32_t AudioStreamManager::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
     AUDIO_INFO_LOG("client id: %{public}d", clientPid);
-    return AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(clientPid);
+
+    std::lock_guard<std::mutex> lock(rendererStateChangeCallbacksMutex_);
+    int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(
+        rendererStateChangeCallbacks_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ret: %{public}d", ret);
+
+    rendererStateChangeCallbacks_.clear();
+    return ret;
+}
+
+int32_t AudioStreamManager::RegisterAudioRendererEventListener(
+    const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
+
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(callback);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ret: %{public}d", ret);
+
+    return ret;
+}
+
+int32_t AudioStreamManager::UnregisterAudioRendererEventListener(
+    const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("in");
+
+    int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(callback);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ret: %{public}d", ret);
+
+    return ret;
 }
 
 int32_t AudioStreamManager::RegisterAudioCapturerEventListener(const int32_t clientPid,
