@@ -141,5 +141,13 @@ int32_t AudioProcessStub::HandleRegisterProcessCb(MessageParcel &data, MessagePa
     reply.WriteInt32(RegisterProcessCb(object));
     return AUDIO_OK;
 }
+
+int32_t AudioProcessStub::HandleRegisterThreadPriority(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t tid = data.ReadUint32();
+    std::string bundleName = data.ReadString();
+    reply.WriteInt32(RegisterThreadPriority(tid, bundleName));
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

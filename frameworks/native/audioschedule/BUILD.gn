@@ -25,6 +25,7 @@ ohos_shared_library("audio_schedule") {
 
   include_dirs = [
     "include",
+    "../audioutils/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
@@ -34,6 +35,8 @@ ohos_shared_library("audio_schedule") {
     "-Wall",
     "-Werror",
   ]
+
+  deps = [ "../audioutils:audio_utils" ]
 
   external_deps = [
     "c_utils:utils",

@@ -21,6 +21,7 @@
 #include "ipc_stream_in_server.h"
 #include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_schedule.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -207,6 +208,8 @@ int32_t IpcStreamInServer::Stop()
 
 int32_t IpcStreamInServer::Release()
 {
+    UnscheduleReportData(config_.appInfo.appPid, clientTid_, clientBundleName_.c_str());
+    clientThreadPriorityRequested_ = false;
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->Release();
     }
@@ -426,6 +429,19 @@ int32_t IpcStreamInServer::SetClientVolume()
     }
     AUDIO_ERR_LOG("mode is not playback or renderer is null");
     return ERR_OPERATION_FAILED;
+}
+
+int32_t IpcStreamInServer::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
+{
+    if (!clientThreadPriorityRequested_) {
+        clientTid_ = tid;
+        clientBundleName_ = bundleName;
+        ScheduleReportData(config_.appInfo.appPid, tid, bundleName.c_str());
+        return SUCCESS;
+    } else {
+        AUDIO_ERR_LOG("client thread priority requested");
+        return ERR_OPERATION_FAILED;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

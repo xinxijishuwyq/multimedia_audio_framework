@@ -3270,7 +3270,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
         ThreadFuncRendererTimerProcessData(u);
     }
-    UnscheduleThreadInServer(gettid());
+    UnscheduleThreadInServer(getpid(), gettid());
 }
 
 static void ThreadFuncWriteHDIMultiChannel(void *userdata)
@@ -3311,7 +3311,7 @@ static void ThreadFuncWriteHDIMultiChannel(void *userdata)
         }
         pa_asyncmsgq_done(u->multiChannel.dq, 0);
     } while (!quit);
-    UnscheduleThreadInServer(gettid());
+    UnscheduleThreadInServer(getpid(), gettid());
 }
 
 static void ThreadFuncWriteHDI(void *userdata)
@@ -3359,7 +3359,7 @@ static void ThreadFuncWriteHDI(void *userdata)
         }
         pa_asyncmsgq_done(u->primary.dq, 0);
     } while (!quit);
-    UnscheduleThreadInServer(gettid());
+    UnscheduleThreadInServer(getpid(), gettid());
 }
 
 static void TestModeThreadFuncWriteHDI(void *userdata)
@@ -3396,7 +3396,7 @@ static void TestModeThreadFuncWriteHDI(void *userdata)
         }
         pa_asyncmsgq_done(u->primary.dq, 0);
     } while (!quit);
-    UnscheduleThreadInServer(gettid());
+    UnscheduleThreadInServer(getpid(), gettid());
 }
 
 static void SinkUpdateRequestedLatencyCb(pa_sink *s)
@@ -3879,7 +3879,7 @@ static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     return sink;
 
 fail:
-    UnscheduleThreadInServer(gettid());
+    UnscheduleThreadInServer(getpid(), gettid());
     return NULL;
 }
 
