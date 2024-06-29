@@ -486,7 +486,7 @@ bool AudioEffectChainManager::ExistAudioEffectChain(const std::string &sceneType
     }
 
     std::string effectChainKey;
-    if (sceneType == "SCENE_RING" || sceneType == COMMON_SCENE_TYPE) {
+    if (sceneType == "SCENE_RING" || sceneType == "SCENE_OTHERS") {
         effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
     } else {
         std::string effectModeTrue = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
