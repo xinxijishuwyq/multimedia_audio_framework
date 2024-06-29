@@ -345,11 +345,7 @@ private:
 
 class LatencyMonitor {
 public:
-    static LatencyMonitor& GetInstance()
-    {
-        static LatencyMonitor latencyMonitor_;
-        return latencyMonitor_;
-    }
+    static LatencyMonitor& GetInstance();
     void ShowTimestamp(bool isRenderer);
     void ShowBluetoothTimestamp();
     void UpdateClientTime(bool isRenderer, std::string &timestamp);
