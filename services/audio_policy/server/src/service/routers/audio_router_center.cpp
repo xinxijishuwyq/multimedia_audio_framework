@@ -137,7 +137,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
             streamUsage, clientUID, PIPE_TYPE_NORMAL_OUT);
     }
     AUDIO_INFO_LOG("usage:%{public}d uid:%{public}d device size:[%{public}zu],"
-        " 1st device type:id %{public}d:%{public}d router:%{public}d ", streamUsage, clientUID, descs.size(),
+        " 1st device type:[%{public}d], id:[%{public}d], router:%{public}d ", streamUsage, clientUID, descs.size(),
         descs[0]->deviceType_, descs[0]->deviceId_, routerType);
     return descs;
 }
@@ -147,6 +147,7 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::unique_ptr<AudioD
 {
     RouterType routerType = ROUTER_TYPE_NONE;
     AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
+    AUDIO_INFO_LOG("ring render router streamUsage:%{public}d, audioScene:%{public}d.", streamUsage, audioScene);
     if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT) {
         unique_ptr<AudioDeviceDescriptor> desc = make_unique<AudioDeviceDescriptor>();
         auto isPresent = [] (const unique_ptr<RouterBase> &router) {

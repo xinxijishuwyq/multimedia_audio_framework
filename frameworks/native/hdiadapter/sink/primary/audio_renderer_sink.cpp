@@ -1020,6 +1020,7 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType
     Trace trace("AudioRendererSinkInner::SetOutputRoutes pin " + std::to_string(outputPortPin) + " device " +
         std::to_string(outputDevice));
     currentActiveDevice_ = outputDevice;
+    currentDevicesSize_ = static_cast<int32_t>(outputDevices.size());
 
     AudioRouteNode source = {};
     source.portId = static_cast<int32_t>(0);
