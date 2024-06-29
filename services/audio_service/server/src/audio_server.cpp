@@ -427,8 +427,10 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
 
 int32_t AudioServer::SuspendRenderSink(const std::string &sinkName)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "Check system permission failed,no system permission");
+    int32_t audio_policy_server_id = 1041;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
+        return;
+    }
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance(sinkName.c_str(), "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
     return audioRendererSinkInstance->SuspendRenderSink();
@@ -436,8 +438,10 @@ int32_t AudioServer::SuspendRenderSink(const std::string &sinkName)
 
 int32_t AudioServer::RestoreRenderSink(const std::string &sinkName)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "Check system permission failed,no system permission");
+    int32_t audio_policy_server_id = 1041;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
+        return;
+    }
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance(sinkName.c_str(), "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
     return audioRendererSinkInstance->RestoreRenderSink();
