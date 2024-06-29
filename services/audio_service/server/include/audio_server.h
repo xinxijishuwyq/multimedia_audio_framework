@@ -80,6 +80,8 @@ public:
     int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
+    int32_t SuspendRenderSink(const std::string &sinkName) override;
+    int32_t RestoreRenderSink(const std::string &sinkName) override;
 
     int32_t SetAsrAecMode(AsrAecMode asrAecMode) override;
     int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;

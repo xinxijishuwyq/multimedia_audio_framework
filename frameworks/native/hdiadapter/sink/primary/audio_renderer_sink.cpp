@@ -149,6 +149,8 @@ public:
     int32_t Resume(void) override;
     int32_t Start(void) override;
     int32_t Stop(void) override;
+    int32_t SuspendRenderSink(void) override;
+    int32_t RestoreRenderSink(void) override;
 
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int32_t SetVolume(float left, float right) override;
@@ -1241,6 +1243,16 @@ int32_t AudioRendererSinkInner::Flush(void)
     }
 
     return ERR_OPERATION_FAILED;
+}
+
+int32_t AudioRendererSinkInner::SuspendRenderSink(void)
+{
+    return SUCCESS;
+}
+
+int32_t AudioRendererSinkInner::RestoreRenderSink(void)
+{
+    return SUCCESS;
 }
 
 int32_t AudioRendererSinkInner::Preload(const std::string &usbInfoStr)

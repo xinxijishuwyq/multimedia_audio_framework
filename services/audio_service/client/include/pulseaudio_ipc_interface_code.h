@@ -74,7 +74,9 @@ namespace AudioStandard {
         SET_ASR_VOICE_MUTE_MODE,
         IS_WHISPERING,
         GET_EFFECT_OFFLOAD_ENABLED,
-        AUDIO_SERVER_CODE_MAX = GET_EFFECT_OFFLOAD_ENABLED,
+        SUSPEND_RENDERSINK,
+        RESTORE_RENDERSINK,
+        AUDIO_SERVER_CODE_MAX = RESTORE_RENDERSINK,
     };
 } // namespace AudioStandard
 } // namespace OHOS

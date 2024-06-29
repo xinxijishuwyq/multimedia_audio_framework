@@ -6979,10 +6979,29 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     }
     sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(desc);
     audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command);
+    CheckForA2dpSuspend(desc);
 
     OnPreferredStateUpdated(desc, command);
     FetchDevice(false);
     UpdateA2dpOffloadFlagForAllStream();
+}
+
+void AudioPolicyService::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
+{
+    if (desc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+        return;
+    }
+
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    if (audioDeviceManager_.GetScoState()) {
+        gsp->SuspendRenderSink("a2dp");
+    } else {
+        gsp->RestoreRenderSink("a2dp");
+    }
+    IPCSkeleton::SetCallingIdentity(identity);
 }
 
 void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()

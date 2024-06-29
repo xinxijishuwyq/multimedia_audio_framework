@@ -1076,6 +1076,42 @@ void AudioManagerProxy::ResetAudioEndpoint()
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "Send request failed, error:%{public}d", error);
 }
 
+int32_t AudioManagerProxy::SuspendRenderSink(const std::string &sinkName)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteString(sinkName);
+
+    error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SUSPEND_RENDERSINK), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioManagerProxy::RestoreRenderSink(const std::string &sinkName)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteString(sinkName);
+
+    error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::RESTORE_RENDERSINK), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
 void AudioManagerProxy::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
 {
     int32_t error;

@@ -55,6 +55,8 @@ public:
     virtual int32_t OffloadDrain() = 0;
     virtual int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) = 0;
     virtual int32_t OffloadSetBufferSize(uint32_t sizeMs) = 0;
+    virtual int32_t SuspendRenderSink(const std::string &sinkName) = 0;
+    virtual int32_t RestoreRenderSink(const std::string &sinkName) = 0;
 
     /**
      * Sets Audio modes.
@@ -476,6 +478,8 @@ private:
     int HandleSetAsrVoiceMuteMode(MessageParcel &data, MessageParcel &reply);
     int HandleIsWhispering(MessageParcel &data, MessageParcel &reply);
     int HandleGetEffectOffloadEnabled(MessageParcel &data, MessageParcel &reply);
+    int HandleSuspendRenderSink(MessageParcel &data, MessageParcel &reply);
+    int HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -531,6 +535,8 @@ private:
         &AudioManagerStub::HandleSetAsrVoiceMuteMode,
         &AudioManagerStub::HandleIsWhispering,
         &AudioManagerStub::HandleGetEffectOffloadEnabled,
+        &AudioManagerStub::HandleSuspendRenderSink,
+        &AudioManagerStub::HandleRestoreRenderSink,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),

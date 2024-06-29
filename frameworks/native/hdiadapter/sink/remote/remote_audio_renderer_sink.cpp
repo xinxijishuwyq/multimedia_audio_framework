@@ -88,6 +88,8 @@ public:
     int32_t Reset(void) override;
     int32_t Pause(void) override;
     int32_t Resume(void) override;
+    int32_t SuspendRenderSink(void) override;
+    int32_t RestoreRenderSink(void) override;
 
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int32_t SetVolume(float left, float right) override;
@@ -486,6 +488,16 @@ int32_t RemoteAudioRendererSinkInner::Flush(void)
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Flush: Audio render is null.");
     int32_t ret = audioRender_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Flush fail, ret %{public}d.", ret);
+    return SUCCESS;
+}
+
+int32_t RemoteAudioRendererSinkInner::SuspendRenderSink(void)
+{
+    return SUCCESS;
+}
+
+int32_t RemoteAudioRendererSinkInner::RestoreRenderSink(void)
+{
     return SUCCESS;
 }
 

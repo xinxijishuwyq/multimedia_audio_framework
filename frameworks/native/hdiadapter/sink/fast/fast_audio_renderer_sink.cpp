@@ -72,6 +72,9 @@ public:
     int32_t Pause(void) override;
     int32_t Resume(void) override;
 
+    int32_t SuspendRenderSink(void) override;
+    int32_t RestoreRenderSink(void) override;
+
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
@@ -846,6 +849,16 @@ int32_t FastAudioRendererSinkInner::Resume(void)
     }
     paused_ = false;
 
+    return SUCCESS;
+}
+
+int32_t FastAudioRendererSinkInner::SuspendRenderSink(void)
+{
+    return SUCCESS;
+}
+
+int32_t FastAudioRendererSinkInner::RestoreRenderSink(void)
+{
     return SUCCESS;
 }
 

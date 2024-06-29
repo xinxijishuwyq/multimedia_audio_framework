@@ -84,6 +84,8 @@ public:
     int32_t Resume(void) override;
     int32_t Start(void) override;
     int32_t Stop(void) override;
+    int32_t SuspendRenderSink(void) override;
+    int32_t RestoreRenderSink(void) override;
     int32_t Drain(AudioDrainType type) override;
     int32_t SetBufferSize(uint32_t sizeMs) override;
 
@@ -866,6 +868,16 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
             Start();
         }
     }).detach();
+    return SUCCESS;
+}
+
+int32_t OffloadAudioRendererSinkInner::SuspendRenderSink(void)
+{
+    return SUCCESS;
+}
+
+int32_t OffloadAudioRendererSinkInner::RestoreRenderSink(void)
+{
     return SUCCESS;
 }
 

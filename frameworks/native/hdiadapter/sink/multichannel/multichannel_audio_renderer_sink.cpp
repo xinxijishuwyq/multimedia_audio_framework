@@ -76,6 +76,9 @@ public:
     int32_t Start(void) override;
     int32_t Stop(void) override;
 
+    int32_t SuspendRenderSink(void) override;
+    int32_t RestoreRenderSink(void) override;
+
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
@@ -999,6 +1002,16 @@ int32_t MultiChannelRendererSinkInner::Flush(void)
     }
 
     return ERR_OPERATION_FAILED;
+}
+
+int32_t MultiChannelRendererSinkInner::SuspendRenderSink(void)
+{
+    return SUCCESS;
+}
+
+int32_t MultiChannelRendererSinkInner::RestoreRenderSink(void)
+{
+    return SUCCESS;
 }
 
 int32_t MultiChannelRendererSinkInner::Preload(const std::string &usbInfoStr)
