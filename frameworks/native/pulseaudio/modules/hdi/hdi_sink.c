@@ -1779,7 +1779,7 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
     return sinkSceneType;
 }
 
-static void CheckIfCommonSceneTypeZeroVolume(int32_t i) 
+static void CheckIfCommonSceneTypeZeroVolume(int32_t i)
 {
     if (!g_effectAllStreamVolumeZeroMap[i] &&
         EffectChainManagerSceneCheck(SCENE_TYPE_SET[i], SCENE_TYPE_SET[COMMON_SCENE_TYPE_INDEX])) {
