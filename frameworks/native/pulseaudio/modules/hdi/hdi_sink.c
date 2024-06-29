@@ -1733,10 +1733,7 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
             break;
         }
     }
-    if (!g_effectAllStreamVolumeZeroMap[u->sinkSceneType] &&
-        EffectChainManagerSceneCheck(SCENE_TYPE_SET[u->sinkSceneType], SCENE_TYPE_SET[COMMON_SCENE_TYPE_INDEX])) {
-        g_effectAllStreamVolumeZeroMap[COMMON_SCENE_TYPE_INDEX] = false;
-    }
+    CheckIfCommonSceneTypeZeroVolume(u->sinkSceneType);
     if (g_effectAllStreamVolumeZeroMap[i] && !g_effectHaveDisabledMap[i] && (g_effectStartVolZeroTimeMap[i] == 0) &&
         PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
         AUDIO_INFO_LOG("Timing begins, will close [%{public}s] effect after [%{public}d]s", SCENE_TYPE_SET[i],
@@ -1761,6 +1758,14 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
         }
     }
     return sinkSceneType;
+}
+
+static void CheckIfCommonSceneTypeZeroVolume(int32_t i)
+{
+    if (!g_effectAllStreamVolumeZeroMap[i] &&
+        EffectChainManagerSceneCheck(SCENE_TYPE_SET[i], SCENE_TYPE_SET[COMMON_SCENE_TYPE_INDEX])) {
+        g_effectAllStreamVolumeZeroMap[COMMON_SCENE_TYPE_INDEX] = false;
+    }
 }
 
 static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
