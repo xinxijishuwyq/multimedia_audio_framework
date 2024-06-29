@@ -322,8 +322,8 @@ int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
     attr.deviceType = device_.deviceType;
     attr.volume = 1.0f;
     attr.openMicSpeaker = 1;
-    AUDIO_INFO_LOG("sink name:%{public}s,device:%{public}d,sample rate:%{public}d,format:%{public}d", sinkName.c_str(),
-        attr.deviceType, attr.sampleRate, attr.format);
+    AUDIO_INFO_LOG("sinkName:%{public}s,device:%{public}d,sample rate:%{public}d,format:%{public}d,channel:%{public}d",
+        sinkName.c_str(), attr.deviceType, attr.sampleRate, attr.format, attr.channel);
     int32_t ret = renderSink_->Init(attr);
     if (ret != SUCCESS) {
         return ret;

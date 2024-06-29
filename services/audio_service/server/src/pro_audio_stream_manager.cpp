@@ -44,6 +44,10 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
 {
     Trace trace("ProAudioStreamManager::CreateRender");
     AUDIO_DEBUG_LOG("Create renderer start,manager type:%{public}d", managerType_);
+    if (playbackEngine_ != nullptr) {
+        AUDIO_ERR_LOG("playbackEngine_ is not nullptr! Only one direct stream is supported");
+        return ERR_NOT_SUPPORTED;
+    }
     uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
 
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig);
