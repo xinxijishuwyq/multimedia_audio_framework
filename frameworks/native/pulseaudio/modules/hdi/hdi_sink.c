@@ -1740,6 +1740,7 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
             WAIT_CLOSE_PA_OR_EFFECT_TIME);
         time(&g_effectStartVolZeroTimeMap[i]);
     }
+
     char *sinkSceneType = SCENE_TYPE_SET[i];
     if (g_effectAllStreamVolumeZeroMap[i] && PA_SINK_IS_RUNNING(u->sink->thread_info.state) &&
         difftime(currentTime, g_effectStartVolZeroTimeMap[i]) > WAIT_CLOSE_PA_OR_EFFECT_TIME) {
