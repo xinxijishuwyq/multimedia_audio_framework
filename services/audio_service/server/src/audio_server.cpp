@@ -417,7 +417,7 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     } else if (key == "perf_info") {
         parmKey = AudioParamKey::PERF_INFO;
     } else {
-        AUDIO_ERR_LOG("key %{publbic}s is invalid for hdi interface", key.c_str());
+        AUDIO_ERR_LOG("key %{public}s is invalid for hdi interface", key.c_str());
         return;
     }
     audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);

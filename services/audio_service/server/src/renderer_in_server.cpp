@@ -144,8 +144,12 @@ int32_t RendererInServer::Init()
     }
 
     if (processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) {
-        AUDIO_INFO_LOG("current stream marked as VoIP direct stream");
-        managerType_ = VOIP_PLAYBACK;
+        if (IStreamManager::GetPlaybackManager(VOIP_PLAYBACK).GetStreamCount() <= 0) {
+            AUDIO_INFO_LOG("current stream marked as VoIP direct stream");
+            managerType_ = VOIP_PLAYBACK;
+        } else {
+            AUDIO_WARNING_LOG("One VoIP direct stream has been created! Use normal mode.");
+        }
     }
 
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
