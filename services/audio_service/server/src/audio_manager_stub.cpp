@@ -651,8 +651,8 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
 
 int AudioManagerStub::HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply)
 {
-    bool result = LoadHdiEffectModel();
-    return result;
+    LoadHdiEffectModel();
+    return AUDIO_OK;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -66,7 +66,7 @@ struct SessionEffectInfo {
     uint32_t volume;
 };
 
-const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
+const std::vector<AudioChannelLayout> AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_STEREO,
     CH_LAYOUT_5POINT1,
     CH_LAYOUT_5POINT1POINT2,
