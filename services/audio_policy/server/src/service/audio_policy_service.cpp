@@ -8013,14 +8013,11 @@ void AudioPolicyService::OnReceiveBluetoothEvent(const std::string macAddress, c
 void AudioPolicyService::LoadHdiEffectModel()
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false,
-        "error for g_adProxy null");
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
 
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    bool ret = gsp->LoadHdiEffectModel();
+    gsp->LoadHdiEffectModel();
     IPCSkeleton::SetCallingIdentity(identity);
-
-    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

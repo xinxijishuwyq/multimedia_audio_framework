@@ -419,7 +419,7 @@ public:
     /**
      * Load effect hdi model when audio_host online.
      */
-    virtual bool LoadEffectHdiModel() = 0;
+    virtual void LoadEffectHdiModel() = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
