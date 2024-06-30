@@ -73,9 +73,7 @@ const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_7POINT1,
     CH_LAYOUT_5POINT1POINT4,
     CH_LAYOUT_7POINT1POINT2,
-    CH_LAYOUT_7POINT1POINT4,
-    CH_LAYOUT_9POINT1POINT4,
-    CH_LAYOUT_9POINT1POINT6
+    CH_LAYOUT_7POINT1POINT4
 };
 
 struct EffectBufferAttr {
@@ -131,6 +129,7 @@ public:
     bool CheckA2dpOffload();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
+    void InitHdiState();
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
@@ -142,7 +141,6 @@ private:
     AudioEffectScene GetSceneTypeFromSpatializationSceneType(AudioEffectScene sceneType);
     void UpdateEffectChainParams(AudioEffectScene sceneType);
     void SetSpkOffloadState();
-    void InitHdiState();
     void UpdateCurrSceneType(AudioEffectScene &currSceneType, std::string &sceneType);
     void ChangeEffectChainCountMapForCreate(const std::string &sceneType);
     void EraseEffectChainSetAndMapForCreate(const std::string &sceneType);
