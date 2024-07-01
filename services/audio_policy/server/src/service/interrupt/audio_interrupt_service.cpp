@@ -51,9 +51,9 @@ inline AudioScene GetAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInt
 
 static const std::unordered_map<const AudioScene, const int> SCENE_PRIORITY = {
     // from high to low
-    {AUDIO_SCENE_PHONE_CALL, 4},
+    {AUDIO_SCENE_PHONE_CALL, 5},
+    {AUDIO_SCENE_VOICE_RINGING, 4},
     {AUDIO_SCENE_PHONE_CHAT, 3},
-    {AUDIO_SCENE_VOICE_RINGING, 2},
     {AUDIO_SCENE_RINGING, 2},
     {AUDIO_SCENE_DEFAULT, 1}
 };

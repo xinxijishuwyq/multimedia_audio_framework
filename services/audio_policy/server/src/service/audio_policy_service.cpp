@@ -2142,7 +2142,7 @@ int32_t AudioPolicyService::HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceD
             FetchOutputDevice(rendererChangeInfos);
             return ERROR;
         }
-        if (desc->connectState_ == DEACTIVE_CONNECTED) {
+        if (desc->connectState_ == DEACTIVE_CONNECTED || lastAudioScene_ != audioScene_) {
             Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioScene_);
             return SUCCESS;
         }
@@ -2219,7 +2219,8 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchOutputDevice(unique_ptr<Au
     unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     if (desc->deviceType_ == DEVICE_TYPE_NONE || (IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo) &&
-        !NeedRehandleA2DPDevice(desc) && desc->connectState_ != DEACTIVE_CONNECTED)) {
+        !NeedRehandleA2DPDevice(desc) && desc->connectState_ != DEACTIVE_CONNECTED &&
+        lastAudioScene_ == audioScene_)) {
         AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
         if (!IsSameDevice(desc, currentActiveDevice_)) {
             currentActiveDevice_ = AudioDeviceDescriptor(*desc);
@@ -2461,7 +2462,7 @@ int32_t AudioPolicyService::HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDe
         FetchInputDevice(capturerChangeInfos);
         return ERROR;
     }
-    if (desc->connectState_ == DEACTIVE_CONNECTED) {
+    if (desc->connectState_ == DEACTIVE_CONNECTED || lastAudioScene_ != audioScene_) {
         Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioScene_);
         return SUCCESS;
     }
@@ -3193,6 +3194,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
 
+    lastAudioScene_ = audioScene_;
     audioScene_ = audioScene;
 
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {
