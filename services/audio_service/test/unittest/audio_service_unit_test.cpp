@@ -13,19 +13,21 @@
  * limitations under the License.
  */
 
-#include "audio_errors.h"
-#include "audio_manager_listener_stub.h"
-#include "audio_manager_proxy.h"
-#include "audio_log.h"
-#include "audio_process_in_client.h"
-#include "audio_process_proxy.h"
-#include "audio_stream.h"
-#include "audio_system_manager.h"
 #include <gtest/gtest.h>
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
+#include "audio_log.h"
+#include "audio_errors.h"
+#include "audio_system_manager.h"
+
+#include "audio_manager_proxy.h"
+#include "audio_manager_listener_stub.h"
+#include "audio_process_proxy.h"
+#include "audio_process_in_client.h"
+
 using namespace testing::ext;
+
 namespace OHOS {
 namespace AudioStandard {
 std::unique_ptr<AudioManagerProxy> audioManagerProxy;
@@ -33,6 +35,7 @@ std::shared_ptr<AudioProcessInClient> processClient_;
 const int32_t TEST_RET_NUM = 0;
 const int32_t RENDERER_FLAGS = 0;
 constexpr int32_t ERROR_62980101 = -62980101;
+
 class AudioServiceUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
