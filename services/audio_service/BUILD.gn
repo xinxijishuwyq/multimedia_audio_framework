@@ -144,10 +144,8 @@ ohos_shared_library("audio_client") {
     "client/src/audio_process_in_client.cpp",
     "client/src/audio_process_proxy.cpp",
     "client/src/audio_routing_manager.cpp",
-    "client/src/audio_service_client.cpp",
     "client/src/audio_spatial_channel_converter.cpp",
     "client/src/audio_spatialization_manager.cpp",
-    "client/src/audio_stream.cpp",
     "client/src/audio_stream_manager.cpp",
     "client/src/audio_stream_tracker.cpp",
     "client/src/audio_system_manager.cpp",
@@ -475,10 +473,7 @@ ohos_shared_library("audio_sasdk") {
 group("audio_service_test_packages") {
   deps = [
     ":audio_hdi_device_test",
-    ":audio_multichannel_test",
     ":audio_process_client_test",
-    ":audio_service_playback_test",
-    ":audio_service_record_test",
   ]
 }
 
@@ -541,26 +536,6 @@ ohos_executable("audio_hdi_device_test") {
   subsystem_name = "multimedia"
 }
 
-ohos_executable("audio_service_playback_test") {
-  install_enable = false
-
-  sources = [ "test/example/playback_test.cpp" ]
-
-  configs = [ ":audio_client_public_config" ]
-
-  deps = [ ":audio_client" ]
-
-  external_deps = [
-    "bounds_checking_function:libsec_shared",
-    "hilog:libhilog",
-    "ipc:ipc_single",
-    "pulseaudio:pulse",
-  ]
-
-  part_name = "audio_framework"
-  subsystem_name = "multimedia"
-}
-
 ohos_executable("audio_faststream_playback_test") {
   install_enable = false
 
@@ -580,45 +555,6 @@ ohos_executable("audio_faststream_playback_test") {
     "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
-    "ipc:ipc_single",
-    "pulseaudio:pulse",
-  ]
-
-  part_name = "audio_framework"
-  subsystem_name = "multimedia"
-}
-
-ohos_executable("audio_service_record_test") {
-  install_enable = false
-
-  sources = [ "test/example/record_test.cpp" ]
-
-  configs = [ ":audio_client_public_config" ]
-
-  deps = [ ":audio_client" ]
-
-  external_deps = [
-    "bounds_checking_function:libsec_shared",
-    "hilog:libhilog",
-    "ipc:ipc_single",
-    "pulseaudio:pulse",
-  ]
-  part_name = "audio_framework"
-  subsystem_name = "multimedia"
-}
-
-ohos_executable("audio_multichannel_test") {
-  install_enable = false
-
-  sources = [ "test/example/audio_multichannel_test.cpp" ]
-
-  configs = [ ":audio_client_public_config" ]
-
-  deps = [ ":audio_client" ]
-
-  external_deps = [
-    "bounds_checking_function:libsec_shared",
-    "hilog:libhilog",
     "ipc:ipc_single",
     "pulseaudio:pulse",
   ]

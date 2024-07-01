@@ -20,7 +20,6 @@
 #include "audio_capturer.h"
 #include "audio_errors.h"
 #include "audio_info.h"
-#include "audio_stream.h"
 #include "audio_capturer_private.h"
 
 using namespace std;

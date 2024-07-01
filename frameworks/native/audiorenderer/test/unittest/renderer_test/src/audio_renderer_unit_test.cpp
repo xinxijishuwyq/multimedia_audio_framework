@@ -23,9 +23,7 @@
 #include "audio_renderer.h"
 #include "audio_renderer_proxy_obj.h"
 #include "audio_policy_manager.h"
-#include "audio_stream.h"
 #include "audio_renderer_private.h"
-
 
 using namespace std;
 using namespace std::chrono;
@@ -5333,70 +5331,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_SamplingRate_001, Test
     uint32_t sampleRateRet = audioRenderer->GetRendererSamplingRate();
     EXPECT_EQ(AudioSamplingRate::SAMPLE_RATE_44100, sampleRateRet);
     audioRenderer->Release();
-}
-
-/**
- * @tc.name  : Test set renderer Interrupt.
- * @tc.number: Audio_Renderer_Set_Renderer_Interrupt_002
- * @tc.desc  : Test AudioRendererInterruptCallbackImpl SaveCallback and OnInterrupt.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Interrupt_002, TestSize.Level1)
-{
-    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
-    uint32_t invalidSessionID = static_cast<uint32_t>(-1);
-    AudioInterrupt audioInterrupt = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
-        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidSessionID};
-    AppInfo appInfo_;
-    if (!(appInfo_.appPid)) {
-        appInfo_.appPid = getpid();
-    }
-
-    if (appInfo_.appUid < 0) {
-        appInfo_.appUid = static_cast<int32_t>(getuid());
-    }
-    const std::shared_ptr<AudioStream> audioStream_ = std::make_shared<AudioStream>(AudioStreamType::STREAM_MEDIA,
-        AUDIO_MODE_PLAYBACK, appInfo_.appUid);
-    ASSERT_NE(nullptr, audioStream_);
-
-    shared_ptr<AudioRendererInterruptCallbackImpl> interruptCallbackImpl =
-        make_shared<AudioRendererInterruptCallbackImpl>(audioStream_, audioInterrupt);
-    EXPECT_NE(nullptr, interruptCallbackImpl);
-
-    interruptCallbackImpl->SaveCallback(audioRendererCB);
-
-    InterruptEventInternal interruptEvent = {};
-    interruptEvent.eventType = INTERRUPT_TYPE_END;
-    interruptEvent.forceType = INTERRUPT_SHARE;
-    interruptEvent.hintType = INTERRUPT_HINT_NONE;
-    interruptEvent.duckVolume = 0;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.forceType = INTERRUPT_FORCE;
-    interruptEvent.hintType = INTERRUPT_HINT_RESUME;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.hintType = INTERRUPT_HINT_STOP;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.hintType = INTERRUPT_HINT_DUCK;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.duckVolume = 5;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.duckVolume = 15;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.hintType = INTERRUPT_HINT_UNDUCK;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.hintType = INTERRUPT_HINT_NONE;
-    interruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    EXPECT_EQ(interruptEvent.hintType, INTERRUPT_HINT_NONE);
 }
 
 /**

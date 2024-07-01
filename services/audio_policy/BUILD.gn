@@ -20,7 +20,6 @@ group("audio_policy_packages") {
   deps = [
     ":audio_converter_config",
     ":audio_device_config",
-    ":audio_dump",
     ":audio_effect_config",
     ":audio_interrupt_policy_config",
     ":audio_policy_service",
@@ -82,32 +81,6 @@ config("audio_policy_public_config") {
   }
 
   ldflags = [ "-Wl" ]
-}
-
-ohos_shared_library("audio_dump") {
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    cfi_vcall_icall_only = true
-    debug = false
-  }
-  install_enable = true
-  sources = [ "server/src/service/dump/audio_service_dump.cpp" ]
-
-  public_configs = [ ":audio_policy_public_config" ]
-
-  external_deps = [
-    "bounds_checking_function:libsec_shared",
-    "cJSON:cjson",
-    "c_utils:utils",
-    "hilog:libhilog",
-    "pulseaudio:pulse",
-  ]
-
-  public_external_deps = [ "libxml2:libxml2" ]
-
-  subsystem_name = "multimedia"
-  part_name = "audio_framework"
 }
 
 ohos_shared_library("audio_policy_service") {
@@ -195,7 +168,6 @@ ohos_shared_library("audio_policy_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_config.para",
     "../audio_policy:audio_config.para.dac",
-    "../audio_policy:audio_dump",
     "../audio_service:audio_client",
     "../audio_service:audio_common",
   ]
