@@ -432,11 +432,7 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
     if (SceneTypeToSpecialEffectSet_.count(sceneType)) {
         SceneTypeToSpecialEffectSet_.erase(sceneType);
     }
-    if (SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] < 1) {
-        SceneTypeToEffectChainMap_.erase(commonSceneTypeAndDeviceKey);
-        SceneTypeToEffectChainCountMap_.erase(commonSceneTypeAndDeviceKey);
-        isCommonEffectChainExisted_ = false;
-    }
+    CheckAndReleaseCommonEffectChain(sceneType);
     SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
     SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
 
@@ -1223,6 +1219,23 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
         }
     }
     return audioEffectChain;
+}
+
+void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string &sceneType) {
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
+    if (!isCommonEffectChainExisted_) {
+        return;
+    }
+    if (SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] == SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]) {
+        if (SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] <= 1) {
+            SceneTypeToEffectChainMap_.erase(commonSceneTypeAndDeviceKey);
+            SceneTypeToEffectChainCountMap_.erase(commonSceneTypeAndDeviceKey);
+            isCommonEffectChainExisted_ = false;
+        } else {
+            SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey]--;
+        }
+    }
 }
 
 #ifdef WINDOW_MANAGER_ENABLE
