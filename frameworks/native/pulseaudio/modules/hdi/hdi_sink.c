@@ -267,7 +267,7 @@ static void StopPrimaryHdiIfNoRunning(struct Userdata *u);
 static void StartPrimaryHdiIfRunning(struct Userdata *u);
 static void StartMultiChannelHdiIfRunning(struct Userdata *u);
 static void CheckInputChangeToOffload(struct Userdata *u, pa_sink_input *i);
-static void CheckIfCommonSceneTypeZeroVolume(int32_t i);
+static void CheckIfCommonSceneTypeZeroVolume();
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f
@@ -1734,7 +1734,7 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
             break;
         }
     }
-    CheckIfCommonSceneTypeZeroVolume(u->sinkSceneType);
+    CheckIfCommonSceneTypeZeroVolume();
     if (g_effectAllStreamVolumeZeroMap[i] && !g_effectHaveDisabledMap[i] && (g_effectStartVolZeroTimeMap[i] == 0) &&
         PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
         AUDIO_INFO_LOG("Timing begins, will close [%{public}s] effect after [%{public}d]s", SCENE_TYPE_SET[i],
@@ -1762,11 +1762,14 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
     return sinkSceneType;
 }
 
-static void CheckIfCommonSceneTypeZeroVolume(int32_t i)
+static void CheckIfCommonSceneTypeZeroVolume()
 {
-    if (!g_effectAllStreamVolumeZeroMap[i] &&
-        EffectChainManagerSceneCheck(SCENE_TYPE_SET[i], SCENE_TYPE_SET[COMMON_SCENE_TYPE_INDEX])) {
-        g_effectAllStreamVolumeZeroMap[COMMON_SCENE_TYPE_INDEX] = false;
+    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+        if (!g_effectAllStreamVolumeZeroMap[i] &&
+            EffectChainManagerSceneCheck(SCENE_TYPE_SET[i], SCENE_TYPE_SET[COMMON_SCENE_TYPE_INDEX])) {
+            g_effectAllStreamVolumeZeroMap[COMMON_SCENE_TYPE_INDEX] = false;
+            break;
+        }
     }
 }
 

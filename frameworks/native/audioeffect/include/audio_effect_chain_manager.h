@@ -129,7 +129,6 @@ public:
     void ResetInfo();  // Use for testing temporarily.
     void UpdateRealAudioEffect();
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
-    bool CheckA2dpOffload();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
     void UpdateEffectChainRss(const std::string &rssScene);

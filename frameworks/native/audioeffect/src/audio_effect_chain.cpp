@@ -230,7 +230,7 @@ int32_t AudioEffectChain::UpdateEffectParam()
         int32_t replyData;
         int32_t ret = SetEffectParamToHandle(handle, replyData);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "set EFFECT_CMD_SET_PARAM fail");
-        AUDIO_DEBUG_LOG("Set Effect Param %{public}d Success", currSceneType_);
+        AUDIO_DEBUG_LOG("Set Effect Param Scene Type: %{public}d Success", currSceneType_);
         latency_ += static_cast<uint32_t>(replyData);
     }
     return SUCCESS;

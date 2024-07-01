@@ -765,8 +765,7 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
         std::string pairSceneTypeAndDeviceKey = scene + "_&_" + GetDeviceTypeName();
         if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
             SceneTypeToEffectChainMap_[pairSceneTypeAndDeviceKey]) {
-            std::set<std::string> sessions = session;
-            FindMaxEffectChannels(scene, sessions, channels, channelLayout);
+            FindMaxEffectChannels(scene, session, channels, channelLayout);
         }
     }
     return SUCCESS;
@@ -1048,7 +1047,7 @@ AudioEffectScene AudioEffectChainManager::GetSceneTypeFromSpatializationSceneTyp
 void AudioEffectChainManager::UpdateEffectChainRss(const std::string &rssScene)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    AUDIO_INFO_LOG("Update Rss: %{public}s to effect chain", rssScene.c_str());
+    AUDIO_INFO_LOG("Update rss: %{public}s to effect chain", rssScene.c_str());
     rssScene_ = rssScene;
     for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
         auto audioEffectChain = it->second;
@@ -1065,7 +1064,7 @@ void AudioEffectChainManager::UpdateEffectChainRss(const std::string &rssScene)
 
 void AudioEffectChainManager::UpdateEffectChainParams(AudioEffectScene sceneType)
 {
-    AUDIO_INFO_LOG("Update param: %{public}s to effect chain", sceneType.c_str());
+    AUDIO_INFO_LOG("Update param: %{public}d to effect chain", sceneType);
     for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
         auto audioEffectChain = it->second;
         if (audioEffectChain == nullptr) {
