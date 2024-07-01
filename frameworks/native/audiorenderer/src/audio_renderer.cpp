@@ -1337,6 +1337,7 @@ int32_t AudioRendererPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clie
     AUDIO_INFO_LOG("RegisterAudioPolicyServerDiedCb client id: %{public}d", clientPid);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
 
+    policyServiceDiedCallback_ = callback;
     return AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(clientPid, callback);
 }
 
