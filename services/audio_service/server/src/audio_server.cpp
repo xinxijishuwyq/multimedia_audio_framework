@@ -271,7 +271,7 @@ void AudioServer::OnStop()
     AUDIO_DEBUG_LOG("OnStop");
 }
 
-void AudioServer::UpdateAudioEffectType(const std::string &mainkey, const std::string &subkey,
+void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
     const std::string &rssType)
 {
     if (mainkey == "audio_effect" && subkey == "update_audio_effect_type") {
@@ -310,7 +310,7 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         auto subKeyIt = subKeyMap.find(it->first);
         if (subKeyIt != subKeyMap.end()) {
             value += it->first + "=" + it->second + ";";
-            UpdateAudioEffectType(key, it->first, it->second);
+            RecognizeAudioEffectType(key, it->first, it->second);
         } else {
             match = false;
             break;

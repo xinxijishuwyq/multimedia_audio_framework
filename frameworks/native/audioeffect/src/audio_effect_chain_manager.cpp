@@ -1043,7 +1043,7 @@ AudioEffectScene AudioEffectChainManager::GetSceneTypeFromSpatializationSceneTyp
 void AudioEffectChainManager::UpdateRssType(const std::string &rssType)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    AUDIO_INFO_LOG("Update rss type: %{public}s to effect chain", rssType.c_str());
+    AUDIO_INFO_LOG("Update scene type: %{public}s to effect chain", rssType.c_str());
     rssType_ = rssType;
     for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
         auto audioEffectChain = it->second;
@@ -1243,7 +1243,8 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
     return audioEffectChain;
 }
 
-void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string &sceneType) {
+void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string &sceneType)
+{
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     if (!isCommonEffectChainExisted_) {
