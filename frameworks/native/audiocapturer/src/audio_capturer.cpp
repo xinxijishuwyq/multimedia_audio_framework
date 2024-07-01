@@ -266,6 +266,11 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
 
     RegisterCapturerPolicyServiceDiedCallback();
+
+    if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
+        AUDIO_ERR_LOG("GetAudioSessionID failed!");
+        return ERR_INVALID_INDEX;
+    }
     // eg: 100009_44100_2_1_cap_client_out.pcm
     std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.samplingRate) + "_" +
         std::to_string(params.audioChannel) + "_" + std::to_string(params.audioSampleFormat) + "_cap_client_out.pcm";

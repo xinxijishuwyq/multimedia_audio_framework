@@ -18,6 +18,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_policy_manager_listener_stub.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -62,8 +63,9 @@ void AudioPolicyManagerListenerStub::ReadAudioDeviceChangeData(MessageParcel &da
 int AudioPolicyManagerListenerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
-    CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(),
-        AUDIO_INVALID_PARAM, "ReadInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(), AUDIO_INVALID_PARAM,
+        "ReadInterfaceToken failed");
+    Trace trace("AudioPolicyManagerListenerStub::OnRemoteRequest:" + std::to_string(code));
     switch (code) {
         case ON_INTERRUPT: {
             InterruptEventInternal interruptEvent = {};
