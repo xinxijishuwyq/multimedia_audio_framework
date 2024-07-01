@@ -1713,6 +1713,9 @@ HWTEST(AudioManagerUnitTest, SetMicrophoneMute_002, TestSize.Level1)
     int32_t ret = AudioSystemManager::GetInstance()->SetMicrophoneMute(false);
     EXPECT_EQ(SUCCESS, ret);
 
+    ret =  AudioSystemManager::GetInstance()->GetGroupManager(DEFAULT_VOLUME_GROUP_ID)->
+        SetMicrophoneMutePersistent(false, PolicyType::PRIVACY_POLCIY_TYPE);
+    EXPECT_EQ(SUCCESS, ret);
     bool isMicrophoneMuted = AudioSystemManager::GetInstance()->IsMicrophoneMute();
     EXPECT_EQ(isMicrophoneMuted, false);
 }
