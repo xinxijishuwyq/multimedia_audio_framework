@@ -648,5 +648,11 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
     AUDIO_ERR_LOG("default case, need check AudioManagerStub");
     return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
 }
+
+int AudioManagerStub::HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply)
+{
+    LoadHdiEffectModel();
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1885,5 +1885,16 @@ int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t d
 
     return audioRendererSinkInstance->SetRenderEmpty(durationUs);
 }
+
+void AudioServer::LoadHdiEffectModel()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+        "load hdi effect model refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+    audioEffectChainManager->InitHdiState();
+}
 } // namespace AudioStandard
 } // namespace OHOS

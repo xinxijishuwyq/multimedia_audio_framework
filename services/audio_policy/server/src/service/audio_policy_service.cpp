@@ -4194,6 +4194,8 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
     // load inner-cap-sink
     LoadModernInnerCapSink();
     // RegisterBluetoothListener() will be called when bluetooth_host is online
+    // load hdi-effect-model
+    LoadHdiEffectModel();
 }
 
 void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
@@ -8006,6 +8008,16 @@ void AudioPolicyService::OnReceiveBluetoothEvent(const std::string macAddress, c
                 device->deviceId_, device->deviceName_.c_str());
         }
     }
+}
+
+void AudioPolicyService::LoadHdiEffectModel()
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->LoadHdiEffectModel();
+    IPCSkeleton::SetCallingIdentity(identity);
 }
 } // namespace AudioStandard
 } // namespace OHOS

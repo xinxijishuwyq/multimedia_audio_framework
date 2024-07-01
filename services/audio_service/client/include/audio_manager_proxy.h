@@ -92,6 +92,7 @@ public:
     int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering() override;
     bool GetEffectOffloadEnabled() override;
+    void LoadHdiEffectModel() override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

@@ -152,6 +152,8 @@ public:
 
     // IAudioServerInnerCall
     int32_t SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs) final;
+
+    void LoadHdiEffectModel() override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

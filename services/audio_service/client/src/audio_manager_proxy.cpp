@@ -1129,5 +1129,19 @@ void AudioManagerProxy::UpdateLatencyTimestamp(std::string &timestamp, bool isRe
     CHECK_AND_RETURN_LOG(error == ERR_NONE,
         "LatencyMeas UpdateLatencyTimestamp failed, error:%{public}d", error);
 }
+
+void AudioManagerProxy::LoadHdiEffectModel()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_HDI_EFFECT_MODEL), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
+}
 } // namespace AudioStandard
 } // namespace OHOS

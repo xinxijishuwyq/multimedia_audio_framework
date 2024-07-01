@@ -933,6 +933,8 @@ private:
 
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support);
 
+    void LoadHdiEffectModel();
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;

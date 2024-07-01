@@ -58,10 +58,10 @@ static int32_t FindEffectLib(const std::string &effect,
     return ERROR;
 }
 
-static bool IsChannelLayoutHVSSupported(const uint64_t channelLayout)
+static bool IsChannelLayoutSupported(const uint64_t channelLayout)
 {
-    return find(HVS_SUPPORTED_CHANNELLAYOUTS.begin(), HVS_SUPPORTED_CHANNELLAYOUTS.end(), channelLayout) !=
-        HVS_SUPPORTED_CHANNELLAYOUTS.end();
+    return find(AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS.begin(),
+        AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS.end(), channelLayout) != AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS.end();
 }
 
 static void FindMaxSessionID(std::string &maxSessionID, std::string &sceneType,
@@ -778,7 +778,7 @@ int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint
             if (info.channels > DEFAULT_NUM_CHANNEL &&
                 info.channels <= DSP_MAX_NUM_CHANNEL &&
                 !ExistAudioEffectChain(it->first, info.sceneMode, info.spatializationEnabled) &&
-                IsChannelLayoutHVSSupported(info.channelLayout)) {
+                IsChannelLayoutSupported(info.channelLayout)) {
                 tmpChannelLayout = info.channelLayout;
                 tmpChannelCount = info.channels;
             }
@@ -1174,7 +1174,7 @@ void AudioEffectChainManager::FindMaxEffectChannels(const std::string &sceneType
         std::string deviceType = GetDeviceTypeName();
         if (((deviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") || (deviceType == "DEVICE_TYPE_SPEAKER"))
             && ExistAudioEffectChain(sceneType, info.sceneMode, info.spatializationEnabled)
-            && IsChannelLayoutHVSSupported(info.channelLayout)) {
+            && IsChannelLayoutSupported(info.channelLayout)) {
             tmpChannelLayout = info.channelLayout;
             tmpChannelCount = info.channels;
         } else {
