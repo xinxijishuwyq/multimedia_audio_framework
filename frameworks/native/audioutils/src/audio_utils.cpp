@@ -902,6 +902,12 @@ bool AudioLatencyMeasurement::CheckIfEnabled()
     return (latencyMeasure == 1);
 }
 
+LatencyMonitor& LatencyMonitor::GetInstance()
+{
+    static LatencyMonitor latencyMonitor_;
+    return latencyMonitor_;
+}
+
 void LatencyMonitor::UpdateClientTime(bool isRenderer, std::string &timestamp)
 {
     if (isRenderer) {
