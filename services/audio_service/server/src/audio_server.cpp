@@ -271,16 +271,15 @@ void AudioServer::OnStop()
     AUDIO_DEBUG_LOG("OnStop");
 }
 
-static void RssSceneType(const std::string &key, const std::string &RssKey, const std::string &RssValue)
+static void RssSceneType(const std::string &mainkey, const std::string &subkey, const std::string &rssScene)
 {
-    AUDIO_DEBUG_LOG("key is %{public}s, RssKey is %{public}s, and RssValue is %{public}s",
-        key.c_str(), RssKey.c_str(), RssValue.c_str());
-    if (key == "audio_effect" && RssKey == "update_audio_effect_type") {
+    if (mainkey == "audio_effect" && subkey == "update_audio_effect_type") {
+        AUDIO_DEBUG_LOG("rssScene is %{public}s", rssScene.c_str());
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
         }
-        audioEffectChainManager->UpdateEffectChainRss(RssValue);
+        audioEffectChainManager->UpdateEffectChainRss(rssScene);
     }
 }
 
