@@ -17,6 +17,7 @@
 
 #include "futex_tool.h"
 
+#include <cinttypes>
 #include <ctime>
 #include "linux/futex.h"
 #include <sys/syscall.h>
@@ -28,22 +29,17 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-const int32_t WAIT_TRY_COUNT = 10;
+const int32_t WAIT_TRY_COUNT = 50;
 const int64_t SEC_TO_NANOSEC = 1000000000;
 }
-void TimeoutToRealtime(int64_t timeout, struct timespec &realtime)
+// FUTEX_WAIT using relative timeout value.
+void TimeoutToRelativeTime(int64_t timeout, struct timespec &realtime)
 {
-    clock_gettime(CLOCK_MONOTONIC, &realtime);
     int64_t timeoutNanoSec = timeout % SEC_TO_NANOSEC;
     int64_t timeoutSec = timeout / SEC_TO_NANOSEC;
 
-    if (timeoutNanoSec + realtime.tv_nsec >= SEC_TO_NANOSEC) {
-        realtime.tv_nsec = (timeoutNanoSec + realtime.tv_nsec) - SEC_TO_NANOSEC;
-        realtime.tv_sec += timeoutSec + 1;
-    } else {
-        realtime.tv_nsec += timeoutNanoSec;
-        realtime.tv_sec += timeoutSec;
-    }
+    realtime.tv_nsec = timeoutNanoSec;
+    realtime.tv_sec = timeoutSec;
 }
 
 FutexCode FutexTool::FutexWait(std::atomic<uint32_t> *futexPtr, int64_t timeout)
@@ -57,13 +53,16 @@ FutexCode FutexTool::FutexWait(std::atomic<uint32_t> *futexPtr, int64_t timeout)
     }
     struct timespec waitTime;
     if (timeout > 0) {
-        TimeoutToRealtime(timeout, waitTime);
+        TimeoutToRelativeTime(timeout, waitTime);
     }
 
     uint32_t expect = IS_READY;
     if (!futexPtr->compare_exchange_strong(expect, IS_NOT_READY)) {
-        AUDIO_ERR_LOG("failed with invalid status:%{public}u", expect);
-        return FUTEX_INVALID_PARAMS;
+        if (expect == IS_PRE_EXIT) {
+            AUDIO_ERR_LOG("failed with invalid status:%{public}u", expect);
+            return FUTEX_OPERATION_FAILED;
+        }
+        AUDIO_WARNING_LOG("recall while futex value is IS_NOT_READY");
     }
     long res = 0;
     int32_t tryCount = 0;
@@ -77,7 +76,8 @@ FutexCode FutexTool::FutexWait(std::atomic<uint32_t> *futexPtr, int64_t timeout)
             return FUTEX_SUCCESS; // return success here
         }
         if (errno == ETIMEDOUT) {
-            AUDIO_WARNING_LOG("result:%{public}ld, timeout errno[%{public}d]:%{public}s", res, errno, strerror(errno));
+            AUDIO_WARNING_LOG("wait:%{public}" PRId64"ns timeout, result:%{public}ld errno[%{public}d]:%{public}s",
+                timeout, res, errno, strerror(errno));
             return FUTEX_TIMEOUT;
         }
         if (errno != EAGAIN) {
