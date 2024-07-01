@@ -161,7 +161,7 @@ int32_t AudioEnhanceChainManager::InitEnhanceBuffer()
     }
     if (lenEc > enhanceBuffer_->lengthEc) {
         enhanceBuffer_->ecBuffer.resize(lenEc);
-    } 
+    }
     return SUCCESS;
 }
 
