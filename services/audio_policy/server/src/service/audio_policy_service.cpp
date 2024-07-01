@@ -2387,6 +2387,32 @@ void AudioPolicyService::TriggerRecreateRendererStreamCallback(int32_t callerPid
     }
 }
 
+void AudioPolicyService::FetchStreamForA2dpMchStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+    vector<std::unique_ptr<AudioDeviceDescriptor>> &descs)
+{
+    if (CheckStreamMultichannelMode(rendererChangeInfo->sessionId)) {
+        if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
+            LoadMchModule();
+        }
+        std::string portName = GetSinkPortName(descs.front()->deviceType_, PIPE_TYPE_MULTICHANNEL);
+        int32_t ret  = MoveToOutputDevice(rendererChangeInfo->sessionId, portName);
+        if (ret == SUCCESS) {
+            streamCollector_.UpdateRendererPipeInfo(rendererChangeInfo->sessionId, PIPE_TYPE_MULTICHANNEL);
+        }
+    } else {
+        AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+        streamCollector_.GetPipeType(rendererChangeInfo->sessionId, pipeType);
+        if (pipeType == PIPE_TYPE_MULTICHANNEL) {
+            std::string currentActivePort = MCH_PRIMARY_SPEAKER;
+            AudioIOHandle activateDeviceIOHandle = IOHandles_[currentActivePort];
+            audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
+            audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
+            IOHandles_.erase(currentActivePort);
+        }
+        MoveToNewOutputDevice(rendererChangeInfo, descs);
+    }
+}
+
 void AudioPolicyService::FetchStreamForA2dpOffload(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
 {
     AUDIO_INFO_LOG("start for %{public}zu stream", rendererChangeInfos.size());
@@ -2409,7 +2435,7 @@ void AudioPolicyService::FetchStreamForA2dpOffload(vector<unique_ptr<AudioRender
                 gsp->ResetAudioEndpoint();
                 IPCSkeleton::SetCallingIdentity(identity);
             }
-            MoveToNewOutputDevice(rendererChangeInfo, descs);
+            FetchStreamForA2dpMchStream(rendererChangeInfo, descs);
             ResetOffloadMode(rendererChangeInfo->sessionId);
         }
     }
@@ -5976,7 +6002,7 @@ int32_t AudioPolicyService::UnloadOffloadModule()
     return ClosePortAndEraseIOHandle(OFFLOAD_PRIMARY_SPEAKER);
 }
 
-bool AudioPolicyService::CheckStreamMultichannelMode(int64_t activateSessionId, AudioStreamType streamType)
+bool AudioPolicyService::CheckStreamMultichannelMode(const int64_t activateSessionId)
 {
     if (currentActiveDevice_.networkId_ != LOCAL_NETWORK_ID ||
         currentActiveDevice_.deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
@@ -6042,9 +6068,9 @@ int32_t AudioPolicyService::UnloadMchModule()
     return ClosePortAndEraseIOHandle(MCH_PRIMARY_SPEAKER);
 }
 
-void AudioPolicyService::CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType)
+void AudioPolicyService::CheckStreamMode(const int64_t activateSessionId)
 {
-    if (CheckStreamMultichannelMode(activateSessionId, activateStreamType)) {
+    if (CheckStreamMultichannelMode(activateSessionId)) {
         AudioPipeType pipeMultiChannel = PIPE_TYPE_MULTICHANNEL;
         int32_t ret = ActivateAudioConcurrency(pipeMultiChannel);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "concede incoming multichannel");
@@ -6108,7 +6134,7 @@ int32_t AudioPolicyService::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType
             break;
         }
         case PIPE_TYPE_MULTICHANNEL: {
-            if (!CheckStreamMultichannelMode(sessionId, streamType)) {
+            if (!CheckStreamMultichannelMode(sessionId)) {
                 return ERROR;
             }
             if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
@@ -6778,9 +6804,6 @@ void AudioPolicyService::UpdateAllActiveSessions(std::vector<Bluetooth::A2dpStre
                 activeSession.isSpatialAudio =
                     activeSession.isSpatialAudio | newSessionHasBeenSpatialized[changeInfo->sessionId];
                 newSessionHasBeenSpatialized[changeInfo->sessionId] = activeSession.isSpatialAudio;
-
-                // try to move into multchannel
-                MoveToNewPipeInner(activeSession.sessionId, PIPE_TYPE_MULTICHANNEL);
                 break;
             }
         }

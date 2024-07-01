@@ -461,8 +461,7 @@ private:
     void OffloadStreamCheck(int64_t activateSessionId, int64_t deactivateSessionId);
     void CheckSubscribePowerStateChange();
 
-    void CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType,
-        int64_t deactivateSessionId);
+    void CheckStreamMode(const int64_t activateSessionId);
 
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
