@@ -52,14 +52,12 @@ public:
 private:
     void InitAudioEnhanceChain();
     void ReleaseEnhanceChain();
-    int32_t GetOneFrameInputData(std::shared_ptr<EnhanceBuffer> enhanceBuffer);
 
     bool setConfigFlag_;
     std::mutex chainMutex_;
     std::string sceneType_;
     std::string enhanceMode_;
     AlgoAttr algoAttr_;
-    AlgoConfig algoSupportedConfig_;
     std::vector<AudioEffectHandle> standByEnhanceHandles_;
     std::vector<AudioEffectLibrary*> enhanceLibHandles_;
 };
