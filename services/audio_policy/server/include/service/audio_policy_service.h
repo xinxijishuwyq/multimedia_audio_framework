@@ -987,6 +987,7 @@ private:
     std::string activeBTDevice_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioScene lastAudioScene_ = AUDIO_SCENE_DEFAULT;
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
     std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap_ {};
 
