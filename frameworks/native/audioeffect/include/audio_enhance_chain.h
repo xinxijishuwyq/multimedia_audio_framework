@@ -39,6 +39,15 @@ struct AlgoAttr {
     uint32_t byteLenPerFrame;
 };
 
+struct AlgoConfig {
+    uint32_t frameLength;
+    uint32_t sampleRate;
+    uint32_t dataForamt;
+    uint32_t micNum;
+    uint32_t refNum;
+    uint32_t outNum;
+}
+
 class AudioEnhanceChain {
 public:
     AudioEnhanceChain(const std::string &scene, const std::string &mode);
@@ -58,6 +67,7 @@ private:
     std::string sceneType_;
     std::string enhanceMode_;
     AlgoAttr algoAttr_;
+    AlgoConfig algoSupportedConfig_;
     std::vector<AudioEffectHandle> standByEnhanceHandles_;
     std::vector<AudioEffectLibrary*> enhanceLibHandles_;
 };
