@@ -271,16 +271,17 @@ void AudioServer::OnStop()
     AUDIO_DEBUG_LOG("OnStop");
 }
 
-static void RssSceneType(const std::string &mainkey, const std::string &subkey, const std::string &rssScene)
+void AudioServer::UpdateAudioEffectType(const std::string &mainkey, const std::string &subkey,
+    const std::string &rssType)
 {
     if (mainkey == "audio_effect" && subkey == "update_audio_effect_type") {
-        AUDIO_DEBUG_LOG("mainkey is %{public}s, subkey is %{public}s, rssScene is %{public}s",
-            mainkey.c_str(), subkey.c_str(), rssScene.c_str());
+        AUDIO_DEBUG_LOG("mainkey is %{public}s, subkey is %{public}s, rssType is %{public}s",
+            mainkey.c_str(), subkey.c_str(), rssType.c_str());
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
         }
-        audioEffectChainManager->UpdateEffectChainRss(rssScene);
+        audioEffectChainManager->UpdateRssType(rssType);
     }
 }
 
@@ -309,7 +310,7 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         auto subKeyIt = subKeyMap.find(it->first);
         if (subKeyIt != subKeyMap.end()) {
             value += it->first + "=" + it->second + ";";
-            RssSceneType(key, it->first, it->second);
+            UpdateAudioEffectType(key, it->first, it->second);
         } else {
             match = false;
             break;

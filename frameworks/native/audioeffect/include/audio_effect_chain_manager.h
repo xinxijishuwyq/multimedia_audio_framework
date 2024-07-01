@@ -131,7 +131,7 @@ public:
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
-    void UpdateEffectChainRss(const std::string &rssScene);
+    void UpdateRssType(const std::string &rssType);
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
@@ -152,6 +152,7 @@ private:
     int32_t UpdateDeviceInfo(int32_t device, const std::string &sinkName);
     std::shared_ptr<AudioEffectChain> CreateAudioEffectChain(const std::string &sceneType);
     bool CheckIfSpkDsp();
+    void CheckAndReleaseCommonEffectChain(const std::string &sceneType);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
@@ -172,7 +173,7 @@ private:
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     std::string deviceClass_ = "";
-    std::string rssScene_ = "0";
+    std::string rssType_ = "0";
     bool isInitialized_ = false;
     std::recursive_mutex dynamicMutex_;
     bool spatializationEnabled_ = false;

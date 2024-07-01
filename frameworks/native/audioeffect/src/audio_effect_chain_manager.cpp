@@ -368,7 +368,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
     }
 
     audioEffectChain->SetEffectMode(effectMode);
-    audioEffectChain->SetEffectRssScene(rssScene_);
+    audioEffectChain->SetEffectrssType(rssType_);
     for (std::string effect: EffectChainToEffectsMap_[effectChain]) {
         AudioEffectHandle handle = nullptr;
         AudioEffectDescriptor descriptor;
@@ -433,11 +433,7 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
     if (SceneTypeToSpecialEffectSet_.count(sceneType)) {
         SceneTypeToSpecialEffectSet_.erase(sceneType);
     }
-    if (SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] < 1) {
-        SceneTypeToEffectChainMap_.erase(commonSceneTypeAndDeviceKey);
-        SceneTypeToEffectChainCountMap_.erase(commonSceneTypeAndDeviceKey);
-        isCommonEffectChainExisted_ = false;
-    }
+    CheckAndReleaseCommonEffectChain(sceneType);
     SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
     SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
 
@@ -1044,19 +1040,19 @@ AudioEffectScene AudioEffectChainManager::GetSceneTypeFromSpatializationSceneTyp
     return sceneType;
 }
 
-void AudioEffectChainManager::UpdateEffectChainRss(const std::string &rssScene)
+void AudioEffectChainManager::UpdateRssType(const std::string &rssType)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    AUDIO_INFO_LOG("Update rss: %{public}s to effect chain", rssScene.c_str());
-    rssScene_ = rssScene;
+    AUDIO_INFO_LOG("Update rss type: %{public}s to effect chain", rssType.c_str());
+    rssType_ = rssType;
     for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
         auto audioEffectChain = it->second;
         if (audioEffectChain == nullptr) {
             continue;
         }
-        audioEffectChain->SetEffectRssScene(rssScene);
+        audioEffectChain->SetEffectRssType(rssType);
         if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
-            AUDIO_WARNING_LOG("Update Rss to effect chain failed");
+            AUDIO_WARNING_LOG("Update rss type to effect chain failed");
             continue;
         }
     }
@@ -1245,6 +1241,23 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
         }
     }
     return audioEffectChain;
+}
+
+void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string &sceneType) {
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
+    if (!isCommonEffectChainExisted_) {
+        return;
+    }
+    if (SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] == SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]) {
+        if (SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] <= 1) {
+            SceneTypeToEffectChainMap_.erase(commonSceneTypeAndDeviceKey);
+            SceneTypeToEffectChainCountMap_.erase(commonSceneTypeAndDeviceKey);
+            isCommonEffectChainExisted_ = false;
+        } else {
+            SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey]--;
+        }
+    }
 }
 
 #ifdef WINDOW_MANAGER_ENABLE

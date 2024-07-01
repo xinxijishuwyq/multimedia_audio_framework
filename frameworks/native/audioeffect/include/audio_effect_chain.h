@@ -45,7 +45,7 @@ public:
     ~AudioEffectChain();
     std::string GetEffectMode();
     void SetEffectMode(const std::string &mode);
-    void SetEffectRssScene(const std::string &rssScene);
+    void SetEffectRssType(const std::string &rssType);
     void SetEffectCurrSceneType(AudioEffectScene currSceneType);
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle, AudioEffectScene currSceneType);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
@@ -68,7 +68,7 @@ private:
     std::string sceneType_;
     std::string effectMode_;
     uint32_t latency_ = 0;
-    uint32_t effectChainRssScene_ = 0;
+    uint32_t effectChainRssType_ = 0;
     AudioEffectScene currSceneType_ = SCENE_MUSIC;
     std::vector<AudioEffectHandle> standByEffectHandles_;
     std::vector<AudioEffectLibrary *> libHandles_;
