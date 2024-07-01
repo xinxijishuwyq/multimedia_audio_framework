@@ -216,7 +216,7 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceChainDynamic(const std::string 
 
     std::string enhanceChain;
     std::string enhanceChainKey = sceneType + "_&_" + sceneMode;
-    std::string enhanceNone = AUDIO_ENHANCE_MODES.find(ENHANCE_NONE)->second;
+    std::string enhanceNone = AUDIO_ENHANCE_SUPPORTED_SCENE_MODES.find(ENHANCE_NONE)->second;
     if (!sceneTypeAndModeToEnhanceChainNameMap_.count(enhanceChainKey)) {
         AUDIO_ERR_LOG("EnhanceChain key [%{public}s] does not exist, auto set to %{public}s",
             enhanceChainKey.c_str(), enhanceNone.c_str());

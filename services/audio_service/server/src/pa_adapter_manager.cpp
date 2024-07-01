@@ -668,7 +668,7 @@ int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEn
         AUDIO_ERR_LOG("pa_proplist_new failed.");
         return ERROR;
     }
-    std::string enhanceModeName = AUDIO_ENHANCE_MODES.find(mode)->second;
+    std::string enhanceModeName = AUDIO_ENHANCE_SUPPORTED_SCENE_MODES.find(mode)->second;
     std::string upDevice = "DEVICE_TYPE_MIC";
     std::string downDevice = "DEVICE_TYPE_SPEAKER";
     pa_proplist_sets(propList, "device.up", upDevice.c_str());

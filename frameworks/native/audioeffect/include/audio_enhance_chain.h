@@ -42,11 +42,11 @@ struct AlgoAttr {
 struct AlgoConfig {
     uint32_t frameLength;
     uint32_t sampleRate;
-    uint32_t dataForamt;
+    uint32_t dataFormat;
     uint32_t micNum;
     uint32_t refNum;
     uint32_t outNum;
-}
+};
 
 class AudioEnhanceChain {
 public:
