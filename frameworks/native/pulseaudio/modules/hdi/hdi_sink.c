@@ -267,7 +267,7 @@ static void StopPrimaryHdiIfNoRunning(struct Userdata *u);
 static void StartPrimaryHdiIfRunning(struct Userdata *u);
 static void StartMultiChannelHdiIfRunning(struct Userdata *u);
 static void CheckInputChangeToOffload(struct Userdata *u, pa_sink_input *i);
-static void CheckIfCommonSceneTypeZeroVolume();
+static void CheckIfCommonSceneTypeZeroVolume(int32_t i);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f
@@ -1762,14 +1762,11 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
     return sinkSceneType;
 }
 
-static void CheckIfCommonSceneTypeZeroVolume()
+static void CheckIfCommonSceneTypeZeroVolume(int32_t i)
 {
-    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
-        if (!g_effectAllStreamVolumeZeroMap[i] &&
-            EffectChainManagerSceneCheck(SCENE_TYPE_SET[i], SCENE_TYPE_SET[COMMON_SCENE_TYPE_INDEX])) {
-            g_effectAllStreamVolumeZeroMap[COMMON_SCENE_TYPE_INDEX] = false;
-            break;
-        }
+    if (!g_effectAllStreamVolumeZeroMap[i] &&
+        EffectChainManagerSceneCheck(SCENE_TYPE_SET[i], SCENE_TYPE_SET[COMMON_SCENE_TYPE_INDEX])) {
+        g_effectAllStreamVolumeZeroMap[COMMON_SCENE_TYPE_INDEX] = false;
     }
 }
 
