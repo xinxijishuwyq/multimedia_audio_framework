@@ -254,12 +254,12 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceChainDynamic(const std::string 
 
 int32_t AudioEnhanceChainManager::FreeEnhanceBuffer()
 {
-    enhanceBuffer_.reset();
-    AUDIO_DEBUG_LOG("reset enhanceBuffer. use_count: %{public}ld", enhanceBuffer_.use_count());
-    if (enhanceBuffer_.use_count() != 0) {
-        return ERROR;
+    if (enhanceBuffer_ != nullptr) {
+        std::vector<uint8_t>().swap(enhanceBuffer_->ecBuffer);
+        std::vector<uint8_t>().swap(enhanceBuffer_->micBufferIn);
+        std::vector<uint8_t>().swap(enhanceBuffer_->micBufferOut);
+        AUDIO_INFO_LOG("release EnhanceBuffer success");
     }
-    AUDIO_INFO_LOG("release EnhanceBuffer success");
     return SUCCESS;
 }
 
@@ -282,7 +282,7 @@ int32_t AudioEnhanceChainManager::ReleaseAudioEnhanceChainDynamic(const std::str
     sceneTypeToEnhanceChainCountMap_.erase(sceneTypeAndDeviceKey);
     sceneTypeToEnhanceChainMap_.erase(sceneTypeAndDeviceKey);
     AUDIO_INFO_LOG("release %{public}s", sceneTypeAndDeviceKey.c_str());
-    if (IsEmptyEnhanceChain()) {
+    if (sceneTypeToEnhanceChainMap_.size() == 0) {
         FreeEnhanceBuffer();
     }
     return SUCCESS;
