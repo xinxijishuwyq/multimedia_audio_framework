@@ -108,19 +108,19 @@ private:
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
 
-    IAudioSourceAttr attr_;
-    bool sourceInited_;
-    bool captureInited_;
-    bool started_;
-    bool paused_;
-    float leftVolume_;
-    float rightVolume_;
+    IAudioSourceAttr attr_ = {};
+    bool sourceInited_ = false;
+    bool captureInited_ = false;
+    bool started_ = false;
+    bool paused_ = false;
+    float leftVolume_ = 0.0f;
+    float rightVolume_ = 0.0f;
 
     int32_t routeHandle_ = -1;
     int32_t logMode_ = 0;
-    uint32_t openMic_;
+    uint32_t openMic_ = 0;
     uint32_t captureId_ = 0;
-    std::string adapterNameCase_;
+    std::string adapterNameCase_ = "";
 
     // for get amplitude
     float maxAmplitude_ = 0;
@@ -133,9 +133,9 @@ private:
     std::atomic<bool> adapterLoaded_ = false;
     struct IAudioAdapter *audioAdapter_ = nullptr;
     struct IAudioCapture *audioCapture_ = nullptr;
-    const std::string halName_;
-    struct AudioAdapterDescriptor adapterDesc_;
-    struct AudioPort audioPort_;
+    const std::string halName_ = "";
+    struct AudioAdapterDescriptor adapterDesc_ = {};
+    struct AudioPort audioPort_ = {};
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif

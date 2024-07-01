@@ -87,6 +87,7 @@
 #define BYTE_LEN_FOR_16BIT 2
 #define BYTE_LEN_FOR_24BIT 3
 #define BYTE_LEN_FOR_32BIT 4
+#define PRINT_INTERVAL_FRAME_COUNT 100
 #define MIN_SLEEP_FOR_USEC 2000
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
@@ -248,6 +249,7 @@ struct Userdata {
     } multiChannel;
 };
 
+static int32_t g_effectProcessFrameCount = 0;
 static void UserdataFree(struct Userdata *u);
 static int32_t PrepareDevice(struct Userdata *u, const char *filePath);
 
@@ -1259,7 +1261,8 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         return;
     }
 
-    if (pa_atomic_load(&u->primary.fadingFlagForPrimary) == 1 && u->primary.primarySinkInIndex == sinkIn->index) {
+    if (pa_atomic_load(&u->primary.fadingFlagForPrimary) == 1 &&
+        u->primary.primarySinkInIndex == (int32_t)sinkIn->index) {
         if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
             AUDIO_INFO_LOG("pa_memblock_is_silence");
             return;
@@ -1267,14 +1270,14 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         //do fading in
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
-        int32_t bitSize = pa_sample_size_of_format(sinkIn->sample_spec.format);
+        int32_t bitSize = (int32_t)pa_sample_size_of_format(u->format);
         DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 0);
         u->primary.primaryFadingInDone = 1;
         pa_memblock_release(infoIn->chunk.memblock);
     }
     if (pa_safe_streq(sinkFadeoutPause, "1")) {
         //do fading out
-        int32_t bitSize = pa_sample_size_of_format(sinkIn->sample_spec.format);
+        int32_t bitSize = (int32_t)pa_sample_size_of_format(u->format);
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
         DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 1);
@@ -1287,7 +1290,7 @@ static void CheckPrimaryFadeinIsDone(pa_sink *si, pa_sink_input *sinkIn)
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    if (u->primary.primaryFadingInDone && u->primary.primarySinkInIndex == sinkIn->index) {
+    if (u->primary.primaryFadingInDone && u->primary.primarySinkInIndex == (int32_t)sinkIn->index) {
         pa_atomic_store(&u->primary.fadingFlagForPrimary, 0);
     }
 }
@@ -1309,6 +1312,18 @@ static void SafeRendererSinkUpdateAppsUid(struct RendererSinkAdapter *sinkAdapte
     }
 }
 
+static void RecordEffectChainStatus(bool existFlag, const char *sinkSceneType, const char *sinkSceneMode,
+    bool actualSpatializationEnabled)
+{
+    g_effectProcessFrameCount++;
+    if (g_effectProcessFrameCount == PRINT_INTERVAL_FRAME_COUNT) {
+        g_effectProcessFrameCount = 0;
+        AUDIO_DEBUG_LOG("Effect Chain Status is %{public}d, "
+            "scene type is %{public}s, scene mode is %{public}s, spatializationEnabled is %{public}d.",
+            existFlag, sinkSceneType, sinkSceneMode, actualSpatializationEnabled);
+    }
+}
+
 static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
     unsigned maxInfo, char *sceneType)
 {
@@ -1326,7 +1341,6 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     pa_sink_assert_io_context(si);
     pa_assert(infoIn);
 
-    bool isCaptureSilently = IsCaptureSilently();
     int32_t appsUid[MAX_MIX_CHANNELS];
     size_t count = 0;
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
@@ -1335,8 +1349,9 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag =
             EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled ? "1" : "0");
+        RecordEffectChainStatus(existFlag, sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled);
         bool sceneTypeFlag = EffectChainManagerSceneCheck(sinkSceneType, sceneType);
-        if ((IsInnerCapturer(sinkIn) && isCaptureSilently) || !InputIsPrimary(sinkIn)) {
+        if ((IsInnerCapturer(sinkIn) && IsCaptureSilently()) || !InputIsPrimary(sinkIn)) {
             continue;
         } else if ((sceneTypeFlag && existFlag) || (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
             pa_sink_input_assert_ref(sinkIn);
@@ -1351,9 +1366,9 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
                 AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
                 pa_sink_input_handle_ohos_underrun(sinkIn);
             } else {
+                AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
                 pa_atomic_store(&sinkIn->isFirstReaded, 1);
             }
-            AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
 
             infoIn->userdata = pa_sink_input_ref(sinkIn);
             pa_assert(infoIn->chunk.memblock);
@@ -1386,13 +1401,13 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
     }
 
     if (pa_atomic_load(&u->multiChannel.fadingFlagForMultiChannel) == 1 &&
-        u->multiChannel.multiChannelSinkInIndex == sinkIn->index) {
+        u->multiChannel.multiChannelSinkInIndex == (int32_t)sinkIn->index) {
         if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
             AUDIO_INFO_LOG("pa_memblock_is_silence");
             return;
         }
         //do fading in
-        int32_t bitSize = pa_sample_size_of_format(sinkIn->sample_spec.format);
+        int32_t bitSize = (int32_t)pa_sample_size_of_format(u->format);
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
         DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 0);
@@ -1401,7 +1416,7 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
     }
     if (pa_safe_streq(sinkFadeoutPause, "1")) {
         //do fading out
-        int32_t bitSize = pa_sample_size_of_format(sinkIn->sample_spec.format);
+        int32_t bitSize = (int32_t)pa_sample_size_of_format(u->format);
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
         DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 1);
@@ -1414,7 +1429,8 @@ static void CheckMultiChannelFadeinIsDone(pa_sink *si, pa_sink_input *sinkIn)
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    if (u->multiChannel.multiChannelFadingInDone && u->multiChannel.multiChannelSinkInIndex == sinkIn->index) {
+    if (u->multiChannel.multiChannelFadingInDone &&
+        u->multiChannel.multiChannelSinkInIndex == (int32_t)sinkIn->index) {
         pa_atomic_store(&u->multiChannel.fadingFlagForMultiChannel, 0);
     }
 }
@@ -1721,10 +1737,12 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
         pa_sink_input_assert_ref(input);
         const char *sinkSceneTypeTmp = pa_proplist_gets(input->proplist, "scene.type");
         const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
+        const char *clientVolumeIsZero = safeProplistGets(input->proplist, "clientVolumeIsZero", "false");
         pa_cvolume vol;
         pa_sink_input_get_volume(input, &vol, true);
         pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
-        bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol);
+        bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol) ||
+            pa_safe_streq(clientVolumeIsZero, "true");
         if (pa_safe_streq(sinkSceneTypeTmp, SCENE_TYPE_SET[i]) && !isZeroVolume) {
             g_effectAllStreamVolumeZeroMap[i] = false;
             g_effectStartVolZeroTimeMap[i] = 0;
@@ -1803,6 +1821,30 @@ static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
     }
 }
 
+static void HandleClosePa(struct Userdata *u)
+{
+    if (!g_paHaveDisabled) {
+        int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0);
+        AUDIO_INFO_LOG("Speaker pa volume change to zero over [%{public}d]s, close %{public}s pa [%{public}s], "
+            "ret:%{public}d", WAIT_CLOSE_PA_OR_EFFECT_TIME, u->sink->name, (ret == 0 ? "success" : "failed"), ret);
+        g_paHaveDisabled = true;
+        g_speakerPaAllStreamStartVolZeroTime = 0;
+        g_speakerPaHaveClosed = true;
+        time(&g_speakerPaClosedTime);
+    }
+}
+
+static void HandleOpenPa(struct Userdata *u)
+{
+    if (g_paHaveDisabled) {
+        int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1);
+        AUDIO_INFO_LOG("volume change to non zero, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d",
+            u->sink->name, (ret == 0 ? "success" : "failed"), ret);
+        g_paHaveDisabled = false;
+        g_speakerPaHaveClosed = false;
+    }
+}
+
 static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTime)
 {
     if (!g_onlyPrimarySpeakerPaLoading) {
@@ -1814,10 +1856,12 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
     g_speakerPaAllStreamVolumeZero = true;
     while ((input = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
         pa_sink_input_assert_ref(input);
+        const char *clientVolumeIsZero = safeProplistGets(input->proplist, "clientVolumeIsZero", "false");
         pa_cvolume vol;
         pa_sink_input_get_volume(input, &vol, true);
         pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
-        bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol);
+        bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol) ||
+            pa_safe_streq(clientVolumeIsZero, "true");
         if (!strcmp(u->sink->name, "Speaker") && !isZeroVolume) {
             g_speakerPaAllStreamVolumeZero = false;
             g_speakerPaAllStreamStartVolZeroTime = 0;
@@ -1832,23 +1876,9 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
     }
     if (g_speakerPaAllStreamVolumeZero && PA_SINK_IS_RUNNING(u->sink->thread_info.state) &&
         difftime(currentTime, g_speakerPaAllStreamStartVolZeroTime) > WAIT_CLOSE_PA_OR_EFFECT_TIME) {
-        if (!g_paHaveDisabled) {
-            int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0);
-            AUDIO_INFO_LOG("Speaker pa volume change to zero over [%{public}d]s, close %{public}s pa [%{public}s], "
-                "ret:%{public}d", WAIT_CLOSE_PA_OR_EFFECT_TIME, u->sink->name, (ret == 0 ? "success" : "failed"), ret);
-            g_paHaveDisabled = true;
-            g_speakerPaAllStreamStartVolZeroTime = 0;
-            g_speakerPaHaveClosed = true;
-            time(&g_speakerPaClosedTime);
-        }
+        HandleClosePa(u);
     } else {
-        if (g_paHaveDisabled) {
-            int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1);
-            AUDIO_INFO_LOG("volume change to non zero, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d",
-                u->sink->name, (ret == 0 ? "success" : "failed"), ret);
-            g_paHaveDisabled = false;
-            g_speakerPaHaveClosed = false;
-        }
+        HandleOpenPa(u);
     }
 
     if (g_speakerPaHaveClosed && difftime(currentTime, g_speakerPaClosedTime) >= MONITOR_CLOSE_PA_TIME_SEC) {
@@ -2334,7 +2364,7 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
     while (l > 0) {
         pa_memchunk tchunk;
         tchunk = *chunk;
-        tchunk.index += d;
+        tchunk.index += (size_t)d;
         tchunk.length = PA_MIN(length, blockSize - tchunk.index);
 
         PaSinkRenderIntoOffload(i->sink, infoInputs, nInputs, &tchunk);
@@ -2587,6 +2617,9 @@ static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa
     const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
     const bool stopping = state == PA_SINK_INPUT_UNLINKED;
 
+    if (!u->offload.inited && PrepareDeviceOffload(u) == 0) {
+        u->offload.inited = true;
+    }
     if (starting) {
         StartOffloadHdi(u, i);
     } else if (corking) {
@@ -2614,7 +2647,7 @@ static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa
             AUDIO_INFO_LOG("store fadingFlagForPrimary for 1");
             pa_proplist_sets(i->proplist, "fadeoutPause", "0");
             u->primary.primaryFadingInDone = 0;
-            u->primary.primarySinkInIndex = i->index;
+            u->primary.primarySinkInIndex = (int32_t)(i->index);
             AUDIO_INFO_LOG("PaInputStateChangeCb, HDI renderer already started");
             return;
         }
@@ -2631,7 +2664,7 @@ static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa
             AUDIO_INFO_LOG("store fadingFlagForPrimary for 1");
             pa_proplist_sets(i->proplist, "fadeoutPause", "0");
             u->primary.primaryFadingInDone = 0;
-            u->primary.primarySinkInIndex = i->index;
+            u->primary.primarySinkInIndex = (int32_t)(i->index);
             AUDIO_INFO_LOG("PaInputStateChangeCb, Successfully restarted HDI renderer");
         }
     }
@@ -2725,9 +2758,9 @@ static void POSSIBLY_UNUSED StopPrimaryHdiIfNoRunning(struct Userdata *u)
         return;
     }
 
-    unsigned nPrimary;
-    unsigned nOffload;
-    unsigned nMultiChannel;
+    unsigned nPrimary = 0;
+    unsigned nOffload = 0;
+    unsigned nMultiChannel = 0;
     GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
     if (nPrimary > 0) {
         return;
@@ -2758,7 +2791,7 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
         uint32_t sinkChannel = DEFAULT_MULTICHANNEL_NUM;
         uint64_t sinkChannelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
         EffectChainManagerReturnMultiChannelInfo(&sinkChannel, &sinkChannelLayout);
-        u->multiChannel.multiChannelTmpSinkInIndex = i->index;
+        u->multiChannel.multiChannelTmpSinkInIndex = (int32_t)(i->index);
         ResetMultiChannelHdiState(u, sinkChannel, sinkChannelLayout);
     } else if (stopping) {
         // Continuously dropping data clear counter on entering suspended state.
@@ -2829,9 +2862,9 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
         return;
     }
 
-    if (u->offload_enable && InputIsOffload(i)) {
+    if (u->offload_enable && !strcmp(i->sink->name, OFFLOAD_SINK_NAME)) {
         PaInputStateChangeCbOffload(u, i, state);
-    } else if (u->multichannel_enable && InputIsMultiChannel(i)) {
+    } else if (u->multichannel_enable && !strcmp(i->sink->name, MCH_SINK_NAME)) {
         PaInputStateChangeCbMultiChannel(u, i, state);
     } else {
         PaInputStateChangeCbPrimary(u, i, state);
@@ -2918,7 +2951,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
         }
     }
     if (nInput != 0 && blockTime != -1) {
-        *sleepForUsec = (int64_t)PA_MAX(blockTime, 0) - (int64_t)(pa_rtclock_now() - now);
+        *sleepForUsec = PA_MAX(blockTime, 0) - (int64_t)(pa_rtclock_now() - now);
         *sleepForUsec = PA_MAX(*sleepForUsec, 0);
     }
 }
@@ -2931,14 +2964,6 @@ static void ThreadFuncRendererTimerOffloadFlag(struct Userdata *u, pa_usec_t now
         if (delta > 0) {
             flag = false;
             *sleepForUsec = delta;
-        } else {
-            unsigned nPrimary = 0;
-            unsigned nOffload = 0;
-            unsigned nMultiChannel = 0;
-            GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
-            if (nOffload == 0) {
-                flag = false;
-            }
         }
     } else if (!PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
         OffloadUnlock(u);
@@ -3127,7 +3152,8 @@ static void ProcessNormalData(struct Userdata *u)
     if (flag) {
         pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
         if (pa_atomic_load(&u->primary.dflag) == 1) {
-            sleepForUsec = blockTime - (pa_rtclock_now() - u->primary.lastProcessDataTime);
+            sleepForUsec = (int64_t)blockTime -
+                ((int64_t)pa_rtclock_now() - (int64_t)(u->primary.lastProcessDataTime));
             if (sleepForUsec < MIN_SLEEP_FOR_USEC) {
                 sleepForUsec = MIN_SLEEP_FOR_USEC;
             }
@@ -3137,7 +3163,7 @@ static void ProcessNormalData(struct Userdata *u)
                 u->primary.lastProcessDataTime = pa_rtclock_now();
                 ProcessRenderUseTiming(u, now);
             }
-            sleepForUsec = blockTime - (pa_rtclock_now() - now);
+            sleepForUsec = (int64_t)blockTime - ((int64_t)pa_rtclock_now() - (int64_t)now);
             if (u->primary.timestamp <= now + u->primary.prewrite) {
                 sleepForUsec = PA_MIN(sleepForUsec, (int64_t)u->primary.writeTime);
             }
@@ -3174,7 +3200,8 @@ static void ProcessMCHData(struct Userdata *u)
         ProcessRenderUseTimingMultiChannel(u, now);
     }
     pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-    sleepForUsec = PA_MIN(blockTime - (pa_rtclock_now() - now), u->multiChannel.writeTime);
+    sleepForUsec = PA_MIN((int64_t)blockTime - ((int64_t)pa_rtclock_now() - (int64_t)now),
+        (int64_t)(u->multiChannel.writeTime));
     sleepForUsec = PA_MAX(sleepForUsec, 0);
     if (sleepForUsec != -1) {
         if (u->timestampSleep == -1) {
@@ -3195,11 +3222,12 @@ static void ProcessOffloadData(struct Userdata *u)
 
     if (flag) {
         ThreadFuncRendererTimerOffloadProcess(u, now, &sleepForUsec);
+        sleepForUsec = PA_MAX(sleepForUsec, 0);
     }
 
     if (u->offload.fullTs != 0) {
         if (u->offload.fullTs + 10 * PA_USEC_PER_MSEC > now) { // 10 is min checking size
-            const int64_t s = (u->offload.fullTs + 10 * PA_USEC_PER_MSEC) - now;
+            const int64_t s = ((int64_t)(u->offload.fullTs) + 10 * PA_USEC_PER_MSEC) - (int64_t)now;
             sleepForUsec = sleepForUsec == -1 ? s : PA_MIN(s, sleepForUsec);
         } else if (pa_atomic_load(&u->offload.hdistate) == 1) {
             u->offload.fullTs = 0;
@@ -3445,6 +3473,7 @@ static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t
     pa_memchunk *chunk)
 {
     AUDIO_DEBUG_LOG("SinkProcessMsg: code: %{public}d", code);
+    AUTO_CTRACE("hdi_sink::SinkProcessMsg code: %d", code);
     struct Userdata *u = PA_SINK(o)->userdata;
     pa_assert(u);
 
@@ -3597,7 +3626,6 @@ static int32_t SinkSetStateInIoThreadCbStartMultiChannel(struct Userdata *u, pa_
 
 static void OffloadSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newState)
 {
-    pa_sink *s;
     struct Userdata *u = (struct Userdata *)(sink->userdata);
     const bool starting = PA_SINK_IS_OPENED(newState);
     const bool stopping = newState == PA_SINK_SUSPENDED;
@@ -3605,24 +3633,7 @@ static void OffloadSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newState)
         starting, stopping, u->offload_enable);
     if (starting && u->offload_enable && !u->offload.inited && PrepareDeviceOffload(u) == 0) {
         u->offload.inited = true;
-    } else if (stopping) {
-        pa_core *c = u->core;
-        uint32_t idx;
-        int32_t nOpened = 0;
-        PA_IDXSET_FOREACH(s, c->sinks, idx) {
-            AUDIO_INFO_LOG("sink name: %{public}s, driver: %{public}s", s->name, s->driver);
-            bool isHdiSink = !strncmp(s->driver, "module_hdi_sink", 15); // 15 cmp length
-            if (isHdiSink && ((struct Userdata *)(s->userdata))->offload_enable) {
-                u = s->userdata;
-            }
-            if (isHdiSink && s != sink && s->thread_info.state != PA_SINK_SUSPENDED) {
-                nOpened += 1;
-            }
-        }
-        AUDIO_INFO_LOG("nOpened: %{public}d, offload_enable: %{public}d", nOpened, u->offload_enable);
-        if (!u->offload_enable || nOpened > 0) {
-            return;
-        }
+    } else if (stopping && u->offload_enable) {
         if (u->offload.isHDISinkStarted) {
             u->offload.sinkAdapter->RendererSinkStop(u->offload.sinkAdapter);
             AUDIO_INFO_LOG("Stopped Offload HDI renderer, DeInit later");
@@ -3658,6 +3669,7 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
 
     if (!strcmp(u->sink->name, OFFLOAD_SINK_NAME)) {
         OffloadSinkStateChangeCb(s, newState);
+        return 0;
     }
 
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT ||
@@ -3698,7 +3710,10 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
 static pa_hook_result_t SinkInputMoveStartCb(pa_core *core, pa_sink_input *i, struct Userdata *u)
 {
     pa_sink_input_assert_ref(i);
-    if (u->offload_enable) {
+    char str[SPRINTF_STR_LEN] = {0};
+    GetSinkInputName(i, str, SPRINTF_STR_LEN);
+    AUDIO_INFO_LOG("SinkInputMoveStartCb sink[%{public}s] - %{public}s", i->sink->name, str);
+    if (u->offload_enable && !strcmp(i->sink->name, OFFLOAD_SINK_NAME)) {
         const bool maybeOffload = pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) != 0;
         if (maybeOffload || InputIsOffload(i)) {
             OffloadRewindAndFlush(u, i, false);
@@ -3711,7 +3726,10 @@ static pa_hook_result_t SinkInputMoveStartCb(pa_core *core, pa_sink_input *i, st
 static pa_hook_result_t SinkInputStateChangedCb(pa_core *core, pa_sink_input *i, struct Userdata *u)
 {
     pa_sink_input_assert_ref(i);
-    if (u->offload_enable && InputIsOffload(i)) {
+    char str[SPRINTF_STR_LEN] = {0};
+    GetSinkInputName(i, str, SPRINTF_STR_LEN);
+    AUDIO_INFO_LOG("SinkInputStateChangedCb sink[%{public}s] - %{public}s", i->sink->name, str);
+    if (u->offload_enable && !strcmp(i->sink->name, OFFLOAD_SINK_NAME)) {
         if (i->state == PA_SINK_INPUT_CORKED) {
             pa_atomic_store(&u->offload.hdistate, 0);
         }
@@ -3842,7 +3860,7 @@ static int32_t PrepareDeviceMultiChannel(struct Userdata *u, struct RendererSink
     u->multiChannel.sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
     u->multiChannel.sample_attrs.filePath = filePath;
     u->multiChannel.sample_attrs.deviceNetworkId = u->deviceNetworkId;
-    u->multiChannel.sample_attrs.deviceType =  u->deviceType;
+    u->multiChannel.sample_attrs.deviceType = u->deviceType;
 
     ret = sinkAdapter->RendererSinkInit(sinkAdapter, &u->multiChannel.sample_attrs);
     if (ret != 0) {
@@ -3858,7 +3876,7 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
 {
     u->format = u->ss.format;
     u->processLen = IN_CHANNEL_NUM_MAX * DEFAULT_FRAMELEN;
-    u->processSize = (int64_t)u->processLen * sizeof(float);
+    u->processSize = (uint32_t)u->processLen * sizeof(float);
     u->bufferAttr = pa_xnew0(BufferAttr, 1);
     pa_assert_se(u->bufferAttr->bufIn = (float *)malloc(u->processSize));
     pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(u->processSize));

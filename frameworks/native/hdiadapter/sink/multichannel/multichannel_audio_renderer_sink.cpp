@@ -76,6 +76,9 @@ public:
     int32_t Start(void) override;
     int32_t Stop(void) override;
 
+    int32_t SuspendRenderSink(void) override;
+    int32_t RestoreRenderSink(void) override;
+
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
@@ -108,23 +111,23 @@ public:
     ~MultiChannelRendererSinkInner();
 private:
     IAudioSinkAttr attr_ = {};
-    bool sinkInited_;
-    bool adapterInited_;
-    bool renderInited_;
-    bool started_;
-    bool paused_;
-    float leftVolume_;
-    float rightVolume_;
+    bool sinkInited_ = false;
+    bool adapterInited_ = false;
+    bool renderInited_ = false;
+    bool started_ = false;
+    bool paused_ = false;
+    float leftVolume_ = 0;
+    float rightVolume_ = 0;
     int32_t routeHandle_ = -1;
     int32_t logMode_ = 0;
-    uint32_t openSpeaker_;
+    uint32_t openSpeaker_ = 0;
     uint32_t renderId_ = 0;
-    std::string adapterNameCase_;
-    struct IAudioManager *audioManager_;
-    struct IAudioAdapter *audioAdapter_;
-    struct IAudioRender *audioRender_;
+    std::string adapterNameCase_ = "";
+    struct IAudioManager *audioManager_ = nullptr;
+    struct IAudioAdapter *audioAdapter_ = nullptr;
+    struct IAudioRender *audioRender_ = nullptr;
     std::string halName_;
-    struct AudioAdapterDescriptor adapterDesc_;
+    struct AudioAdapterDescriptor adapterDesc_ = {};
     struct AudioPort audioPort_ = {};
     bool audioMonoState_ = false;
     bool audioBalanceState_ = false;
@@ -160,7 +163,7 @@ private:
 
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
-    AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
+    AudioScene currentAudioScene_ = AudioScene::AUDIO_SCENE_INVALID;
 };
 
 MultiChannelRendererSinkInner::MultiChannelRendererSinkInner(const std::string &halName)
@@ -671,6 +674,7 @@ int32_t MultiChannelRendererSinkInner::SetVoiceVolume(float volume)
 
 int32_t MultiChannelRendererSinkInner::GetLatency(uint32_t *latency)
 {
+    Trace trace("MultiChannelRendererSinkInner::GetLatency");
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("GetLatency failed audio render null");
         return ERR_INVALID_HANDLE;
@@ -1000,6 +1004,16 @@ int32_t MultiChannelRendererSinkInner::Flush(void)
     return ERR_OPERATION_FAILED;
 }
 
+int32_t MultiChannelRendererSinkInner::SuspendRenderSink(void)
+{
+    return SUCCESS;
+}
+
+int32_t MultiChannelRendererSinkInner::RestoreRenderSink(void)
+{
+    return SUCCESS;
+}
+
 int32_t MultiChannelRendererSinkInner::Preload(const std::string &usbInfoStr)
 {
     CHECK_AND_RETURN_RET_LOG(halName_ == "usb", ERR_INVALID_OPERATION, "Preload only supported for usb");
@@ -1043,7 +1057,7 @@ int32_t MultiChannelRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfo
         sinkFormat_end - sinkFormat_begin - std::strlen("sink_format:"));
 
     // usb default config
-    attr_.sampleRate = static_cast<uint32_t>(stoi(sampleRateStr));
+    attr_.sampleRate = static_cast<uint32_t>((stoi(sampleRateStr)));
     attr_.channel = STEREO_CHANNEL_COUNT;
     attr_.format = ParseAudioFormat(formatStr);
 

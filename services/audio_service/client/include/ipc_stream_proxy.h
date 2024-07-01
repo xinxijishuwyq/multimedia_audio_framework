@@ -45,7 +45,7 @@ public:
 
     int32_t Flush() override;
 
-    int32_t Drain() override;
+    int32_t Drain(bool stopFlag = false) override;
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
 
@@ -85,6 +85,8 @@ public:
     int32_t GetStreamManagerType() override;
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
+
+    int32_t SetClientVolume() override;
 private:
     static inline BrokerDelegator<IpcStreamProxy> delegator_;
 };

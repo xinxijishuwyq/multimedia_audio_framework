@@ -560,7 +560,7 @@ napi_status NapiAudioRenderer::WriteArrayBufferToNative(std::shared_ptr<AudioRen
             AUDIO_ERR_LOG("Write length < 0,break.");
             break;
         }
-        totalBytesWritten += bytesWritten;
+        totalBytesWritten += static_cast<size_t>(bytesWritten);
     }
     context->status = napi_ok;
     context->totalBytesWritten = totalBytesWritten;
@@ -588,7 +588,8 @@ napi_value NapiAudioRenderer::GetAudioTime(napi_env env, napi_callback_info info
         Timestamp timestamp;
         if (napiAudioRenderer->audioRenderer_->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC)) {
             const uint64_t secToNanosecond = 1000000000;
-            context->time = static_cast<int64_t>(timestamp.time.tv_nsec) + timestamp.time.tv_sec * secToNanosecond;
+            context->time = static_cast<uint64_t>(timestamp.time.tv_nsec) +
+                static_cast<uint64_t>(timestamp.time.tv_sec) * secToNanosecond;
             context->status = napi_ok;
         } else {
             context->SignError(NAPI_ERR_SYSTEM);
@@ -616,7 +617,8 @@ napi_value NapiAudioRenderer::GetAudioTimeSync(napi_env env, napi_callback_info 
     CHECK_AND_RETURN_RET_LOG(ret, result, "GetAudioTime failure!");
 
     const uint64_t secToNanosecond = 1000000000;
-    uint64_t time = static_cast<uint64_t>(timestamp.time.tv_nsec + timestamp.time.tv_sec * secToNanosecond);
+    uint64_t time = static_cast<uint64_t>(timestamp.time.tv_nsec) +
+        static_cast<uint64_t>(timestamp.time.tv_sec) * secToNanosecond;
 
     NapiParamUtils::SetValueInt64(env, time, result);
     return result;

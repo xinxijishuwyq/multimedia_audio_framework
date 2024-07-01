@@ -24,39 +24,60 @@ void AudioRendererProxyObj::SaveRendererObj(const AudioRenderer *rendererObj)
     renderer = rendererObj;
 }
 
+void AudioRendererProxyObj::UnsetRendererObj()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    renderer = nullptr;
+}
+
 void AudioRendererProxyObj::PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    renderer->Pause(CMD_FROM_SYSTEM);
+    if (renderer != nullptr) {
+        renderer->Pause(CMD_FROM_SYSTEM);
+    }
 }
 
 void AudioRendererProxyObj::ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    renderer->Start(CMD_FROM_SYSTEM);
+    if (renderer != nullptr) {
+        renderer->Start(CMD_FROM_SYSTEM);
+    }
 }
 
 void AudioRendererProxyObj::SetLowPowerVolumeImpl(float volume)
 {
-    renderer->SetLowPowerVolume(volume);
+    if (renderer != nullptr) {
+        renderer->SetLowPowerVolume(volume);
+    }
 }
 
 void AudioRendererProxyObj::GetLowPowerVolumeImpl(float &volume)
 {
-    volume = renderer->GetLowPowerVolume();
+    if (renderer != nullptr) {
+        volume = renderer->GetLowPowerVolume();
+    }
 }
 
 void AudioRendererProxyObj::SetOffloadModeImpl(int32_t state, bool isAppBack)
 {
-    renderer->SetOffloadMode(state, isAppBack);
+    if (renderer != nullptr) {
+        renderer->SetOffloadMode(state, isAppBack);
+    }
 }
 
 void AudioRendererProxyObj::UnsetOffloadModeImpl()
 {
-    renderer->UnsetOffloadMode();
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (renderer != nullptr) {
+        renderer->UnsetOffloadMode();
+    }
 }
 
 void AudioRendererProxyObj::GetSingleStreamVolumeImpl(float &volume)
 {
-    volume = renderer->GetSingleStreamVolume();
+    if (renderer != nullptr) {
+        volume = renderer->GetSingleStreamVolume();
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

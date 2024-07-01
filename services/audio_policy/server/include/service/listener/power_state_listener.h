@@ -17,6 +17,7 @@
 #define ST_POWER_STATE_LISTENER_H
 
 #include <iremote_stub.h>
+#include <audio_interrupt_info.h>
 
 #include "suspend/isync_sleep_callback.h"
 #include "suspend/sleep_priority.h"
@@ -26,6 +27,13 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace OHOS::PowerMgr;
 class AudioPolicyServer;
+class PowerListerMethods {
+public:
+    PowerListerMethods() = default;
+    virtual ~PowerListerMethods() = default;
+    static void InitAudioInterruptInfo(AudioInterrupt& audioInterrupt);
+};
+
 class PowerStateListenerStub : public IRemoteStub<ISyncSleepCallback> {
 public:
     PowerStateListenerStub() = default;
@@ -49,6 +57,32 @@ public:
 
 private:
     void ControlAudioFocus(bool applyFocus);
+    sptr<AudioPolicyServer> audioPolicyServer_;
+};
+ 
+class SyncHibernateListenerStub : public IRemoteStub<ISyncHibernateCallback> {
+public:
+    SyncHibernateListenerStub() = default;
+    virtual ~SyncHibernateListenerStub() = default;
+    DISALLOW_COPY_AND_MOVE(SyncHibernateListenerStub);
+ 
+    virtual int32_t OnRemoteRequest(uint32_t code, MessageParcel &data,
+        MessageParcel &reply, MessageOption &option) override;
+ 
+private:
+    int32_t OnSyncHibernateCallbackStub();
+    int32_t OnSyncWakeupCallbackStub();
+};
+ 
+class SyncHibernateListener : public SyncHibernateListenerStub {
+public:
+    explicit SyncHibernateListener(const sptr<AudioPolicyServer> audioPolicyServer);
+    virtual ~SyncHibernateListener() {}
+    void OnSyncHibernate() override;
+    void OnSyncWakeup() override;
+ 
+private:
+    void ControlAudioFocus(bool isHibernate);
     sptr<AudioPolicyServer> audioPolicyServer_;
 };
 } // namespace AudioStandard

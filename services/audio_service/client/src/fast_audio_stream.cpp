@@ -548,7 +548,7 @@ bool FastAudioStream::FlushAudioStream()
     return true;
 }
 
-bool FastAudioStream::DrainAudioStream()
+bool FastAudioStream::DrainAudioStream(bool stopFlag)
 {
     AUDIO_INFO_LOG("Drain stream SUCCESS");
     return true;

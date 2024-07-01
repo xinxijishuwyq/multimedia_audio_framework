@@ -2191,7 +2191,7 @@ int32_t AudioPolicyProxy::UnsetAudioDeviceRefinerCallback()
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::TriggerFetchDevice()
+int32_t AudioPolicyProxy::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2200,6 +2200,7 @@ int32_t AudioPolicyProxy::TriggerFetchDevice()
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
+    data.WriteInt32(static_cast<int>(reason));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::TRIGGER_FETCH_DEVICE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);

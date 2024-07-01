@@ -73,7 +73,7 @@ public:
     std::unique_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
     int32_t SetAudioDeviceRefinerCallback(const std::shared_ptr<AudioDeviceRefiner> &callback);
     int32_t UnsetAudioDeviceRefinerCallback();
-    int32_t TriggerFetchDevice();
+    int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 private:
     int32_t GetCallingPid();
 };

@@ -47,6 +47,9 @@ namespace AudioStandard {
 namespace {
 const int32_t HALF_FACTOR = 2;
 const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
+const int32_t MAX_GET_POSITOIN_TRY_COUNT = 50;
+const int32_t MAX_GET_POSITION_HANDLE_TIME = 10000000; // 1000000us
+const int32_t MAX_GET_POSITION_WAIT_TIME = 2000000; // 2000000us
 const int32_t RENDER_FRAME_NUM = -4;
 const float DEFAULT_VOLUME_LEVEL = 1.0f;
 const uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -88,6 +91,8 @@ public:
     int32_t Reset(void) override;
     int32_t Pause(void) override;
     int32_t Resume(void) override;
+    int32_t SuspendRenderSink(void) override;
+    int32_t RestoreRenderSink(void) override;
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
@@ -122,6 +127,7 @@ private:
     bool rendererInited_;
     bool started_;
     bool paused_;
+    bool suspend_;
     float leftVolume_;
     float rightVolume_;
     struct HDI::Audio_Bluetooth::AudioProxyManager *audioManager_;
@@ -141,6 +147,7 @@ private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
+    int32_t CheckPositionTime();
 
     bool isBluetoothLowLatency_ = false;
     uint32_t bufferTotalFrameSize_ = 0;
@@ -177,7 +184,7 @@ private:
 };
 
 BluetoothRendererSinkInner::BluetoothRendererSinkInner(bool isBluetoothLowLatency)
-    : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
+    : rendererInited_(false), started_(false), paused_(false), suspend_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
       rightVolume_(DEFAULT_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr),
       audioRender_(nullptr), handle_(nullptr), isBluetoothLowLatency_(isBluetoothLowLatency)
 {
@@ -491,6 +498,10 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
     CheckUpdateState(&data, len);
 
+    if (suspend_) {
+        return ret;
+    }
+
     Trace trace("BluetoothRendererSinkInner::RenderFrame");
     while (true) {
         Trace::CountVolume("BluetoothRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
@@ -610,6 +621,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
             ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
             if (!ret) {
                 started_ = true;
+                CHECK_AND_RETURN_RET_LOG(CheckPositionTime() == SUCCESS, ERR_NOT_STARTED, "CheckPositionTime failed!");
                 return SUCCESS;
             } else {
                 AUDIO_ERR_LOG("Start failed, remaining %{public}d attempt(s)", tryCount);
@@ -620,6 +632,29 @@ int32_t BluetoothRendererSinkInner::Start(void)
         return ERR_NOT_STARTED;
     }
     return SUCCESS;
+}
+
+int32_t BluetoothRendererSinkInner::CheckPositionTime()
+{
+    int32_t tryCount = MAX_GET_POSITOIN_TRY_COUNT;
+    uint64_t frames = 0;
+    int64_t timeSec = 0;
+    int64_t timeNanoSec = 0;
+    while (tryCount-- > 0) {
+        ClockTime::RelativeSleep(MAX_GET_POSITION_WAIT_TIME);
+        int32_t ret = GetMmapHandlePosition(frames, timeSec, timeNanoSec);
+        int64_t curTime = ClockTime::GetCurNano();
+        int64_t curSec = curTime / AUDIO_NS_PER_SECOND;
+        int64_t curNanoSec = curTime - curSec * AUDIO_NS_PER_SECOND;
+        if (ret != SUCCESS || curSec != timeSec || curNanoSec - timeNanoSec > MAX_GET_POSITION_HANDLE_TIME) {
+            AUDIO_WARNING_LOG("Try count %{public}d, ret %{public}d", tryCount, ret);
+            continue;
+        } else {
+            AUDIO_INFO_LOG("Finished.");
+            return SUCCESS;
+        }
+    }
+    return ERROR;
 }
 
 int32_t BluetoothRendererSinkInner::SetVolume(float left, float right)
@@ -657,6 +692,7 @@ int32_t BluetoothRendererSinkInner::GetVolume(float &left, float &right)
 
 int32_t BluetoothRendererSinkInner::GetLatency(uint32_t *latency)
 {
+    Trace trace("BluetoothRendererSinkInner::GetLatency");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "GetLatency failed audio render null");
 
@@ -803,6 +839,18 @@ int32_t BluetoothRendererSinkInner::Flush(void)
     }
 
     return ERR_OPERATION_FAILED;
+}
+
+int32_t BluetoothRendererSinkInner::SuspendRenderSink(void)
+{
+    suspend_ = true;
+    return SUCCESS;
+}
+
+int32_t BluetoothRendererSinkInner::RestoreRenderSink(void)
+{
+    suspend_ = false;
+    return SUCCESS;
 }
 
 void BluetoothRendererSinkInner::SetAudioMonoState(bool audioMono)

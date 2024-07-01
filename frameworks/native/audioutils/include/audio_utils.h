@@ -21,6 +21,7 @@
 #include <mutex>
 #include <ctime>
 #include <sys/time.h>
+#include <atomic>
 
 #include <cstdio>
 #include <queue>
@@ -344,11 +345,7 @@ private:
 
 class LatencyMonitor {
 public:
-    static LatencyMonitor& GetInstance()
-    {
-        static LatencyMonitor latencyMonitor_;
-        return latencyMonitor_;
-    }
+    static LatencyMonitor& GetInstance();
     void ShowTimestamp(bool isRenderer);
     void ShowBluetoothTimestamp();
     void UpdateClientTime(bool isRenderer, std::string &timestamp);
@@ -375,6 +372,19 @@ int32_t GetKeyFromValue(const std::unordered_map<EnumType, V> &map, const V &val
         }
     }
     return -1;
+}
+
+template <typename T, typename Compare>
+bool CasWithCompare(std::atomic<T> &atomicVar, T newValue, Compare compare)
+{
+    T old = atomicVar;
+    do {
+        if (!compare(old, newValue)) {
+            return false;
+        }
+    } while (!atomicVar.compare_exchange_weak(old, newValue));
+
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

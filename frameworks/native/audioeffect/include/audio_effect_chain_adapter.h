@@ -60,7 +60,7 @@ int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *c
 int32_t EffectChainManagerVolumeUpdate(const char *sessionID, const uint32_t volume);
 bool EffectChainManagerGetSpatializationEnabled();
 void EffectChainManagerFlush(void);
-void EffectChainManagerEffectUpdate();
+void EffectChainManagerEffectUpdate(void);
 bool EffectChainManagerSceneCheck(const char *sinkSceneType, const char *sceneType);
 
 #ifdef __cplusplus

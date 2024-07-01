@@ -60,6 +60,9 @@ public:
     virtual int32_t Start(void) = 0;
     virtual int32_t Stop(void) = 0;
 
+    virtual int32_t SuspendRenderSink(void) = 0;
+    virtual int32_t RestoreRenderSink(void) = 0;
+
     virtual int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) = 0;
     virtual int32_t GetLatency(uint32_t *latency) = 0;
 
@@ -94,6 +97,12 @@ public:
         const size_t size) = 0;
 
     virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
+
+    virtual int32_t SetRenderEmpty(int32_t durationUs)
+    {
+        // Only operate on primary for now
+        return 0;
+    }
 };
 
 class IMmapAudioRendererSink : public IAudioRendererSink {

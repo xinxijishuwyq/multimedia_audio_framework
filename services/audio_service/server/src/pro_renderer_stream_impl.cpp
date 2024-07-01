@@ -538,6 +538,12 @@ int32_t ProRendererStreamImpl::ReturnIndex(int32_t index)
     return SUCCESS;
 }
 
+int32_t ProRendererStreamImpl::SetClientVolume(float clientVolume)
+{
+    AUDIO_INFO_LOG("clientVolume: %{public}f", clientVolume);
+    return SUCCESS;
+}
+
 int32_t ProRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)
 {
     return SUCCESS;

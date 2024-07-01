@@ -62,6 +62,8 @@ private:
     int32_t HandleGetStreamManagerType(MessageParcel &data, MessageParcel &reply);
 
     int32_t HandleSetSilentModeAndMixWithOthers(MessageParcel &data, MessageParcel &reply);
+
+    int32_t HandleSetClientVolume(MessageParcel &data, MessageParcel &reply);
     
     using HandlerFunc = int32_t(IpcStreamStub::*)(MessageParcel &data, MessageParcel &reply);
     // Using the same order in IpcStreamMsg::Code when add func!
@@ -95,6 +97,7 @@ private:
         &IpcStreamStub::HandleUpdateSpatializationState,
         &IpcStreamStub::HandleGetStreamManagerType,
         &IpcStreamStub::HandleSetSilentModeAndMixWithOthers,
+        &IpcStreamStub::HandleSetClientVolume,
     };
 };
 } // namespace AudioStandard

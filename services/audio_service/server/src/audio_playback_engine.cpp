@@ -17,7 +17,11 @@
 #include "audio_errors.h"
 namespace OHOS {
 namespace AudioStandard {
+AudioPlaybackEngine::AudioPlaybackEngine()
+    : renderSink_(nullptr), playbackThread_(nullptr), streams_(0) {}
+
 AudioPlaybackEngine::~AudioPlaybackEngine() {}
+
 int32_t AudioPlaybackEngine::AddRenderer(const std::shared_ptr<IRendererStream> &stream)
 {
     auto it = std::find(streams_.begin(), streams_.end(), stream);

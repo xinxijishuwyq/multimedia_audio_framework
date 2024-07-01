@@ -87,6 +87,10 @@ AudioRendererPrivate::~AudioRendererPrivate()
         Release();
     }
 
+    if (rendererProxyObj_ != nullptr) {
+        rendererProxyObj_->UnsetRendererObj();
+    }
+
     RemoveRendererPolicyServiceDiedCallback();
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
@@ -423,10 +427,16 @@ IAudioStream::StreamClass AudioRendererPrivate::GetPreferredStreamClass(AudioStr
     if (rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {
         return IAudioStream::PA_STREAM;
     }
+    if (rendererInfo_.originalFlag == AUDIO_FLAG_MMAP &&
+        !IAudioStream::IsStreamSupported(rendererInfo_.originalFlag, audioStreamParams)) {
+        AUDIO_WARNING_LOG("Unsupported stream params, will create normal stream");
+        rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    }
 
     int32_t flag = AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo_);
     AUDIO_INFO_LOG("Preferred renderer flag: %{public}d", flag);
-    if (flag == AUDIO_FLAG_MMAP && IAudioStream::IsStreamSupported(rendererInfo_.originalFlag, audioStreamParams)) {
+    if (flag == AUDIO_FLAG_MMAP) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
         isFastRenderer_ = true;
         return IAudioStream::FAST_STREAM;
@@ -452,17 +462,24 @@ IAudioStream::StreamClass AudioRendererPrivate::GetPreferredStreamClass(AudioStr
 bool AudioRendererPrivate::IsDirectVoipParams(const AudioStreamParams &audioStreamParams)
 {
     // VoIP derect only supports 8K, 16K and 48K sampling rate.
-    if (audioStreamParams.samplingRate == SAMPLE_RATE_8000 ||
+    if (!(audioStreamParams.samplingRate == SAMPLE_RATE_8000 ||
         audioStreamParams.samplingRate == SAMPLE_RATE_16000 ||
-        audioStreamParams.samplingRate == SAMPLE_RATE_48000) {
-        AUDIO_INFO_LOG("The sampling rate %{public}d is valid for direct VoIP mode",
-            audioStreamParams.samplingRate);
-        return true;
-    } else {
+        audioStreamParams.samplingRate == SAMPLE_RATE_48000)) {
         AUDIO_ERR_LOG("The sampling rate %{public}d is not supported for direct VoIP mode",
             audioStreamParams.samplingRate);
         return false;
     }
+
+    // VoIP derect only supports STEREO channels.
+    if (audioStreamParams.channels != STEREO) {
+        AUDIO_ERR_LOG("The channels %{public}d is not supported for direct VoIP mode",
+            audioStreamParams.channels);
+        return false;
+    }
+
+    AUDIO_INFO_LOG("Valid params for direct VoIP mode: sampling rate %{public}d, channels %{public}d",
+        audioStreamParams.samplingRate, audioStreamParams.channels);
+    return true;
 }
 
 int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
@@ -1216,20 +1233,23 @@ int32_t AudioRendererPrivate::SetOffloadAllowed(bool isAllowed)
 int32_t AudioRendererPrivate::SetOffloadMode(int32_t state, bool isAppBack) const
 {
     AUDIO_INFO_LOG("set offload mode for session %{public}u", sessionID_);
+    uint32_t sessionId = static_cast<uint32_t>(-1);
+    int32_t ret = GetAudioStreamId(sessionId);
+    CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get sessionId failed");
 
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.pipeType == PIPE_TYPE_NORMAL_OUT, ERR_CONCEDE_INCOMING_STREAM,
-        "session %{public}u pipe type is %{public}d, deny offload", sessionID_, rendererInfo_.pipeType);
+        "session %{public}u pipe type is %{public}d, deny offload", sessionId, rendererInfo_.pipeType);
     if (!isOffloadAllowed_) {
         AUDIO_INFO_LOG("offload is not allowed");
         return ERR_NOT_SUPPORTED;
     }
 
     AudioPipeType offload = PIPE_TYPE_OFFLOAD;
-    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioConcurrency(offload);
+    ret = AudioPolicyManager::GetInstance().ActivateAudioConcurrency(offload);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_CONCEDE_INCOMING_STREAM,
-        "session %{public}u deny offload", sessionID_);
+        "session %{public}u deny offload", sessionId);
 
-    AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_OFFLOAD);
+    AudioPolicyManager::GetInstance().MoveToNewPipe(sessionId, PIPE_TYPE_OFFLOAD);
     return audioStream_->SetOffloadMode(state, isAppBack);
 }
 
@@ -1871,6 +1891,10 @@ void AudioRendererPrivate::ActivateAudioConcurrency(const AudioStreamParams &aud
 void AudioRendererPrivate::ConcedeStream()
 {
     AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", sessionID_, rendererInfo_.pipeType);
+    uint32_t sessionId = static_cast<uint32_t>(-1);
+    int32_t ret = GetAudioStreamId(sessionId);
+    CHECK_AND_RETURN_LOG(!ret, "Get sessionId failed");
+
     AudioPipeType pipeType = PIPE_TYPE_NORMAL_OUT;
     audioStream_->GetAudioPipeType(pipeType);
     rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
@@ -1878,12 +1902,12 @@ void AudioRendererPrivate::ConcedeStream()
     switch (pipeType) {
         case PIPE_TYPE_LOWLATENCY_OUT:
         case PIPE_TYPE_DIRECT_MUSIC:
-            SwitchStream(sessionID_, IAudioStream::PA_STREAM);
+            SwitchStream(sessionId, IAudioStream::PA_STREAM);
             break;
         case PIPE_TYPE_OFFLOAD:
             isOffloadAllowed_ = false;
             UnsetOffloadMode();
-            AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_NORMAL_OUT);
+            AudioPolicyManager::GetInstance().MoveToNewPipe(sessionId, PIPE_TYPE_NORMAL_OUT);
             break;
         default:
             break;
