@@ -1789,6 +1789,8 @@ static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
         if (isHdiSink && strcmp(s->name, "Speaker")) {
             AUDIO_DEBUG_LOG("Have new routing:[%{public}s] on primary, dont close it.", s->name);
             g_onlyPrimarySpeakerPaLoading = false;
+            g_speakerPaAllStreamVolumeZero = false;
+            g_speakerPaAllStreamStartVolZeroTime = 0;
             break;
         }
     }
@@ -1797,6 +1799,8 @@ static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
         AUDIO_DEBUG_LOG("Sink[%{public}s] -- no primary, dont close it.",
             GetDeviceClass(u->primary.sinkAdapter->deviceClass));
         g_onlyPrimarySpeakerPaLoading = false;
+        g_speakerPaAllStreamVolumeZero = false;
+        g_speakerPaAllStreamStartVolZeroTime = 0;
     }
 
     if (PA_SINK_IS_RUNNING(u->sink->thread_info.state) && !g_onlyPrimarySpeakerPaLoading && g_paHaveDisabled) {
