@@ -42,7 +42,6 @@ const std::map<int32_t, pa_sample_format_t> FORMAT_CONVERT_MAP {
 
 int32_t EnhanceChainManagerCreateCb(const char *sceneType, const char *enhanceMode, const char *upDevice,
     const char *downDevice)
-
 {
     AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
