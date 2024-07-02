@@ -30,6 +30,8 @@ void AudioConcurrencyService::DispatchConcurrencyEventWithSessionId(uint32_t ses
 {
     std::lock_guard<std::mutex> lock(cbMapMutex_);
     AUDIO_DEBUG_LOG("DispatchConcurrencyEventWithSessionId %{public}d", sessionID);
+    CHECK_AND_RETURN_LOG(concurrencyClients_.find(sessionID) != concurrencyClients_.end(),
+        "session %{public}u not exist", sessionID);
     concurrencyClients_[sessionID]->OnConcedeStream();
 }
 
