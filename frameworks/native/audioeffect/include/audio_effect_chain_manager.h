@@ -56,6 +56,7 @@ const std::string BLUETOOTH_DEVICE_SINK = "Bt_Speaker";
 const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 const uint32_t HDI_ROOM_MODE_INDEX_TWO = 2;
 const uint32_t DEFAULT_NUM_EFFECT_INSTANCES = 1;
+const std::string COMMON_SCENE_TYPE = "SCENE_MUSIC";
 
 struct SessionEffectInfo {
     std::string sceneMode;
@@ -126,7 +127,6 @@ public:
     void ResetInfo();  // Use for testing temporarily.
     void UpdateRealAudioEffect();
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
-    bool CheckA2dpOffload();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
     void InitHdiState();
@@ -149,6 +149,7 @@ private:
     int32_t UpdateDeviceInfo(int32_t device, const std::string &sinkName);
     std::shared_ptr<AudioEffectChain> CreateAudioEffectChain(const std::string &sceneType);
     bool CheckIfSpkDsp();
+    void CheckAndReleaseCommonEffectChain(const std::string &sceneType);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
@@ -181,6 +182,7 @@ private:
     int32_t hdiEffectMode_ = 0;
     bool isCommonEffectChainExisted_ = false;
     bool debugArmFlag_ = false;
+    int32_t commonEffectChainCount_ = 0;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
