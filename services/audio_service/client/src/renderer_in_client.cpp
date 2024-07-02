@@ -673,9 +673,8 @@ int32_t RendererInClientInner::GetFrameCount(uint32_t &frameCount)
 
 int32_t RendererInClientInner::GetLatency(uint64_t &latency)
 {
-    // in plan: 150000 for debug
-    latency = 150000; // unit is us, 150000 is 150ms
-    return SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    return ipcStream_->GetLatency(latency);
 }
 
 int32_t RendererInClientInner::SetAudioStreamType(AudioStreamType audioStreamType)
