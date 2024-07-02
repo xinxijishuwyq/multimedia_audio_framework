@@ -127,7 +127,6 @@ public:
     void ResetInfo();  // Use for testing temporarily.
     void UpdateRealAudioEffect();
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
-    bool CheckA2dpOffload();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
     void UpdateExtraSceneType(const std::string &extraSceneType);
@@ -185,6 +184,7 @@ private:
     int32_t hdiEffectMode_ = 0;
     bool isCommonEffectChainExisted_ = false;
     bool debugArmFlag_ = false;
+    int32_t commonEffectChainCount_ = 0;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

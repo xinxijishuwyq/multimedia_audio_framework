@@ -27,8 +27,69 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
 constexpr int32_t AUDIO_EXTRA_PARAMETERS_COUNT_UPPER_LIMIT = 40;
-
+const char *g_audioServerCodeStrs[] = {
+    "GET_AUDIO_PARAMETER",
+    "SET_AUDIO_PARAMETER",
+    "GET_EXTRA_AUDIO_PARAMETERS",
+    "SET_EXTRA_AUDIO_PARAMETERS",
+    "SET_MICROPHONE_MUTE",
+    "SET_AUDIO_SCENE",
+    "UPDATE_ROUTE_REQ",
+    "UPDATE_ROUTES_REQ",
+    "UPDATE_DUAL_TONE_REQ",
+    "GET_TRANSACTION_ID",
+    "SET_PARAMETER_CALLBACK",
+    "GET_REMOTE_AUDIO_PARAMETER",
+    "SET_REMOTE_AUDIO_PARAMETER",
+    "NOTIFY_DEVICE_INFO",
+    "CHECK_REMOTE_DEVICE_STATE",
+    "SET_VOICE_VOLUME",
+    "SET_AUDIO_MONO_STATE",
+    "SET_AUDIO_BALANCE_VALUE",
+    "CREATE_AUDIOPROCESS",
+    "LOAD_AUDIO_EFFECT_LIBRARIES",
+    "REQUEST_THREAD_PRIORITY",
+    "CREATE_AUDIO_EFFECT_CHAIN_MANAGER",
+    "SET_OUTPUT_DEVICE_SINK",
+    "CREATE_PLAYBACK_CAPTURER_MANAGER",
+    "SET_SUPPORT_STREAM_USAGE",
+    "REGISET_POLICY_PROVIDER",
+    "SET_WAKEUP_CLOSE_CALLBACK",
+    "SET_CAPTURE_SILENT_STATE",
+    "UPDATE_SPATIALIZATION_STATE",
+    "OFFLOAD_SET_VOLUME",
+    "OFFLOAD_DRAIN",
+    "OFFLOAD_GET_PRESENTATION_POSITION",
+    "OFFLOAD_SET_BUFFER_SIZE",
+    "NOTIFY_STREAM_VOLUME_CHANGED",
+    "GET_CAPTURE_PRESENTATION_POSITION",
+    "GET_RENDER_PRESENTATION_POSITION",
+    "SET_SPATIALIZATION_SCENE_TYPE",
+    "GET_MAX_AMPLITUDE",
+    "RESET_AUDIO_ENDPOINT",
+    "RESET_ROUTE_FOR_DISCONNECT",
+    "GET_EFFECT_LATENCY",
+    "UPDATE_LATENCY_TIMESTAMP",
+    "SET_ASR_AEC_MODE",
+    "GET_ASR_AEC_MODE",
+    "SET_ASR_NOISE_SUPPRESSION_MODE",
+    "GET_ASR_NOISE_SUPPRESSION_MODE",
+    "SET_ASR_WHISPER_DETECTION_MODE",
+    "GET_ASR_WHISPER_DETECTION_MODE",
+    "SET_ASR_VOICE_CONTROL_MODE",
+    "SET_ASR_VOICE_MUTE_MODE",
+    "IS_WHISPERING",
+    "GET_EFFECT_OFFLOAD_ENABLED",
+    "SUSPEND_RENDERSINK",
+    "RESTORE_RENDERSINK",
+    "LOAD_HDI_EFFECT_MODEL",
+};
+constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
+static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
+    "keep same with AudioServerInterfaceCode");
+}
 static void LoadEffectLibrariesReadData(vector<Library>& libList, vector<Effect>& effectList, MessageParcel &data,
     int32_t countLib, int32_t countEff)
 {
@@ -642,7 +703,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
 {
     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(),
         -1, "ReadInterfaceToken failed");
-    Trace trace("AudioServer::Handle::" + std::to_string(code));
+    Trace trace(code >= codeNums ? "invalid audio server code!" : g_audioServerCodeStrs[code]);
     CHECK_AND_RETURN_RET(code > static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX),
         (this->*handlers[code])(data, reply));
     AUDIO_ERR_LOG("default case, need check AudioManagerStub");
