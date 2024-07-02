@@ -427,12 +427,12 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
         return SUCCESS;
     }
     
-    if (SceneTypeToSpecialEffectSet_.count(sceneType)) {
-        SceneTypeToSpecialEffectSet_.erase(sceneType);
-    }
+    SceneTypeToSpecialEffectSet_.erase(sceneType);
     CheckAndReleaseCommonEffectChain(sceneType);
     SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
-    SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
+    if (sceneType != COMMON_SCENE_TYPE) {
+        SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
+    }
 
     if (debugArmFlag_ && !spkOffloadEnabled_ && CheckIfSpkDsp()) {
         effectHdiInput_[0] = HDI_INIT;
@@ -1219,7 +1219,8 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
     return audioEffectChain;
 }
 
-void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string &sceneType) {
+void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string &sceneType) 
+{
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     if (!isCommonEffectChainExisted_) {
