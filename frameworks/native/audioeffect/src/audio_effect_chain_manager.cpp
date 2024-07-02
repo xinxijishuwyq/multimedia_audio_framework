@@ -1149,7 +1149,7 @@ void AudioEffectChainManager::ChangeEffectChainCountMapForCreate(const std::stri
     std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey]++;
     if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
-        SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] && sceneType != COMMON_SCENE_TYPE) {
+        SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey]) {
         commonEffectChainCount_++;
     }
 }
