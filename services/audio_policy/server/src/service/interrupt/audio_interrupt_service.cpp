@@ -274,7 +274,7 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(const int32_t zoneId, cons
         return SUCCESS;
     }
 
-    policyServer_->CheckStreamMode(incomingSessionId, streamType, OFFLOAD_NO_SESSION_ID);
+    policyServer_->CheckStreamMode(incomingSessionId);
 
     bool shouldReturnSuccess = false;
     ProcessAudioScene(audioInterrupt, incomingSessionId, zoneId, shouldReturnSuccess);

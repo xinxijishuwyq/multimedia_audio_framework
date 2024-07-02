@@ -3055,6 +3055,13 @@ static void ProcessRenderUseTimingMultiChannel(struct Userdata *u, pa_usec_t now
     pa_assert(chunk.length > 0);
 
     StartMultiChannelHdiIfRunning(u);
+
+    if (!chunk.memblock) {
+        if (pa_atomic_load(&u->multiChannel.dflag) == 1) {
+            pa_atomic_sub(&u->multiChannel.dflag, 1);
+        }
+        return;
+    }
     pa_asyncmsgq_post(u->multiChannel.dq, NULL, HDI_RENDER, NULL, 0, &chunk, NULL);
     u->multiChannel.timestamp += pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
 }
@@ -3308,7 +3315,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
             pa_rtpoll_set_timer_relative(u->rtpoll, sleepForUsec);
         }
 
-        AUTO_CTRACE("ProcessDataLoop sleep:%lld us", sleepForUsec);
+        AUTO_CTRACE("ProcessDataLoop %s sleep:%lld us", deviceClass, sleepForUsec);
         // Hmm, nothing to do. Let's sleep
         if ((ret = pa_rtpoll_run(u->rtpoll)) < 0) {
             AUDIO_ERR_LOG("Thread %s(use timing bus) shutting down, error %d, pid %d, tid %d",

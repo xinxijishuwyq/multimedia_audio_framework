@@ -501,7 +501,7 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
     bool IsStreamSupported(AudioStreamType streamType);
     int32_t GetCurActivateCount();
-    void CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType);
+    void CheckStreamMode(const int64_t activateSessionId);
 
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
     int32_t DynamicUnloadModule(const AudioPipeType pipeType);
@@ -641,6 +641,9 @@ private:
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     bool IsFastFromA2dpToA2dp(const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+
+    void FetchStreamForA2dpMchStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+        vector<std::unique_ptr<AudioDeviceDescriptor>> &descs);
 
     void FetchStreamForA2dpOffload(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
 
@@ -906,7 +909,7 @@ private:
     int32_t UnloadOffloadModule();
     int32_t MoveToOutputDevice(uint32_t sessionId, std::string portName);
 
-    bool CheckStreamMultichannelMode(int64_t activateSessionId, AudioStreamType streamType);
+    bool CheckStreamMultichannelMode(const int64_t activateSessionId);
     AudioModuleInfo ConstructMchAudioModuleInfo(DeviceType deviceType);
     int32_t LoadMchModule();
     int32_t UnloadMchModule();

@@ -524,10 +524,9 @@ AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerSt
     AudioPolicyServer* policyServer) : PowerMgr::PowerStateCallbackStub(), policyServer_(policyServer)
 {}
 
-void AudioPolicyServer::CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType,
-    int64_t deactivateSessionId)
+void AudioPolicyServer::CheckStreamMode(const int64_t activateSessionId)
 {
-    audioPolicyService_.CheckStreamMode(activateSessionId, activateStreamType);
+    audioPolicyService_.CheckStreamMode(activateSessionId);
 }
 
 void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnPowerStateChanged(PowerMgr::PowerState state)
