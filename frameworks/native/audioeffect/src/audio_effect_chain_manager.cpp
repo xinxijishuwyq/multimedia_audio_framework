@@ -368,7 +368,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
     }
 
     audioEffectChain->SetEffectMode(effectMode);
-    audioEffectChain->SetEffectRssType(rssType_);
+    audioEffectChain->SetExtraSceneType(extraSceneType_);
     for (std::string effect: EffectChainToEffectsMap_[effectChain]) {
         AudioEffectHandle handle = nullptr;
         AudioEffectDescriptor descriptor;
@@ -1042,19 +1042,19 @@ AudioEffectScene AudioEffectChainManager::GetSceneTypeFromSpatializationSceneTyp
     return sceneType;
 }
 
-void AudioEffectChainManager::UpdateRssType(const std::string &rssType)
+void AudioEffectChainManager::UpdateExtraSceneType(const std::string &extraSceneType)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    AUDIO_INFO_LOG("Update scene type: %{public}s to effect chain", rssType.c_str());
-    rssType_ = rssType;
+    AUDIO_INFO_LOG("Update scene type: %{public}s to effect chain", extraSceneType.c_str());
+    extraSceneType_ = extraSceneType;
     for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
         auto audioEffectChain = it->second;
         if (audioEffectChain == nullptr) {
             continue;
         }
-        audioEffectChain->SetEffectRssType(rssType);
+        audioEffectChain->SetExtraSceneType(extraSceneType);
         if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
-            AUDIO_WARNING_LOG("Update rss type to effect chain failed");
+            AUDIO_WARNING_LOG("Update scene type to effect chain failed");
             continue;
         }
     }

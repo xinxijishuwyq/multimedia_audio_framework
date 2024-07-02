@@ -180,7 +180,7 @@ private:
     void WriteServiceStartupError();
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
-        const std::string &rssType);
+        const std::string &extraSceneType);
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
