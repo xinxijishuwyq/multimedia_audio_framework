@@ -889,6 +889,10 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_002, TestSize.Le
     uint64_t channelLayout = 0x3;
     string sessionID = "123456";
 
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
+        DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
+
     int32_t addRes = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     EXPECT_EQ(SUCCESS, addRes);
 
