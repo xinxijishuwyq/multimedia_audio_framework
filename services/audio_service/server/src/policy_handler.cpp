@@ -67,7 +67,7 @@ void PolicyHandler::Dump(std::string &dumpString)
         AppendFormat(dumpString, "  device: %d ", g_volumeIndexVector[i].second);
         AppendFormat(dumpString, "  isMute: %s ", (volumeVector_[i].isMute ? "true" : "false"));
         AppendFormat(dumpString, "  volFloat: %f ", volumeVector_[i].volumeFloat);
-        AppendFormat(dumpString, "  volint: %d \n", volumeVector_[i].volumeInt);
+        AppendFormat(dumpString, "  volint: %u \n", volumeVector_[i].volumeInt);
     }
 }
 

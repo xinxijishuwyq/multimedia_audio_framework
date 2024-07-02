@@ -95,8 +95,10 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     AUDIO_DEBUG_LOG("Create renderer start");
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
-
     uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+
+    // PaAdapterManager is solely responsible for creating paStream objects
+    // while the PaRendererStreamImpl has full authority over the subsequent management of the paStream
     pa_stream *paStream = InitPaStream(processConfig, sessionId, false);
     CHECK_AND_RETURN_RET_LOG(paStream != nullptr, ERR_OPERATION_FAILED, "Failed to init render");
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, paStream);
@@ -194,8 +196,10 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
     CHECK_AND_RETURN_RET_LOG(managerType_ == RECORDER, ERROR, "Invalid managerType:%{public}d", managerType_);
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
-
     uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+
+    // PaAdapterManager is solely responsible for creating paStream objects
+    // while the PaCapturerStreamImpl has full authority over the subsequent management of the paStream
     pa_stream *paStream = InitPaStream(processConfig, sessionId, true);
     CHECK_AND_RETURN_RET_LOG(paStream != nullptr, ERR_OPERATION_FAILED, "Failed to init capture");
     std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(processConfig, paStream);
@@ -533,7 +537,8 @@ std::shared_ptr<IRendererStream> PaAdapterManager::CreateRendererStream(AudioPro
     std::shared_ptr<PaRendererStreamImpl> rendererStream =
         std::make_shared<PaRendererStreamImpl>(paStream, processConfig, mainLoop_);
     if (rendererStream->InitParams() != SUCCESS) {
-        AUDIO_ERR_LOG("Create rendererStream Failed");
+        int32_t error = pa_context_errno(context_);
+        AUDIO_ERR_LOG("Create rendererStream Failed, error: %{public}d", error);
         return nullptr;
     }
     return rendererStream;
@@ -546,7 +551,8 @@ std::shared_ptr<ICapturerStream> PaAdapterManager::CreateCapturerStream(AudioPro
     std::shared_ptr<PaCapturerStreamImpl> capturerStream =
         std::make_shared<PaCapturerStreamImpl>(paStream, processConfig, mainLoop_);
     if (capturerStream->InitParams() != SUCCESS) {
-        AUDIO_ERR_LOG("Create capturerStream Failed");
+        int32_t error = pa_context_errno(context_);
+        AUDIO_ERR_LOG("Create capturerStream Failed, error: %{public}d", error);
         return nullptr;
     }
     return capturerStream;

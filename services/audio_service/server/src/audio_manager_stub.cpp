@@ -104,6 +104,41 @@ int AudioManagerStub::HandleGetAsrNoiseSuppressionMode(MessageParcel &data, Mess
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleSetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply)
+{
+    AsrWhisperDetectionMode asrWhisperDetectionMode = (static_cast<AsrWhisperDetectionMode>(data.ReadInt32()));
+    int32_t result = SetAsrWhisperDetectionMode(asrWhisperDetectionMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply)
+{
+    AsrWhisperDetectionMode asrWhisperDetectionMode = (static_cast<AsrWhisperDetectionMode>(data.ReadInt32()));
+    int32_t ret = GetAsrWhisperDetectionMode(asrWhisperDetectionMode);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrWhisperDetection Mode audio parameters failed");
+    reply.WriteInt32(int32_t(asrWhisperDetectionMode));
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetAsrVoiceControlMode(MessageParcel &data, MessageParcel &reply)
+{
+    AsrVoiceControlMode asrVoiceControlMode = (static_cast<AsrVoiceControlMode>(data.ReadInt32()));
+    bool on = data.ReadBool();
+    int32_t result = SetAsrVoiceControlMode(asrVoiceControlMode, on);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetAsrVoiceMuteMode(MessageParcel &data, MessageParcel &reply)
+{
+    AsrVoiceMuteMode asrVoiceMuteMode = (static_cast<AsrVoiceMuteMode>(data.ReadInt32()));
+    bool on = data.ReadBool();
+    int32_t result = SetAsrVoiceMuteMode(asrVoiceMuteMode, on);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleIsWhispering(MessageParcel &data, MessageParcel &reply)
 {
     const std::string key = data.ReadString();
@@ -171,8 +206,8 @@ int AudioManagerStub::HandleSetAudioScene(MessageParcel &data, MessageParcel &re
     AudioScene audioScene = (static_cast<AudioScene>(data.ReadInt32()));
     std::vector<DeviceType> activeOutputDevices;
     int32_t vecSize = data.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(vecSize > 0 && vecSize <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT, AUDIO_ERR,
-        "HandleSetAudioScene failed");
+    CHECK_AND_RETURN_RET_LOG(vecSize > 0 && static_cast<size_t>(vecSize) <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+        AUDIO_ERR, "HandleSetAudioScene failed");
     for (int32_t i = 0; i < vecSize; i++) {
         DeviceType deviceType = (static_cast<DeviceType>(data.ReadInt32()));
         activeOutputDevices.push_back(deviceType);
@@ -196,8 +231,8 @@ int AudioManagerStub::HandleUpdateActiveDevicesRoute(MessageParcel &data, Messag
 {
     std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
     int32_t vecSize = data.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(vecSize > 0 && vecSize <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT, AUDIO_ERR,
-        "HandleUpdateActiveDevicesRoute failed");
+    CHECK_AND_RETURN_RET_LOG(vecSize > 0 && static_cast<size_t>(vecSize) <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+        AUDIO_ERR, "HandleUpdateActiveDevicesRoute failed");
     for (int32_t i = 0; i < vecSize; i++) {
         DeviceType deviceType = (static_cast<DeviceType>(data.ReadInt32()));
         DeviceFlag deviceFlag = (static_cast<DeviceFlag>(data.ReadInt32()));
@@ -579,6 +614,22 @@ int AudioManagerStub::HandleResetAudioEndpoint(MessageParcel &data, MessageParce
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleSuspendRenderSink(MessageParcel &data, MessageParcel &reply)
+{
+    std::string sinkName = data.ReadString();
+    int32_t ret = SuspendRenderSink(sinkName);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply)
+{
+    std::string sinkName = data.ReadString();
+    int32_t ret = SuspendRenderSink(sinkName);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleUpdateLatencyTimestamp(MessageParcel &data, MessageParcel &reply)
 {
     std::string timestamp = data.ReadString();
@@ -596,6 +647,12 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
         (this->*handlers[code])(data, reply));
     AUDIO_ERR_LOG("default case, need check AudioManagerStub");
     return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+}
+
+int AudioManagerStub::HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply)
+{
+    LoadHdiEffectModel();
+    return AUDIO_OK;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -84,6 +84,8 @@ public:
     int32_t Resume(void) override;
     int32_t Start(void) override;
     int32_t Stop(void) override;
+    int32_t SuspendRenderSink(void) override;
+    int32_t RestoreRenderSink(void) override;
     int32_t Drain(AudioDrainType type) override;
     int32_t SetBufferSize(uint32_t sizeMs) override;
 
@@ -122,19 +124,19 @@ public:
     ~OffloadAudioRendererSinkInner();
 private:
     IAudioSinkAttr attr_ = {};
-    bool rendererInited_;
-    bool started_;
-    bool isFlushing_;
-    bool startDuringFlush_;
-    uint64_t renderPos_;
-    float leftVolume_;
-    float rightVolume_;
+    bool rendererInited_ = false;
+    bool started_ = false;
+    bool isFlushing_ = false;
+    bool startDuringFlush_ = false;
+    uint64_t renderPos_ = 0;
+    float leftVolume_ = 0.0f;
+    float rightVolume_ = 0.0f;
     uint32_t renderId_ = 0;
-    std::string adapterNameCase_;
-    struct IAudioManager *audioManager_;
-    struct IAudioAdapter *audioAdapter_;
-    struct IAudioRender *audioRender_;
-    struct AudioAdapterDescriptor adapterDesc_;
+    std::string adapterNameCase_ = "";
+    struct IAudioManager *audioManager_ = nullptr;
+    struct IAudioAdapter *audioAdapter_ = nullptr;
+    struct IAudioRender *audioRender_ = nullptr;
+    struct AudioAdapterDescriptor adapterDesc_ = {};
     struct AudioPort audioPort_ = {};
     struct AudioCallbackService callbackServ = {};
     bool audioMonoState_ = false;
@@ -613,7 +615,7 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     renderPos_ += writeLen;
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    int64_t stampThreshold = 20;  // 20ms
+    int64_t stampThreshold = 50;  // 50ms
     if (stamp >= stampThreshold) {
         AUDIO_WARNING_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
     }
@@ -866,6 +868,16 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
             Start();
         }
     }).detach();
+    return SUCCESS;
+}
+
+int32_t OffloadAudioRendererSinkInner::SuspendRenderSink(void)
+{
+    return SUCCESS;
+}
+
+int32_t OffloadAudioRendererSinkInner::RestoreRenderSink(void)
+{
     return SUCCESS;
 }
 

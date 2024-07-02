@@ -81,6 +81,7 @@ public:
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
     void ClearAudioFocusInfoListOnAccountsChanged(const int &id);
     void AudioInterruptZoneDump(std::string &dumpString);
+    AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -146,7 +147,6 @@ private:
     void SendInterruptEvent(AudioFocuState oldState, AudioFocuState newState,
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
-    AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     void UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType);
     void SendFocusChangeEvent(const int32_t zoneId, int32_t callbackCategory, const AudioInterrupt &audioInterrupt);
     void RemoveClient(const int32_t zoneId, uint32_t sessionId);

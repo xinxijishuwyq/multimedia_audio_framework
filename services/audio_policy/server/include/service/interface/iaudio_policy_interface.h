@@ -47,6 +47,8 @@ public:
 
     virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
 
+    virtual int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType) = 0;
+
     virtual float GetSystemVolumeDb(AudioStreamType streamType) = 0;
 
     virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute) = 0;

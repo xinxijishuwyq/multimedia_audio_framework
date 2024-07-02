@@ -155,7 +155,7 @@ public:
     bool ReleaseAudioStream(bool releaseRunner = true) override;
 
     // Playback related APIs
-    bool DrainAudioStream() override;
+    bool DrainAudioStream(bool stopFlag = false) override;
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize) override;
     void SetPreferredFrameSize(int32_t frameSize) override;
@@ -265,14 +265,14 @@ private:
 
     uint32_t readLogTimes_ = 0;
 
-    std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
+    std::unique_ptr<AudioStreamTracker> audioStreamTracker_ = nullptr;
     bool streamTrackerRegistered_ = false;
 
-    AudioRendererInfo rendererInfo_; // not in use
-    AudioCapturerInfo capturerInfo_;
+    AudioRendererInfo rendererInfo_ = {}; // not in use
+    AudioCapturerInfo capturerInfo_ = {};
 
     int32_t bufferSizeInMsec_ = 20; // 20ms
-    std::string cachePath_;
+    std::string cachePath_ = "";
 
     // callback mode
     AudioCaptureMode capturerMode_ = CAPTURE_MODE_NORMAL;
@@ -871,7 +871,8 @@ bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 
     int64_t deltaPos = writePos >= currentReadPos ? static_cast<int64_t>(writePos - currentReadPos) : 0;
     int64_t tempLatency = 25000000; // 25000000 -> 25 ms
-    int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
+    int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND /
+        static_cast<int64_t>(streamParams_.samplingRate) * AUDIO_US_PER_S;
 
     handleTime = handleTime + deltaTime + tempLatency;
     timestamp.time.tv_sec = static_cast<time_t>(handleTime / AUDIO_NS_PER_SECOND);
@@ -1529,7 +1530,7 @@ int32_t CapturerInClientInner::FlushRingCache()
     return SUCCESS;
 }
 
-bool CapturerInClientInner::DrainAudioStream()
+bool CapturerInClientInner::DrainAudioStream(bool stopFlag)
 {
     AUDIO_ERR_LOG("Drain is not supported");
     return false;

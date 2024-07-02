@@ -1661,11 +1661,11 @@ int32_t AudioPolicyManager::UnsetAudioDeviceRefinerCallback()
     return gsp->UnsetAudioDeviceRefinerCallback();
 }
 
-int32_t AudioPolicyManager::TriggerFetchDevice()
+int32_t AudioPolicyManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return gsp->TriggerFetchDevice();
+    return gsp->TriggerFetchDevice(reason);
 }
 
 int32_t AudioPolicyManager::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)

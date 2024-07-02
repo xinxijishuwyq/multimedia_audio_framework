@@ -134,9 +134,9 @@ private:
     std::shared_ptr<IAudioDeviceAdapter> audioAdapter_ = nullptr;
     IAudioSourceCallback *paramCb_ = nullptr;
     sptr<IAudioCapture> audioCapture_ = nullptr;
-    struct AudioPort audioPort_;
+    struct AudioPort audioPort_ = {};
     IAudioSourceAttr attr_ = {};
-    std::string deviceNetworkId_;
+    std::string deviceNetworkId_ = "";
     uint32_t captureId_ = 0;
 
 #ifdef DEBUG_DIRECT_USE_HDI

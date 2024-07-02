@@ -385,6 +385,11 @@ int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType)
     return volumeDataMaintainer_.GetStreamVolume(streamType);
 }
 
+int32_t AudioAdapterManager::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
+{
+    return volumeDataMaintainer_.GetStreamVolume(streamType);
+}
+
 float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
 {
     int32_t volumeLevel = volumeDataMaintainer_.GetStreamVolume(streamType);
@@ -408,12 +413,12 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
         return SUCCESS;
     }
 
-    if (Util::IsDualToneStreamType(streamType)) {
-        AUDIO_INFO_LOG("Dual tone stream type %{public}d, mute %{public}d", streamType, mute);
-        volumeDataMaintainer_.SaveMuteStatus(DEVICE_TYPE_SPEAKER, streamType, mute);
-    } else {
-        volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
+    if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_SPEAKER) {
+        AUDIO_INFO_LOG("Dual tone stream type %{public}d, current active device:[%{public}d] is no speaker, dont mute",
+            streamType, mute);
+        return SUCCESS;
     }
+    volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
 
     // Achieve the purpose of adjusting the mute status by adjusting the stream volume.
     return SetVolumeDb(streamType);
@@ -568,6 +573,13 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
 {
+    if (!isLoaded_) {
+        AUDIO_ERR_LOG("The data base is not loaded. Can not load new volume for new device!");
+        // The ring volume is also saved in audio_config.para.
+        // So the boot animation can still play with right volume.
+        return;
+    }
+
     std::lock_guard<std::mutex> lock(muteStatusMutex_);
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
         SetVolumeDb(STREAM_MUSIC);
@@ -1705,8 +1717,8 @@ void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
     AppendFormat(dumpString, "  - SafeVolume: %d\n", safeVolume_);
     AppendFormat(dumpString, "  - BtSafeStatus: %s\n", statusBt.c_str());
     AppendFormat(dumpString, "  - SafeStatus: %s\n", status.c_str());
-    AppendFormat(dumpString, "  - ActiveBtSafeTime: %llu\n", safeActiveBtTime_);
-    AppendFormat(dumpString, "  - ActiveSafeTime: %llu\n", safeActiveTime_);
+    AppendFormat(dumpString, "  - ActiveBtSafeTime: %lld\n", safeActiveBtTime_);
+    AppendFormat(dumpString, "  - ActiveSafeTime: %lld\n", safeActiveTime_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

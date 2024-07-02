@@ -181,6 +181,16 @@ int32_t AudioRendererFileSink::Resume(void)
     return SUCCESS;
 }
 
+int32_t AudioRendererFileSink::SuspendRenderSink(void)
+{
+    return SUCCESS;
+}
+
+int32_t AudioRendererFileSink::RestoreRenderSink(void)
+{
+    return SUCCESS;
+}
+
 int32_t AudioRendererFileSink::Reset(void)
 {
     return SUCCESS;

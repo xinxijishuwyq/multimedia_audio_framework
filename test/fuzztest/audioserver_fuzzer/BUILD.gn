@@ -20,6 +20,7 @@ ohos_fuzztest("AudioServerFuzzTest") {
   fuzz_config_file = "../audioserver_fuzzer"
 
   include_dirs = [
+    "../../../frameworks/native/audioinnercall/include",
     "../../../frameworks/native/hdiadapter/sink/common",
     "../../../services/audio_service/server/include",
     "../../../services/audio_policy/client/include",

@@ -49,7 +49,6 @@ constexpr int32_t UID_CAAS_SA = 5527;
 constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
-constexpr int32_t UID_CAMERA = 1047;
 
 constexpr size_t FIRST_CHAR = 1;
 constexpr size_t MIN_LEN = 8;
@@ -65,8 +64,7 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_CAAS_SA,
     UID_DISTRIBUTED_AUDIO_SA,
     UID_FOUNDATION_SA,
-    UID_DISTRIBUTED_CALL_SA,
-    UID_CAMERA
+    UID_DISTRIBUTED_CALL_SA
 };
 
 const std::set<SourceType> NO_BACKGROUND_CHECK_SOURCE_TYPE = {
@@ -781,12 +779,12 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
     int32_t currentPeakIndex = -1;
     int32_t currentPeakSignal = SHRT_MIN;
     bool hasNoneZero = false;
-    size_t frameCount = bufferLen / channels_;
+    size_t frameCount = bufferLen / static_cast<size_t>(channels_);
     for (size_t index = 0; index < frameCount; index++) {
         int32_t tempMax = SHRT_MIN;
         int32_t tempMin = SHRT_MAX;
-        for (int channel = 0; channel < channels_; channel++) {
-            int16_t temp = buffer[index * static_cast<uint32_t>(channels_) + channel];
+        for (uint32_t channel = 0; channel < static_cast<uint32_t>(channels_); channel++) {
+            int32_t temp = buffer[index * static_cast<uint32_t>(channels_) + channel];
             tempMax = temp > tempMax ? temp : tempMax;
             tempMin = temp < tempMin ? temp : tempMin;
         }
@@ -902,6 +900,12 @@ bool AudioLatencyMeasurement::CheckIfEnabled()
     int32_t latencyMeasure = -1;
     GetSysPara("persist.multimedia.audiolatency", latencyMeasure);
     return (latencyMeasure == 1);
+}
+
+LatencyMonitor& LatencyMonitor::GetInstance()
+{
+    static LatencyMonitor latencyMonitor_;
+    return latencyMonitor_;
 }
 
 void LatencyMonitor::UpdateClientTime(bool isRenderer, std::string &timestamp)

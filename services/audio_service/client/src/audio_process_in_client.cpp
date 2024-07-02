@@ -454,8 +454,8 @@ void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize)
 {
     size_t originalSpanSizeInFrame = static_cast<size_t>(spanSizeInFrame_);
     size_t tmp = static_cast<size_t>(frameSize);
-    size_t count = static_cast<size_t>(frameSize / spanSizeInFrame_);
-    size_t rest = frameSize % spanSizeInFrame_;
+    size_t count = static_cast<size_t>(frameSize) / spanSizeInFrame_;
+    size_t rest = static_cast<size_t>(frameSize) % spanSizeInFrame_;
     if (tmp <= originalSpanSizeInFrame) {
         clientSpanSizeInFrame_ = originalSpanSizeInFrame;
     } else if (tmp >= MAX_TIMES * originalSpanSizeInFrame) {
@@ -1309,7 +1309,8 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
 
         threadStatus_ = SLEEPING;
         curTime = ClockTime::GetCurNano();
-        if (wakeUpTime > curTime && wakeUpTime - curTime < spanSizeInMs_ * ONE_MILLISECOND_DURATION + clientReadCost) {
+        if (wakeUpTime > curTime && wakeUpTime - curTime < static_cast<int64_t>(spanSizeInMs_) *
+            ONE_MILLISECOND_DURATION + clientReadCost) {
             ClockTime::AbsoluteSleep(wakeUpTime);
         } else {
             Trace trace("RecordBigWakeUpTime");
@@ -1560,7 +1561,7 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
         // start safe sleep
         threadStatus_ = SLEEPING;
         curTime = ClockTime::GetCurNano();
-        if (wakeUpTime - curTime > spanSizeInMs_ * ONE_MILLISECOND_DURATION + clientWriteCost) {
+        if (wakeUpTime - curTime > static_cast<int64_t>(spanSizeInMs_) * ONE_MILLISECOND_DURATION + clientWriteCost) {
             Trace trace("BigWakeUpTime curTime[" + std::to_string(curTime) + "] target[" + std::to_string(wakeUpTime) +
                 "] delay " + std::to_string(wakeUpTime - curTime) + "ns");
             AUDIO_WARNING_LOG("wakeUpTime is too late...");
@@ -1645,7 +1646,7 @@ bool AudioProcessInClientInner::PrepareNextIndependent(uint64_t curWritePos, int
     Trace prepareTrace("AudioEndpoint::PrepareNextLoop " + std::to_string(nextHandlePos));
     int64_t nextHdiReadTime = GetPredictNextHandleTime(nextHandlePos, true);
     uint64_t aheadTime = spanSizeInFrame_ * AUDIO_NS_PER_SECOND / processConfig_.streamInfo.samplingRate;
-    int64_t nextServerHandleTime = nextHdiReadTime - aheadTime;
+    int64_t nextServerHandleTime = nextHdiReadTime - static_cast<int64_t>(aheadTime);
     if (nextServerHandleTime < ClockTime::GetCurNano()) {
         wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION; // make sure less than duration
     } else {

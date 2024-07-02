@@ -367,7 +367,7 @@ public:
 
     int32_t UnsetAudioDeviceRefinerCallback();
 
-    int32_t TriggerFetchDevice();
+    int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
 

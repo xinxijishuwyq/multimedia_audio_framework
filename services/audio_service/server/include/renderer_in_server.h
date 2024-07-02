@@ -48,7 +48,7 @@ public:
     int32_t Start();
     int32_t Pause();
     int32_t Flush();
-    int32_t Drain();
+    int32_t Drain(bool stopFlag = false);
     int32_t Stop();
     int32_t Release();
 
@@ -92,6 +92,7 @@ public:
 
     int32_t GetStreamManagerType() const noexcept;
     int32_t SetSilentModeAndMixWithOthers(bool on);
+    int32_t SetClientVolume();
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -142,6 +143,7 @@ private:
     bool isNeedFade_ = false;
     float oldAppliedVolume_ = MAX_FLOAT_VOLUME;
     std::mutex updateIndexLock_;
+    uint32_t underrunCount_ = 0;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
     std::mutex writeLock_;

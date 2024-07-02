@@ -68,6 +68,7 @@ public:
     int32_t Peek(std::vector<char> *audioBuffer, int32_t &index) override;
     int32_t ReturnIndex(int32_t index) override;
     AudioProcessConfig GetAudioProcessConfig() const noexcept override;
+    int32_t SetClientVolume(float clientVolume) override;
 
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);

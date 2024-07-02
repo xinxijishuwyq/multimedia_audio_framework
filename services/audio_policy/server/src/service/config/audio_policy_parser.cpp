@@ -346,17 +346,6 @@ void AudioPolicyParser::ParsePipes(xmlNode &node, AudioAdapterInfo &adapterInfo)
     adapterInfo.pipeInfos_ = pipeInfos;
 }
 
-void AudioPolicyParser::SplitStringToSet(std::string &str, std::set<uint32_t> &result)
-{
-    std::stringstream ss(str);
-    std::string token;
-
-    while (std::getline(ss, token, ',')) {
-        uint32_t num = static_cast<uint32_t>(std::stoi(token));
-        result.insert(num);
-    }
-}
-
 void AudioPolicyParser::SplitChannelStringToSet(std::string &str, std::set<uint32_t> &result)
 {
     std::stringstream ss(str);
