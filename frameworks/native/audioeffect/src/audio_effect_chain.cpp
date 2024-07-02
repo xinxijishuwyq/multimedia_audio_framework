@@ -122,7 +122,7 @@ void AudioEffectChain::SetEffectMode(const std::string &mode)
 
 void AudioEffectChain::SetEffectRssType(const std::string &rssType)
 {
-    effectChainRssType_ = static_cast<int32_t>(std::stoi(rssType_));
+    effectChainRssType_ = static_cast<int32_t>(std::stoi(rssType));
 }
 
 void AudioEffectChain::SetEffectCurrSceneType(AudioEffectScene currSceneType)

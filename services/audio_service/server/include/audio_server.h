@@ -179,7 +179,7 @@ private:
     const std::string GetUsbParameter();
     void WriteServiceStartupError();
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
-    void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
+    void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &rssType);
 
 private:

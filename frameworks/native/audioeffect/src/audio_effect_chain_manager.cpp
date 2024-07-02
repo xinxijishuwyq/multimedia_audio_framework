@@ -314,7 +314,7 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(const std::string
 
     std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
     if (SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         if (!SceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) ||
             SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] < 1) {
@@ -416,7 +416,7 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
 
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
     if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
         return SUCCESS;
@@ -424,7 +424,7 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
         SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] > 1) {
         SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey]--;
         if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
-            SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] && sceneType != COMMON_SCENE_TYPE) {
+            SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] && sceneType != "SCENE_OTHERS") {
             SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey]--;
         }
         return SUCCESS;
@@ -433,7 +433,11 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
     if (SceneTypeToSpecialEffectSet_.count(sceneType)) {
         SceneTypeToSpecialEffectSet_.erase(sceneType);
     }
-    CheckAndReleaseCommonEffectChain(sceneType);
+    if (SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] < 1) {
+        SceneTypeToEffectChainMap_.erase(commonSceneTypeAndDeviceKey);
+        SceneTypeToEffectChainCountMap_.erase(commonSceneTypeAndDeviceKey);
+        isCommonEffectChainExisted_ = false;
+    }
     SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
     SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
 
@@ -753,15 +757,13 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
     uint64_t &channelLayout)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
+    if (!SceneTypeToSessionIDMap_.count(sceneType)) {
         return ERROR;
     }
-    for (auto &[scene, session] : SceneTypeToSessionIDMap_) {
-        std::string pairSceneTypeAndDeviceKey = scene + "_&_" + GetDeviceTypeName();
-        if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
-            SceneTypeToEffectChainMap_[pairSceneTypeAndDeviceKey]) {
-            FindMaxEffectChannels(scene, session, channels, channelLayout);
+    for (auto& scenePair : SceneTypeToSessionIDMap_) {
+        if (sceneType == scenePair.first || !SceneTypeToSpecialEffectSet_.count(sceneType)) {
+            std::set<std::string> sessions = scenePair.second;
+            FindMaxEffectChannels(sceneType, sessions, channels, channelLayout);
         }
     }
     return SUCCESS;
@@ -1125,13 +1127,12 @@ void AudioEffectChainManager::UpdateRealAudioEffect()
             FindMaxSessionID(maxSessionID, sceneType, scenePair.first, sessions);
         }
     }
-    std::string key = sceneType + "_&_" + GetDeviceTypeName();
-    if (!sceneType.empty() && SceneTypeToEffectChainMap_.count(key)) {
+    if (!sceneType.empty()) {
+        std::string key = sceneType + "_&_" + GetDeviceTypeName();
         std::shared_ptr<AudioEffectChain> audioEffectChain = SceneTypeToEffectChainMap_[key];
         AudioEffectScene currSceneType;
         UpdateCurrSceneType(currSceneType, sceneType);
-        audioEffectChain->SetEffectCurrSceneType(currSceneType);
-        audioEffectChain->UpdateEffectParam();
+        audioEffectChain->SetEffectParam(currSceneType);
     }
 }
 
@@ -1140,7 +1141,7 @@ bool AudioEffectChainManager::CheckSceneTypeMatch(const std::string &sinkSceneTy
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string sinkSceneTypeAndDeviceKey = sinkSceneType + "_&_" + GetDeviceTypeName();
-    std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
     if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) ||
         !SceneTypeToEffectChainMap_.count(sinkSceneTypeAndDeviceKey)) {
         return false;
@@ -1169,10 +1170,10 @@ void AudioEffectChainManager::UpdateCurrSceneType(AudioEffectScene &currSceneTyp
 void AudioEffectChainManager::ChangeEffectChainCountMapForCreate(const std::string &sceneType)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
     SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey]++;
     if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
-        SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] && sceneType != COMMON_SCENE_TYPE) {
+        SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] && sceneType != "SCENE_OTHERS") {
         SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey]++;
     }
 }
@@ -1214,9 +1215,9 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
 {
     std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
 
-    if ((DEFAULT_NUM_EFFECT_INSTANCES - SceneTypeToSpecialEffectSet_.size()) > 1 && sceneType != COMMON_SCENE_TYPE) {
+    if ((DEFAULT_NUM_EFFECT_INSTANCES - SceneTypeToSpecialEffectSet_.size()) > 1 && sceneType != "SCENE_OTHERS") {
         SceneTypeToSpecialEffectSet_.insert(sceneType);
 #ifdef SENSOR_ENABLE
         audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker_);
@@ -1226,11 +1227,11 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
     } else {
         if (!isCommonEffectChainExisted_) {
 #ifdef SENSOR_ENABLE
-            audioEffectChain = std::make_shared<AudioEffectChain>(COMMON_SCENE_TYPE, headTracker_);
+            audioEffectChain = std::make_shared<AudioEffectChain>("SCENE_OTHERS", headTracker_);
 #else
-            audioEffectChain = std::make_shared<AudioEffectChain>(COMMON_SCENE_TYPE);
+            audioEffectChain = std::make_shared<AudioEffectChain>("SCENE_OTHERS");
 #endif
-            if (sceneType != COMMON_SCENE_TYPE) {
+            if (sceneType != "SCENE_OTHERS") {
                 SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] = audioEffectChain;
                 SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] = 1;
             }
@@ -1241,24 +1242,6 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
         }
     }
     return audioEffectChain;
-}
-
-void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string &sceneType)
-{
-    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
-    if (!isCommonEffectChainExisted_) {
-        return;
-    }
-    if (SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] == SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]) {
-        if (SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] <= 1) {
-            SceneTypeToEffectChainMap_.erase(commonSceneTypeAndDeviceKey);
-            SceneTypeToEffectChainCountMap_.erase(commonSceneTypeAndDeviceKey);
-            isCommonEffectChainExisted_ = false;
-        } else {
-            SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey]--;
-        }
-    }
 }
 
 #ifdef WINDOW_MANAGER_ENABLE
