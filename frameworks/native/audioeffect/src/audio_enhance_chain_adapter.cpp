@@ -31,13 +31,13 @@ using namespace OHOS::AudioStandard;
 constexpr int32_t SAMPLE_FORMAT_U8 = 8;
 constexpr int32_t SAMPLE_FORMAT_S16LE = 16;
 constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
-constexpr int32_t SAMPLE_FORMAT_S362LE = 32;
+constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
 
 const std::map<int32_t, pa_sample_format_t> FORMAT_CONVERT_MAP {
     {SAMPLE_FORMAT_U8, PA_SAMPLE_U8},
     {SAMPLE_FORMAT_S16LE, PA_SAMPLE_S16LE},
     {SAMPLE_FORMAT_S24LE, PA_SAMPLE_S24LE},
-    {SAMPLE_FORMAT_S362LE, PA_SAMPLE_S32LE},
+    {SAMPLE_FORMAT_S32LE, PA_SAMPLE_S32LE},
 };
 
 int32_t EnhanceChainManagerCreateCb(const char *sceneType, const char *enhanceMode, const char *upDevice,
@@ -148,9 +148,9 @@ int32_t EnhanceChainManagerInitEnhanceBuffer()
     AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
         ERROR, "null audioEnhanceChainManager");
-    if (!audioEnhanceChainMananger->IsEmptyEnhanceChain()) {
-        return audioEnhanceChainMananger->InitEnhanceBuffer();
+    if (audioEnhanceChainMananger->IsEmptyEnhanceChain()) {
+        AUDIO_DEBUG_LOG("audioEnhanceChainMananger is empty EnhanceChain.");
+        return ERROR;
     }
-    AUDIO_DEBUG_LOG("audioEnhanceChainMananger is empty EnhanceChain.");
-    return ERROR;
+    return audioEnhanceChainMananger->InitEnhanceBuffer();
 }
