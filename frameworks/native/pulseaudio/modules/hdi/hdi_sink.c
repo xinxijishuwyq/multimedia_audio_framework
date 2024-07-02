@@ -2818,6 +2818,16 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
     }
 }
 
+static void ResetFadeoutPause(pa_sink_input *i, pa_sink_input_state_t state)
+{
+    bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
+    bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
+    if (corking || starting) {
+        AUDIO_INFO_LOG("set fadeoutPause to 0");
+        pa_proplist_sets(i->proplist, "fadeoutPause", "0");
+    }
+}
+
 static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
 {
     struct Userdata *u = NULL;
@@ -2827,6 +2837,7 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     pa_assert(i->sink);
     if (!strcmp(i->sink->name, SINK_NAME_INNER_CAPTURER) ||
         !strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER)) {
+        ResetFadeoutPause(i, state);
         AUDIO_INFO_LOG("PaInputStateChangeCb inner_cap return");
         return;
     }
