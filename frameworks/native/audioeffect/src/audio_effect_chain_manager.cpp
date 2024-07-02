@@ -368,7 +368,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
     }
 
     audioEffectChain->SetEffectMode(effectMode);
-    audioEffectChain->SetEffectrssType(rssType_);
+    audioEffectChain->SetEffectRssType(rssType_);
     for (std::string effect: EffectChainToEffectsMap_[effectChain]) {
         AudioEffectHandle handle = nullptr;
         AudioEffectDescriptor descriptor;
