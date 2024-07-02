@@ -1132,7 +1132,8 @@ void AudioEffectChainManager::UpdateRealAudioEffect()
         std::shared_ptr<AudioEffectChain> audioEffectChain = SceneTypeToEffectChainMap_[key];
         AudioEffectScene currSceneType;
         UpdateCurrSceneType(currSceneType, sceneType);
-        audioEffectChain->SetEffectParam(currSceneType);
+        audioEffectChain->SetEffectCurrSceneType(currSceneType);
+        audioEffectChain->UpdateEffectParam();
     }
 }
 
