@@ -185,6 +185,7 @@ private:
     int32_t hdiEffectMode_ = 0;
     bool isCommonEffectChainExisted_ = false;
     bool debugArmFlag_ = false;
+    int32_t commonEffectChainCount_ = 0;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

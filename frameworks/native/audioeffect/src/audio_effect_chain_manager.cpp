@@ -332,8 +332,7 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(const std::string
         return ERROR;
     }
     std::string effectMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
-    if (!SceneTypeToSpecialEffectSet_.count(sceneType) &&
-        SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] > 1) {
+    if (!SceneTypeToSpecialEffectSet_.count(sceneType) && commonEffectChainCount_ > 1) {
         return SUCCESS;
     }
     if (SetAudioEffectChainDynamic(sceneType, effectMode) != SUCCESS) {
@@ -422,9 +421,8 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
     } else if (SceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
         SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] > 1) {
         SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey]--;
-        if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
-            SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] && sceneType != COMMON_SCENE_TYPE) {
-            SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey]--;
+        if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey]) {
+            commonEffectChainCount_--;
         }
         return SUCCESS;
     }
@@ -1151,7 +1149,7 @@ void AudioEffectChainManager::ChangeEffectChainCountMapForCreate(const std::stri
     SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey]++;
     if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
         SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] && sceneType != COMMON_SCENE_TYPE) {
-        SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey]++;
+        commonEffectChainCount_++;
     }
 }
 
@@ -1210,12 +1208,12 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
 #endif
             if (sceneType != COMMON_SCENE_TYPE) {
                 SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] = audioEffectChain;
-                SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] = 1;
             }
+            commonEffectChainCount_ = 1;
             isCommonEffectChainExisted_ = true;
         } else {
             audioEffectChain = SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey];
-            SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey]++;
+            commonEffectChainCount_++;
         }
     }
     return audioEffectChain;
@@ -1228,12 +1226,13 @@ void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string
         return;
     }
     if (SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] == SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]) {
-        if (SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] <= 1) {
+        if (commonEffectChainCount_ <= 1) {
             SceneTypeToEffectChainMap_.erase(commonSceneTypeAndDeviceKey);
             SceneTypeToEffectChainCountMap_.erase(commonSceneTypeAndDeviceKey);
+            commonEffectChainCount_= 0;
             isCommonEffectChainExisted_ = false;
         } else {
-            SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey]--;
+            commonEffectChainCount_--;
         }
     }
 }
