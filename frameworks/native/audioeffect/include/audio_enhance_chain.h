@@ -25,13 +25,13 @@
 namespace OHOS {
 namespace AudioStandard {
 
-typedef struct EnhanceBuffer {
+struct EnhanceBuffer {
     std::vector<uint8_t> ecBuffer;  // ref data = mic data * 2
     std::vector<uint8_t> micBufferIn; // mic data input
     std::vector<uint8_t> micBufferOut; // mic data output
     uint32_t length;  // mic length
     uint32_t lengthEc;  // EC length
-} EnhanceBuffer;
+};
 
 struct AlgoAttr {
     uint32_t bitDepth;
