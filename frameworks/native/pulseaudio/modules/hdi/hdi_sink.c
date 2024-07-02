@@ -1788,7 +1788,7 @@ static void CheckIfCommonSceneTypeZeroVolume()
             g_effectAllStreamVolumeZeroMap[COMMON_SCENE_TYPE_INDEX] = false;
             break;
         }
-    }  
+    }
 }
 
 static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
