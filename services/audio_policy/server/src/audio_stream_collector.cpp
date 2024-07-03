@@ -728,8 +728,7 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo->clientUID == clientUid &&
-            streamSetStateEventInternal.streamUsage == changeInfo->rendererInfo.streamUsage &&
-            GetAndCompareStreamType(streamSetStateEventInternal.streamUsage, changeInfo->rendererInfo)) {
+            streamSetStateEventInternal.streamUsage == changeInfo->rendererInfo.streamUsage) {
             AUDIO_INFO_LOG("UpdateStreamState Found matching uid=%{public}d and usage=%{public}d",
                 clientUid, streamSetStateEventInternal.streamUsage);
             std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
