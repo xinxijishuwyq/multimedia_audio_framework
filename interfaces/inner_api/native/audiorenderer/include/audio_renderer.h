@@ -860,31 +860,13 @@ public:
      */
     virtual void SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback) = 0;
 
-    /**
-     * @brief Registers the renderer event callback listener.
-     *
-     * @param clientPid client PID
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 10
-     */
-    virtual int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
-        const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback);
-
-    /**
-     * @brief Unregisters the renderer event callback listener.
-     *
-     * @param clientPid client PID
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 10
-     */
-    virtual int32_t UnregisterAudioRendererEventListener(const int32_t clientPid);
-
     virtual int32_t RegisterOutputDeviceChangeWithInfoCallback(
         const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) = 0;
 
     virtual int32_t UnregisterOutputDeviceChangeWithInfoCallback() = 0;
+
+    virtual int32_t UnregisterOutputDeviceChangeWithInfoCallback(
+        const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) = 0;
 
     /**
      * @brief Register audio policy service died callback.
@@ -906,12 +888,6 @@ public:
      * @since 10
      */
     virtual int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid) = 0;
-
-    /**
-     * @brief Destory callback instance when unregister renderer event listener.
-     * @since 10
-     */
-    virtual void DestroyAudioRendererStateCallback() = 0;
 
     /**
      * @brief Sets channel blend mode for audio stream.

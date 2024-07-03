@@ -75,7 +75,6 @@ AudioRendererPrivate::~AudioRendererPrivate()
     std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback = outputDeviceChangeCallback_;
     if (outputDeviceChangeCallback != nullptr) {
         outputDeviceChangeCallback->RemoveCallback();
-        outputDeviceChangeCallback->RemoveOldCallback();
         outputDeviceChangeCallback->UnsetAudioRendererObj();
     }
     AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionID_);
@@ -1306,25 +1305,6 @@ void AudioRendererPrivate::SetAudioRendererErrorCallback(std::shared_ptr<AudioRe
     audioRendererErrorCallback_ = errorCallback;
 }
 
-int32_t AudioRendererPrivate::RegisterAudioRendererEventListener(const int32_t clientPid,
-    const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback)
-{
-    AUDIO_INFO_LOG("RegisterAudioRendererEventListener client id: %{public}d", clientPid);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
-
-    CHECK_AND_RETURN_RET_LOG(GetCurrentOutputDevices(currentDeviceInfo_) == SUCCESS, ERROR,
-        "get current device info failed");
-
-    if (callback == nullptr) {
-        AUDIO_ERR_LOG("callback is null");
-        return ERR_INVALID_PARAM;
-    }
-
-    outputDeviceChangeCallback_->SaveOldCallback(callback);
-    AUDIO_DEBUG_LOG("successful!");
-    return SUCCESS;
-}
-
 int32_t AudioRendererPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
     const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback)
 {
@@ -1341,45 +1321,34 @@ int32_t AudioRendererPrivate::UnregisterAudioPolicyServerDiedCb(const int32_t cl
     return AudioPolicyManager::GetInstance().UnregisterAudioPolicyServerDiedCb(clientPid);
 }
 
-void AudioRendererPrivate::DestroyAudioRendererStateCallback()
-{
-    outputDeviceChangeCallback_->RemoveOldCallback();
-}
-
-int32_t AudioRendererPrivate::UnregisterAudioRendererEventListener(const int32_t clientPid)
-{
-    AUDIO_INFO_LOG("client id: %{public}d", clientPid);
-    outputDeviceChangeCallback_->RemoveOldCallback();
-
-    return SUCCESS;
-}
-
 int32_t AudioRendererPrivate::RegisterOutputDeviceChangeWithInfoCallback(
     const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback)
 {
-    AUDIO_INFO_LOG("RegisterOutputDeviceChangeWithInfoCallback");
+    AUDIO_INFO_LOG("in");
     if (callback == nullptr) {
         AUDIO_ERR_LOG("callback is null");
         return ERR_INVALID_PARAM;
     }
 
     outputDeviceChangeCallback_->SaveCallback(callback);
-    AUDIO_DEBUG_LOG("RegisterOutputDeviceChangeWithInfoCallback successful!");
+    AUDIO_DEBUG_LOG("successful!");
     return SUCCESS;
 }
 
 int32_t AudioRendererPrivate::UnregisterOutputDeviceChangeWithInfoCallback()
 {
-    AUDIO_INFO_LOG("UnregisterAudioCapturerEventListener");
-
-    uint32_t sessionId;
-    int32_t ret = GetAudioStreamId(sessionId);
-    if (ret) {
-        AUDIO_ERR_LOG("UnregisterOutputDeviceChangeWithInfoCallback Get sessionId failed");
-        return ret;
-    }
+    AUDIO_INFO_LOG("Unregister all");
 
     outputDeviceChangeCallback_->RemoveCallback();
+    return SUCCESS;
+}
+
+int32_t AudioRendererPrivate::UnregisterOutputDeviceChangeWithInfoCallback(
+    const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("in");
+
+    outputDeviceChangeCallback_->RemoveCallback(callback);
     return SUCCESS;
 }
 
@@ -1532,17 +1501,23 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
     const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason)
 {
     AUDIO_INFO_LOG("OnRendererStateChange");
-    std::shared_ptr<AudioRendererOutputDeviceChangeCallback> cb;
+    std::vector<std::shared_ptr<AudioRendererOutputDeviceChangeCallback>> callbacks;
     std::shared_ptr<AudioRendererDeviceChangeCallback> oldCb;
 
-    cb = callback_;
-    oldCb = oldCallback_;
-
-    if (cb != nullptr) {
-        AUDIO_INFO_LOG("sessionId: %{public}u, deviceType: %{public}d reason: %{public}d",
-            sessionId, static_cast<int>(deviceInfo.deviceType), static_cast<int>(reason));
-        cb->OnOutputDeviceChange(deviceInfo, reason);
+    {
+        std::lock_guard<std::mutex> lock(callbackMutex_);
+        callbacks = callbacks_;
+        oldCb = oldCallback_;
     }
+
+    for (auto &cb : callbacks) {
+        if (cb != nullptr) {
+            cb->OnOutputDeviceChange(deviceInfo, reason);
+        }
+    }
+
+    AUDIO_INFO_LOG("sessionId: %{public}u, deviceType: %{public}d reason: %{public}d size: %{public}zu",
+        sessionId, static_cast<int>(deviceInfo.deviceType), static_cast<int>(reason), callbacks.size());
 
     if (oldCb != nullptr) {
         AUDIO_INFO_LOG("sessionId: %{public}u, deviceType: %{public}d",

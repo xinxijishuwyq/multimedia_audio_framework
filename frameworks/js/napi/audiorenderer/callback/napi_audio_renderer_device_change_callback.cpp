@@ -103,7 +103,8 @@ int32_t NapiAudioRendererDeviceChangeCallback::GetCallbackListSize() const
     return callbacks_.size();
 }
 
-void NapiAudioRendererDeviceChangeCallback::OnStateChange(const DeviceInfo &deviceInfo)
+void NapiAudioRendererDeviceChangeCallback::OnOutputDeviceChange(const DeviceInfo &deviceInfo,
+    const AudioStreamDeviceChangeReason reason)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto ref = callbacks_.begin(); ref != callbacks_.end(); ++ref) {
