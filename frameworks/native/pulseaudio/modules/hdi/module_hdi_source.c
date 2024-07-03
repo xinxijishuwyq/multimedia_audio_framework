@@ -28,10 +28,7 @@
 #include <pulsecore/namereg.h>
 
 #include "audio_log.h"
-#include "audio_source_type.h"
 #include "audio_enhance_chain_adapter.h"
-
-#define SCENE_KEY_MAX_LEN 100
 
 pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver);
 void PaHdiSourceFree(pa_source *s);
@@ -89,6 +86,7 @@ static pa_hook_result_t SourceOutputProplistChangedCb(pa_core *c, pa_source_outp
 
 static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so)
 {
+    AUDIO_DEBUG_LOG("Trigger SourceOutputPutCb");
     pa_assert(c);
     const char *sceneType = pa_proplist_gets(so->proplist, "scene.type");
     const char *sceneMode = pa_proplist_gets(so->proplist, "scene.mode");
@@ -96,7 +94,7 @@ static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so)
     const char *downDevice = pa_proplist_gets(so->proplist, "device.down");
     int32_t ret = EnhanceChainManagerCreateCb(sceneType, sceneMode, upDevice, downDevice);
     if (ret != 0) {
-        return PA_HOOK_STOP;
+        return PA_HOOK_OK;
     }
     EnhanceChainManagerInitEnhanceBuffer();
     return PA_HOOK_OK;
@@ -104,6 +102,7 @@ static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so)
 
 static pa_hook_result_t SourceOutputUnlinkCb(pa_core *c, pa_source_output *so)
 {
+    AUDIO_DEBUG_LOG("Trigger SourceOutputUnlinkCb");
     pa_assert(c);
     const char *sceneType = pa_proplist_gets(so->proplist, "scene.type");
     const char *upDevice = pa_proplist_gets(so->proplist, "device.up");

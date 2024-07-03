@@ -23,7 +23,6 @@
 #include "securec.h"
 #include "audio_log.h"
 #include "audio_errors.h"
-#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,7 +32,7 @@ const uint32_t MILLISECOND = 1000;
 const uint32_t DEFAULT_FRAMELENGTH = 20;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_DATAFORMAT = 16;
-const uint32_t DEFAULT_REF_NUM = 0;
+const uint32_t DEFAULT_REF_NUM = 0;  // if sceneType is voip, refNum is 8
 const uint32_t DEFAULT_MIC_NUM = 4;
 const uint32_t DEFAULT_OUT_NUM = 4;
 
@@ -109,13 +108,12 @@ bool AudioEnhanceChain::IsEmptyEnhanceHandles()
     return standByEnhanceHandles_.size() == 0;
 }
 
-AudioBufferConfig AudioEnhanceChain::GetAlgoConfig()
+void AudioEnhanceChain::GetAlgoConfig(AudioBufferConfig &algoConfig)
 {
-    AudioBufferConfig algoConfig;
     algoConfig.samplingRate = algoSupportedConfig_.sampleRate;
     algoConfig.channels = algoSupportedConfig_.micNum;
     algoConfig.format = static_cast<uint8_t>(algoSupportedConfig_.dataFormat);
-    return algoConfig;
+    return;
 }
 
 uint32_t AudioEnhanceChain::GetAlgoBufferSize()

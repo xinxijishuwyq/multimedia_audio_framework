@@ -317,7 +317,8 @@ AudioBufferConfig AudioEnhanceChainManager::AudioEnhanceChainGetAlgoConfig(const
     auto audioEnhanceChain = sceneTypeToEnhanceChainMap_[sceneTypeAndDeviceKey];
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChain != nullptr, config, "[%{public}s] get config faild",
         sceneTypeAndDeviceKey.c_str());
-    return audioEnhanceChain->GetAlgoConfig();
+    audioEnhanceChain->GetAlgoConfig(config);
+    return config;
 }
 
 bool AudioEnhanceChainManager::IsEmptyEnhanceChain()

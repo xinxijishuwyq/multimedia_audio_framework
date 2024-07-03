@@ -26,7 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 struct EnhanceBuffer {
-    std::vector<uint8_t> ecBuffer;  // ref data = mic data * 2
+    std::vector<uint8_t> ecBuffer;  // voip: ref data = mic data * 2
     std::vector<uint8_t> micBufferIn; // mic data input
     std::vector<uint8_t> micBufferOut; // mic data output
     uint32_t length;  // mic length
@@ -54,7 +54,7 @@ public:
     ~AudioEnhanceChain();
     void AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle);
     bool IsEmptyEnhanceHandles();
-    AudioBufferConfig GetAlgoConfig();
+    void GetAlgoConfig(AudioBufferConfig &algoConfig);
     uint32_t GetAlgoBufferSize();
     uint32_t GetAlgoBufferSizeEc();
 
