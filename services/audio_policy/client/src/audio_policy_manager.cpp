@@ -782,10 +782,10 @@ int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t clientPid,
+int32_t AudioPolicyManager::RegisterAudioRendererEventListener(
     const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManager::RegisterAudioRendererEventListener");
+    AUDIO_DEBUG_LOG("in");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "RendererEvent Listener callback is nullptr");
@@ -807,12 +807,28 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t cli
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(const int32_t clientPid)
+int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(
+    const std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> &callbacks)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterAudioRendererEventListener");
+    AUDIO_DEBUG_LOG("in");
     std::lock_guard<std::mutex> lockCbMap(rendererStateMutex_);
     if ((audioPolicyClientStubCB_ != nullptr) && isAudioRendererEventListenerRegistered) {
-        audioPolicyClientStubCB_->RemoveRendererStateChangeCallback();
+        audioPolicyClientStubCB_->RemoveRendererStateChangeCallback(callbacks);
+        if (audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize() == 0) {
+            SetClientCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, false);
+        }
+        isAudioRendererEventListenerRegistered = false;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(
+    const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("in");
+    std::lock_guard<std::mutex> lockCbMap(rendererStateMutex_);
+    if ((audioPolicyClientStubCB_ != nullptr) && isAudioRendererEventListenerRegistered) {
+        audioPolicyClientStubCB_->RemoveRendererStateChangeCallback(callback);
         if (audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize() == 0) {
             SetClientCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, false);
         }
@@ -864,15 +880,15 @@ int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t c
 int32_t AudioPolicyManager::RegisterDeviceChangeWithInfoCallback(
     const uint32_t sessionID, const std::shared_ptr<DeviceChangeWithInfoCallback> &callback)
 {
-    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
+    AUDIO_DEBUG_LOG("In");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
-        AUDIO_ERR_LOG("RegisterAudioRendererEventListener: audio policy manager proxy is NULL.");
+        AUDIO_ERR_LOG("proxy is NULL.");
         return ERROR;
     }
 
     if (callback == nullptr) {
-        AUDIO_ERR_LOG("RegisterAudioRendererEventListener: RendererEvent Listener callback is nullptr");
+        AUDIO_ERR_LOG("callback is nullptr");
         return ERR_INVALID_PARAM;
     }
 
@@ -889,7 +905,7 @@ int32_t AudioPolicyManager::RegisterDeviceChangeWithInfoCallback(
 
 int32_t AudioPolicyManager::UnregisterDeviceChangeWithInfoCallback(const uint32_t sessionID)
 {
-    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
+    AUDIO_DEBUG_LOG("In");
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveDeviceChangeWithInfoCallback(sessionID);
     }

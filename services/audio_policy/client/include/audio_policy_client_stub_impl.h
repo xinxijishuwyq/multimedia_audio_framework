@@ -48,7 +48,10 @@ public:
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &cb);
     int32_t RemovePreferredInputDeviceChangeCallback();
     int32_t AddRendererStateChangeCallback(const std::shared_ptr<AudioRendererStateChangeCallback> &cb);
-    int32_t RemoveRendererStateChangeCallback();
+    int32_t RemoveRendererStateChangeCallback(
+        const std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> &callbacks);
+    int32_t RemoveRendererStateChangeCallback(
+        const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
     size_t GetRendererStateChangeCallbackSize() const;
     int32_t AddCapturerStateChangeCallback(const std::shared_ptr<AudioCapturerStateChangeCallback> &cb);
     int32_t RemoveCapturerStateChangeCallback();
@@ -98,7 +101,8 @@ private:
     std::vector<std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>> preferredOutputDeviceCallbackList_;
     std::vector<std::shared_ptr<AudioPreferredInputDeviceChangeCallback>> preferredInputDeviceCallbackList_;
-    std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbackList_;
+    std::unordered_map<AudioRendererStateChangeCallback*,
+        std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbackList_;
     std::vector<std::weak_ptr<AudioCapturerStateChangeCallback>> capturerStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledChangeCallbackList_;
     std::vector<std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledChangeCallbackList_;

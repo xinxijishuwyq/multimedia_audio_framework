@@ -28,7 +28,6 @@ config("audio_renderer_config") {
     "-Wall",
     "-Werror",
   ]
-
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
   }
@@ -55,11 +54,7 @@ ohos_shared_library("audio_renderer") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
   ]
-  if (sonic_enable == true) {
-    external_deps += [ "pulseaudio:sonic" ]
-  }
 
   public_configs = [ ":audio_external_library_config" ]
 

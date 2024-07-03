@@ -126,6 +126,7 @@ public:
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
+     * @deprecated since 12
      */
     int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
                                               const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
@@ -137,8 +138,29 @@ public:
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
+     * @deprecated since 12
      */
     int32_t UnregisterAudioRendererEventListener(const int32_t clientPid);
+
+    /**
+     * @brief Registers the renderer event callback listener.
+     *
+     * @param callback
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 12
+     */
+    int32_t RegisterAudioRendererEventListener(const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
+
+    /**
+     * @brief Unregisters the renderer event callback listener.
+     *
+     * @param callback need to unregister.
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 12
+     */
+    int32_t UnregisterAudioRendererEventListener(const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
     /**
      * @brief Registers the capturer event callback listener.
@@ -219,6 +241,10 @@ public:
      * @since 11
      */
     int32_t GetHardwareOutputSamplingRate(sptr<AudioDeviceDescriptor> &desc);
+
+private:
+    std::mutex rendererStateChangeCallbacksMutex_;
+    std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbacks_;
 };
 
 static const std::map<std::string, AudioEffectMode> effectModeMap = {

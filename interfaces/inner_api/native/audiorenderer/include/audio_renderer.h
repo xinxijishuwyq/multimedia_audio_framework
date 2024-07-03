@@ -886,8 +886,6 @@ public:
 
     virtual int32_t UnregisterOutputDeviceChangeWithInfoCallback() = 0;
 
-    virtual void DestroyOutputDeviceChangeWithInfoCallback() = 0;
-
     /**
      * @brief Register audio policy service died callback.
      *

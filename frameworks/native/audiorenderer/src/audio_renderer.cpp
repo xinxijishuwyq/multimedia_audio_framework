@@ -17,6 +17,8 @@
 
 #include <sstream>
 #include "securec.h"
+#include <atomic>
+#include <memory>
 
 #include "audio_renderer.h"
 #include "audio_renderer_private.h"
@@ -69,15 +71,11 @@ AudioRendererPrivate::~AudioRendererPrivate()
 {
     AUDIO_INFO_LOG("Destruct in");
     abortRestore_ = true;
-    std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback = audioDeviceChangeCallback_;
-    if (audioDeviceChangeCallback != nullptr) {
-        audioDeviceChangeCallback->UnsetAudioRendererObj();
-    }
-
-    (void)AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(appInfo_.appPid);
 
     std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback = outputDeviceChangeCallback_;
     if (outputDeviceChangeCallback != nullptr) {
+        outputDeviceChangeCallback->RemoveCallback();
+        outputDeviceChangeCallback->RemoveOldCallback();
         outputDeviceChangeCallback->UnsetAudioRendererObj();
     }
     AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionID_);
@@ -385,10 +383,6 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
     CHECK_AND_RETURN_RET_LOG(!ret, ret, "SetParams SetAudioStreamInfo Failed");
-
-    if (isFastRenderer_) {
-        SetSelfRendererStateCallback();
-    }
 
     ret = GetAudioStreamId(sessionID_);
     CHECK_AND_RETURN_RET_LOG(!ret, ret, "GetAudioStreamId err");
@@ -1314,20 +1308,13 @@ int32_t AudioRendererPrivate::RegisterAudioRendererEventListener(const int32_t c
     CHECK_AND_RETURN_RET_LOG(GetCurrentOutputDevices(currentDeviceInfo_) == SUCCESS, ERROR,
         "get current device info failed");
 
-    if (!audioDeviceChangeCallback_) {
-        audioDeviceChangeCallback_ = std::make_shared<AudioRendererStateChangeCallbackImpl>();
-        CHECK_AND_RETURN_RET_LOG(audioDeviceChangeCallback_, ERROR,
-            "Memory Allocation Failed !!");
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("callback is null");
+        return ERR_INVALID_PARAM;
     }
 
-    int32_t ret =
-        AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientPid, audioDeviceChangeCallback_);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR,
-        "RegisterAudioRendererEventListener failed");
-
-    audioDeviceChangeCallback_->setAudioRendererObj(this);
-    audioDeviceChangeCallback_->SaveCallback(callback);
-    AUDIO_DEBUG_LOG("RegisterAudioRendererEventListener successful!");
+    outputDeviceChangeCallback_->SaveOldCallback(callback);
+    AUDIO_DEBUG_LOG("successful!");
     return SUCCESS;
 }
 
@@ -1349,20 +1336,14 @@ int32_t AudioRendererPrivate::UnregisterAudioPolicyServerDiedCb(const int32_t cl
 
 void AudioRendererPrivate::DestroyAudioRendererStateCallback()
 {
-    if (audioDeviceChangeCallback_ != nullptr) {
-        audioDeviceChangeCallback_.reset();
-        audioDeviceChangeCallback_ = nullptr;
-    }
+    outputDeviceChangeCallback_->RemoveOldCallback();
 }
 
 int32_t AudioRendererPrivate::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
     AUDIO_INFO_LOG("client id: %{public}d", clientPid);
-    int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(clientPid);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR,
-        "UnregisterAudioRendererEventListener failed");
+    outputDeviceChangeCallback_->RemoveOldCallback();
 
-    DestroyAudioRendererStateCallback();
     return SUCCESS;
 }
 
@@ -1380,11 +1361,6 @@ int32_t AudioRendererPrivate::RegisterOutputDeviceChangeWithInfoCallback(
     return SUCCESS;
 }
 
-void AudioRendererPrivate::DestroyOutputDeviceChangeWithInfoCallback()
-{
-    outputDeviceChangeCallback_ = nullptr;
-}
-
 int32_t AudioRendererPrivate::UnregisterOutputDeviceChangeWithInfoCallback()
 {
     AUDIO_INFO_LOG("UnregisterAudioCapturerEventListener");
@@ -1398,34 +1374,6 @@ int32_t AudioRendererPrivate::UnregisterOutputDeviceChangeWithInfoCallback()
 
     outputDeviceChangeCallback_->RemoveCallback();
     return SUCCESS;
-}
-
-AudioRendererStateChangeCallbackImpl::AudioRendererStateChangeCallbackImpl()
-{
-    AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl instance create");
-}
-
-AudioRendererStateChangeCallbackImpl::~AudioRendererStateChangeCallbackImpl()
-{
-    AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl instance destory");
-}
-
-void AudioRendererStateChangeCallbackImpl::SaveCallback(
-    const std::weak_ptr<AudioRendererDeviceChangeCallback> &callback)
-{
-    callback_ = callback;
-}
-
-void AudioRendererStateChangeCallbackImpl::setAudioRendererObj(AudioRendererPrivate *rendererObj)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    renderer_ = rendererObj;
-}
-
-void AudioRendererStateChangeCallbackImpl::UnsetAudioRendererObj()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    renderer_ = nullptr;
 }
 
 void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
@@ -1573,58 +1521,26 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unregister device change callback for old session failed");
 }
 
-bool AudioRendererPrivate::IsDeviceChanged(DeviceInfo &newDeviceInfo)
-{
-    bool deviceUpdated = false;
-    DeviceInfo deviceInfo = {};
-
-    int32_t ret = GetCurrentOutputDevices(deviceInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, deviceUpdated,
-        "GetCurrentOutputDevices failed");
-
-    AUDIO_INFO_LOG("newDeviceInfo type: %{public}d, currentDeviceInfo_ type: %{public}d ",
-        deviceInfo.deviceType, currentDeviceInfo_.deviceType);
-    if (currentDeviceInfo_.deviceType != deviceInfo.deviceType) {
-        currentDeviceInfo_ = deviceInfo;
-        newDeviceInfo = currentDeviceInfo_;
-        deviceUpdated = true;
-    }
-    return deviceUpdated;
-}
-
-void AudioRendererStateChangeCallbackImpl::OnRendererStateChange(
-    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
-{
-    std::shared_ptr<AudioRendererDeviceChangeCallback> cb = callback_.lock();
-    AUDIO_DEBUG_LOG("AudioRendererStateChangeCallbackImpl OnRendererStateChange");
-    DeviceInfo deviceInfo = {};
-    bool isDevicedChanged = false;
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (renderer_ == nullptr) {
-            return;
-        }
-        isDevicedChanged = renderer_->IsDeviceChanged(deviceInfo);
-        if (isDevicedChanged) {
-            CHECK_AND_RETURN_LOG(cb != nullptr, "OnStateChange cb == nullptr.");
-        }
-    }
-
-    if (isDevicedChanged) {
-        cb->OnStateChange(deviceInfo);
-    }
-}
-
 void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
     const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason)
 {
     AUDIO_INFO_LOG("OnRendererStateChange");
-    std::shared_ptr<AudioRendererOutputDeviceChangeCallback> cb = callback_.lock();
+    std::shared_ptr<AudioRendererOutputDeviceChangeCallback> cb;
+    std::shared_ptr<AudioRendererDeviceChangeCallback> oldCb;
+
+    cb = callback_;
+    oldCb = oldCallback_;
 
     if (cb != nullptr) {
         AUDIO_INFO_LOG("sessionId: %{public}u, deviceType: %{public}d reason: %{public}d",
             sessionId, static_cast<int>(deviceInfo.deviceType), static_cast<int>(reason));
         cb->OnOutputDeviceChange(deviceInfo, reason);
+    }
+
+    if (oldCb != nullptr) {
+        AUDIO_INFO_LOG("sessionId: %{public}u, deviceType: %{public}d",
+            sessionId, static_cast<int>(deviceInfo.deviceType));
+        oldCb->OnStateChange(deviceInfo);
     }
 }
 
@@ -1647,25 +1563,6 @@ int64_t AudioRendererPrivate::GetFramesWritten() const
 int32_t AudioRendererPrivate::SetAudioEffectMode(AudioEffectMode effectMode) const
 {
     return audioStream_->SetAudioEffectMode(effectMode);
-}
-
-void AudioRendererPrivate::SetSelfRendererStateCallback()
-{
-    int32_t tmp = GetCurrentOutputDevices(currentDeviceInfo_);
-    CHECK_AND_RETURN_LOG(tmp == SUCCESS, "get current device info failed");
-
-    int32_t clientPid = getpid();
-    if (!audioDeviceChangeCallback_) {
-        audioDeviceChangeCallback_ = std::make_shared<AudioRendererStateChangeCallbackImpl>();
-        CHECK_AND_RETURN_LOG(audioDeviceChangeCallback_, "Memory Allocation Failed !!");
-    }
-
-    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientPid,
-        audioDeviceChangeCallback_);
-    CHECK_AND_RETURN_LOG(ret == 0, "RegisterAudioRendererEventListener failed");
-
-    audioDeviceChangeCallback_->setAudioRendererObj(this);
-    AUDIO_INFO_LOG("RegisterAudioRendererEventListener successful!");
 }
 
 int32_t AudioRendererPrivate::SetVolumeWithRamp(float volume, int32_t duration)

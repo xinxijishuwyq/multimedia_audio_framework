@@ -282,13 +282,12 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSessionInfoInFocus_001, Test
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioRendererEventListener_001, TestSize.Level1)
 {
-    int32_t clientId = getpid();
     std::shared_ptr<AudioRendererStateChangeCallback> callback =
         std::make_shared<AudioRendererStateChangeCallbackTest>();
-    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientId, callback);
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(callback);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(clientId);
+    ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(callback);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -575,9 +574,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetVolumeKeyEventCallback_001, 
 */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioRendererEventListener_002, TestSize.Level1)
 {
-    int32_t clientPid = getpid();
     std::shared_ptr<AudioRendererStateChangeCallback> callback = nullptr;
-    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientPid, callback);
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(callback);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
