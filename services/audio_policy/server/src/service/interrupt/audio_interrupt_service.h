@@ -24,7 +24,6 @@
 #include "audio_interrupt_info.h"
 #include "audio_policy_server_handler.h"
 #include "audio_policy_server.h"
-#include "audio_service_dump.h"
 
 namespace OHOS {
 namespace AudioStandard {

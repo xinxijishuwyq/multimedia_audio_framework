@@ -18,7 +18,6 @@
 #include <cstdio>
 #include <iostream>
 
-#include "audio_service_client.h"
 #include "audio_log.h"
 #include "audio_system_manager.h"
 #include "pcm2wav.h"

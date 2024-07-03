@@ -70,8 +70,8 @@
 #define DEFAULT_FRAMELEN 2048
 #define SCENE_TYPE_NUM 7
 #define HDI_MIN_MS_MAINTAIN 30
-#define OFFLOAD_HDI_CACHE1 200 // ms, should equal with val in audio_service_client.cpp
-#define OFFLOAD_HDI_CACHE2 7000 // ms, should equal with val in audio_service_client.cpp
+#define OFFLOAD_HDI_CACHE1 200 // ms, should equal with val in client
+#define OFFLOAD_HDI_CACHE2 7000 // ms, should equal with val in client
 #define OFFLOAD_FRAME_SIZE 50
 #define OFFLOAD_HDI_CACHE1_PLUS (OFFLOAD_HDI_CACHE1 + OFFLOAD_FRAME_SIZE + 5)   // ms, add 1 frame and 5ms
 #define OFFLOAD_HDI_CACHE2_PLUS (OFFLOAD_HDI_CACHE2 + OFFLOAD_FRAME_SIZE + 5)   // to make sure get full

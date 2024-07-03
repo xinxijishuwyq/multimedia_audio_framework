@@ -13,19 +13,21 @@
  * limitations under the License.
  */
 
-#include "audio_errors.h"
-#include "audio_manager_listener_stub.h"
-#include "audio_manager_proxy.h"
-#include "audio_log.h"
-#include "audio_process_in_client.h"
-#include "audio_process_proxy.h"
-#include "audio_stream.h"
-#include "audio_system_manager.h"
 #include <gtest/gtest.h>
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
+#include "audio_log.h"
+#include "audio_errors.h"
+#include "audio_system_manager.h"
+
+#include "audio_manager_proxy.h"
+#include "audio_manager_listener_stub.h"
+#include "audio_process_proxy.h"
+#include "audio_process_in_client.h"
+
 using namespace testing::ext;
+
 namespace OHOS {
 namespace AudioStandard {
 std::unique_ptr<AudioManagerProxy> audioManagerProxy;
@@ -33,6 +35,7 @@ std::shared_ptr<AudioProcessInClient> processClient_;
 const int32_t TEST_RET_NUM = 0;
 const int32_t RENDERER_FLAGS = 0;
 constexpr int32_t ERROR_62980101 = -62980101;
+
 class AudioServiceUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -294,134 +297,6 @@ HWTEST(AudioServiceUnitTest, AudioDeviceDescriptor_001, TestSize.Level1)
     EXPECT_EQ(streamInfo.encoding, audioStreamInfo.encoding);
     EXPECT_EQ(streamInfo.format, audioStreamInfo.format);
     EXPECT_EQ(streamInfo.samplingRate, audioStreamInfo.samplingRate);
-}
-
-/**
- * @tc.name  : Test AudioServiceClient API
- * @tc.type  : FUNC
- * @tc.number: AudioServiceClient_001
- * @tc.desc  : Test AudioServiceClient interface.
- */
-HWTEST(AudioServiceUnitTest, AudioServiceClient_001, TestSize.Level1)
-{
-    int32_t ret = -1;
-
-    std::unique_ptr<AudioServiceClient> audioServiceClient = std::make_unique<AudioStream>(STREAM_MUSIC,
-        AUDIO_MODE_PLAYBACK, getuid());
-
-    ASClientType eClientType = ASClientType::AUDIO_SERVICE_CLIENT_PLAYBACK;
-    ret = audioServiceClient->Initialize(eClientType);
-    EXPECT_EQ(SUCCESS, ret);
-
-    AudioStreamParams audioParams = {};
-    audioParams.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    audioParams.encoding = AudioEncodingType::ENCODING_PCM;
-    audioParams.format = AudioSampleFormat::SAMPLE_S16LE;
-    audioParams.channels = AudioChannel::STEREO;
-
-    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_SYSTEM);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_NOTIFICATION);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_BLUETOOTH_SCO);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_DTMF);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_TTS);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_DEFAULT);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioServiceClient->SetStreamRenderRate(AudioRendererRate::RENDER_RATE_HALF);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = audioServiceClient->SetStreamRenderRate(static_cast<AudioRendererRate>(-1));
-    EXPECT_EQ(SUCCESS - 2, ret);
-    ret = audioServiceClient->SetStreamRenderRate(RENDER_RATE_DOUBLE);
-    EXPECT_EQ(SUCCESS, ret);
-
-    uint32_t rate = audioServiceClient->GetRendererSamplingRate();
-    EXPECT_EQ((uint32_t)SAMPLE_RATE_44100, rate);
-    ret = audioServiceClient->SetRendererSamplingRate(0);
-    EXPECT_EQ(SUCCESS - 2, ret);
-    rate = audioServiceClient->GetRendererSamplingRate();
-    EXPECT_EQ((uint32_t)SAMPLE_RATE_44100, rate);
-
-    audioServiceClient->OnTimeOut();
-}
-
-/**
- * @tc.name  : Test AudioServiceClient API
- * @tc.type  : FUNC
- * @tc.number: AudioServiceClient_002
- * @tc.desc  : Test AudioServiceClient interface.
- */
-HWTEST(AudioServiceUnitTest, AudioServiceClient_002, TestSize.Level1)
-{
-    int32_t ret = -1;
-
-    std::unique_ptr<AudioServiceClient> audioServiceClient = std::make_unique<AudioStream>(STREAM_MUSIC,
-        AUDIO_MODE_PLAYBACK, getuid());
-
-    ASClientType eClientType = ASClientType::AUDIO_SERVICE_CLIENT_PLAYBACK;
-    ret = audioServiceClient->Initialize(eClientType);
-    EXPECT_EQ(SUCCESS, ret);
-
-    AudioStreamParams audioParams = {};
-    audioParams.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    audioParams.encoding = AudioEncodingType::ENCODING_PCM;
-    audioParams.format = AudioSampleFormat::SAMPLE_S16LE;
-    audioParams.channels = AudioChannel::STEREO;
-
-    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_MUSIC);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = audioServiceClient->StartStream();
-    EXPECT_EQ(SUCCESS, ret);
-    ret = audioServiceClient->SetStreamOffloadMode(2, true);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = audioServiceClient->StopStream();
-    EXPECT_EQ(SUCCESS, ret);
-    ret = audioServiceClient->UnsetStreamOffloadMode();
-    EXPECT_EQ(SUCCESS, ret);
-
-    audioServiceClient->OnTimeOut();
-}
-
-/**
- * @tc.name  : Test AudioServiceClient API
- * @tc.type  : FUNC
- * @tc.number: AudioServiceClient_003
- * @tc.desc  : Test AudioServiceClient interface.
- */
-HWTEST(AudioServiceUnitTest, AudioServiceClient_003, TestSize.Level1)
-{
-    int32_t ret = -1;
-
-    std::unique_ptr<AudioServiceClient> audioServiceClient = std::make_unique<AudioStream>(STREAM_MUSIC,
-        AUDIO_MODE_PLAYBACK, getuid());
-
-    ASClientType eClientType = ASClientType::AUDIO_SERVICE_CLIENT_PLAYBACK;
-    ret = audioServiceClient->Initialize(eClientType);
-    EXPECT_EQ(SUCCESS, ret);
-
-    AudioStreamParams audioParams = {};
-    audioParams.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    audioParams.encoding = AudioEncodingType::ENCODING_PCM;
-    audioParams.format = AudioSampleFormat::SAMPLE_S16LE;
-    audioParams.channels = AudioChannel::STEREO;
-
-    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_MUSIC);
-    EXPECT_EQ(SUCCESS, ret);
-
-    AudioSpatializationState spatializationState = {false, false};
-
-    std::unique_ptr<AudioSpatializationStateChangeCallbackImpl> spatializationStateChangeCallbackPtr(
-        new AudioSpatializationStateChangeCallbackImpl());
-    spatializationStateChangeCallbackPtr->OnSpatializationStateChange(spatializationState);
-
-    spatializationStateChangeCallbackPtr->setAudioServiceClientObj(audioServiceClient.get());
-    spatializationStateChangeCallbackPtr->OnSpatializationStateChange(spatializationState);
-
-    audioServiceClient->OnTimeOut();
 }
 } // namespace AudioStandard
 } // namespace OHOS
