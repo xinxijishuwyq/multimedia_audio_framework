@@ -64,12 +64,13 @@ static bool IsChannelLayoutSupported(const uint64_t channelLayout)
         AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS.end(), channelLayout) != AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS.end();
 }
 
-static void FindMaxSessionID(std::string &maxSessionID, std::string &sceneType,
+static void FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
     const std::string &scenePairType, std::set<std::string> &sessions)
 {
     for (auto& sessionID : sessions) {
-        if (sessionID > maxSessionID) {
-            maxSessionID = sessionID;
+        uint32_t sessionIDInt = static_cast<uint32_t>(std::stoul(sessionID));
+        if (sessionIDInt > maxSessionID) {
+            maxSessionID = sessionIDInt;
             sceneType = scenePairType;
         }
     }
@@ -1061,6 +1062,7 @@ void AudioEffectChainManager::ResetEffectBuffer()
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     for (const auto &[sceneType, effectChain] : SceneTypeToEffectChainMap_) {
+        if (effectChain == nullptr) continue;
         effectChain->InitEffectChain();
     }
 }
@@ -1095,7 +1097,7 @@ void AudioEffectChainManager::ResetInfo()
 void AudioEffectChainManager::UpdateRealAudioEffect()
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    std::string maxSessionID;
+    uint32_t maxSessionID = 0;
     std::string sceneType = "";
     for (auto& scenePair : SceneTypeToSessionIDMap_) {
         if (!SceneTypeToSpecialEffectSet_.count(scenePair.first)) {
@@ -1104,7 +1106,7 @@ void AudioEffectChainManager::UpdateRealAudioEffect()
         }
     }
     std::string key = sceneType + "_&_" + GetDeviceTypeName();
-    if (!sceneType.empty() && SceneTypeToEffectChainMap_.count(key)) {
+    if (!sceneType.empty() && SceneTypeToEffectChainMap_[key] != nullptr) {
         std::shared_ptr<AudioEffectChain> audioEffectChain = SceneTypeToEffectChainMap_[key];
         AudioEffectScene currSceneType;
         UpdateCurrSceneType(currSceneType, sceneType);
