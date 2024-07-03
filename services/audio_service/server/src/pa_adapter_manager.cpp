@@ -410,12 +410,6 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
         AUDIO_ERR_LOG("ConnectStreamToPA Failed");
         return nullptr;
     }
-    if (processConfig.audioMode == AUDIO_MODE_RECORD) {
-        ret = SetStreamAudioEnhanceMode(paStream, enhanceMode_);
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("capturer set audio enhance mode failed.");
-        }
-    }
     return paStream;
 }
 
@@ -470,9 +464,16 @@ void PaAdapterManager::SetRecordProplist(pa_proplist *propList, AudioProcessConf
     pa_proplist_sets(propList, "stream.isIpcCapturer", std::to_string(true).c_str());
     pa_proplist_sets(propList, "stream.capturerSource",
         std::to_string(processConfig.capturerInfo.sourceType).c_str());
-    pa_proplist_sets(propList, "scene.type", GetEnhanceSceneName(processConfig.capturerInfo.sourceType).c_str());
-    enhanceMode_ = IsEnhanceMode(processConfig.capturerInfo.sourceType) ? EFFECT_DEFAULT : EFFECT_NONE;
-    pa_proplist_sets(propList, "scene.mode", GetEnhanceModeName(enhanceMode_).c_str());
+    const std::string sceneType = GetEnhanceSceneName(processConfig.capturerInfo.sourceType);
+    AudioEnhanceMode enhanceMode = IsEnhanceMode(processConfig.capturerInfo.sourceType) ?
+        ENHANCE_DEFAULT : ENHANCE_NONE;
+    const std::string sceneMode = GetEnhanceModeName(enhanceMode);
+    std::string upDevice = "DEVICE_TYPE_MIC";
+    std::string downDevice = "DEVICE_TYPE_SPEAKER";
+    pa_proplist_sets(propList, "scene.type", sceneType.c_str());
+    pa_proplist_sets(propList, "scene.mode", sceneMode.c_str());
+    pa_proplist_sets(propList, "device.up", upDevice.c_str());
+    pa_proplist_sets(propList, "device.down", downDevice.c_str());
 }
 
 int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
@@ -659,7 +660,7 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
     return SUCCESS;
 }
 
-int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEffectMode audioEnhanceMode)
+int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEnhanceMode mode)
 {
     PaLockGuard lock(mainLoop_);
     pa_proplist *propList = pa_proplist_new();
@@ -667,10 +668,11 @@ int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEf
         AUDIO_ERR_LOG("pa_proplist_new failed.");
         return ERROR;
     }
+    std::string enhanceModeName = AUDIO_ENHANCE_SUPPORTED_SCENE_MODES.find(mode)->second;
     std::string upDevice = "DEVICE_TYPE_MIC";
     std::string downDevice = "DEVICE_TYPE_SPEAKER";
-    std::string upAndDownDevice = upDevice + "_&_" + downDevice;
-    pa_proplist_sets(propList, "device.upAndDown", upAndDownDevice.c_str());
+    pa_proplist_sets(propList, "device.up", upDevice.c_str());
+    pa_proplist_sets(propList, "device.down", downDevice.c_str());
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     if (updatePropOperation == nullptr) {
@@ -682,18 +684,18 @@ int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEf
     return SUCCESS;
 }
 
-const std::string PaAdapterManager::GetEnhanceModeName(AudioEffectMode audioEnhanceMode)
+const std::string PaAdapterManager::GetEnhanceModeName(AudioEnhanceMode mode)
 {
     std::string name;
-    switch (audioEnhanceMode) {
-        case AudioEffectMode::EFFECT_NONE:
-            name = "EFFECT_NONE";
+    switch (mode) {
+        case AudioEnhanceMode::ENHANCE_NONE:
+            name = "ENHANCE_NONE";
             break;
-        case AudioEffectMode::EFFECT_DEFAULT:
-            name = "EFFECT_DEFAULT";
+        case AudioEnhanceMode::ENHANCE_DEFAULT:
+            name = "ENHANCE_DEFAULT";
             break;
         default:
-            name = "EFFECT_DEFAULT";
+            name = "ENHANCE_NONE";
             break;
     }
     const std::string modeName = name;
