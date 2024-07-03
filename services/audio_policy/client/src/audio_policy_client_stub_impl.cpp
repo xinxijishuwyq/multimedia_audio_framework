@@ -432,12 +432,18 @@ size_t AudioPolicyClientStubImpl::GetCapturerStateChangeCallbackSize() const
 void AudioPolicyClientStubImpl::OnCapturerStateChange(
     std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    std::lock_guard<std::mutex> lockCbMap(capturerStateChangeMutex_);
-    for (auto it = capturerStateChangeCallbackList_.begin(); it != capturerStateChangeCallbackList_.end(); ++it) {
-        std::shared_ptr<AudioCapturerStateChangeCallback> capturerStateChangeCallback = (*it).lock();
-        if (capturerStateChangeCallback != nullptr) {
-            capturerStateChangeCallback->OnCapturerStateChange(audioCapturerChangeInfos);
+    std::vector<std::shared_ptr<AudioCapturerStateChangeCallback>> tmpCallbackList;
+    {
+        std::lock_guard<std::mutex> lockCbMap(capturerStateChangeMutex_);
+        for (auto it = capturerStateChangeCallbackList_.begin(); it != capturerStateChangeCallbackList_.end(); ++it) {
+            std::shared_ptr<AudioCapturerStateChangeCallback> capturerStateChangeCallback = (*it).lock();
+            if (capturerStateChangeCallback != nullptr) {
+                tmpCallbackList.emplace_back(capturerStateChangeCallback);
+            }
         }
+    }
+    for (auto it = tmpCallbackList.begin(); it != tmpCallbackList.end(); ++it) {
+        (*it)->OnCapturerStateChange(audioCapturerChangeInfos);
     }
 }
 
