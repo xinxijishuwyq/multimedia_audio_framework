@@ -1728,6 +1728,29 @@ static void SinkRenderPrimaryAfterProcess(pa_sink *si, size_t length, pa_memchun
     pa_memblock_release(chunkIn->memblock);
 }
 
+static char *HandleSinkSceneType(struct Userdata *u, time_t currentTime, int32_t i)
+{
+    char *sinkSceneType = SCENE_TYPE_SET[i];
+    if (g_effectAllStreamVolumeZeroMap[i] && PA_SINK_IS_RUNNING(u->sink->thread_info.state) &&
+        difftime(currentTime, g_effectStartVolZeroTimeMap[i]) > WAIT_CLOSE_PA_OR_EFFECT_TIME) {
+        sinkSceneType = SCENE_TYPE_SET[SCENE_TYPE_NUM - 1]; // EFFECT_NONE
+        if (!g_effectHaveDisabledMap[i]) {
+            AUDIO_INFO_LOG("volume change to zero over %{public}ds, close effect:%{public}s success.",
+                WAIT_CLOSE_PA_OR_EFFECT_TIME, SCENE_TYPE_SET[i]);
+            g_effectHaveDisabledMap[i] = true;
+            g_effectStartVolZeroTimeMap[i] = 0;
+        }
+    } else {
+        sinkSceneType = SCENE_TYPE_SET[i];
+        if (g_effectHaveDisabledMap[i]) {
+            g_effectHaveDisabledMap[i] = false;
+            AUDIO_INFO_LOG("volume change to non zero, open effect:%{public}s success. ", SCENE_TYPE_SET[i]);
+        }
+    }
+    return sinkSceneType;
+}
+
+
 static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime, int32_t i)
 {
     void *state = NULL;
@@ -1759,25 +1782,9 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
             WAIT_CLOSE_PA_OR_EFFECT_TIME);
         time(&g_effectStartVolZeroTimeMap[i]);
     }
-
-    char *sinkSceneType = SCENE_TYPE_SET[i];
-    if (g_effectAllStreamVolumeZeroMap[i] && PA_SINK_IS_RUNNING(u->sink->thread_info.state) &&
-        difftime(currentTime, g_effectStartVolZeroTimeMap[i]) > WAIT_CLOSE_PA_OR_EFFECT_TIME) {
-        sinkSceneType = SCENE_TYPE_SET[SCENE_TYPE_NUM - 1]; // EFFECT_NONE
-        if (!g_effectHaveDisabledMap[i]) {
-            AUDIO_INFO_LOG("volume change to zero over %{public}ds, close effect:%{public}s success.",
-                WAIT_CLOSE_PA_OR_EFFECT_TIME, SCENE_TYPE_SET[i]);
-            g_effectHaveDisabledMap[i] = true;
-            g_effectStartVolZeroTimeMap[i] = 0;
-        }
-    } else {
-        sinkSceneType = SCENE_TYPE_SET[i];
-        if (g_effectHaveDisabledMap[i]) {
-            g_effectHaveDisabledMap[i] = false;
-            AUDIO_INFO_LOG("volume change to non zero, open effect:%{public}s success. ", SCENE_TYPE_SET[i]);
-        }
-    }
-    return sinkSceneType;
+    char *handledSceneType = HandleSinkSceneType(u, currentTime, i);
+    AUDIO_DEBUG_LOG("handle sink scene type:%{public}s", handledSceneType);
+    return handledSceneType;
 }
 
 static void CheckIfCommonSceneTypeZeroVolume()
@@ -1796,7 +1803,6 @@ static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
     pa_sink *s;
     pa_core *c = u->core;
     uint32_t idx;
-    g_onlyPrimarySpeakerPaLoading = true;
     PA_IDXSET_FOREACH(s, c->sinks, idx) {
         bool isHdiSink = !strncmp(s->driver, "module_hdi_sink", 15); // 15 cmp length
         if (isHdiSink && strcmp(s->name, "Speaker")) {
@@ -1857,7 +1863,6 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
     }
     void *state = NULL;
     pa_sink_input *input;
-    g_speakerPaAllStreamVolumeZero = true;
     while ((input = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
         pa_sink_input_assert_ref(input);
         const char *clientVolumeIsZero = safeProplistGets(input->proplist, "clientVolumeIsZero", "false");
@@ -3285,6 +3290,8 @@ static void ThreadFuncRendererTimerProcessData(struct Userdata *u)
         logCnt = 0;
     }
 
+    g_onlyPrimarySpeakerPaLoading = true;
+    g_speakerPaAllStreamVolumeZero = true;
     CheckOnlyPrimarySpeakerPaLoading(u);
     if (!strcmp(u->sink->name, MCH_SINK_NAME)) {
         ProcessMCHData(u);
