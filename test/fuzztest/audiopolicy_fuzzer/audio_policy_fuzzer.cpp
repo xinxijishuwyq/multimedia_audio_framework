@@ -26,7 +26,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-bool g_isAudioPermission = false;
+bool g_hasPermission = false;
 constexpr int32_t OFFSET = 4;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
 const int32_t SYSTEM_ABILITY_ID = 3009;
@@ -52,7 +52,7 @@ uint32_t Convert2Uint32(const uint8_t *ptr)
 
 void AudioFuzzTestGetPermission()
 {
-    if (!g_isAudioPermission) {
+    if (!g_hasPermission) {
         uint64_t tokenId;
         constexpr int perNum = 10;
         const char *perms[perNum] = {
