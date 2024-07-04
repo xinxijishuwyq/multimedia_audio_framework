@@ -32,7 +32,11 @@ ohos_static_library("audio_schedule") {
     "-Werror",
   ]
 
-  external_deps = [ "ipc:ipc_single" ]
+  external_deps = [
+    "c_utils:utils",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+  ]
 
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]

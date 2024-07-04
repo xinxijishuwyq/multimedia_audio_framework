@@ -118,6 +118,7 @@ ohos_shared_library("module-hdi-source") {
   external_deps = [
     "bounds_checking_function:libsec_shared",
     "drivers_interface_audio:libaudio_proxy_3.0",
+    "hdf_core:libhdf_utils",
     "hilog:libhilog",
     "pulseaudio:pulse",
     "pulseaudio:pulsecommon",
