@@ -77,7 +77,8 @@ public:
         TYPE_PLAYBACK_CAPTURE = 2,
         TYPE_COMMUNICATION = 7,
         TYPE_MESSAGE = 10,
-        TYPE_REMOTE_CAST = 11
+        TYPE_REMOTE_CAST = 11,
+        TYPE_VOICE_TRANSCRIPTION = 12
     };
 
     enum AudioDataCallbackResult {
