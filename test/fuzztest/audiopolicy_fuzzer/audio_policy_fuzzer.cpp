@@ -81,7 +81,7 @@ void AudioFuzzTestGetPermission()
         tokenId = GetAccessTokenId(&infoInstance);
         SetSelfTokenID(tokenId);
         OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
-        g_isAudioPermission = true;
+        g_hasPermission = true;
     }
 }
 
