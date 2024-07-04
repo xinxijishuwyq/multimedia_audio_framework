@@ -26,7 +26,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const uint32_t NUM_SET_EFFECT_PARAM = 5;
+const uint32_t NUM_SET_EFFECT_PARAM = 6;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
 const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
@@ -120,6 +120,16 @@ void AudioEffectChain::SetEffectMode(const std::string &mode)
     effectMode_ = mode;
 }
 
+void AudioEffectChain::SetExtraSceneType(const std::string &extraSceneType)
+{
+    extraEffectChainType_ = static_cast<int32_t>(std::stoi(extraSceneType));
+}
+
+void AudioEffectChain::SetEffectCurrSceneType(AudioEffectScene currSceneType)
+{
+    currSceneType_ = currSceneType;
+}
+
 void AudioEffectChain::ReleaseEffectChain()
 {
     for (uint32_t i = 0; i < standByEffectHandles_.size() && i < libHandles_.size(); ++i) {
@@ -138,8 +148,7 @@ void AudioEffectChain::ReleaseEffectChain()
     libHandles_.clear();
 }
 
-int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, AudioEffectScene currSceneType,
-    int32_t &replyData)
+int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32_t &replyData)
 {
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
@@ -151,7 +160,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, Audio
     effectParam->valueSize = 0;
     int32_t *data = &(effectParam->data[0]);
     *data++ = EFFECT_SET_PARAM;
-    *data++ = static_cast<int32_t>(currSceneType);
+    *data++ = static_cast<int32_t>(currSceneType_);
     *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode_);
 #ifdef WINDOW_MANAGER_ENABLE
     std::shared_ptr<AudioEffectRotation> audioEffectRotation = AudioEffectRotation::GetInstance();
@@ -171,6 +180,8 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, Audio
         *data++ = audioEffectVolume->GetApVolume(sceneType_);
     }
     AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
+    *data++ = extraEffectChainType_;
+    AUDIO_DEBUG_LOG("set scene type: %{public}d", extraEffectChainType_);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     delete[] effectParam;
@@ -182,6 +193,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
 {
     int32_t ret;
     int32_t replyData = 0;
+    currSceneType_ = currSceneType;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     ret = (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
@@ -191,7 +203,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], %{pubilc}s lib EFFECT_CMD_ENABLE fail",
         sceneType_.c_str(), effectMode_.c_str(), libHandle->name);
 
-    CHECK_AND_RETURN_LOG(SetEffectParamToHandle(handle, currSceneType, replyData) == 0,
+    CHECK_AND_RETURN_LOG(SetEffectParamToHandle(handle, replyData) == 0,
         "[%{public}s] with mode [%{public}s], %{pubilc}s lib EFFECT_CMD_SET_PARAM fail", sceneType_.c_str(),
         effectMode_.c_str(), libHandle->name);
 
@@ -210,14 +222,15 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     latency_ += static_cast<uint32_t>(replyData);
 }
 
-int32_t AudioEffectChain::SetEffectParam(AudioEffectScene currSceneType)
+int32_t AudioEffectChain::UpdateEffectParam()
 {
     std::lock_guard<std::mutex> lock(reloadMutex_);
     latency_ = 0;
     for (AudioEffectHandle handle : standByEffectHandles_) {
         int32_t replyData;
-        int32_t ret = SetEffectParamToHandle(handle, currSceneType, replyData);
+        int32_t ret = SetEffectParamToHandle(handle, replyData);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "set EFFECT_CMD_SET_PARAM fail");
+        AUDIO_DEBUG_LOG("Set Effect Param Scene Type: %{public}d Success", currSceneType_);
         latency_ += static_cast<uint32_t>(replyData);
     }
     return SUCCESS;

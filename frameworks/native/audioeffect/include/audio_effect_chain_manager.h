@@ -129,6 +129,7 @@ public:
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
+    void UpdateExtraSceneType(const std::string &extraSceneType);
     void InitHdiState();
 
 private:
@@ -170,6 +171,7 @@ private:
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     std::string deviceClass_ = "";
+    std::string extraSceneType_ = "0";
     bool isInitialized_ = false;
     std::recursive_mutex dynamicMutex_;
     bool spatializationEnabled_ = false;
