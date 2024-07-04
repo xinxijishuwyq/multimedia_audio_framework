@@ -189,6 +189,7 @@ struct Userdata {
     int8_t spatializationFadingState; // for indicating the fading state, =0:no fading, >0:fading in, <0:fading out
     int8_t spatializationFadingCount; // for indicating the fading rate
     bool actualSpatializationEnabled; // the spatialization state that actually applies effect
+    bool isFirstStarted;
     struct {
         int32_t sessionID;
         bool firstWrite;
@@ -3572,6 +3573,15 @@ static char *GetInputStateInfo(pa_sink_input_state_t state)
 static int32_t RemoteSinkStateChange(pa_sink *s, pa_sink_state_t newState)
 {
     struct Userdata *u = s->userdata;
+    if (s->thread_info.state == PA_SINK_INIT || newState == PA_SINK_INIT) {
+        u->isFirstStarted = false;
+    }
+
+    if (!u->isFirstStarted && (newState == PA_SINK_RUNNING)) {
+        u->primary.timestamp = pa_rtclock_now();
+        u->isFirstStarted = true;
+    }
+
     if (s->thread_info.state == PA_SINK_INIT && newState == PA_SINK_IDLE) {
         AUDIO_INFO_LOG("First start.");
     }
