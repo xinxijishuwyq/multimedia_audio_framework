@@ -153,7 +153,7 @@ int32_t RendererInServer::Init()
         Trace trace("high resolution create failed use normal replace");
         managerType_ = PLAYBACK;
         ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
-        AUDIO_DEBUG_LOG("high resolution create failed use normal replace");
+        AUDIO_INFO_LOG("high resolution create failed use normal replace");
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
         "Construct rendererInServer failed: %{public}d", ret);
