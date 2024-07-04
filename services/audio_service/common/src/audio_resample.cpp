@@ -36,7 +36,11 @@ AudioResample::AudioResample(uint32_t channels, uint32_t inRate, uint32_t outRat
     speex_ = std::make_unique<SpeexResample>();
     speex_->channelCount_ = channels;
     speex_->resampler = speex_resampler_init(channels, inRate, outRate, quantity, &error);
-    speex_resampler_skip_zeros(speex_->resampler);
+    if (speex_->resampler) {
+        speex_resampler_skip_zeros(speex_->resampler);
+    } else {
+        speex_ = nullptr;
+    }
 #endif
 }
 
@@ -50,6 +54,9 @@ bool AudioResample::IsResampleInit() const noexcept
 
 AudioResample::~AudioResample()
 {
+    if (!speex_) {
+        return;
+    }
 #ifdef SPEEX_ENABLE
     if (!speex_->resampler)
         return;
@@ -60,6 +67,9 @@ AudioResample::~AudioResample()
 int32_t AudioResample::ProcessFloatResample(const std::vector<float> &input, std::vector<float> &output)
 {
     int32_t ret = 0;
+    if (!speex_) {
+        return ERR_INVALID_PARAM;
+    }
 #ifdef SPEEX_ENABLE
     Trace trace("AudioResample::ProcessFloatResample");
     if (speex_->channelCount_ <= 0) {

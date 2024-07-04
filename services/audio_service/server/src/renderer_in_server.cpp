@@ -1103,17 +1103,26 @@ int32_t RendererInServer::GetStreamManagerType() const noexcept
 
 bool RendererInServer::IsHighResolution() const noexcept
 {
-    if ((processConfig_.deviceType == DEVICE_TYPE_WIRED_HEADSET ||
-        processConfig_.deviceType == DEVICE_TYPE_USB_HEADSET) &&
-        processConfig_.streamType == STREAM_MUSIC && processConfig_.streamInfo.samplingRate >= SAMPLE_RATE_48000 &&
-        processConfig_.streamInfo.format >= SAMPLE_S24LE &&
-        processConfig_.rendererInfo.pipeType == PIPE_TYPE_DIRECT_MUSIC) {
-        if (IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetStreamCount() <= 0) {
-            return true;
-        }
+    if (processConfig_.deviceType != DEVICE_TYPE_WIRED_HEADSET &&
+        processConfig_.deviceType != DEVICE_TYPE_USB_HEADSET) {
+        AUDIO_INFO_LOG("normal stream,device type:%{public}d", processConfig_.deviceType);
+        return false;
     }
-    Trace trace("RendererInServer::IsHighResolution false");
-    return false;
+
+    if (processConfig_.streamType != STREAM_MUSIC || processConfig_.streamInfo.samplingRate < SAMPLE_RATE_48000 ||
+        processConfig_.streamInfo.format < SAMPLE_S24LE ||
+        processConfig_.rendererInfo.pipeType != PIPE_TYPE_DIRECT_MUSIC) {
+        AUDIO_INFO_LOG("normal stream because stream info");
+        return false;
+    }
+
+    if (IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetStreamCount() > 0) {
+        AUDIO_INFO_LOG("high resolution exist.");
+        return false;
+    }
+
+    Trace trace("RendererInServer::IsHighResolution true");
+    return true;
 }
 
 int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
