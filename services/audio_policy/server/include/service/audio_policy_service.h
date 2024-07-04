@@ -415,8 +415,6 @@ public:
 
     void UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    void OffloadStartPlayingIfOffloadMode(uint64_t sessionId);
-
     int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionIds);
 
     int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
@@ -594,8 +592,6 @@ private:
     int32_t SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     int32_t HandleActiveDevice(DeviceType deviceType);
-
-    int32_t HandleA2dpDevice(DeviceType deviceType);
 
     int32_t LoadA2dpModule(DeviceType deviceType);
 
