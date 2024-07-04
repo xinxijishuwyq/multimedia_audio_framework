@@ -56,7 +56,7 @@ namespace {
     std::condition_variable g_condVar;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> g_audioFocusInfoList;
     static constexpr char CONFIG_FILE[] = "/vendor/etc/audio/audio_policy_config.xml";
-    static constexpr char CONFIG_FILE_NEW[] = "/chip_prod/etc/audio/audio_policy_config_new.xml";
+    static constexpr char CONFIG_FILE_NEW[] = "/chip_prod/etc/audio/audio_policy_config.xml";
     constexpr int32_t OFFLOAD_HDI_CACHE1 = 200;
 }
 
