@@ -361,6 +361,13 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     return SUCCESS;
 }
 
+void PaRendererStreamImpl::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, int32_t success, void *userdata)
+{
+    PaRendererStreamImpl *rendererStreamImpl = (PaRendererStreamImpl *)userdata;
+    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)rendererStreamImpl->mainloop_;
+    pa_threaded_mainloop_signal(mainLoop, 0);
+}
+
 int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
 {
     PaLockGuard lock(mainloop_);
@@ -371,36 +378,28 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
     pa_usec_t cacheLatency {0};
     int32_t negative {0};
 
-    // Get PA latency
-    while (true) {
-        pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
-        if (operation != nullptr) {
-            pa_operation_unref(operation);
-        } else {
-            AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
+    pa_operation *operation = pa_stream_update_timing_info(paStream_, PAStreamUpdateTimingInfoSuccessCb, (void *)this);
+    if (operation != nullptr) {
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(mainloop_);
         }
-        if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0) {
-            if (negative) {
-                latency = 0;
-                return ERR_OPERATION_FAILED;
-            }
-            break;
-        }
-        AUDIO_INFO_LOG("waiting for audio latency information");
-        pa_threaded_mainloop_wait(mainloop_);
+        pa_operation_unref(operation);
+    } else {
+        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
-    lock.Unlock();
-    cacheLatency = 0;
+
+    if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0) {
+        if (negative) {
+            AUDIO_WARNING_LOG("pa_stream_get_latency failed");
+            return ERR_OPERATION_FAILED;
+        }
+    }
+
     // In plan: Total latency will be sum of audio write cache latency plus PA latency
     uint64_t fwLatency = paLatency + cacheLatency;
-    uint64_t sinkLatency = sinkLatencyInMsec_ * PA_USEC_PER_MSEC;
-    if (fwLatency > sinkLatency) {
-        latency = fwLatency - sinkLatency;
-    } else {
-        latency = fwLatency;
-    }
-    AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}"
-        PRIu64 ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
+    latency = fwLatency;
+    AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", cache latency: %{public}"
+        PRIu64, latency, paLatency, cacheLatency);
 
     return SUCCESS;
 }

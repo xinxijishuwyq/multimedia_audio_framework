@@ -59,6 +59,7 @@ constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 const uint64_t SECOND_TO_NANOSECOND = 1000000000;
 const uint64_t SECOND_TO_MICROSECOND = 1000000;
 const uint64_t SECOND_TO_MILLISECOND = 1000;
+const uint64_t MICROSECOND_TO_MILLISECOND = 1000;
 const uint32_t BIT_IN_BYTE = 8;
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 const unsigned int TIME_OUT_SECONDS = 10;
@@ -730,13 +731,16 @@ int32_t OffloadAudioRendererSinkInner::GetLatency(uint32_t *latency)
     CHECK_AND_RETURN_RET_LOG(latency, ERR_INVALID_PARAM,
         "GetLatency failed latency null");
 
-    uint32_t hdiLatency;
-    if (audioRender_->GetLatency(audioRender_, &hdiLatency) == 0) {
-        *latency = hdiLatency;
-        return SUCCESS;
-    } else {
-        return ERR_OPERATION_FAILED;
-    }
+    // bytewidth is 4
+    uint64_t hdiLatency = renderPos_ * SECOND_TO_MICROSECOND / (AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT);
+    uint64_t frames = 0;
+    int64_t timeSec = 0;
+    int64_t timeNanoSec = 0;
+    CHECK_AND_RETURN_RET_LOG(GetPresentationPosition(frames, timeSec, timeNanoSec) == SUCCESS, ERR_OPERATION_FAILED,
+        "get latency failed!");
+
+    *latency = hdiLatency > frames ? (hdiLatency - frames) / MICROSECOND_TO_MILLISECOND : 0;
+    return SUCCESS;
 }
 
 int32_t OffloadAudioRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &outputDevices)
@@ -868,6 +872,7 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
             Start();
         }
     }).detach();
+    renderPos_ = 0;
     return SUCCESS;
 }
 

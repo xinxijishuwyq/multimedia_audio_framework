@@ -3501,7 +3501,7 @@ static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t
 
     switch (code) {
         case PA_SINK_MESSAGE_GET_LATENCY: {
-            if (u->sink_latency) {
+            if (u->sink_latency && strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_OFFLOAD)) {
                 *((uint64_t *)data) = u->sink_latency * PA_USEC_PER_MSEC;
             } else {
                 uint64_t latency;
