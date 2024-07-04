@@ -2264,7 +2264,9 @@ bool RendererInClientInner::RestoreAudioStream()
     if (ret != SUCCESS) {
         goto error;
     }
-
+    if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
+        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    }
     switch (oldState) {
         case RUNNING:
             result = StartAudioStream();
