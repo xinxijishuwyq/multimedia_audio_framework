@@ -80,6 +80,7 @@ if (!audio_framework_feature_opensl_es) {
     ]
 
     external_deps = [
+      "c_utils:utils",
       "hilog:libhilog",
       "ipc:ipc_single",
       "opensles:libSLES",

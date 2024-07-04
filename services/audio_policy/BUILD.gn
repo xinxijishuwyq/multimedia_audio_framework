@@ -316,12 +316,14 @@ ohos_prebuilt_etc("audio_converter_config") {
 
 ohos_prebuilt_etc("audio_config.para") {
   source = "etc/audio_config.para"
+  subsystem_name = "multimedia"
   part_name = "audio_framework"
   module_install_dir = "etc/param"
 }
 
 ohos_prebuilt_etc("audio_config.para.dac") {
   source = "etc/audio_config.para.dac"
+  subsystem_name = "multimedia"
   part_name = "audio_framework"
   module_install_dir = "etc/param"
 }

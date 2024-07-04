@@ -322,10 +322,12 @@ ohos_shared_library("audio_process_service") {
   external_deps = [
     "c_utils:utils",
     "drivers_interface_audio:libeffect_proxy_1.0",
+    "hdf_core:libhdf_utils",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "ipc:ipc_single",
     "pulseaudio:pulse",
+    "samgr:samgr_proxy",
   ]
 
   public_external_deps = [ "bounds_checking_function:libsec_static" ]
@@ -457,7 +459,9 @@ ohos_shared_library("audio_sasdk") {
 
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "hilog:libhilog",
+    "ipc:ipc_single",
   ]
 
   version_script = "../../audio_framework.versionscript"

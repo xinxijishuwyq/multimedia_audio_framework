@@ -48,7 +48,6 @@
             "device_manager",
             "drivers_interface_audio",
             "drivers_interface_distributed_audio",
-            "drivers_peripheral_audio",
             "drivers_peripheral_bluetooth",
             "eventhandler",
             "hdf_core",
