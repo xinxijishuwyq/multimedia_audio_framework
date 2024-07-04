@@ -187,7 +187,7 @@ public:
     virtual bool FlushAudioStream() = 0;
 
     // Playback related APIs
-    virtual bool DrainAudioStream() = 0;
+    virtual bool DrainAudioStream(bool stopFlag = false) = 0;
     virtual int32_t Write(uint8_t *buffer, size_t buffer_size) = 0;
     virtual int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) = 0;
 

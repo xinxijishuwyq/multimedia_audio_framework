@@ -21,7 +21,6 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
-#include "audio_stream.h"
 #include "fast_audio_stream.h"
 
 #include "capturer_in_client.h"

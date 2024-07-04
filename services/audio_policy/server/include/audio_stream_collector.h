@@ -42,6 +42,7 @@ public:
         const sptr<IRemoteObject> &object);
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateTracker(const AudioMode &mode, DeviceInfo &deviceInfo);
+    int32_t UpdateTrackerInternal(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &outputDeviceInfo);
     int32_t UpdateRendererPipeInfo(const int32_t sessionId, const AudioPipeType pipeType);
@@ -86,6 +87,7 @@ private:
     int32_t UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateRendererDeviceInfo(DeviceInfo &outputDeviceInfo);
     int32_t UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceInfo);
+    int32_t UpdateRendererStreamInternal(AudioStreamChangeInfo &streamChangeInfo);
     AudioStreamType GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage);
     AudioStreamType GetStreamTypeFromSourceType(SourceType sourceType);
     void WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);

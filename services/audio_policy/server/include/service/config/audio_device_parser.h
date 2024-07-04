@@ -77,9 +77,9 @@ private:
     void ParseDevicePrivacyInfo(xmlNode *node, std::list<DevicePrivacyInfo> &deviceLists);
     void ParserDevicePrivacyInfoList(xmlNode *node, std::list<DevicePrivacyInfo> &deviceLists);
     void ParseAudioDevicePrivacyType(xmlNode *node, AudioDevicePrivacyType &deviceType);
-    void ParseDeviceRole(const std::string &deviceRole, int32_t &deviceRoleFlag);
-    void ParseDeviceCategory(const std::string &deviceCategory, int32_t &deviceCategoryFlag);
-    void ParseDeviceUsage(const std::string &deviceUsage, int32_t &deviceUsageFlag);
+    void ParseDeviceRole(const std::string &deviceRole, uint32_t &deviceRoleFlag);
+    void ParseDeviceCategory(const std::string &deviceCategory, uint32_t &deviceCategoryFlag);
+    void ParseDeviceUsage(const std::string &deviceUsage, uint32_t &deviceUsageFlag);
     std::string ExtractPropertyValue(const std::string &propName, xmlNode *node);
     AudioDevicePrivacyType GetDevicePrivacyType(const std::string &devicePrivacyType);
 

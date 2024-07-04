@@ -51,9 +51,9 @@ inline AudioScene GetAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInt
 
 static const std::unordered_map<const AudioScene, const int> SCENE_PRIORITY = {
     // from high to low
-    {AUDIO_SCENE_PHONE_CALL, 4},
+    {AUDIO_SCENE_PHONE_CALL, 5},
+    {AUDIO_SCENE_VOICE_RINGING, 4},
     {AUDIO_SCENE_PHONE_CHAT, 3},
-    {AUDIO_SCENE_VOICE_RINGING, 2},
     {AUDIO_SCENE_RINGING, 2},
     {AUDIO_SCENE_DEFAULT, 1}
 };
@@ -274,7 +274,7 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(const int32_t zoneId, cons
         return SUCCESS;
     }
 
-    policyServer_->CheckStreamMode(incomingSessionId, streamType, OFFLOAD_NO_SESSION_ID);
+    policyServer_->CheckStreamMode(incomingSessionId);
 
     bool shouldReturnSuccess = false;
     ProcessAudioScene(audioInterrupt, incomingSessionId, zoneId, shouldReturnSuccess);
@@ -811,7 +811,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
 
     UpdateAudioSceneFromInterrupt(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT);
 
-    policyServer_->OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, STREAM_DEFAULT, audioInterrupt.sessionId);
+    policyServer_->OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, audioInterrupt.sessionId);
     policyServer_->OffloadStopPlaying(audioInterrupt);
 
     // resume if other session was forced paused or ducked
@@ -1198,26 +1198,26 @@ void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> audioInterruptZonesMapDump;
     AddDumpInfo(audioInterruptZonesMapDump);
     dumpString += "\nAudioInterrupt Zone:\n";
-    AppendFormat(dumpString, "- %d AudioInterruptZoneDump (s) available:\n",
+    AppendFormat(dumpString, "- %zu AudioInterruptZoneDump (s) available:\n",
         zonesMap_.size());
     for (const auto&[zoneID, audioInterruptZoneDump] : audioInterruptZonesMapDump) {
         if (zoneID < 0) {
             continue;
         }
         AppendFormat(dumpString, "  - Zone ID: %d\n", zoneID);
-        AppendFormat(dumpString, "  - Pids size: %d\n", audioInterruptZoneDump->pids.size());
+        AppendFormat(dumpString, "  - Pids size: %zu\n", audioInterruptZoneDump->pids.size());
         for (auto pid : audioInterruptZoneDump->pids) {
             AppendFormat(dumpString, "    - pid: %d\n", pid);
         }
 
-        AppendFormat(dumpString, "  - Interrupt callback size: %d\n",
+        AppendFormat(dumpString, "  - Interrupt callback size: %zu\n",
             audioInterruptZoneDump->interruptCbSessionIdsMap.size());
         AppendFormat(dumpString, "    - The sessionIds as follow:\n");
         for (auto sessionId : audioInterruptZoneDump->interruptCbSessionIdsMap) {
-            AppendFormat(dumpString, "      - SessionId: %d -- have interrupt callback.\n", sessionId);
+            AppendFormat(dumpString, "      - SessionId: %u -- have interrupt callback.\n", sessionId);
         }
 
-        AppendFormat(dumpString, "  - Audio policy client proxy callback size: %d\n",
+        AppendFormat(dumpString, "  - Audio policy client proxy callback size: %zu\n",
             audioInterruptZoneDump->audioPolicyClientProxyCBClientPidMap.size());
         AppendFormat(dumpString, "    - The clientPids as follow:\n");
         for (auto pid : audioInterruptZoneDump->audioPolicyClientProxyCBClientPidMap) {
@@ -1226,14 +1226,14 @@ void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
 
         std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList
             = audioInterruptZoneDump->audioFocusInfoList;
-        AppendFormat(dumpString, "  - %d Audio Focus Info (s) available:\n", audioFocusInfoList.size());
+        AppendFormat(dumpString, "  - %zu Audio Focus Info (s) available:\n", audioFocusInfoList.size());
         uint32_t invalidSessionId = static_cast<uint32_t>(-1);
         for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
             if ((iter->first).sessionId == invalidSessionId) {
                 continue;
             }
             AppendFormat(dumpString, "    - Pid: %d\n", (iter->first).pid);
-            AppendFormat(dumpString, "    - SessionId: %d\n", (iter->first).sessionId);
+            AppendFormat(dumpString, "    - SessionId: %u\n", (iter->first).sessionId);
             AppendFormat(dumpString, "    - Audio Focus isPlay Id: %d\n", (iter->first).audioFocusType.isPlay);
             AppendFormat(dumpString, "    - Stream Name: %s\n",
                 AudioInfoDumpUtils::GetStreamName((iter->first).audioFocusType.streamType).c_str());

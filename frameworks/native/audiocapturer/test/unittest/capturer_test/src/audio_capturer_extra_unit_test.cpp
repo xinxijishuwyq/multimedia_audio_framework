@@ -20,7 +20,6 @@
 #include "audio_capturer.h"
 #include "audio_errors.h"
 #include "audio_info.h"
-#include "audio_stream.h"
 #include "audio_capturer_private.h"
 #include "audio_system_manager.h"
 
@@ -1337,65 +1336,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCaptureMode, TestSize.Level1)
     AudioCaptureMode captureMode = audioCapturer->GetCaptureMode();
     EXPECT_EQ(CAPTURE_MODE_CALLBACK, captureMode);
     audioCapturer->Release();
-}
-
-/**
- * @tc.name  : Test AudioCapturerInterruptCallbackImpl interface.
- * @tc.number: Audio_Capturer_AudioCapturerInterruptCallbackImpl_001
- * @tc.desc  : Test AudioCapturerInterruptCallbackImpl interface.
- */
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_AudioCapturerInterruptCallbackImpl_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioStream> audioStream = nullptr;
-    int32_t appUid = static_cast<int32_t>(getuid());
-    audioStream= std::make_shared<AudioStream>(AudioStreamType::STREAM_MUSIC, AUDIO_MODE_RECORD, appUid);
-    EXPECT_NE(nullptr, audioStream);
-
-    shared_ptr<AudioCapturerInterruptCallbackImpl> audioCapturerInterruptCallbackImpl =
-        std::make_shared<AudioCapturerInterruptCallbackImpl>(audioStream);
-    shared_ptr<AudioCapturerCallbackTest> audioCapturerCB = std::make_shared<AudioCapturerCallbackTest>();
-    audioCapturerInterruptCallbackImpl->SaveCallback(audioCapturerCB);
-
-    InterruptEventInternal interruptEvent = {};
-    interruptEvent.eventType = INTERRUPT_TYPE_END;
-    interruptEvent.forceType = INTERRUPT_SHARE;
-    interruptEvent.hintType = INTERRUPT_HINT_NONE;
-    interruptEvent.duckVolume = 0;
-    audioCapturerInterruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.forceType = INTERRUPT_FORCE;
-    interruptEvent.hintType = INTERRUPT_HINT_RESUME;
-    audioCapturerInterruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
-    audioCapturerInterruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    interruptEvent.hintType = INTERRUPT_HINT_DUCK;
-    audioCapturerInterruptCallbackImpl->OnInterrupt(interruptEvent);
-
-    EXPECT_NE(nullptr, audioCapturerInterruptCallbackImpl);
-}
-
-/**
- * @tc.name  : Test AudioCapturerInterruptCallbackImpl interface.
- * @tc.number: Audio_Capturer_AudioCapturerInterruptCallbackImpl_002
- * @tc.desc  : Test AudioCapturerInterruptCallbackImpl interface.
- */
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_AudioCapturerInterruptCallbackImpl_002, TestSize.Level1)
-{
-    const std::shared_ptr<AudioStream> audioStream = nullptr;
-    shared_ptr<AudioCapturerInterruptCallbackImpl> audioCapturerInterruptCallbackImpl =
-        std::make_shared<AudioCapturerInterruptCallbackImpl>(audioStream);
-    shared_ptr<AudioCapturerCallbackTest> audioCapturerCB = std::make_shared<AudioCapturerCallbackTest>();
-    audioCapturerInterruptCallbackImpl->SaveCallback(audioCapturerCB);
-
-    InterruptEventInternal interruptEvent = {};
-    interruptEvent.eventType = INTERRUPT_TYPE_END;
-    interruptEvent.forceType = INTERRUPT_FORCE;
-    interruptEvent.hintType = INTERRUPT_HINT_NONE;
-    interruptEvent.duckVolume = 0;
-    audioCapturerInterruptCallbackImpl->OnInterrupt(interruptEvent);
-    EXPECT_NE(nullptr, audioCapturerInterruptCallbackImpl);
 }
 
 /**

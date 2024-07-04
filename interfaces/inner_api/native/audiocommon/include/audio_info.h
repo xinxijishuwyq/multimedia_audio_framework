@@ -329,7 +329,7 @@ struct AudioRendererInfo {
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
     uint8_t encodingType = 0;
     uint64_t channelLayout = 0ULL;
-    AudioSampleFormat format = INVALID_WIDTH;
+    AudioSampleFormat format = SAMPLE_S16LE;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -463,7 +463,7 @@ enum AudioScene : int32_t {
     AUDIO_SCENE_MAX,
 };
 
-enum AudioDeviceUsage : int32_t {
+enum AudioDeviceUsage : uint32_t {
     /**
      * Media output devices.
      * @syscap SystemCapability.Multimedia.Audio.Device
@@ -754,6 +754,7 @@ public:
     AudioRendererInfo rendererInfo;
     RendererState rendererState;
     DeviceInfo outputDeviceInfo;
+    bool prerunningState = false;
 
     AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)
     {

@@ -320,7 +320,7 @@ template<typename T> std::set<T> UnmarshallingSetInt32(Parcel &parcel,
 
 struct DeviceStreamInfo {
     AudioEncodingType encoding = AudioEncodingType::ENCODING_PCM;
-    AudioSampleFormat format;
+    AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
     AudioChannelLayout channelLayout  = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
     std::set<AudioSamplingRate> samplingRate;
     std::set<AudioChannel> channels;
@@ -484,7 +484,7 @@ public:
         OLD_DEVICE_UNAVALIABLE = 2,
         OVERRODE = 3,
         MIN = 1000,
-        OLD_DEVICE_UNAVALIABLE_EXT = 1000
+        OLD_DEVICE_UNAVALIABLE_EXT = 1000,
     };
 
     operator AudioStreamDeviceChangeReason() const
@@ -509,6 +509,11 @@ public:
     bool IsOldDeviceUnavaliable() const
     {
         return ((reason_ == ExtEnum::OLD_DEVICE_UNAVALIABLE) || (reason_ == ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT));
+    }
+
+    bool isOverride() const
+    {
+        return reason_ == ExtEnum::OVERRODE;
     }
 
 private:

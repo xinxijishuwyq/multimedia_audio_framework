@@ -26,7 +26,6 @@
 #include "audio_renderer.h"
 #include "audio_renderer_proxy_obj.h"
 #include "audio_policy_manager.h"
-#include "audio_stream.h"
 #include "audio_renderer_private.h"
 
 using namespace std;

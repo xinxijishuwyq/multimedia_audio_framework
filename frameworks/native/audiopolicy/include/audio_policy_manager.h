@@ -171,10 +171,13 @@ public:
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
 
-    int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
-        const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
+    int32_t RegisterAudioRendererEventListener(const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
-    int32_t UnregisterAudioRendererEventListener(const int32_t clientPid);
+    int32_t UnregisterAudioRendererEventListener(
+        const std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> &callbacks);
+
+    int32_t UnregisterAudioRendererEventListener(
+        const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
     int32_t RegisterAudioCapturerEventListener(const int32_t clientPid,
         const std::shared_ptr<AudioCapturerStateChangeCallback> &callback);
@@ -367,7 +370,7 @@ public:
 
     int32_t UnsetAudioDeviceRefinerCallback();
 
-    int32_t TriggerFetchDevice();
+    int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
 

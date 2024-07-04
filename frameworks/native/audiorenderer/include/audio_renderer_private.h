@@ -26,7 +26,6 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
-class AudioRendererStateChangeCallbackImpl;
 class RendererPolicyServiceDiedCallback;
 class OutputDeviceChangeWithInfoCallbackImpl;
 class AudioRendererConcurrencyCallbackImpl;
@@ -94,7 +93,6 @@ public:
     float GetMaxStreamVolume() const override;
     int32_t GetCurrentOutputDevices(DeviceInfo &deviceInfo) const override;
     uint32_t GetUnderflowCount() const override;
-    bool IsDeviceChanged(DeviceInfo &newDeviceInfo);
     void SwitchStream(const uint32_t sessionId, const int32_t streamFlag);
     int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
         const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback) override;
@@ -102,7 +100,6 @@ public:
     int32_t RegisterOutputDeviceChangeWithInfoCallback(
         const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) override;
     int32_t UnregisterOutputDeviceChangeWithInfoCallback() override;
-    void DestroyOutputDeviceChangeWithInfoCallback() override;
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
         const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback) override;
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid) override;
@@ -150,8 +147,6 @@ public:
 
     ~AudioRendererPrivate();
 
-    friend class AudioRendererStateChangeCallbackImpl;
-
 protected:
     // Method for switching between normal and low latency paths
     void SwitchStream(bool isLowLatencyDevice, bool isHalNeedChange);
@@ -166,7 +161,6 @@ private:
     void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId);
     void WriteSwitchStreamLogMsg();
-    void SetSelfRendererStateCallback();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
     void ActivateAudioConcurrency(const AudioStreamParams &audioStreamParams,
@@ -184,7 +178,6 @@ private:
     uint32_t sessionID_ = INVALID_SESSION_ID;
     std::shared_ptr<AudioRendererProxyObj> rendererProxyObj_;
     FILE *dumpFile_ = nullptr;
-    std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioRendererErrorCallback> audioRendererErrorCallback_ = nullptr;
     std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback_ = nullptr;
     mutable std::shared_ptr<RendererPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
@@ -200,6 +193,8 @@ private:
 
     float speed_ = 1.0;
     bool isOffloadAllowed_ = true;
+
+    std::shared_ptr<AudioRendererPolicyServiceDiedCallback> policyServiceDiedCallback_ = nullptr;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
@@ -233,22 +228,6 @@ private:
     std::weak_ptr<AudioRendererCallback> callback_;
 };
 
-class AudioRendererStateChangeCallbackImpl : public AudioRendererStateChangeCallback {
-public:
-    AudioRendererStateChangeCallbackImpl();
-    virtual ~AudioRendererStateChangeCallbackImpl();
-
-    void OnRendererStateChange(
-        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
-    void SaveCallback(const std::weak_ptr<AudioRendererDeviceChangeCallback> &callback);
-    void setAudioRendererObj(AudioRendererPrivate *rendererObj);
-    void UnsetAudioRendererObj();
-private:
-    std::weak_ptr<AudioRendererDeviceChangeCallback> callback_;
-    AudioRendererPrivate *renderer_{nullptr};
-    std::mutex mutex_;
-};
-
 class OutputDeviceChangeWithInfoCallbackImpl : public DeviceChangeWithInfoCallback {
 public:
     OutputDeviceChangeWithInfoCallbackImpl() = default;
@@ -259,14 +238,28 @@ public:
 
     void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag) override;
 
-    void SaveCallback(const std::weak_ptr<AudioRendererOutputDeviceChangeCallback> &callback)
+    void SaveCallback(const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback)
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         callback_ = callback;
     }
 
     void RemoveCallback()
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         callback_.reset();
+    }
+
+    void SaveOldCallback(const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        oldCallback_ = callback;
+    }
+
+    void RemoveOldCallback()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        oldCallback_.reset();
     }
 
     void SetAudioRendererObj(AudioRendererPrivate *rendererObj)
@@ -281,7 +274,8 @@ public:
         renderer_ = nullptr;
     }
 private:
-    std::weak_ptr<AudioRendererOutputDeviceChangeCallback> callback_;
+    std::shared_ptr<AudioRendererOutputDeviceChangeCallback> callback_;
+    std::shared_ptr<AudioRendererDeviceChangeCallback> oldCallback_;
     AudioRendererPrivate *renderer_ = nullptr;
     std::mutex mutex_;
 };

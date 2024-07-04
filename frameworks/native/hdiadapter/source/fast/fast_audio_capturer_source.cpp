@@ -92,19 +92,19 @@ private:
     static constexpr uint32_t FAST_INPUT_STREAM_ID = 22; // 14 + 1 * 8
     int32_t routeHandle_ = -1;
 
-    IAudioSourceAttr attr_;
-    bool capturerInited_;
-    bool started_;
-    bool paused_;
+    IAudioSourceAttr attr_ = {};
+    bool capturerInited_ = false;
+    bool started_ = false;
+    bool paused_ = false;
 
     uint32_t captureId_ = 0;
-    uint32_t openMic_;
-    std::string adapterNameCase_;
+    uint32_t openMic_ = 0;
+    std::string adapterNameCase_ = "";
     struct IAudioManager *audioManager_ = nullptr;
     struct IAudioAdapter *audioAdapter_ = nullptr;
     struct IAudioCapture *audioCapture_ = nullptr;
-    struct AudioAdapterDescriptor adapterDesc_;
-    struct AudioPort audioPort;
+    struct AudioAdapterDescriptor adapterDesc_ = {};
+    struct AudioPort audioPort = {};
 
     size_t bufferSize_ = 0;
     uint32_t bufferTotalFrameSize_ = 0;
@@ -554,6 +554,7 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
         case DEVICE_TYPE_BLUETOOTH_SCO:
             source.ext.device.type = PIN_IN_BLUETOOTH_SCO_HEADSET;
             source.ext.device.desc = const_cast<char *>("pin_in_bluetooth_sco_headset");
+            break;
         default:
             ret = ERR_NOT_SUPPORTED;
             break;

@@ -63,7 +63,7 @@ bool NapiAudioManagerMicStateChangeCallback::IsSameCallback(const napi_value arg
     if (args == nullptr) {
         return true;
     }
-    if (micStateChangeCallback_.get() == nullptr) {
+    if (micStateChangeCallback_ == nullptr) {
         return false;
     }
     napi_value micStateChangeCallback = nullptr;

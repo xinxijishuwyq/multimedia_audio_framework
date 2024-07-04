@@ -578,7 +578,7 @@ class AudioStreamInfo {
 public:
     AudioSamplingRate samplingRate;
     AudioEncodingType encoding = AudioEncodingType::ENCODING_PCM;
-    AudioSampleFormat format;
+    AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
     AudioChannel channels;
     AudioChannelLayout channelLayout  = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
     constexpr AudioStreamInfo(AudioSamplingRate samplingRate_, AudioEncodingType encoding_, AudioSampleFormat format_,

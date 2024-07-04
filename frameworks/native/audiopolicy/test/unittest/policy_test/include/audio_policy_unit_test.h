@@ -23,7 +23,6 @@
 #undef private
 #include "audio_policy_proxy.h"
 #include "audio_stream_manager.h"
-#include "audio_stream.h"
 #include "audio_group_manager.h"
 
 namespace OHOS {
@@ -98,8 +97,6 @@ public:
     // TearDown: Called after each test cases
     void TearDown(void);
     static void InitAudioPolicyProxy(std::shared_ptr<AudioPolicyProxy> &audioPolicyProxy);
-    static void InitAudioStream(std::shared_ptr<AudioStream> &audioStream);
-    static uint32_t GetSessionId(std::shared_ptr<AudioStream> &audioStream);
     static void GetIRemoteObject(sptr<IRemoteObject> &object);
 };
 } // namespace AudioStandard

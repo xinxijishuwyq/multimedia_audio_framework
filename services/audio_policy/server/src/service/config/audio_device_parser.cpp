@@ -96,7 +96,7 @@ void AudioDeviceParser::ParseDevicePrivacyInfo(xmlNode *node, std::list<DevicePr
 
             pValue = reinterpret_cast<char*>(xmlGetProp(deviceNode,
                 reinterpret_cast<xmlChar*>(const_cast<char*>("role"))));
-            int32_t intValue = 0;
+            uint32_t intValue = 0;
             ParseDeviceRole(pValue, intValue);
             deviceInfo.deviceRole = static_cast<DeviceRole>(intValue);
             xmlFree(pValue);
@@ -215,7 +215,7 @@ std::vector<std::string> split(const std::string &line, const std::string &sep)
     return buf;
 }
 
-void AudioDeviceParser::ParseDeviceRole(const std::string &deviceRole, int32_t &deviceRoleFlag)
+void AudioDeviceParser::ParseDeviceRole(const std::string &deviceRole, uint32_t &deviceRoleFlag)
 {
     std::vector<std::string> buf = split(deviceRole, ",");
     for (const auto &role : buf) {
@@ -227,7 +227,7 @@ void AudioDeviceParser::ParseDeviceRole(const std::string &deviceRole, int32_t &
     }
 }
 
-void AudioDeviceParser::ParseDeviceCategory(const std::string &deviceCategory, int32_t &deviceCategoryFlag)
+void AudioDeviceParser::ParseDeviceCategory(const std::string &deviceCategory, uint32_t &deviceCategoryFlag)
 {
     std::vector<std::string> buf = split(deviceCategory, ",");
     for (const auto &category : buf) {
@@ -247,7 +247,7 @@ void AudioDeviceParser::ParseDeviceCategory(const std::string &deviceCategory, i
     }
 }
 
-void AudioDeviceParser::ParseDeviceUsage(const std::string &deviceUsage, int32_t &deviceUsageFlag)
+void AudioDeviceParser::ParseDeviceUsage(const std::string &deviceUsage, uint32_t &deviceUsageFlag)
 {
     std::vector<std::string> buf = split(deviceUsage, ",");
     for (const auto &usage : buf) {

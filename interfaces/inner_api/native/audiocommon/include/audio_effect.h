@@ -153,11 +153,27 @@ enum AudioEffectScene {
 };
 
 /**
+* Enumerates the audio enhance scene effect type.
+*/
+enum AudioEnhanceScene {
+    SCENE_VOIP_3A = 0,
+    SCENE_RECORD = 1
+};
+
+/**
 * Enumerates the audio scene effct mode.
 */
 enum AudioEffectMode {
     EFFECT_NONE = 0,
     EFFECT_DEFAULT = 1
+};
+
+/**
+* Enumerates the audio enhance scene effct mode.
+*/
+enum AudioEnhanceMode {
+    ENHANCE_NONE = 0,
+    ENHANCE_DEFAULT = 1
 };
 
 struct AudioSceneEffectInfo {
@@ -173,9 +189,19 @@ const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TY
     {SCENE_RING, "SCENE_RING"}
 };
 
+const std::unordered_map<AudioEnhanceScene, std::string> AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES {
+    {SCENE_VOIP_3A, "SCENE_VOIP_3A"},
+    {SCENE_RECORD, "SCENE_RECORD"}
+};
+
 const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
     {EFFECT_NONE, "EFFECT_NONE"},
     {EFFECT_DEFAULT, "EFFECT_DEFAULT"},
+};
+
+const std::unordered_map<AudioEnhanceMode, std::string> AUDIO_ENHANCE_SUPPORTED_SCENE_MODES {
+    {ENHANCE_NONE, "ENHANCE_NONE"},
+    {ENHANCE_DEFAULT, "ENHANCE_DEFAULT"},
 };
 
 const std::unordered_map<DeviceType, std::string> SUPPORTED_DEVICE_TYPE {
@@ -235,7 +261,7 @@ struct AudioBuffer {
         int16_t*  s16;
         uint8_t*  u8;
     };
-    void *metaData;
+    void *metaData = nullptr;
 };
 
 struct AudioBufferConfig {

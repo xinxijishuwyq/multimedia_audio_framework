@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
+#undef LOG_TAG
+#define LOG_TAG "ModuleHdiSource"
 
 #include <config.h>
 #include <pulsecore/log.h>
@@ -70,23 +72,42 @@ static const char * const VALID_MODARGS[] = {
     NULL
 };
 
-static pa_hook_result_t SourceOutputNewCb(pa_core *c, pa_source_output *so)
+static pa_hook_result_t SourceOutputProplistChangedCb(pa_core *c, pa_source_output *so)
 {
+    AUDIO_DEBUG_LOG("Trigger SourceOutputProplistChangedCb");
     pa_assert(c);
     const char *sceneMode = pa_proplist_gets(so->proplist, "scene.mode");
     const char *sceneType = pa_proplist_gets(so->proplist, "scene.type");
-    const char *upAndDownDevice = pa_proplist_gets(so->proplist, "device.upAndDown");
-    EnhanceChainManagerCreateCb(sceneType, sceneMode, upAndDownDevice);
+    const char *upDevice = pa_proplist_gets(so->proplist, "device.up");
+    const char *downDevice = pa_proplist_gets(so->proplist, "device.down");
+    EnhanceChainManagerCreateCb(sceneType, sceneMode, upDevice, downDevice);
+    return PA_HOOK_OK;
+}
+
+static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so)
+{
+    AUDIO_DEBUG_LOG("Trigger SourceOutputPutCb");
+    pa_assert(c);
+    const char *sceneType = pa_proplist_gets(so->proplist, "scene.type");
+    const char *sceneMode = pa_proplist_gets(so->proplist, "scene.mode");
+    const char *upDevice = pa_proplist_gets(so->proplist, "device.up");
+    const char *downDevice = pa_proplist_gets(so->proplist, "device.down");
+    int32_t ret = EnhanceChainManagerCreateCb(sceneType, sceneMode, upDevice, downDevice);
+    if (ret != 0) {
+        return PA_HOOK_OK;
+    }
+    EnhanceChainManagerInitEnhanceBuffer();
     return PA_HOOK_OK;
 }
 
 static pa_hook_result_t SourceOutputUnlinkCb(pa_core *c, pa_source_output *so)
 {
+    AUDIO_DEBUG_LOG("Trigger SourceOutputUnlinkCb");
     pa_assert(c);
-    const char *sceneMode = pa_proplist_gets(so->proplist, "scene.mode");
     const char *sceneType = pa_proplist_gets(so->proplist, "scene.type");
-    const char *upAndDownDevice = pa_proplist_gets(so->proplist, "device.upAndDown");
-    EnhanceChainManagerReleaseCb(sceneType, sceneMode, upAndDownDevice);
+    const char *upDevice = pa_proplist_gets(so->proplist, "device.up");
+    const char *downDevice = pa_proplist_gets(so->proplist, "device.down");
+    EnhanceChainManagerReleaseCb(sceneType, upDevice, downDevice);
     return PA_HOOK_OK;
 }
 
@@ -106,7 +127,9 @@ int pa__init(pa_module *m)
     }
 
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_PROPLIST_CHANGED], PA_HOOK_LATE,
-        (pa_hook_cb_t)SourceOutputNewCb, NULL);
+        (pa_hook_cb_t)SourceOutputProplistChangedCb, NULL);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_PUT], PA_HOOK_LATE,
+        (pa_hook_cb_t)SourceOutputPutCb, NULL);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_UNLINK], PA_HOOK_LATE,
         (pa_hook_cb_t)SourceOutputUnlinkCb, NULL);
 

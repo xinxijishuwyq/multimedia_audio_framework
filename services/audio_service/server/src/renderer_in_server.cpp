@@ -22,6 +22,7 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "audio_service.h"
+#include "futex_tool.h"
 #include "i_stream_manager.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
@@ -143,8 +144,12 @@ int32_t RendererInServer::Init()
     }
 
     if (processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) {
-        AUDIO_INFO_LOG("current stream marked as VoIP direct stream");
-        managerType_ = VOIP_PLAYBACK;
+        if (IStreamManager::GetPlaybackManager(VOIP_PLAYBACK).GetStreamCount() <= 0) {
+            AUDIO_INFO_LOG("current stream marked as VoIP direct stream");
+            managerType_ = VOIP_PLAYBACK;
+        } else {
+            AUDIO_WARNING_LOG("One VoIP direct stream has been created! Use normal mode.");
+        }
     }
 
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
@@ -228,7 +233,8 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             }
             break;
         case OPERATION_UNDERFLOW:
-            stateListener->OnOperationHandled(UNDERFLOW_COUNT_ADD, 0);
+            underrunCount_++;
+            audioServerBuffer_->SetUnderrunCount(underrunCount_);
             break;
         case OPERATION_SET_OFFLOAD_ENABLE:
         case OPERATION_UNSET_OFFLOAD_ENABLE:
@@ -272,9 +278,9 @@ void RendererInServer::DoFadingOutFor8Bit(BufferDesc& bufferDesc, size_t byteLen
     if (length == 0) {
         return;
     }
-    int32_t numChannels = processConfig_.streamInfo.channels;
+    uint32_t numChannels = processConfig_.streamInfo.channels;
     for (size_t i = 0; i < length / numChannels; i++) {
-        for (int32_t j = 0; j < numChannels; j++) {
+        for (uint32_t j = 0; j < numChannels; j++) {
             float fadeoutRatio = (float)(length - (i * numChannels + j)) / (length);
             data[i * numChannels + j] =
                 (data[i * numChannels + j] - UINT8_SILENCE_VALUE) * fadeoutRatio + UINT8_SILENCE_VALUE;
@@ -292,10 +298,10 @@ void RendererInServer::DoFadingOutFor16Bit(BufferDesc& bufferDesc, size_t byteLe
     if (length == 0) {
         return;
     }
-    int32_t numChannels = processConfig_.streamInfo.channels;
+    uint32_t numChannels = processConfig_.streamInfo.channels;
     size_t lastPos = 0;
     for (size_t i = 0; i < length / numChannels; i++) {
-        for (int32_t j = 0; j < numChannels; j++) {
+        for (uint32_t j = 0; j < numChannels; j++) {
             float fadeoutRatio = (float)(length - (i * numChannels + j)) / (length);
             lastPos = i * numChannels + j;
             data[lastPos] *= fadeoutRatio;
@@ -314,7 +320,7 @@ void RendererInServer::DoFadingOutFor24Bit(BufferDesc& bufferDesc, size_t byteLe
         return;
     }
 
-    int32_t numChannels = processConfig_.streamInfo.channels;
+    uint32_t numChannels = processConfig_.streamInfo.channels;
     size_t step = byteLen * numChannels;
     size_t lastPos = 0;
     for (size_t i = 0; i < length;) {
@@ -342,10 +348,10 @@ void RendererInServer::DoFadingOutFor32Bit(BufferDesc& bufferDesc, size_t byteLe
     if (length == 0) {
         return;
     }
-    int32_t numChannels = processConfig_.streamInfo.channels;
+    uint32_t numChannels = processConfig_.streamInfo.channels;
     size_t lastPos = 0;
     for (size_t i = 0; i < length / numChannels; i++) {
-        for (int32_t j = 0; j < numChannels; j++) {
+        for (uint32_t j = 0; j < numChannels; j++) {
             float fadeoutRatio = (float)(length - (i * numChannels + j)) / (length);
             lastPos = i * numChannels + j;
             data[lastPos] *= fadeoutRatio;
@@ -495,7 +501,7 @@ int32_t RendererInServer::WriteData()
         Trace trace2("RendererInServer::Underrun");
         std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
         CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_OPERATION_FAILED, "IStreamListener is nullptr");
-        stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
+        FutexTool::FutexWake(audioServerBuffer_->GetFutex());
         return ERR_OPERATION_FAILED;
     }
 
@@ -526,7 +532,7 @@ int32_t RendererInServer::WriteData()
     }
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, SUCCESS, "IStreamListener is nullptr");
-    stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
+    FutexTool::FutexWake(audioServerBuffer_->GetFutex());
     return SUCCESS;
 }
 
@@ -698,6 +704,7 @@ int32_t RendererInServer::Pause()
 int32_t RendererInServer::Flush()
 {
     AUDIO_INFO_LOG("Flush.");
+    Trace trace(traceTag_ + " Flush");
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_STARTED) {
         status_ = I_STATUS_FLUSHING_WHEN_STARTED;
@@ -749,7 +756,7 @@ int32_t RendererInServer::DrainAudioBuffer()
     return SUCCESS;
 }
 
-int32_t RendererInServer::Drain()
+int32_t RendererInServer::Drain(bool stopFlag)
 {
     {
         std::unique_lock<std::mutex> lock(statusLock_);
@@ -759,8 +766,8 @@ int32_t RendererInServer::Drain()
         }
         status_ = I_STATUS_DRAINING;
     }
-    AUDIO_INFO_LOG("Start drain");
-    {
+    AUDIO_INFO_LOG("Start drain. stopFlag:%{public}d", stopFlag);
+    if (stopFlag) {
         std::lock_guard<std::mutex> lock(fadeoutLock_);
         AUDIO_INFO_LOG("fadeoutFlag_ = DO_FADINGOUT");
         fadeoutFlag_ = DO_FADINGOUT;
@@ -1117,6 +1124,17 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
     return SUCCESS;
+}
+
+int32_t RendererInServer::SetClientVolume()
+{
+    if (audioServerBuffer_ == nullptr) {
+        AUDIO_WARNING_LOG("buffer in not inited");
+        return ERROR;
+    }
+    float clientVolume = audioServerBuffer_->GetStreamVolume();
+    int32_t ret = stream_->SetClientVolume(clientVolume);
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

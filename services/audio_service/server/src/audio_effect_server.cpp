@@ -29,9 +29,9 @@ namespace OHOS {
 namespace AudioStandard {
 
 #if (defined(__aarch64__) || defined(__x86_64__))
-    constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib64/"};
+    constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/sys_prod/lib64/", "/system/lib64/"};
 #else
-    constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib/"};
+    constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/sys_prod/lib/", "/system/lib/"};
 #endif
 
 bool ResolveLibrary(const std::string &path, std::string &resovledPath)

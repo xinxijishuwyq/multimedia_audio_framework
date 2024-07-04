@@ -82,6 +82,18 @@ static int32_t UpdateUnsupportedScene(std::string &scene)
     return isSupported;
 }
 
+static int32_t UpdateUnsupportedEnhanceScene(std::string &scene)
+{
+    int32_t isSupported = 0;
+    if ((scene != "SCENE_VOIP_3A") &&
+        (scene != "SCENE_RECORD")) {
+        AUDIO_INFO_LOG("[supportedEnhanceConfig LOG9]:stream-> The scene of %{public}s is unsupported, \
+            and this scene is deleted!", scene.c_str());
+        isSupported = -1;
+    }
+    return isSupported;
+}
+
 static void UpdateUnsupportedDevicePre(Preprocess &pp, Stream &stream, const std::string &mode, int32_t i, int32_t j)
 {
     StreamEffectMode streamEffectMode;
@@ -102,9 +114,9 @@ static void UpdateUnsupportedDevicePre(Preprocess &pp, Stream &stream, const std
 static void UpdateUnsupportedModePre(Preprocess &pp, Stream &stream, std::string &mode, int32_t i)
 {
     int32_t isSupported = 0;
-    if ((mode != "EFFECT_NONE") &&
-        (mode != "EFFECT_DEFAULT")) {
-        AUDIO_INFO_LOG("[supportedEffectConfig LOG10]:mode-> The %{public}s mode of %{public}s is unsupported, \
+    if ((mode != "ENHANCE_NONE") &&
+        (mode != "ENHANCE_DEFAULT")) {
+        AUDIO_INFO_LOG("[supportedEnhanceConfig LOG10]:mode-> The %{public}s mode of %{public}s is unsupported, \
             and this mode is deleted!", mode.c_str(), stream.scene.c_str());
         isSupported = -1;
     }
@@ -148,7 +160,7 @@ static void UpdateUnsupportedModePost(EffectSceneStream &ess, Stream &stream, st
 static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &pp)
 {
     bool isDuplicate = false;
-    int32_t isSupported = UpdateUnsupportedScene(pp.stream);
+    int32_t isSupported = UpdateUnsupportedEnhanceScene(pp.stream);
     auto it = std::find_if(preProcessNew.stream.begin(), preProcessNew.stream.end(), [&pp](const Stream& x) {
         return x.scene == pp.stream;
     });

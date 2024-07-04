@@ -111,8 +111,8 @@ private:
     bool startUpdate_ = false;
     int capFrameNum_ = 0;
 
-    IAudioSourceAttr attr_;
-    std::string deviceNetworkId_;
+    IAudioSourceAttr attr_ = {};
+    std::string deviceNetworkId_ = "";
     std::atomic<bool> capturerInited_ = false;
     std::atomic<bool> isCapturerCreated_ = false;
     std::atomic<bool> started_ = false;
@@ -122,7 +122,7 @@ private:
     std::shared_ptr<IAudioDeviceAdapter> audioAdapter_ = nullptr;
     IAudioSourceCallback *paramCb_ = nullptr;
     sptr<IAudioCapture> audioCapture_ = nullptr;
-    struct AudioPort audioPort_;
+    struct AudioPort audioPort_ = {};
     FILE *dumpFile_ = nullptr;
     bool muteState_ = false;
     std::mutex createCaptureMutex_;
@@ -549,7 +549,7 @@ int32_t RemoteAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
     int32_t ret = SetInputPortPin(inputDevice, source);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set input port pin fail, ret %{public}d", ret);
 
-    source.portId = audioPort_.portId;
+    source.portId = static_cast<int32_t>(audioPort_.portId);
     source.role = AudioPortRole::AUDIO_PORT_SOURCE_ROLE;
     source.type = AudioPortType::AUDIO_PORT_DEVICE_TYPE;
     source.ext.device.moduleId = 0;

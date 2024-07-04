@@ -18,6 +18,7 @@
 #include "audio_policy_client_stub_impl.h"
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -294,15 +295,31 @@ void AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(const std::vector<
 int32_t AudioPolicyClientStubImpl::AddRendererStateChangeCallback(
     const std::shared_ptr<AudioRendererStateChangeCallback> &cb)
 {
+    auto key = cb.get();
+    CHECK_AND_RETURN_RET_LOG(key, ERR_INVALID_PARAM, "cb is null");
+
     std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
-    rendererStateChangeCallbackList_.push_back(cb);
+    rendererStateChangeCallbackList_.insert_or_assign(key, cb);
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::RemoveRendererStateChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemoveRendererStateChangeCallback(
+    const std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> &callbacks)
 {
     std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
-    rendererStateChangeCallbackList_.clear();
+    for (const auto &cb : callbacks) {
+        rendererStateChangeCallbackList_.erase(cb.get());
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveRendererStateChangeCallback(
+    const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
+{
+    std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
+    rendererStateChangeCallbackList_.erase(callback.get());
+
     return SUCCESS;
 }
 
@@ -330,6 +347,7 @@ int32_t AudioPolicyClientStubImpl::RemoveDeviceChangeWithInfoCallback(const uint
 void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t sessionId,
     const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason)
 {
+    Trace trace("AudioPolicyClientStubImpl::OnRendererDeviceChange");
     std::shared_ptr<DeviceChangeWithInfoCallback> callback = nullptr;
     {
         std::lock_guard<std::mutex> lockCbMap(deviceChangeWithInfoCallbackMutex_);
@@ -339,6 +357,8 @@ void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t sessionId,
         callback = deviceChangeWithInfoCallbackMap_.at(sessionId);
     }
     if (callback != nullptr) {
+        Trace traceCallback("callback->OnDeviceChangeWithInfo sessionid:" + std::to_string(sessionId)
+            + " reason:" + std::to_string(static_cast<int>(reason)));
         callback->OnDeviceChangeWithInfo(sessionId, deviceInfo, reason);
     }
 }
@@ -347,8 +367,10 @@ void AudioPolicyClientStubImpl::OnRendererStateChange(
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
+    Trace trace("AudioPolicyClientStubImpl::OnRendererStateChange");
     for (auto it = rendererStateChangeCallbackList_.begin(); it != rendererStateChangeCallbackList_.end(); ++it) {
-        (*it)->OnRendererStateChange(audioRendererChangeInfos);
+        Trace traceCallback("OnRendererStateChange");
+        it->second->OnRendererStateChange(audioRendererChangeInfos);
     }
 }
 

@@ -58,18 +58,19 @@ static int32_t FindEffectLib(const std::string &effect,
     return ERROR;
 }
 
-static bool IsChannelLayoutHVSSupported(const uint64_t channelLayout)
+static bool IsChannelLayoutSupported(const uint64_t channelLayout)
 {
-    return find(HVS_SUPPORTED_CHANNELLAYOUTS.begin(), HVS_SUPPORTED_CHANNELLAYOUTS.end(), channelLayout) !=
-        HVS_SUPPORTED_CHANNELLAYOUTS.end();
+    return find(AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS.begin(),
+        AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS.end(), channelLayout) != AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS.end();
 }
 
-static void FindMaxSessionID(std::string &maxSessionID, std::string &sceneType,
+static void FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
     const std::string &scenePairType, std::set<std::string> &sessions)
 {
     for (auto& sessionID : sessions) {
-        if (sessionID > maxSessionID) {
-            maxSessionID = sessionID;
+        uint32_t sessionIDInt = static_cast<uint32_t>(std::stoul(sessionID));
+        if (sessionIDInt > maxSessionID) {
+            maxSessionID = sessionIDInt;
             sceneType = scenePairType;
         }
     }
@@ -314,7 +315,7 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(const std::string
 
     std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     if (SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         if (!SceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) ||
             SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] < 1) {
@@ -332,8 +333,7 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(const std::string
         return ERROR;
     }
     std::string effectMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
-    if (!SceneTypeToSpecialEffectSet_.count(sceneType) &&
-        SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] > 1) {
+    if (!SceneTypeToSpecialEffectSet_.count(sceneType) && commonEffectChainCount_ > 1) {
         return SUCCESS;
     }
     if (SetAudioEffectChainDynamic(sceneType, effectMode) != SUCCESS) {
@@ -368,6 +368,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
     }
 
     audioEffectChain->SetEffectMode(effectMode);
+    audioEffectChain->SetExtraSceneType(extraSceneType_);
     for (std::string effect: EffectChainToEffectsMap_[effectChain]) {
         AudioEffectHandle handle = nullptr;
         AudioEffectDescriptor descriptor;
@@ -415,7 +416,7 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
 
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
         return SUCCESS;
@@ -423,22 +424,18 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
         SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] > 1) {
         SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey]--;
         if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
-            SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] && sceneType != "SCENE_OTHERS") {
-            SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey]--;
+            SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey]) {
+            commonEffectChainCount_--;
         }
         return SUCCESS;
     }
     
-    if (SceneTypeToSpecialEffectSet_.count(sceneType)) {
-        SceneTypeToSpecialEffectSet_.erase(sceneType);
-    }
-    if (SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] < 1) {
-        SceneTypeToEffectChainMap_.erase(commonSceneTypeAndDeviceKey);
-        SceneTypeToEffectChainCountMap_.erase(commonSceneTypeAndDeviceKey);
-        isCommonEffectChainExisted_ = false;
-    }
+    SceneTypeToSpecialEffectSet_.erase(sceneType);
+    CheckAndReleaseCommonEffectChain(sceneType);
     SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
-    SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
+    if (sceneType != COMMON_SCENE_TYPE) {
+        SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
+    }
 
     if (debugArmFlag_ && !spkOffloadEnabled_ && CheckIfSpkDsp()) {
         effectHdiInput_[0] = HDI_INIT;
@@ -597,7 +594,8 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
                 currSceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(
                     GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, it->first)));
             }
-            int32_t ret = audioEffectChain->SetEffectParam(currSceneType);
+            audioEffectChain->SetEffectCurrSceneType(currSceneType);
+            int32_t ret = audioEffectChain->UpdateEffectParam();
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap volume failed");
             AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, volume changed to %{public}u",
                 it->first.c_str(), audioEffectChain->GetLatency(), volumeMax);
@@ -670,7 +668,8 @@ int32_t AudioEffectChainManager::EffectApRotationUpdate(std::shared_ptr<AudioEff
                 currSceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(
                     GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, it->first)));
             }
-            int32_t ret = audioEffectChain->SetEffectParam(currSceneType);
+            audioEffectChain->SetEffectCurrSceneType(currSceneType);
+            int32_t ret = audioEffectChain->UpdateEffectParam();
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap rotation failed");
             AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, rotation changed to %{public}u",
                 it->first.c_str(), audioEffectChain->GetLatency(), rotationState);
@@ -753,13 +752,16 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
     uint64_t &channelLayout)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    if (!SceneTypeToSessionIDMap_.count(sceneType)) {
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         return ERROR;
     }
     for (auto& scenePair : SceneTypeToSessionIDMap_) {
-        if (sceneType == scenePair.first || !SceneTypeToSpecialEffectSet_.count(sceneType)) {
+        std::string pairSceneTypeAndDeviceKey = scenePair.first + "_&_" + GetDeviceTypeName();
+        if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
+            SceneTypeToEffectChainMap_[pairSceneTypeAndDeviceKey]) {
             std::set<std::string> sessions = scenePair.second;
-            FindMaxEffectChannels(sceneType, sessions, channels, channelLayout);
+            FindMaxEffectChannels(scenePair.first, sessions, channels, channelLayout);
         }
     }
     return SUCCESS;
@@ -777,7 +779,7 @@ int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint
             if (info.channels > DEFAULT_NUM_CHANNEL &&
                 info.channels <= DSP_MAX_NUM_CHANNEL &&
                 !ExistAudioEffectChain(it->first, info.sceneMode, info.spatializationEnabled) &&
-                IsChannelLayoutHVSSupported(info.channelLayout)) {
+                IsChannelLayoutSupported(info.channelLayout)) {
                 tmpChannelLayout = info.channelLayout;
                 tmpChannelCount = info.channels;
             }
@@ -838,6 +840,7 @@ int32_t AudioEffectChainManager::SetHdiParam(const std::string &sceneType, const
         return ERROR;
     }
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
+    hdiSceneType_ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
     effectHdiInput_[0] = HDI_BYPASS;
     effectHdiInput_[1] = enabled == true ? 0 : 1;
@@ -849,7 +852,6 @@ int32_t AudioEffectChainManager::SetHdiParam(const std::string &sceneType, const
     }
 
     effectHdiInput_[0] = HDI_ROOM_MODE;
-    hdiSceneType_ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
     if (!spatializationEnabled_ || (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP")) {
         effectHdiInput_[1] = hdiSceneType_;
     } else {
@@ -1038,16 +1040,35 @@ AudioEffectScene AudioEffectChainManager::GetSceneTypeFromSpatializationSceneTyp
     return sceneType;
 }
 
-void AudioEffectChainManager::UpdateEffectChainParams(AudioEffectScene sceneType)
+void AudioEffectChainManager::UpdateExtraSceneType(const std::string &extraSceneType)
 {
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    AUDIO_INFO_LOG("Update scene type: %{public}s to effect chain", extraSceneType.c_str());
+    extraSceneType_ = extraSceneType;
     for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
         auto audioEffectChain = it->second;
         if (audioEffectChain == nullptr) {
             continue;
         }
+        audioEffectChain->SetExtraSceneType(extraSceneType);
+        if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
+            AUDIO_WARNING_LOG("Update scene type to effect chain failed");
+            continue;
+        }
+    }
+}
 
-        if (audioEffectChain->SetEffectParam(sceneType) != SUCCESS) {
-            AUDIO_WARNING_LOG("set param to effect chain failed");
+void AudioEffectChainManager::UpdateEffectChainParams(AudioEffectScene sceneType)
+{
+    AUDIO_INFO_LOG("Update param: %{public}d to effect chain", sceneType);
+    for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
+        auto audioEffectChain = it->second;
+        if (audioEffectChain == nullptr) {
+            continue;
+        }
+        audioEffectChain->SetEffectCurrSceneType(sceneType);
+        if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
+            AUDIO_WARNING_LOG("Update param to effect chain failed");
             continue;
         }
     }
@@ -1062,6 +1083,7 @@ void AudioEffectChainManager::ResetEffectBuffer()
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     for (const auto &[sceneType, effectChain] : SceneTypeToEffectChainMap_) {
+        if (effectChain == nullptr) continue;
         effectChain->InitEffectChain();
     }
 }
@@ -1096,7 +1118,7 @@ void AudioEffectChainManager::ResetInfo()
 void AudioEffectChainManager::UpdateRealAudioEffect()
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    std::string maxSessionID;
+    uint32_t maxSessionID = 0;
     std::string sceneType = "";
     for (auto& scenePair : SceneTypeToSessionIDMap_) {
         if (!SceneTypeToSpecialEffectSet_.count(scenePair.first)) {
@@ -1104,12 +1126,13 @@ void AudioEffectChainManager::UpdateRealAudioEffect()
             FindMaxSessionID(maxSessionID, sceneType, scenePair.first, sessions);
         }
     }
-    if (!sceneType.empty()) {
-        std::string key = sceneType + "_&_" + GetDeviceTypeName();
+    std::string key = sceneType + "_&_" + GetDeviceTypeName();
+    if (!sceneType.empty() && SceneTypeToEffectChainMap_[key] != nullptr) {
         std::shared_ptr<AudioEffectChain> audioEffectChain = SceneTypeToEffectChainMap_[key];
         AudioEffectScene currSceneType;
         UpdateCurrSceneType(currSceneType, sceneType);
-        audioEffectChain->SetEffectParam(currSceneType);
+        audioEffectChain->SetEffectCurrSceneType(currSceneType);
+        audioEffectChain->UpdateEffectParam();
     }
 }
 
@@ -1118,7 +1141,7 @@ bool AudioEffectChainManager::CheckSceneTypeMatch(const std::string &sinkSceneTy
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string sinkSceneTypeAndDeviceKey = sinkSceneType + "_&_" + GetDeviceTypeName();
-    std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) ||
         !SceneTypeToEffectChainMap_.count(sinkSceneTypeAndDeviceKey)) {
         return false;
@@ -1147,11 +1170,11 @@ void AudioEffectChainManager::UpdateCurrSceneType(AudioEffectScene &currSceneTyp
 void AudioEffectChainManager::ChangeEffectChainCountMapForCreate(const std::string &sceneType)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey]++;
     if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
-        SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] && sceneType != "SCENE_OTHERS") {
-        SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey]++;
+        SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey]) {
+        commonEffectChainCount_++;
     }
 }
 
@@ -1173,7 +1196,7 @@ void AudioEffectChainManager::FindMaxEffectChannels(const std::string &sceneType
         std::string deviceType = GetDeviceTypeName();
         if (((deviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") || (deviceType == "DEVICE_TYPE_SPEAKER"))
             && ExistAudioEffectChain(sceneType, info.sceneMode, info.spatializationEnabled)
-            && IsChannelLayoutHVSSupported(info.channelLayout)) {
+            && IsChannelLayoutSupported(info.channelLayout)) {
             tmpChannelLayout = info.channelLayout;
             tmpChannelCount = info.channels;
         } else {
@@ -1192,9 +1215,9 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
 {
     std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
 
-    if ((DEFAULT_NUM_EFFECT_INSTANCES - SceneTypeToSpecialEffectSet_.size()) > 1 && sceneType != "SCENE_OTHERS") {
+    if ((DEFAULT_NUM_EFFECT_INSTANCES - SceneTypeToSpecialEffectSet_.size()) > 1 && sceneType != COMMON_SCENE_TYPE) {
         SceneTypeToSpecialEffectSet_.insert(sceneType);
 #ifdef SENSOR_ENABLE
         audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker_);
@@ -1204,21 +1227,40 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
     } else {
         if (!isCommonEffectChainExisted_) {
 #ifdef SENSOR_ENABLE
-            audioEffectChain = std::make_shared<AudioEffectChain>("SCENE_OTHERS", headTracker_);
+            audioEffectChain = std::make_shared<AudioEffectChain>(COMMON_SCENE_TYPE, headTracker_);
 #else
-            audioEffectChain = std::make_shared<AudioEffectChain>("SCENE_OTHERS");
+            audioEffectChain = std::make_shared<AudioEffectChain>(COMMON_SCENE_TYPE);
 #endif
-            if (sceneType != "SCENE_OTHERS") {
+            if (sceneType != COMMON_SCENE_TYPE) {
                 SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] = audioEffectChain;
-                SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] = 1;
             }
+            commonEffectChainCount_ = 1;
             isCommonEffectChainExisted_ = true;
         } else {
             audioEffectChain = SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey];
-            SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey]++;
+            commonEffectChainCount_++;
         }
     }
     return audioEffectChain;
+}
+
+void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string &sceneType)
+{
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
+    if (!isCommonEffectChainExisted_) {
+        return;
+    }
+    if (SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] == SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]) {
+        if (commonEffectChainCount_ <= 1) {
+            SceneTypeToEffectChainMap_.erase(commonSceneTypeAndDeviceKey);
+            SceneTypeToEffectChainCountMap_.erase(commonSceneTypeAndDeviceKey);
+            commonEffectChainCount_= 0;
+            isCommonEffectChainExisted_ = false;
+        } else {
+            commonEffectChainCount_--;
+        }
+    }
 }
 
 #ifdef WINDOW_MANAGER_ENABLE

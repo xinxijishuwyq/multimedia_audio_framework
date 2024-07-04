@@ -346,17 +346,6 @@ void AudioPolicyParser::ParsePipes(xmlNode &node, AudioAdapterInfo &adapterInfo)
     adapterInfo.pipeInfos_ = pipeInfos;
 }
 
-void AudioPolicyParser::SplitStringToSet(std::string &str, std::set<uint32_t> &result)
-{
-    std::stringstream ss(str);
-    std::string token;
-
-    while (std::getline(ss, token, ',')) {
-        uint32_t num = static_cast<uint32_t>(std::stoi(token));
-        result.insert(num);
-    }
-}
-
 void AudioPolicyParser::SplitChannelStringToSet(std::string &str, std::set<uint32_t> &result)
 {
     std::stringstream ss(str);
@@ -485,7 +474,7 @@ void AudioPolicyParser::HandleConfigFlagAndUsage(ConfigInfo &configInfo, PipeInf
     if (configInfo.name_ == "flag") {
         auto it = audioFlagStrToEnum.find(configInfo.value_);
         if (it != audioFlagStrToEnum.end()) {
-            pipeInfo.audioFlag_ = it->second;
+            pipeInfo.audioFlag_ = static_cast<int32_t>(it->second);
         }
     } else if (configInfo.name_ == "usage") {
         auto it = audioUsageStrToEnum.find(configInfo.value_);

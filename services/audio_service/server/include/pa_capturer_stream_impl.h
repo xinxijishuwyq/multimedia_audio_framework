@@ -60,15 +60,15 @@ private:
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
 
     pa_stream *paStream_ = nullptr;
-    AudioProcessConfig processConfig_;
+    AudioProcessConfig processConfig_ = {};
     std::weak_ptr<IStatusCallback> statusCallback_;
     std::weak_ptr<IReadCallback> readCallback_;
     std::mutex streamImplLock_;
-    int32_t streamCmdStatus_;
-    int32_t streamFlushStatus_;
+    int32_t streamCmdStatus_ = 0;
+    int32_t streamFlushStatus_ = 0;
     State state_ = INVALID;
-    uint32_t underFlowCount_;
-    pa_threaded_mainloop *mainloop_;
+    uint32_t underFlowCount_ = 0;
+    pa_threaded_mainloop *mainloop_ = nullptr;
 
     size_t byteSizePerFrame_ = 0;
     size_t spanSizeInFrame_ = 0;

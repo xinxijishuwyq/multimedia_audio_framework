@@ -19,7 +19,7 @@ declare_args() {
   sonic_enable = true
   speex_enable = false
   if (!defined(global_parts_info) ||
-      defined(global_parts_info.drivers_interface_distributed_audio)) {
+      defined(global_parts_info.hdf_drivers_interface_distributed_audio)) {
     audio_framework_feature_daudio_enable = true
   } else {
     audio_framework_feature_daudio_enable = false
@@ -61,9 +61,6 @@ declare_args() {
   }
 
   audio_framework_feature_new_napi = true
-
-  multimedia_audio_framework_drivers =
-      "//drivers/peripheral/audio/interfaces/include/"
 }
 
 third_party_path = "//third_party"

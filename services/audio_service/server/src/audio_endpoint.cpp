@@ -320,7 +320,8 @@ std::string AudioEndpoint::GenerateEndpointKey(DeviceInfo &deviceInfo, int32_t e
     if (deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         endpointId = deviceInfo.deviceId;
     }
-    return deviceInfo.networkId + "_" + std::to_string(endpointId) + "_" + std::to_string(endpointFlag);
+    return deviceInfo.networkId + "_" + std::to_string(endpointId) + "_" +
+        std::to_string(deviceInfo.deviceRole) + "_" + std::to_string(endpointFlag);
 }
 
 std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, uint64_t id,
@@ -554,24 +555,24 @@ void AudioEndpointInner::Dump(std::string &dumpString)
     // dump endpoint stream info
     dumpString += "Endpoint stream info:\n";
     AppendFormat(dumpString, "  - samplingRate: %d\n", dstStreamInfo_.samplingRate);
-    AppendFormat(dumpString, "  - channels: %d\n", dstStreamInfo_.channels);
-    AppendFormat(dumpString, "  - format: %d\n", dstStreamInfo_.format);
+    AppendFormat(dumpString, "  - channels: %u\n", dstStreamInfo_.channels);
+    AppendFormat(dumpString, "  - format: %u\n", dstStreamInfo_.format);
     AppendFormat(dumpString, "  - sink type: %d\n", fastSinkType_);
     AppendFormat(dumpString, "  - source type: %d\n", fastSourceType_);
 
     // dump status info
     AppendFormat(dumpString, "  - Current endpoint status: %s\n", GetStatusStr(endpointStatus_).c_str());
     if (dstAudioBuffer_ != nullptr) {
-        AppendFormat(dumpString, "  - Currend hdi read position: %d\n", dstAudioBuffer_->GetCurReadFrame());
-        AppendFormat(dumpString, "  - Currend hdi write position: %d\n", dstAudioBuffer_->GetCurWriteFrame());
+        AppendFormat(dumpString, "  - Currend hdi read position: %u\n", dstAudioBuffer_->GetCurReadFrame());
+        AppendFormat(dumpString, "  - Currend hdi write position: %u\n", dstAudioBuffer_->GetCurWriteFrame());
     }
 
     // dump linked process info
     std::lock_guard<std::mutex> lock(listLock_);
-    AppendFormat(dumpString, "  - linked process:: %d\n", processBufferList_.size());
+    AppendFormat(dumpString, "  - linked process:: %zu\n", processBufferList_.size());
     for (auto item : processBufferList_) {
-        AppendFormat(dumpString, "  - process read position: %d\n", item->GetCurReadFrame());
-        AppendFormat(dumpString, "  - process write position: %d\n", item->GetCurWriteFrame());
+        AppendFormat(dumpString, "  - process read position: %u\n", item->GetCurReadFrame());
+        AppendFormat(dumpString, "  - process write position: %u\n", item->GetCurWriteFrame());
     }
     dumpString += "\n";
 }
@@ -777,7 +778,8 @@ int32_t AudioEndpointInner::PrepareDeviceBuffer(const DeviceInfo &deviceInfo)
         "get adapter buffer Info fail, ret %{public}d.", ret);
 
     // spanDuration_ may be less than the correct time of dstSpanSizeInframe_.
-    spanDuration_ = static_cast<uint64_t>(dstSpanSizeInframe_ * AUDIO_NS_PER_SECOND / dstStreamInfo_.samplingRate);
+    spanDuration_ = static_cast<int64_t>(dstSpanSizeInframe_) * AUDIO_NS_PER_SECOND /
+        static_cast<int64_t>(dstStreamInfo_.samplingRate);
     int64_t temp = spanDuration_ / 5 * 3; // 3/5 spanDuration
     serverAheadReadTime_ = temp < ONE_MILLISECOND_DURATION ? ONE_MILLISECOND_DURATION : temp; // at least 1ms ahead.
     AUDIO_DEBUG_LOG("panDuration %{public}" PRIu64" ns, serverAheadReadTime %{public}" PRIu64" ns.",

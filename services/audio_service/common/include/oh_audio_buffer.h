@@ -63,12 +63,16 @@ struct BasicBufferInfo {
     uint32_t spanSizeInFrame;
     uint32_t byteSizePerFrame;
 
+    std::atomic<uint32_t> futexObj;
+
     std::atomic<StreamStatus> streamStatus;
 
     // basic read/write postion
     std::atomic<uint64_t> basePosInFrame;
     std::atomic<uint64_t> curWriteFrame;
     std::atomic<uint64_t> curReadFrame;
+
+    std::atomic<uint32_t> underrunCount;
 
     std::atomic<uint64_t> handlePos;
     std::atomic<int64_t> handleTime;
@@ -126,6 +130,10 @@ public:
 
     std::atomic<StreamStatus> *GetStreamStatus();
 
+    uint32_t GetUnderrunCount();
+
+    bool SetUnderrunCount(uint32_t count);
+
     bool GetHandleInfo(uint64_t &frames, int64_t &nanoTime);
 
     void SetHandleInfo(uint64_t frames, int64_t nanoTime);
@@ -157,6 +165,7 @@ public:
 
     uint32_t GetSpanCount();
 
+    std::atomic<uint32_t> *GetFutex();
     uint8_t *GetDataBase();
     size_t GetDataSize();
 private:

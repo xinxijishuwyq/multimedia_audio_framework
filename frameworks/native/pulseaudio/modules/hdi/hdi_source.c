@@ -16,6 +16,7 @@
 #define LOG_TAG "HdiSource"
 
 #include <config.h>
+#include <inttypes.h>
 #include <pulse/rtclock.h>
 #include <pulse/timeval.h>
 #include <pulse/util.h>
@@ -28,20 +29,17 @@
 #include <pulsecore/rtpoll.h>
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
-
-#include <inttypes.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 
-#include "audio_types.h"
-#include "audio_manager.h"
-
+#include "audio_hdiadapter_info.h"
 #include "audio_log.h"
 #include "audio_source_type.h"
-#include "audio_hdiadapter_info.h"
-#include "capturer_source_adapter.h"
 #include "audio_utils_c.h"
+#include "capturer_source_adapter.h"
+#include "v3_0/audio_types.h"
+#include "v3_0/iaudio_manager.h"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"
 #define DEFAULT_DEVICE_CLASS "primary"
@@ -74,6 +72,7 @@ struct Userdata {
     SourceAttr attrs;
     bool IsCapturerStarted;
     struct CapturerSourceAdapter *sourceAdapter;
+    pa_usec_t delayTime;
 };
 
 static int PaHdiCapturerInit(struct Userdata *u);
@@ -132,6 +131,7 @@ static void UserdataFree(struct Userdata *u)
 
 static int SourceProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk)
 {
+    AUTO_CTRACE("hdi_source::SourceProcessMsg code: %d", code);
     struct Userdata *u = PA_SOURCE(o)->userdata;
     pa_assert(u);
 
@@ -161,6 +161,7 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
 
     if ((s->thread_info.state == PA_SOURCE_SUSPENDED || s->thread_info.state == PA_SOURCE_INIT) &&
         PA_SOURCE_IS_OPENED(newState)) {
+        u->delayTime = 0;
         u->timestamp = pa_rtclock_now();
         if (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) {
             u->timestamp -= HDI_WAKEUP_BUFFER_TIME;
@@ -279,7 +280,12 @@ static bool PaRtpollSetTimerFunc(struct Userdata *u, bool timerElapsed)
         u->sourceAdapter->CapturerSourceAppsUid(u->sourceAdapter->wapper, appsUid, count);
     }
 
-    pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp + u->block_usec);
+    pa_usec_t costTime = pa_rtclock_now() - now;
+    if (costTime > u->block_usec) {
+        u->delayTime += (costTime - u->block_usec);
+    }
+
+    pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp + u->block_usec + u->delayTime);
     return true;
 }
 
@@ -304,6 +310,7 @@ static void ThreadFuncCapturerTimer(void *userdata)
     AUDIO_DEBUG_LOG("HDI Source: u->timestamp : %{public}" PRIu64, u->timestamp);
 
     while (true) {
+        AUTO_CTRACE("FuncCapturerLoop");
         bool result = PaRtpollSetTimerFunc(u, timerElapsed);
         if (!result) {
             break;

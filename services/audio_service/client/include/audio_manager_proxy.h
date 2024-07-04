@@ -45,6 +45,8 @@ public:
         const std::string& condition) override;
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
+    int32_t SuspendRenderSink(const std::string &sinkName) override;
+    int32_t RestoreRenderSink(const std::string &sinkName) override;
     void SetAudioParameter(const std::string &key, const std::string &value) override;
     void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
         const std::string& value) override;
@@ -84,8 +86,13 @@ public:
     int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;
     int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
     int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) override;
+    int32_t SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisperDetectionMode) override;
+    int32_t GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode) override;
+    int32_t SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on) override;
+    int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering() override;
     bool GetEffectOffloadEnabled() override;
+    void LoadHdiEffectModel() override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

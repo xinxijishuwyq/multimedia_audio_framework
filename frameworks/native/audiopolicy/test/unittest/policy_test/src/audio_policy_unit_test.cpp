@@ -57,32 +57,6 @@ void AudioPolicyUnitTest::GetIRemoteObject(sptr<IRemoteObject> &object)
     }
 }
 
-void AudioPolicyUnitTest::InitAudioStream(std::shared_ptr<AudioStream> &audioStream)
-{
-    AppInfo appInfo_ = {};
-    if (!(appInfo_.appPid)) {
-        appInfo_.appPid = getpid();
-    }
-
-    if (appInfo_.appUid < 0) {
-        appInfo_.appUid = static_cast<int32_t>(getuid());
-    }
-    
-    audioStream = std::make_shared<AudioStream>(STREAM_NOTIFICATION, AUDIO_MODE_PLAYBACK, appInfo_.appUid);
-    if (audioStream) {
-        AUDIO_DEBUG_LOG("InitAudioStream::Audio stream created");
-    }
-}
-
-uint32_t AudioPolicyUnitTest::GetSessionId(std::shared_ptr<AudioStream> &audioStream)
-{
-    uint32_t sessionID_ = static_cast<uint32_t>(-1);
-    if (audioStream->GetAudioSessionID(sessionID_) != 0) {
-        AUDIO_ERR_LOG("AudioPolicyUnitTest::GetSessionId Failed");
-    }
-    return sessionID_;
-}
-
 /**
  * @tc.name  : Test Audio_Policy_SetMicrophoneMuteAudioConfig_001 via illegal state
  * @tc.number: Audio_Policy_SetMicrophoneMuteAudioConfig_001
@@ -254,41 +228,18 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetStreamInFocus_001, TestSize.
 }
 
 /**
- * @tc.name  : Test Audio_Policy_Manager_GetSessionInfoInFocus_001 via legal state
- * @tc.number: Audio_Policy_Manager_GetSessionInfoInFocus_001
- * @tc.desc  : Test GetSessionInfoInFocus interface. Returns success.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSessionInfoInFocus_001, TestSize.Level1)
-{
-    AudioInterrupt audioInterrupt;
-    audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
-    audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
-
-    std::shared_ptr<AudioStream> audioStream;
-    AudioPolicyUnitTest::InitAudioStream(audioStream);
-    ASSERT_NE(nullptr, audioStream);
-
-    uint32_t sessionID_ = AudioPolicyUnitTest::GetSessionId(audioStream);
-    audioInterrupt.sessionId = sessionID_;
-    int32_t ret = AudioPolicyManager::GetInstance().GetSessionInfoInFocus(audioInterrupt);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
  * @tc.name  : Test Audio_Policy_Manager_RegisterAudioRendererEventListener_001 via legal state
  * @tc.number: Audio_Policy_Manager_RegisterAudioRendererEventListener_001
  * @tc.desc  : Test registerAudioRendererEventListener interface. Returns success.
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioRendererEventListener_001, TestSize.Level1)
 {
-    int32_t clientId = getpid();
     std::shared_ptr<AudioRendererStateChangeCallback> callback =
         std::make_shared<AudioRendererStateChangeCallbackTest>();
-    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientId, callback);
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(callback);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(clientId);
+    ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(callback);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -442,28 +393,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_004,
 }
 
 /**
- * @tc.name  : Test Audio_Policy_SetAudioInterruptCallback_001 via illegal state
- * @tc.number: Audio_Policy_SetAudioInterruptCallback_001
- * @tc.desc  : Test SetAudioInterruptCallback interface. Returns invalid.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioInterruptCallback_001, TestSize.Level1)
-{
-    AudioInterrupt audioInterrupt;
-    audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
-    audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
-
-    std::shared_ptr<AudioStream> audioStream;
-    AudioPolicyUnitTest::InitAudioStream(audioStream);
-    ASSERT_NE(nullptr, audioStream);
-
-    uint32_t sessionID_ = AudioPolicyUnitTest::GetSessionId(audioStream);
-    std::shared_ptr<AudioInterruptCallback> callback = nullptr;
-    int32_t ret = AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, callback);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
-}
-
-/**
  * @tc.name  : Test Audio_Policy_SetAudioManagerInterruptCallback_001 via illegal state
  * @tc.number: Audio_Policy_SetAudioManagerInterruptCallback_001
  * @tc.desc  : Test SetAudioManagerInterruptCallback interface. Returns invalid.
@@ -521,28 +450,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetDeviceChangeCallback_002, Te
 }
 
 /**
- * @tc.name  : Test Audio_Policy_Manager_SetAudioInterruptCallback_001 via illegal state
- * @tc.number: Audio_Policy_Manager_SetAudioInterruptCallback_001
- * @tc.desc  : Test SetAudioInterruptCallback interface. Returns invalid.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetAudioInterruptCallback_001, TestSize.Level1)
-{
-    AudioInterrupt audioInterrupt;
-    audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
-    audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
-
-    std::shared_ptr<AudioStream> audioStream;
-    AudioPolicyUnitTest::InitAudioStream(audioStream);
-    ASSERT_NE(nullptr, audioStream);
-
-    uint32_t sessionID_ = AudioPolicyUnitTest::GetSessionId(audioStream);
-    std::shared_ptr<AudioInterruptCallback> callback = nullptr;
-    int32_t ret = AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, callback);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
-}
-
-/**
  * @tc.name  : Test Audio_Policy_Manager_SetAudioManagerInterruptCallback_001 via illegal state
  * @tc.number: Audio_Policy_Manager_SetAudioManagerInterruptCallback_001
  * @tc.desc  : Test SetAudioManagerInterruptCallback interface. Returns invalid.
@@ -575,9 +482,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetVolumeKeyEventCallback_001, 
 */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioRendererEventListener_002, TestSize.Level1)
 {
-    int32_t clientPid = getpid();
     std::shared_ptr<AudioRendererStateChangeCallback> callback = nullptr;
-    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientPid, callback);
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(callback);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 

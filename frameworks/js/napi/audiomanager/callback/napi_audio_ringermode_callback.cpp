@@ -68,7 +68,7 @@ bool NapiAudioRingerModeCallback::IsSameCallback(const napi_value args)
     if (args == nullptr) {
         return true;
     }
-    if (ringerModeCallback_.get() == nullptr) {
+    if (ringerModeCallback_ == nullptr) {
         return false;
     }
     napi_value ringerModeCallback = nullptr;

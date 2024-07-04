@@ -42,7 +42,6 @@
 #include "audio_policy_manager_stub.h"
 #include "audio_policy_client_proxy.h"
 #include "audio_server_death_recipient.h"
-#include "audio_service_dump.h"
 #include "session_processor.h"
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
@@ -359,7 +358,8 @@ public:
 
     int32_t UnsetAudioDeviceRefinerCallback() override;
 
-    int32_t TriggerFetchDevice() override;
+    int32_t TriggerFetchDevice(
+        AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN) override;
 
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) override;
 
@@ -457,12 +457,10 @@ private:
     int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
 
     // offload session
-    void OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
-        int64_t deactivateSessionId);
+    void OffloadStreamCheck(int64_t activateSessionId, int64_t deactivateSessionId);
     void CheckSubscribePowerStateChange();
 
-    void CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType,
-        int64_t deactivateSessionId);
+    void CheckStreamMode(const int64_t activateSessionId);
 
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
@@ -511,6 +509,8 @@ private:
     void RegisterDataObserver();
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();
+    void RegisterSyncHibernateListener();
+    void UnRegisterSyncHibernateListener();
     void RegisterCommonEventReceiver();
     void UnregisterCommonEventReceiver();
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
@@ -532,6 +532,7 @@ private:
 #endif
     std::vector<pid_t> clientDiedListenerState_;
     sptr<PowerStateListener> powerStateListener_;
+    sptr<SyncHibernateListener> syncHibernateListener_;
     bool powerStateCallbackRegister_;
 
     std::mutex keyEventMutex_;

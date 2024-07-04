@@ -40,6 +40,8 @@ public:
     int32_t Reset(void) override;
     int32_t Pause(void) override;
     int32_t Resume(void) override;
+    int32_t SuspendRenderSink(void) override;
+    int32_t RestoreRenderSink(void) override;
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetLatency(uint32_t *latency) override;
