@@ -934,6 +934,9 @@ private:
 
     void LoadHdiEffectModel();
 
+    
+    void UpdateEffectOffloadSupported(const bool &isSupported);
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;

@@ -1290,7 +1290,7 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
 
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
     if (spatializationEnabled_) {
-        if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (deviceSink_ == BLUETOOTH_DEVICE_SINK)) {
+        if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (!btOffloadSupported_)) {
             AUDIO_INFO_LOG("A2dp-hal, enter ARM processing");
             btOffloadEnabled_ = false;
             RecoverAllChains();
@@ -1305,14 +1305,8 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         } else {
             AUDIO_INFO_LOG("set hdi init succeeded, normal spatialization entered");
             btOffloadEnabled_ = true;
-            DeleteAllChains();
         }
     } else {
-        if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (deviceSink_ == BLUETOOTH_DEVICE_SINK)) {
-            AUDIO_INFO_LOG("A2dp-hal, leave ARM processing");
-            DeleteAllChains();
-            return;
-        }
         effectHdiInput_[0] = HDI_DESTROY;
         AUDIO_INFO_LOG("set hdi destroy.");
         int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
@@ -1341,6 +1335,26 @@ bool AudioEffectChainManager::CheckIfSpkDsp()
         }
     }
     return true;
+}
+
+void AudioEffectChainManager::UpdateEffectOffloadSupported(bool isSupported)
+{
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    if (isSupported == btOffloadSupported_) {
+        return;
+    }
+    AUDIO_INFO_LOG("btOffloadSupported_ update to %{public}d, device disconnect from %{public}d", isSupported, deviceType_);
+    if (!isSupported) {
+        btOffloadSupported_ = isSupported;
+        return;
+    }
+    // Release ARM, try offload to DSP
+    AudioSpatializationState oldState = {spatializationEnabled_, headTrackingEnabled_};
+    AudioSpatializationState offState = {false, false};
+    UpdateSpatializationState(offState);
+    btOffloadSupported_ = isSupported;
+    UpdateSpatializationState(oldState);
+    return;
 }
 } // namespace AudioStandard
 } // namespace OHOS
