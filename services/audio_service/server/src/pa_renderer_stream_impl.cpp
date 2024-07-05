@@ -972,16 +972,16 @@ void PaRendererStreamImpl::ResetOffload()
 
 int32_t PaRendererStreamImpl::OffloadUpdatePolicy(AudioOffloadType statePolicy, bool force)
 {
-    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
-        AUDIO_ERR_LOG("Set offload mode: invalid stream state, quit SetStreamOffloadMode due err");
-        return ERR_ILLEGAL_STATE;
-    }
     // if possible turn on the buffer immediately(long buffer -> short buffer), turn it at once.
     if (statePolicy < offloadStatePolicy_ || offloadStatePolicy_ == OFFLOAD_DEFAULT || force) {
         AUDIO_DEBUG_LOG("Update statePolicy immediately: %{public}d -> %{public}d, force(%d)",
             offloadStatePolicy_, statePolicy, force);
         lastOffloadUpdateFinishTime_ = 0;
         PaLockGuard lock(mainloop_);
+        if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+            AUDIO_ERR_LOG("Set offload mode: invalid stream state, quit SetStreamOffloadMode due err");
+            return ERR_ILLEGAL_STATE;
+        }
         pa_proplist *propList = pa_proplist_new();
         CHECK_AND_RETURN_RET_LOG(propList != nullptr, ERR_OPERATION_FAILED, "pa_proplist_new failed");
         if (offloadEnable_) {
