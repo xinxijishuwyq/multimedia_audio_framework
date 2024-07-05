@@ -934,8 +934,7 @@ private:
 
     void LoadHdiEffectModel();
 
-    
-    void UpdateEffectOffloadSupported(const bool &isSupported);
+    void UpdateEffectBtOffloadSupported(const bool &isSupported);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;

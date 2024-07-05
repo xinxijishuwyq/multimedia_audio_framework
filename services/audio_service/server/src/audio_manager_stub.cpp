@@ -85,7 +85,7 @@ const char *g_audioServerCodeStrs[] = {
     "SUSPEND_RENDERSINK",
     "RESTORE_RENDERSINK",
     "LOAD_HDI_EFFECT_MODEL",
-    "UPDATE_EFFECT_OFFLOAD_SUPPORTED",
+    "UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -717,9 +717,9 @@ int AudioManagerStub::HandleLoadHdiEffectModel(MessageParcel &data, MessageParce
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleUpdateEffectOffloadSupported(MessageParcel &data, MessageParcel &reply)
+int AudioManagerStub::HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply)
 {
-    UpdateEffectOffloadSupported(data.ReadBool());
+    UpdateEffectBtOffloadSupported(data.ReadBool());
     return AUDIO_OK;
 }
 } // namespace AudioStandard

@@ -1144,7 +1144,7 @@ void AudioManagerProxy::LoadHdiEffectModel()
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
 }
 
-void AudioManagerProxy::UpdateEffectOffloadSupported(const bool &isSupported)
+void AudioManagerProxy::UpdateEffectBtOffloadSupported(const bool &isSupported)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1155,7 +1155,7 @@ void AudioManagerProxy::UpdateEffectOffloadSupported(const bool &isSupported)
     data.writeBool(isSupported);
 
     int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_EFFECT_OFFLOAD_SUPPORTED), data, reply, option);
+        static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed, error:%{public}d", error);
 }
 } // namespace AudioStandard

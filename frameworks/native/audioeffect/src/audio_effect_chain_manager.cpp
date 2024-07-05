@@ -1337,18 +1337,19 @@ bool AudioEffectChainManager::CheckIfSpkDsp()
     return true;
 }
 
-void AudioEffectChainManager::UpdateEffectOffloadSupported(bool isSupported)
+void AudioEffectChainManager::UpdateEffectBtOffloadSupported(const bool &isSupported)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     if (isSupported == btOffloadSupported_) {
         return;
     }
-    AUDIO_INFO_LOG("btOffloadSupported_ update to %{public}d, device disconnect from %{public}d", isSupported, deviceType_);
     if (!isSupported) {
+        AUDIO_INFO_LOG("btOffloadSupported_ off, device disconnect from %{public}d", deviceType_);
         btOffloadSupported_ = isSupported;
         return;
     }
     // Release ARM, try offload to DSP
+    AUDIO_INFO_LOG("btOffloadSupported_ on, try offload effect on device %{public}d", deviceType_);
     AudioSpatializationState oldState = {spatializationEnabled_, headTrackingEnabled_};
     AudioSpatializationState offState = {false, false};
     UpdateSpatializationState(offState);

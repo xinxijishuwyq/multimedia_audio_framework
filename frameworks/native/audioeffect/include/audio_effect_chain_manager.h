@@ -131,7 +131,8 @@ public:
     void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
     void UpdateExtraSceneType(const std::string &extraSceneType);
     void InitHdiState();
-    void UpdateEffectOffloadSupported(const bool &isSupported);
+    void UpdateEffectBtOffloadSupported(const bool &isSupported);
+
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();

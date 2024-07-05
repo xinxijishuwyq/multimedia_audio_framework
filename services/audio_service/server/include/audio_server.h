@@ -155,7 +155,7 @@ public:
 
     void LoadHdiEffectModel() override;
 
-    void UpdateEffectOffloadSupported(const bool &isSupported) override;
+    void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
