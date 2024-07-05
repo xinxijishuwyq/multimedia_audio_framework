@@ -39,6 +39,9 @@ ohos_fuzztest("AudioPolicyFuzzTest") {
     "ability_base:want",
     "ability_runtime:extension_manager",
     "access_token:libaccesstoken_sdk",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
     "access_token:libtoken_setproc",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
@@ -54,7 +57,9 @@ ohos_fuzztest("AudioPolicyFuzzTest") {
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "pulseaudio:pulse",
+    "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
   if (accessibility_enable == true) {
     external_deps += [

@@ -18,10 +18,15 @@
 #include <cstdint>
 #include "audio_policy_server.h"
 #include "message_parcel.h"
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
+#include "access_token.h"
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+bool g_hasPermission = false;
 constexpr int32_t OFFSET = 4;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
 const int32_t SYSTEM_ABILITY_ID = 3009;
@@ -43,6 +48,41 @@ uint32_t Convert2Uint32(const uint8_t *ptr)
     /* Move the 0th digit to the left by 24 bits, the 1st digit to the left by 16 bits,
        the 2nd digit to the left by 8 bits, and the 3rd digit not to the left */
     return (ptr[0] << SHIFT_LEFT_24) | (ptr[1] << SHIFT_LEFT_16) | (ptr[2] << SHIFT_LEFT_8) | (ptr[3]);
+}
+
+void AudioFuzzTestGetPermission()
+{
+    if (!g_hasPermission) {
+        uint64_t tokenId;
+        constexpr int perNum = 10;
+        const char *perms[perNum] = {
+            "ohos.permission.MICROPHONE",
+            "ohos.permission.MANAGE_INTELLIGENT_VOICE",
+            "ohos.permission.MANAGE_AUDIO_CONFIG",
+            "ohos.permission.MICROPHONE_CONTROL",
+            "ohos.permission.MODIFY_AUDIO_SETTINGS",
+            "ohos.permission.ACCESS_NOTIFICATION_POLICY",
+            "ohos.permission.USE_BLUETOOTH",
+            "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO",
+            "ohos.permission.RECORD_VOICE_CALL",
+            "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS",
+        };
+
+        NativeTokenInfoParams infoInstance = {
+            .dcapsNum = 0,
+            .permsNum = 10,
+            .aclsNum = 0,
+            .dcaps = nullptr,
+            .perms = perms,
+            .acls = nullptr,
+            .processName = "audiofuzztest",
+            .aplStr = "system_basic",
+        };
+        tokenId = GetAccessTokenId(&infoInstance);
+        SetSelfTokenID(tokenId);
+        OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+        g_hasPermission = true;
+    }
 }
 
 void AudioPolicyFuzzFirstLimitTest(const uint8_t *rawData, size_t size)
@@ -115,6 +155,12 @@ void AudioPolicyFuzzThirdLimitTest(const uint8_t *rawData, size_t size)
 }
 } // namespace AudioStandard
 } // namesapce OHOS
+
+extern "C" int LLVMFuzzerInitialize(const uint8_t *data, size_t size)
+{
+    OHOS::AudioStandard::AudioFuzzTestGetPermission();
+    return 0;
+}
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
