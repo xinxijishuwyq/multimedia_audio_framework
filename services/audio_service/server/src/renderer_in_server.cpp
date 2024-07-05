@@ -157,7 +157,7 @@ int32_t RendererInServer::Init()
         Trace trace("high resolution create failed use normal replace");
         managerType_ = PLAYBACK;
         ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
-        AUDIO_DEBUG_LOG("high resolution create failed use normal replace");
+        AUDIO_INFO_LOG("high resolution create failed use normal replace");
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
         "Construct rendererInServer failed: %{public}d", ret);
@@ -1107,17 +1107,23 @@ int32_t RendererInServer::GetStreamManagerType() const noexcept
 
 bool RendererInServer::IsHighResolution() const noexcept
 {
-    if ((processConfig_.deviceType == DEVICE_TYPE_WIRED_HEADSET ||
-        processConfig_.deviceType == DEVICE_TYPE_USB_HEADSET) &&
-        processConfig_.streamType == STREAM_MUSIC && processConfig_.streamInfo.samplingRate >= SAMPLE_RATE_48000 &&
-        processConfig_.streamInfo.format >= SAMPLE_S24LE &&
-        processConfig_.rendererInfo.pipeType == PIPE_TYPE_DIRECT_MUSIC) {
-        if (IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetStreamCount() <= 0) {
-            return true;
-        }
+    Trace trace("CheckHighResolution");
+    if (processConfig_.deviceType != DEVICE_TYPE_WIRED_HEADSET &&
+        processConfig_.deviceType != DEVICE_TYPE_USB_HEADSET) {
+        AUDIO_INFO_LOG("normal stream,device type:%{public}d", processConfig_.deviceType);
+        return false;
     }
-    Trace trace("RendererInServer::IsHighResolution false");
-    return false;
+    if (processConfig_.streamType != STREAM_MUSIC || processConfig_.streamInfo.samplingRate < SAMPLE_RATE_48000 ||
+        processConfig_.streamInfo.format < SAMPLE_S24LE ||
+        processConfig_.rendererInfo.pipeType != PIPE_TYPE_DIRECT_MUSIC) {
+        AUDIO_INFO_LOG("normal stream because stream info");
+        return false;
+    }
+    if (IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetStreamCount() > 0) {
+        AUDIO_INFO_LOG("high resolution exist.");
+        return false;
+    }
+    return true;
 }
 
 int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)

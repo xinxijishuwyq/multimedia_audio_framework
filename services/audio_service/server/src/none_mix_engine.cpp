@@ -188,6 +188,9 @@ void NoneMixEngine::MixStreams()
     if (index < 0) {
         AUDIO_WARNING_LOG("peek buffer failed.result:%{public}d,buffer size:%{public}d", result, index);
         stream_->ReturnIndex(index);
+        if (startFadeout_ || startFadein_) {
+            cvFading_.notify_all();
+        }
         failedCount_++;
         StandbySleep();
         return;
