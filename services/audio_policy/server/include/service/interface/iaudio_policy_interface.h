@@ -146,6 +146,10 @@ public:
     virtual int32_t GetPersistMicMuteState(bool &isMute) const = 0;
 
     virtual void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel) = 0;
+
+    virtual void HandleStreamMuteStatus(AudioStreamType streamType, bool mute) = 0;
+
+    virtual void HandleRingerMode(AudioRingerMode ringerMode) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

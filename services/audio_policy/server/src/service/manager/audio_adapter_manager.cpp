@@ -327,6 +327,18 @@ void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamTyp
     volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevel);
 }
 
+void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute)
+{
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    SetStreamMuteInternal(streamType, mute);
+}
+
+void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
+{
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    SetRingerModeInternal(ringerMode);
+}
+
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 {
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
@@ -398,7 +410,13 @@ float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
 
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
 {
-    return SetStreamMuteInternal(streamType, mute);
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
+    if (handler != nullptr) {
+        handler->SendStreamMuteStatusUpdate(streamType, mute);
+        return SUCCESS;
+    }
+    return ERROR;
 }
 
 int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, bool mute)
@@ -624,7 +642,13 @@ int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutput
 
 int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 {
-    return SetRingerModeInternal(ringerMode);
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
+    if (handler != nullptr) {
+        handler->SendRingerModeUpdate(ringerMode);
+        return SUCCESS;
+    }
+    return ERROR;
 }
 
 int32_t AudioAdapterManager::SetRingerModeInternal(AudioRingerMode ringerMode)

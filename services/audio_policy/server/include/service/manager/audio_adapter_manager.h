@@ -173,6 +173,10 @@ public:
     int32_t GetPersistMicMuteState(bool &isMute) const;
 
     void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
+
+    void HandleStreamMuteStatus(AudioStreamType streamType, bool mute);
+
+    void HandleRingerMode(AudioRingerMode ringerMode);
 private:
     friend class PolicyCallbackImpl;
 

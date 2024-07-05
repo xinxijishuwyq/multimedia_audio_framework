@@ -57,6 +57,27 @@ bool AudioAdapterManagerHandler::SendSaveVolume(const DeviceType &deviceType,
     return ret;
 }
 
+bool AudioAdapterManagerHandler::SendStreamMuteStatusUpdate(const AudioStreamType &streamType, const bool &mute)
+{
+    auto eventContextObj = std::make_shared<StreamMuteStatusEvent>(streamType, mute);
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = true;
+    ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAdapterManagerServerCmd::STREAM_MUTE_STATUS_UPDATE,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendStreamMuteStatusUpdate event failed");
+    return ret;
+}
+
+bool AudioAdapterManagerHandler::SendRingerModeUpdate(const AudioRingerMode &ringerMode)
+{
+    auto eventContextObj = std::make_shared<RingerModeEvent>(ringerMode);
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = true;
+    ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAdapterManagerServerCmd::RINGER_MODE_UPDATE, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendRingerModeUpdate event failed");
+    return ret;
+}
+
 void AudioAdapterManagerHandler::HandleUpdateKvDataEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<bool> eventContextObj = event->GetSharedObject<bool>();
@@ -73,6 +94,21 @@ void AudioAdapterManagerHandler::HandleVolumeDataBaseSave(const AppExecFwk::Inne
         eventContextObj->streamType_, eventContextObj->volumeLevel_);
 }
 
+void AudioAdapterManagerHandler::HandleUpdateStreamMuteStatus(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<StreamMuteStatusEvent> eventContextObj = event->GetSharedObject<StreamMuteStatusEvent>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    AudioPolicyManagerFactory::GetAudioPolicyManager().HandleStreamMuteStatus(eventContextObj->streamType_,
+        eventContextObj->mute_);
+}
+
+void AudioAdapterManagerHandler::HandleUpdateRingerMode(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<RingerModeEvent> eventContextObj = event->GetSharedObject<RingerModeEvent>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    AudioPolicyManagerFactory::GetAudioPolicyManager().HandleRingerMode(eventContextObj->ringerMode_);
+}
+
 void AudioAdapterManagerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     uint32_t eventId = event->GetInnerEventId();
@@ -84,6 +120,12 @@ void AudioAdapterManagerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Poin
             break;
         case EventAdapterManagerServerCmd::VOLUME_DATABASE_SAVE:
             HandleVolumeDataBaseSave(event);
+            break;
+        case STREAM_MUTE_STATUS_UPDATE:
+            HandleUpdateStreamMuteStatus(event);
+            break;
+        case RINGER_MODE_UPDATE:
+            HandleUpdateRingerMode(event);
             break;
         default:
             break;
