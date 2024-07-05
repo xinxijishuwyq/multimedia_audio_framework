@@ -3318,6 +3318,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
     if (!strcmp(u->sink->name, OFFLOAD_SINK_NAME)) {
         OffloadReset(u);
+        CHECK_AND_RETURN_LOG(u->offload.sinkAdapter != NULL, "offload.sinkAdapter is NULL");
         u->offload.sinkAdapter->RendererSinkOffloadRunningLockInit(u->offload.sinkAdapter);
     }
     while (true) {
