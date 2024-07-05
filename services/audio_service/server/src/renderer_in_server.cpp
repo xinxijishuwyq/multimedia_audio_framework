@@ -1103,7 +1103,7 @@ int32_t RendererInServer::GetStreamManagerType() const noexcept
 
 bool RendererInServer::IsHighResolution() const noexcept
 {
-    Trace trace("High Resolution");
+    Trace trace("CheckHighResolution");
     if (processConfig_.deviceType != DEVICE_TYPE_WIRED_HEADSET &&
         processConfig_.deviceType != DEVICE_TYPE_USB_HEADSET) {
         AUDIO_INFO_LOG("normal stream,device type:%{public}d", processConfig_.deviceType);
