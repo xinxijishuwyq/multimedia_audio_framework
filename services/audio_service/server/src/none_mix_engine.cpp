@@ -190,7 +190,6 @@ void NoneMixEngine::MixStreams()
         stream_->ReturnIndex(index);
         if (startFadeout_ || startFadein_) {
             cvFading_.notify_all();
-            return;
         }
         failedCount_++;
         StandbySleep();

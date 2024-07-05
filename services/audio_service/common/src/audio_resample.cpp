@@ -39,6 +39,7 @@ AudioResample::AudioResample(uint32_t channels, uint32_t inRate, uint32_t outRat
     if (speex_->resampler) {
         speex_resampler_skip_zeros(speex_->resampler);
     } else {
+        AUDIO_INFO_LOG("create resample failed.");
         speex_ = nullptr;
     }
 #endif
