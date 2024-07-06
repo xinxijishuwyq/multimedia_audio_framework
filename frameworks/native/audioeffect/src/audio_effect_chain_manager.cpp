@@ -1128,7 +1128,7 @@ void AudioEffectChainManager::UpdateRealAudioEffect()
         }
     }
     std::string key = sceneType + "_&_" + GetDeviceTypeName();
-    if (!sceneType.empty() && SceneTypeToEffectChainMap_[key] != nullptr) {
+    if (!sceneType.empty() && !SceneTypeToEffectChainMap_.count(key) && SceneTypeToEffectChainMap_[key] != nullptr) {
         std::shared_ptr<AudioEffectChain> audioEffectChain = SceneTypeToEffectChainMap_[key];
         AudioEffectScene currSceneType;
         UpdateCurrSceneType(currSceneType, sceneType);
@@ -1344,8 +1344,14 @@ void AudioEffectChainManager::UpdateEffectBtOffloadSupported(const bool &isSuppo
         return;
     }
     if (!isSupported) {
-        AUDIO_INFO_LOG("btOffloadSupported_ off, device disconnect from %{public}d", deviceType_);
         btOffloadSupported_ = isSupported;
+        AUDIO_INFO_LOG("btOffloadSupported_ off, device disconnect from %{public}d", deviceType_);
+        return;
+    }
+
+    if (!spatializationEnabled_) {
+        btOffloadSupported_ = isSupported;
+        AUDIO_INFO_LOG("btOffloadSupported_ on, but spatialization is off, do nothing");
         return;
     }
     // Release ARM, try offload to DSP

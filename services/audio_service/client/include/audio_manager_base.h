@@ -548,6 +548,7 @@ private:
         &AudioManagerStub::HandleGetEffectOffloadEnabled,
         &AudioManagerStub::HandleSuspendRenderSink,
         &AudioManagerStub::HandleRestoreRenderSink,
+        &AudioManagerStub::HandleLoadHdiEffectModel,
         &AudioManagerStub::HandleUpdateEffectBtOffloadSupported,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
