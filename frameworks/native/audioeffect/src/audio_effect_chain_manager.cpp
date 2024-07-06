@@ -1128,7 +1128,7 @@ void AudioEffectChainManager::UpdateRealAudioEffect()
         }
     }
     std::string key = sceneType + "_&_" + GetDeviceTypeName();
-    if (!sceneType.empty() && !SceneTypeToEffectChainMap_.count(key) && SceneTypeToEffectChainMap_[key] != nullptr) {
+    if (!sceneType.empty() && SceneTypeToEffectChainMap_.count(key) && SceneTypeToEffectChainMap_[key] != nullptr) {
         std::shared_ptr<AudioEffectChain> audioEffectChain = SceneTypeToEffectChainMap_[key];
         AudioEffectScene currSceneType;
         UpdateCurrSceneType(currSceneType, sceneType);
