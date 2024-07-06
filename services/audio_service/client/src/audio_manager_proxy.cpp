@@ -1152,7 +1152,7 @@ void AudioManagerProxy::UpdateEffectBtOffloadSupported(const bool &isSupported)
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
-    data.writeBool(isSupported);
+    data.WriteBool(isSupported);
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED), data, reply, option);
