@@ -269,6 +269,7 @@ int32_t AudioService::OnInitInnerCapList()
             filteredRendererMap_.push_back(renderer);
         }
     }
+    lock.unlock();
     return SUCCESS;
 }
 
