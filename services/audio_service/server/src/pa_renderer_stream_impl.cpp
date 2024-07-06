@@ -122,6 +122,7 @@ int32_t PaRendererStreamImpl::InitParams()
         int32_t count = ++bufferNullCount_;
         AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr count is %{public}d", count);
         if (count >= 5) { // bufferAttr is nullptr 5 times, reboot audioserver
+            sleep(3); // sleep 3 seconds to dump stacktrace
             AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, 2); // 2 means RECOVERY
             sleep(2); // sleep 2 seconds to dump stacktrace
         }
