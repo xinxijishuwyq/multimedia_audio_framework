@@ -73,7 +73,7 @@ ProRendererStreamImpl::~ProRendererStreamImpl()
 
 AudioSamplingRate ProRendererStreamImpl::GetDirectSampleRate(AudioSamplingRate sampleRate) const noexcept
 {
-    if (isDirect_ && processConfig_.streamType == STREAM_VOICE_CALL) {
+    if (processConfig_.streamType == STREAM_VOICE_CALL) {
         // VoIP stream type. Return the special sample rate of direct VoIP mode.
         if (sampleRate <= AudioSamplingRate::SAMPLE_RATE_16000) {
             return AudioSamplingRate::SAMPLE_RATE_16000;
@@ -97,6 +97,22 @@ AudioSamplingRate ProRendererStreamImpl::GetDirectSampleRate(AudioSamplingRate s
             break;
     }
     return result;
+}
+
+AudioSampleFormat ProRendererStreamImpl::GetDirectFormat(AudioSampleFormat format) const noexcept
+{
+    if (isDirect_) {
+        // Only SAMPLE_S32LE is supported for high resolution stream.
+        return AudioSampleFormat::SAMPLE_S32LE;
+    }
+
+    // Both SAMPLE_S16LE and SAMPLE_S32LE are supported for direct VoIP stream.
+    if (format == SAMPLE_S16LE || format == SAMPLE_S32LE) {
+        return format;
+    } else {
+        AUDIO_WARNING_LOG("The format %{public}u is unsupported for direct VoIP. Use 32Bit.", format);
+        return AudioSampleFormat::SAMPLE_S32LE;
+    }
 }
 
 int32_t ProRendererStreamImpl::InitParams()
@@ -655,17 +671,10 @@ void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
 float ProRendererStreamImpl::GetStreamVolume()
 {
     float volume = 1.0f;
+    AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(processConfig_.streamType);
+    DeviceType currentOutputDevice = PolicyHandler::GetInstance().GetActiveOutPutDevice();
     Volume vol = {true, 1.0f, 0};
-    AudioStreamType streamType = processConfig_.streamType;
-    AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(streamType);
-    DeviceInfo deviceInfo;
-    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(processConfig_, deviceInfo);
-    if (!ret) {
-        AUDIO_ERR_LOG("GetProcessDeviceInfo failed.");
-        return volume;
-    }
-    if (deviceInfo.networkId == LOCAL_NETWORK_ID &&
-        PolicyHandler::GetInstance().GetSharedVolume(volumeType, processConfig_.deviceType, vol)) {
+    if (PolicyHandler::GetInstance().GetSharedVolume(volumeType, currentOutputDevice, vol)) {
         volume = vol.isMute ? 0 : vol.volumeFloat;
     }
     return volume;
@@ -675,7 +684,7 @@ void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
 {
     currentRate_ = streamInfo.samplingRate;
     desSamplingRate_ = GetDirectSampleRate(streamInfo.samplingRate);
-    desFormat_ = isDirect_ ? SAMPLE_S32LE : SAMPLE_S16LE;
+    desFormat_ = GetDirectFormat(streamInfo.format);
     spanSizeInFrame_ = (streamInfo.samplingRate * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
     byteSizePerFrame_ = GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
     minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;

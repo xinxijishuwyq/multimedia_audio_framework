@@ -464,15 +464,22 @@ bool AudioRendererPrivate::IsDirectVoipParams(const AudioStreamParams &audioStre
         return false;
     }
 
-    // VoIP derect only supports STEREO channels.
-    if (audioStreamParams.channels != STEREO) {
+    // VoIP derect only supports MONO and STEREO.
+    if (!(audioStreamParams.channels == MONO || audioStreamParams.channels == STEREO)) {
         AUDIO_ERR_LOG("The channels %{public}d is not supported for direct VoIP mode",
             audioStreamParams.channels);
         return false;
     }
 
-    AUDIO_INFO_LOG("Valid params for direct VoIP mode: sampling rate %{public}d, channels %{public}d",
-        audioStreamParams.samplingRate, audioStreamParams.channels);
+    // VoIP derect only supports 16bit and 32bit.
+    if (!(audioStreamParams.format == SAMPLE_S16LE || audioStreamParams.format == SAMPLE_S32LE)) {
+        AUDIO_ERR_LOG("The format %{public}d is not supported for direct VoIP mode",
+            audioStreamParams.format);
+        return false;
+    }
+
+    AUDIO_INFO_LOG("Valid params for direct VoIP: sampling rate %{public}d, format %{public}d, channels %{public}d",
+        audioStreamParams.samplingRate, audioStreamParams.format, audioStreamParams.channels);
     return true;
 }
 

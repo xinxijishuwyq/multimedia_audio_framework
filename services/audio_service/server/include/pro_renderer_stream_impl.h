@@ -78,6 +78,7 @@ public:
 private:
     bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate) const noexcept;
+    AudioSampleFormat GetDirectFormat(AudioSampleFormat format) const noexcept;
     uint32_t GetSamplePerFrame(AudioSampleFormat format) const noexcept;
     void ConvertSrcToFloat(uint8_t *buffer, size_t bufLength, float volume);
     void ConvertFloatToDes(int32_t writeIndex);
