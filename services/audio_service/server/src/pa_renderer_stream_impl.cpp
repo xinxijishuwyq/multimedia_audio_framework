@@ -1115,6 +1115,7 @@ int32_t PaRendererStreamImpl::ReturnIndex(int32_t index)
 
 int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
 {
+    PaLockGuard lock(mainloop_);
     if (clientVolume < MIN_VOLUME || clientVolume > MAX_VOLUME) {
         AUDIO_ERR_LOG("SetClientVolume with invalid clientVolume %{public}f", clientVolume);
         return ERR_INVALID_PARAM;
