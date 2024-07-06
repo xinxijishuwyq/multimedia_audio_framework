@@ -188,7 +188,7 @@ std::shared_ptr<IRendererStream> ProAudioStreamManager::CreateRendererStream(Aud
 {
     Trace trace("ProAudioStreamManager::CreateRendererStream");
     std::lock_guard<std::mutex> lock(paElementsMutex_);
-    bool isDirectStream = managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK;
+    bool isDirectStream = managerType_ == DIRECT_PLAYBACK; // direct stream (high resolution) or direct VoIP stream
     std::shared_ptr<ProRendererStreamImpl> rendererStream =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirectStream);
     if (rendererStream->InitParams() != SUCCESS) {
