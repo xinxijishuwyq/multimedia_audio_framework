@@ -528,7 +528,7 @@ void AudioSpatializationService::HandleHeadTrackingDeviceChange(const std::unord
     }
 }
 
-std::string AudioSpatializationService::GetCurrentDeviceAddress()
+std::string AudioSpatializationService::GetCurrentDeviceAddress() const
 {
     return currentDeviceAddress_;
 }
