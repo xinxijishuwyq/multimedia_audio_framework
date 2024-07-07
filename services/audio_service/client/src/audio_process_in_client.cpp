@@ -149,6 +149,7 @@ private:
     void CopyWithVolume(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
     void ProcessVolume(const AudioStreamData &targetData) const;
     int32_t ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
+    void CheckIfWakeUpTooLate(int64_t curTime, int64_t &wakeUpTime);
 
     void DoFadeInOut(uint64_t &curWritePos);
 
@@ -164,6 +165,7 @@ private:
     static constexpr size_t MAX_TIMES = 4; // 4 times spanSizeInFrame_
     static constexpr size_t DIV = 2; // halt of span
     static constexpr int64_t MAX_STOP_FADING_DURATION_NANO = 10000000; // 10ms
+    static constexpr int64_t WAKE_UP_LATE_COUNT = 20; // late for 20 times
     enum ThreadStatus : uint32_t {
         WAITTING = 0,
         SLEEPING,
@@ -208,6 +210,9 @@ private:
 
     std::atomic<uint32_t> underflowCount_ = 0;
     std::atomic<uint32_t> overflowCount_ = 0;
+    bool clientWakeUpTooLate_ = false;
+    int64_t clientLateTime_ = 0;
+    int64_t clientLateCount_ = 0;
 
     std::string cachePath_;
     FILE *dumpFile_ = nullptr;
@@ -1531,11 +1536,7 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
         threadStatus_ = INRUNNING;
         Trace traceLoop("AudioProcessInClient::InRunning");
         curTime = ClockTime::GetCurNano();
-        int64_t wakeupCost = curTime - wakeUpTime;
-        if (wakeupCost > ONE_MILLISECOND_DURATION) {
-            AUDIO_WARNING_LOG("loop wake up too late, cost %{public}" PRId64"us", wakeupCost / AUDIO_MS_PER_SECOND);
-            wakeUpTime = curTime;
-        }
+        CheckIfWakeUpTooLate(curTime, wakeUpTime);
         curWritePos = audioBuffer_->GetCurWriteFrame();
         bool prepared = true;
         prepared = PrepareCurrentLoop(curWritePos);
@@ -1666,6 +1667,29 @@ bool AudioProcessInClientInner::PrepareNextIndependent(uint64_t curWritePos, int
         return false;
     }
     return true;
+}
+
+void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t curTime, int64_t &wakeUpTime)
+{
+    int64_t wakeUpCost = curTime - wakeUpTime;
+    if (wakeUpCost > ONE_MILLISECOND_DURATION) {
+        if (!clientWakeUpTooLate_) {
+            AUDIO_WARNING_LOG("loop wake up late once");
+            clientWakeUpTooLate_ = true;
+        }
+        clientLateCount_++;
+        clientLateTime_ += wakeUpCost;
+        if (clientLateCount_ >= WAKE_UP_LATE_COUNT && (clientLateCount_ % WAKE_UP_LATE_COUNT == 0)) {
+            AUDIO_WARNING_LOG("loop wake up late for 20 times,"
+                " average cost %{public}" PRId64"us", clientLateTime_ / WAKE_UP_LATE_COUNT / AUDIO_MS_PER_SECOND);
+            clientLateTime_ = 0;
+        }
+        if (clientLateCount_ >= INT32_MAX) {
+            AUDIO_WARNING_LOG("loop wake up late for %{public}" PRId64"", clientLateCount_);
+            clientLateCount_ = 0;
+        }
+        wakeUpTime = curTime;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
