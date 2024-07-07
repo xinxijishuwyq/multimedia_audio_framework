@@ -420,6 +420,11 @@ public:
      * Load effect hdi model when audio_host online.
      */
     virtual void LoadHdiEffectModel() = 0;
+
+    /**
+     * Update Effect BtOffload Supported state.
+     */
+    virtual void UpdateEffectBtOffloadSupported(const bool &isSupported) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -485,6 +490,7 @@ private:
     int HandleSuspendRenderSink(MessageParcel &data, MessageParcel &reply);
     int HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply);
     int HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply);
+    int HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -543,6 +549,7 @@ private:
         &AudioManagerStub::HandleSuspendRenderSink,
         &AudioManagerStub::HandleRestoreRenderSink,
         &AudioManagerStub::HandleLoadHdiEffectModel,
+        &AudioManagerStub::HandleUpdateEffectBtOffloadSupported,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),

@@ -527,5 +527,10 @@ void AudioSpatializationService::HandleHeadTrackingDeviceChange(const std::unord
         audioPolicyServerHandler_->SendHeadTrackingDeviceChangeEvent(changeInfo);
     }
 }
+
+std::string AudioSpatializationService::GetCurrentDeviceAddress() const
+{
+    return currentDeviceAddress_;
+}
 } // namespace AudioStandard
 } // namespace OHOS

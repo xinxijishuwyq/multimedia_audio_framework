@@ -1128,7 +1128,7 @@ void AudioEffectChainManager::UpdateRealAudioEffect()
         }
     }
     std::string key = sceneType + "_&_" + GetDeviceTypeName();
-    if (!sceneType.empty() && SceneTypeToEffectChainMap_[key] != nullptr) {
+    if (!sceneType.empty() && SceneTypeToEffectChainMap_.count(key) && SceneTypeToEffectChainMap_[key] != nullptr) {
         std::shared_ptr<AudioEffectChain> audioEffectChain = SceneTypeToEffectChainMap_[key];
         AudioEffectScene currSceneType;
         UpdateCurrSceneType(currSceneType, sceneType);
@@ -1290,7 +1290,7 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
 
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
     if (spatializationEnabled_) {
-        if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (deviceSink_ == BLUETOOTH_DEVICE_SINK)) {
+        if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (!btOffloadSupported_)) {
             AUDIO_INFO_LOG("A2dp-hal, enter ARM processing");
             btOffloadEnabled_ = false;
             RecoverAllChains();
@@ -1305,14 +1305,8 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         } else {
             AUDIO_INFO_LOG("set hdi init succeeded, normal spatialization entered");
             btOffloadEnabled_ = true;
-            DeleteAllChains();
         }
     } else {
-        if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (deviceSink_ == BLUETOOTH_DEVICE_SINK)) {
-            AUDIO_INFO_LOG("A2dp-hal, leave ARM processing");
-            DeleteAllChains();
-            return;
-        }
         effectHdiInput_[0] = HDI_DESTROY;
         AUDIO_INFO_LOG("set hdi destroy.");
         int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
@@ -1341,6 +1335,33 @@ bool AudioEffectChainManager::CheckIfSpkDsp()
         }
     }
     return true;
+}
+
+void AudioEffectChainManager::UpdateEffectBtOffloadSupported(const bool &isSupported)
+{
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    if (isSupported == btOffloadSupported_) {
+        return;
+    }
+    if (!isSupported) {
+        btOffloadSupported_ = isSupported;
+        AUDIO_INFO_LOG("btOffloadSupported_ off, device disconnect from %{public}d", deviceType_);
+        return;
+    }
+
+    if (!spatializationEnabled_) {
+        btOffloadSupported_ = isSupported;
+        AUDIO_INFO_LOG("btOffloadSupported_ on, but spatialization is off, do nothing");
+        return;
+    }
+    // Release ARM, try offload to DSP
+    AUDIO_INFO_LOG("btOffloadSupported_ on, try offload effect on device %{public}d", deviceType_);
+    AudioSpatializationState oldState = {spatializationEnabled_, headTrackingEnabled_};
+    AudioSpatializationState offState = {false, false};
+    UpdateSpatializationState(offState);
+    btOffloadSupported_ = isSupported;
+    UpdateSpatializationState(oldState);
+    return;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1912,5 +1912,15 @@ void AudioServer::LoadHdiEffectModel()
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
     audioEffectChainManager->InitHdiState();
 }
+
+void AudioServer::UpdateEffectBtOffloadSupported(const bool &isSupported)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID, "refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+    audioEffectChainManager->UpdateEffectBtOffloadSupported(isSupported);
+}
 } // namespace AudioStandard
 } // namespace OHOS

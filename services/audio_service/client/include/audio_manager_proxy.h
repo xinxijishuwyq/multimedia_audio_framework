@@ -93,6 +93,7 @@ public:
     int32_t IsWhispering() override;
     bool GetEffectOffloadEnabled() override;
     void LoadHdiEffectModel() override;
+    void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

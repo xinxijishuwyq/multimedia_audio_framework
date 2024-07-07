@@ -68,6 +68,7 @@ public:
     bool IsHeadTrackingDataRequested(const std::string &macAddress);
     void UpdateRendererInfo(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfo);
     void InitSpatializationState();
+    std::string GetCurrentDeviceAddress() const;
 private:
     AudioSpatializationService()
         :audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance())

@@ -131,6 +131,7 @@ public:
     void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
     void UpdateExtraSceneType(const std::string &extraSceneType);
     void InitHdiState();
+    void UpdateEffectBtOffloadSupported(const bool &isSupported);
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
@@ -179,6 +180,7 @@ private:
     bool btOffloadEnabled_ = false;
     bool spkOffloadEnabled_ = false;
     bool initializedLogFlag_ = true;
+    bool btOffloadSupported_ = false;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     int32_t hdiSceneType_ = 0;
     int32_t hdiEffectMode_ = 0;

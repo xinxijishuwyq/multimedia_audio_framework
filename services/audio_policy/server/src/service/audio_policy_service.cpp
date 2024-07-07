@@ -1755,6 +1755,11 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
         audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
     }
     spatialDeviceMap_.insert(make_pair(deviceDescriptor.macAddress_, deviceDescriptor.deviceType_));
+
+    if (deviceDescriptor.macAddress_ !=
+        AudioSpatializationService::GetAudioSpatializationService().GetCurrentDeviceAddress()) {
+        UpdateEffectBtOffloadSupported(false);
+    }
     UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
     AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
 }
@@ -6834,6 +6839,9 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload(BluetoothOffloadState a2dp
 
     std::string activePort = BLUETOOTH_SPEAKER;
     audioPolicyManager_.SuspendAudioDevice(activePort, true);
+
+    std::thread updateEffectOffloadThread(&AudioPolicyService::UpdateEffectBtOffloadSupported, this, true);
+    updateEffectOffloadThread.detach();
     return SUCCESS;
 #else
     return ERROR;
@@ -8015,6 +8023,17 @@ void AudioPolicyService::LoadHdiEffectModel()
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->LoadHdiEffectModel();
     IPCSkeleton::SetCallingIdentity(identity);
+}
+
+void AudioPolicyService::UpdateEffectBtOffloadSupported(const bool &isSupported)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->UpdateEffectBtOffloadSupported(isSupported);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return;
 }
 } // namespace AudioStandard
 } // namespace OHOS

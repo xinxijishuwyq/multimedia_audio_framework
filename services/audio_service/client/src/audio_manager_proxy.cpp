@@ -1143,5 +1143,20 @@ void AudioManagerProxy::LoadHdiEffectModel()
         static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_HDI_EFFECT_MODEL), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
 }
+
+void AudioManagerProxy::UpdateEffectBtOffloadSupported(const bool &isSupported)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    data.WriteBool(isSupported);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed, error:%{public}d", error);
+}
 } // namespace AudioStandard
 } // namespace OHOS

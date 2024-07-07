@@ -77,7 +77,8 @@ namespace AudioStandard {
         SUSPEND_RENDERSINK,
         RESTORE_RENDERSINK,
         LOAD_HDI_EFFECT_MODEL,
-        AUDIO_SERVER_CODE_MAX = LOAD_HDI_EFFECT_MODEL,
+        UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED,
+        AUDIO_SERVER_CODE_MAX = UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED,
     };
 } // namespace AudioStandard
 } // namespace OHOS
