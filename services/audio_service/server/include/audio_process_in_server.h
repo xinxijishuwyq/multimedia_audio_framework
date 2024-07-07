@@ -77,7 +77,7 @@ public:
     void Dump(std::string &dumpString);
 
     int32_t ConfigProcessBuffer(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
-         const std::shared_ptr<OHAudioBuffer> &endpoint = nullptr);
+        DeviceStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBuffer> &endpoint = nullptr);
 
     int32_t AddProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
     int32_t RemoveProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
@@ -87,6 +87,7 @@ public:
     bool GetInnerCapState() override;
 
     AppInfo GetAppInfo() override final;
+    BufferDesc &GetConvertedBuffer() override;
 public:
     const AudioProcessConfig processConfig_;
 
@@ -112,6 +113,7 @@ private:
     std::shared_ptr<OHAudioBuffer> processBuffer_ = nullptr;
     std::mutex listenerListLock_;
     std::vector<std::shared_ptr<IProcessStatusListener>> listenerList_;
+    BufferDesc convertedBuffer_ = {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

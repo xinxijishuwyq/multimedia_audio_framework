@@ -367,6 +367,12 @@ private:
     size_t extraStrLen_ = 0;
 };
 
+class FormatConverter {
+public:
+    static int32_t S16MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t S16StereoToS16Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+};
+
 template <typename EnumType, typename V>
 int32_t GetKeyFromValue(const std::unordered_map<EnumType, V> &map, const V &value)
 {

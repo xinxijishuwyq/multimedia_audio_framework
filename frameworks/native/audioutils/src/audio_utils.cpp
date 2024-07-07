@@ -964,6 +964,38 @@ void LatencyMonitor::ShowBluetoothTimestamp()
         rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
 }
 
+int32_t FormatConverter::S16MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t half = 2; // mono(1) -> stereo(2)
+    if (srcDesc.bufLength != dstDesc.bufLength / half || srcDesc.buffer == nullptr || dstDesc.buffer == nullptr) {
+        return -1;
+    }
+    int16_t *stcPtr = reinterpret_cast<int16_t *>(srcDesc.buffer);
+    int16_t *dstPtr = reinterpret_cast<int16_t *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / half;
+    for (size_t idx = 0; idx < count; idx++) {
+        *(dstPtr++) = *stcPtr;
+        *(dstPtr++) = *stcPtr++;
+    }
+    return 0;
+}
+
+int32_t FormatConverter::S16StereoToS16Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t half = 2; // stereo(2) -> mono(1)
+    if (dstDesc.bufLength != srcDesc.bufLength / half || srcDesc.buffer == nullptr || dstDesc.buffer == nullptr) {
+        return -1;
+    }
+    int16_t *stcPtr = reinterpret_cast<int16_t *>(srcDesc.buffer);
+    int16_t *dstPtr = reinterpret_cast<int16_t *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / half;
+    for (size_t idx = 0; idx < count; idx++) {
+        *(dstPtr++) = (*stcPtr + *(stcPtr + 1)) / 2; // To obtain mono channel, add left to right, then divide by 2
+        stcPtr += 2; // ptr++ on mono is equivalent to ptr+=2 on stereo
+    }
+    return 0;
+}
+
 const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
 {
     std::string name;
