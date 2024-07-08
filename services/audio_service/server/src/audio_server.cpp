@@ -141,33 +141,33 @@ static const std::map<AsrWhisperDetectionMode, std::string> WHISPER_DETECTION_MO
 };
 
 static const std::map<std::string, AsrVoiceControlMode> VC_MODE_MAP = {
-    {"a2v", AsrVoiceControlMode::AUDIO_2_VOICETX},
-    {"am2v", AsrVoiceControlMode::AUDIO_MIX_2_VOICETX},
-    {"a2vt", AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX},
-    {"am2te", AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX},
+    {"Audio2voicetx", AsrVoiceControlMode::AUDIO_2_VOICETX},
+    {"audiomix2voicetx", AsrVoiceControlMode::AUDIO_MIX_2_VOICETX},
+    {"Audio2voicetxex", AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX},
+    {"audiomix2voicetxex", AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX},
 };
 
 static const std::map<AsrVoiceControlMode, std::string> VC_MODE_MAP_VERSE = {
-    {AsrVoiceControlMode::AUDIO_2_VOICETX, "a2v"},
-    {AsrVoiceControlMode::AUDIO_MIX_2_VOICETX, "am2v"},
-    {AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX, "a2vt"},
-    {AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX, "am2te"},
+    {AsrVoiceControlMode::AUDIO_2_VOICETX, "Audio2voicetx"},
+    {AsrVoiceControlMode::AUDIO_MIX_2_VOICETX, "audiomix2voicetx"},
+    {AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX, "Audio2voicetxex"},
+    {AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX, "audiomix2voicetxex"},
 };
 
 static const std::map<std::string, AsrVoiceMuteMode> VM_MODE_MAP = {
-    {"om", AsrVoiceMuteMode::OUTPUT_MUTE},
-    {"im", AsrVoiceMuteMode::INPUT_MUTE},
-    {"tm", AsrVoiceMuteMode::TTS_MUTE},
-    {"cm", AsrVoiceMuteMode::CALL_MUTE},
-    {"ome", AsrVoiceMuteMode::OUTPUT_MUTE_EX},
+    {"output_mute", AsrVoiceMuteMode::OUTPUT_MUTE},
+    {"input_mute", AsrVoiceMuteMode::INPUT_MUTE},
+    {"mute_tts", AsrVoiceMuteMode::TTS_MUTE},
+    {"mute_call", AsrVoiceMuteMode::CALL_MUTE},
+    {"ouput_mute_ex", AsrVoiceMuteMode::OUTPUT_MUTE_EX},
 };
 
 static const std::map<AsrVoiceMuteMode, std::string> VM_MODE_MAP_VERSE = {
-    {AsrVoiceMuteMode::OUTPUT_MUTE, "om"},
-    {AsrVoiceMuteMode::INPUT_MUTE, "im"},
-    {AsrVoiceMuteMode::TTS_MUTE, "tm"},
-    {AsrVoiceMuteMode::CALL_MUTE, "cm"},
-    {AsrVoiceMuteMode::OUTPUT_MUTE_EX, "ome"},
+    {AsrVoiceMuteMode::OUTPUT_MUTE, "output_mute"},
+    {AsrVoiceMuteMode::INPUT_MUTE, "input_mute"},
+    {AsrVoiceMuteMode::TTS_MUTE, "mute_tts"},
+    {AsrVoiceMuteMode::CALL_MUTE, "mute_call"},
+    {AsrVoiceMuteMode::OUTPUT_MUTE_EX, "ouput_mute_ex"},
 };
 
 static const std::map<std::string, bool> RES_MAP = {
@@ -652,7 +652,7 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
     auto it = VC_MODE_MAP_VERSE.find(asrVoiceControlMode);
     auto res = RES_MAP_VERSE.find(on);
     if ((it != VC_MODE_MAP_VERSE.end()) && (res != RES_MAP_VERSE.end())) {
-        value = key + "_" + it->second + "=" + res->second;
+        value = it->second + "=" + res->second;
     } else {
         AUDIO_ERR_LOG("get value failed.");
         return ERR_INVALID_PARAM;
@@ -676,7 +676,7 @@ int32_t AudioServer::SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool
     auto it = VM_MODE_MAP_VERSE.find(asrVoiceMuteMode);
     auto res = RES_MAP_VERSE.find(on);
     if ((it != VM_MODE_MAP_VERSE.end()) && (res != RES_MAP_VERSE.end())) {
-        value = key + "_" + it->second + "=" + res->second;
+        value = it->second + "=" + res->second;
     } else {
         AUDIO_ERR_LOG("get value failed.");
         return ERR_INVALID_PARAM;
