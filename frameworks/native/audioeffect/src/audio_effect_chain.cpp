@@ -204,7 +204,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
         sceneType_.c_str(), effectMode_.c_str(), libHandle->name);
 
     CHECK_AND_RETURN_LOG(SetEffectParamToHandle(handle, replyData) == 0,
-        "[%{public}s] with mode [%{public}s], %{pubilc}s lib EFFECT_CMD_SET_PARAM fail", sceneType_.c_str(),
+        "[%{public}s] with mode [%{public}s], %{public}s lib EFFECT_CMD_SET_PARAM fail", sceneType_.c_str(),
         effectMode_.c_str(), libHandle->name);
 
     cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
