@@ -1072,8 +1072,9 @@ static void SinkRenderMultiChannelInputsDrop(pa_sink *si, pa_mix_info *infoIn, u
 
     /* We optimize for the case where the order of the inputs has not changed */
     pa_mix_info *infoCur = NULL;
+    pa_sink_input *sceneSinkInput = NULL;
     for (uint32_t k = 0; k < n; k++) {
-        pa_sink_input *sceneSinkInput = infoIn[k].userdata;
+        sceneSinkInput = infoIn[k].userdata;
         pa_sink_input_assert_ref(sceneSinkInput);
 
         /* Drop read data */
