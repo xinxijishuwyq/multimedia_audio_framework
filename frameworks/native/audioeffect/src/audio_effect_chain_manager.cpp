@@ -497,11 +497,10 @@ bool AudioEffectChainManager::ExistAudioEffectChain(const std::string &sceneType
     // if the effectChain exist, see if it is empty
     if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) ||
         SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
+        AUDIO_DEBUG_LOG("null SceneTypeToEffectChainMap_[%{public}s]", sceneTypeAndDeviceKey.c_str());
         return false;
     }
     auto audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-    CHECK_AND_RETURN_RET_LOG(audioEffectChain != nullptr, false, "null SceneTypeToEffectChainMap_[%{public}s]",
-        sceneTypeAndDeviceKey.c_str());
     return !audioEffectChain->IsEmptyEffectHandles();
 }
 

@@ -1316,9 +1316,7 @@ static void SafeRendererSinkUpdateAppsUid(struct RendererSinkAdapter *sinkAdapte
 static void RecordEffectChainStatus(bool existFlag, const char *sinkSceneType, const char *sinkSceneMode,
     bool actualSpatializationEnabled)
 {
-    g_effectProcessFrameCount++;
     if (g_effectProcessFrameCount == PRINT_INTERVAL_FRAME_COUNT) {
-        g_effectProcessFrameCount = 0;
         AUDIO_DEBUG_LOG("Effect Chain Status is %{public}d, "
             "scene type is %{public}s, scene mode is %{public}s, spatializationEnabled is %{public}d.",
             existFlag, sinkSceneType, sinkSceneMode, actualSpatializationEnabled);
@@ -1350,11 +1348,11 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag =
             EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled ? "1" : "0");
-        RecordEffectChainStatus(existFlag, sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled);
         bool sceneTypeFlag = EffectChainManagerSceneCheck(sinkSceneType, sceneType);
         if ((IsInnerCapturer(sinkIn) && IsCaptureSilently()) || !InputIsPrimary(sinkIn)) {
             continue;
         } else if ((sceneTypeFlag && existFlag) || (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
+            RecordEffectChainStatus(existFlag, sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled);
             pa_sink_input_assert_ref(sinkIn);
             updateResampler(sinkIn, sinkSceneType, false);
 
@@ -1932,6 +1930,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     time_t currentTime = time(NULL);
     PrepareSpatializationFading(&u->spatializationFadingState, &u->spatializationFadingCount,
         &u->actualSpatializationEnabled);
+    g_effectProcessFrameCount++;
     for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
         uint32_t processChannels = DEFAULT_NUM_CHANNEL;
         uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
@@ -1953,6 +1952,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
         PrimaryEffectProcess(u, chunkIn, sinkSceneType);
     }
+    if (g_effectProcessFrameCount == PRINT_INTERVAL_FRAME_COUNT) { g_effectProcessFrameCount = 0; }
     CheckAndDealSpeakerPaZeroVolume(u, currentTime);
     SinkRenderPrimaryAfterProcess(si, length, chunkIn);
 }
