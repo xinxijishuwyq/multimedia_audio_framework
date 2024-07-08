@@ -336,7 +336,7 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(const std::string
     if (!SceneTypeToSpecialEffectSet_.count(sceneType) && commonEffectChainCount_ > 1) {
         return SUCCESS;
     }
-    std::string createSceneType = SceneTypeToSpecialEffectSet_.count(sceneType) ? sceneType : COMMON_SCENE_TYPE
+    std::string createSceneType = SceneTypeToSpecialEffectSet_.count(sceneType) ? sceneType : COMMON_SCENE_TYPE;
     if (SetAudioEffectChainDynamic(createSceneType, effectMode) != SUCCESS) {
         return ERROR;
     }
