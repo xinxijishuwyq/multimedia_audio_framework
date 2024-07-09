@@ -97,7 +97,8 @@ int32_t AudioProcessInServer::Start()
     if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(processConfig_.appInfo.appTokenId,
             processConfig_.appInfo.appFullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
-        PermissionUtil::NotifyPrivacy(processConfig_.appInfo.appTokenId, AUDIO_PERMISSION_START);
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacy(processConfig_.appInfo.appTokenId,
+            AUDIO_PERMISSION_START), ERR_PERMISSION_DENIED, "NotifyPrivacy failed!");
     }
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
@@ -144,7 +145,8 @@ int32_t AudioProcessInServer::Resume()
         uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
             "VerifyBackgroundCapture failed!");
-        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_START);
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_START), ERR_PERMISSION_DENIED,
+            "NotifyPrivacy failed!");
     }
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
