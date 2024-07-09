@@ -125,7 +125,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         }
         descs.push_back(move(desc));
     } else if (renderConfigMap_[streamUsage] == RING_RENDER_ROUTERS) {
-        DealRingRenderRouters(descs, streamUsage, clientUID);
+        DealRingRenderRouters(descs, streamUsage, clientUID, routerType);
     } else if (renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS) {
         descs.push_back(FetchCallRenderDevice(streamUsage, clientUID, routerType));
     } else {
@@ -143,9 +143,8 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
 }
 
 void AudioRouterCenter::DealRingRenderRouters(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
-    StreamUsage streamUsage, int32_t clientUID)
+    StreamUsage streamUsage, int32_t clientUID, RouterType &routerType)
 {
-    RouterType routerType = ROUTER_TYPE_NONE;
     AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
     AUDIO_INFO_LOG("ring render router streamUsage:%{public}d, audioScene:%{public}d.", streamUsage, audioScene);
     if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT) {

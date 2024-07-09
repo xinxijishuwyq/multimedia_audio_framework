@@ -108,7 +108,7 @@ private:
     vector<unique_ptr<AudioDeviceDescriptor>> FetchRingRenderDevices(StreamUsage streamUsage, int32_t clientUID,
         RouterType &routerType);
     void DealRingRenderRouters(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
-        StreamUsage streamUsage, int32_t clientUID);
+        StreamUsage streamUsage, int32_t clientUID, RouterType &routerType);
 
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> callRenderRouters_;
