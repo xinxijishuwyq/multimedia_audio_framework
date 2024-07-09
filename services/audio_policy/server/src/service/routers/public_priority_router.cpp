@@ -57,6 +57,15 @@ vector<std::unique_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
     int32_t clientUID)
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
+    if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+        descs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
+        if (descs.size() == 0) {
+            descs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
+        }
+    }
+    unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);
+    AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
+        clientUID, desc->deviceType_);
     return descs;
 }
 
