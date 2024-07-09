@@ -156,6 +156,7 @@ void AudioPolicyServer::OnStart()
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
     AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
     AddSystemAbilityListener(POWER_MANAGER_SERVICE_ID);
+    AddSystemAbilityListener(AVSESSION_SERVICE_ID);
 #ifdef SUPPORT_USER_ACCOUNT
     AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
 #endif
@@ -248,6 +249,9 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
     AUDIO_DEBUG_LOG("AudioPolicyServer::OnRemoveSystemAbility systemAbilityId:%{public}d removed", systemAbilityId);
+    if (systemAbilityId == AVSESSION_SERVICE_ID) {
+        isAvSessionSetVoipStart = false;
+    }
 }
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
