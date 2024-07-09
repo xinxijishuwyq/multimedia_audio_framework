@@ -292,7 +292,8 @@ int32_t CapturerInServer::Start()
         uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
             "VerifyBackgroundCapture failed!");
-        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_START);
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_START), ERR_PERMISSION_DENIED,
+            "NotifyPrivacy failed!");
     }
 
     status_ = I_STATUS_STARTING;
