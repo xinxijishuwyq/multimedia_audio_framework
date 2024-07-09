@@ -472,7 +472,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
         }
         AudioInterrupt audioInterrupt = iter->first;
         streamInFocus = audioInterrupt.audioFocusType.streamType;
-        if (streamInFocus != STREAM_ULTRASONIC) {
+        if (streamInFocus != STREAM_ACCESSIBILITY && streamInFocus != STREAM_ULTRASONIC) {
             break;
         }
     }
