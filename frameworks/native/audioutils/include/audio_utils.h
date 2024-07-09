@@ -158,6 +158,13 @@ bool isEqual(T a, T b, double precision = 0.01)
     return std::abs(a - b) < precision;
 }
 
+// return true if value is not in the array.
+template <typename V>
+inline bool NotContain(const std::vector<V> &array, const V &value)
+{
+    return std::find(array.begin(), array.end(), value) == array.end();
+}
+
 template <typename T>
 bool GetSysPara(const char *key, T &value);
 
