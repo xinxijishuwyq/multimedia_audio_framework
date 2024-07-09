@@ -3214,6 +3214,9 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioHfpManager::DisconnectSco();
 #endif
+    }
+    if (audioScene_ == AUDIO_SCENE_DEFAULT || audioScene_ == AUDIO_SCENE_PHONE_CALL ||
+        audioScene_ == AUDIO_SCENE_PHONE_CHAT) {
         ClearScoDeviceSuspendState();
     }
 
