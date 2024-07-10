@@ -318,7 +318,7 @@ void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string&
             break;
         case RES_SCHED_SYS_ABILITY_ID:
             AUDIO_INFO_LOG("ressched service start");
-            ScheduleReportData(getpid(), paDaemonTid_, "audio_server");
+            OnAddResSchedService(getpid());
             break;
         default:
             AUDIO_ERR_LOG("unhandled sysabilityId:%{public}d", systemAbilityId);
