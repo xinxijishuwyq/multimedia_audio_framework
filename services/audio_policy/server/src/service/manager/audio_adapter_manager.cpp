@@ -327,10 +327,10 @@ void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamTyp
     volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevel);
 }
 
-void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute)
+void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
 {
     std::lock_guard<std::mutex> lock(muteStatusMutex_);
-    SetStreamMuteInternal(streamType, mute);
+    SetStreamMuteInternal(streamType, mute, streamUsage);
 }
 
 void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
@@ -408,20 +408,21 @@ float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
     return CalculateVolumeDb(volumeLevel);
 }
 
-int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
+int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
 {
     std::lock_guard<std::mutex> lock(muteStatusMutex_);
     auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
     if (handler != nullptr) {
-        handler->SendStreamMuteStatusUpdate(streamType, mute);
+        handler->SendStreamMuteStatusUpdate(streamType, mute, streamUsage);
         return SUCCESS;
     }
     return ERROR;
 }
 
-int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, bool mute)
+int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, bool mute,
+    StreamUsage streamUsage)
 {
-    AUDIO_INFO_LOG("SetStreamMute: stream type %{public}d, mute %{public}d", streamType, mute);
+    AUDIO_INFO_LOG("stream type %{public}d, mute:%{public}d, streamUsage:%{public}d", streamType, mute, streamUsage);
     if (mute &&
         (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
         streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY ||
@@ -430,8 +431,8 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
         AUDIO_ERR_LOG("SetStreamMute: this type can not set mute");
         return SUCCESS;
     }
-
-    if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_SPEAKER) {
+    if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_SPEAKER &&
+        GetRingerMode() != RINGER_MODE_NORMAL && mute && Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         AUDIO_INFO_LOG("Dual tone stream type %{public}d, current active device:[%{public}d] is no speaker, dont mute",
             streamType, mute);
         return SUCCESS;
@@ -643,6 +644,7 @@ int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutput
 int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 {
     std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    ringerMode_ = ringerMode;
     auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
     if (handler != nullptr) {
         handler->SendRingerModeUpdate(ringerMode);
@@ -654,7 +656,9 @@ int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 int32_t AudioAdapterManager::SetRingerModeInternal(AudioRingerMode ringerMode)
 {
     AUDIO_INFO_LOG("SetRingerMode: %{public}d", ringerMode);
-    ringerMode_ = ringerMode;
+    if (ringerMode_ != ringerMode) {
+        ringerMode_ = ringerMode;
+    }
 
     // In case if KvStore didnot connect during bootup
     if (!isLoaded_) {
