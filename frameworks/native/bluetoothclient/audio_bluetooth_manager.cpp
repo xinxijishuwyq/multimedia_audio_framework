@@ -35,6 +35,7 @@ std::mutex g_a2dpInstanceLock;
 HandsFreeAudioGateway *AudioHfpManager::hfpInstance_ = nullptr;
 std::shared_ptr<AudioHfpListener> AudioHfpManager::hfpListener_ = std::make_shared<AudioHfpListener>();
 AudioScene AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
+AudioScene AudioHfpManager::sceneFromPolicy_ = AUDIO_SCENE_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
 std::mutex g_activehfpDeviceLock;
 std::mutex g_audioSceneLock;
@@ -434,6 +435,22 @@ void AudioHfpManager::UpdateAudioScene(AudioScene scene)
     scene_ = scene;
 }
 
+AudioStandard::AudioScene AudioHfpManager::GetCurrentAudioScene()
+{
+    std::lock_guard<std::mutex> sceneLock(g_audioSceneLock);
+    return scene_;
+}
+
+void AudioHfpManager::SetAudioSceneFromPolicy(AudioScene scene)
+{
+    sceneFromPolicy_ = scene;
+}
+
+AudioStandard::AudioScene AudioHfpManager::GetPolicyAudioScene()
+{
+    return sceneFromPolicy_;
+}
+
 void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state, int reason)
 {
     AUDIO_INFO_LOG("AudioHfpListener::OnScoStateChanged: state: [%{public}d] reason: [%{public}d]", state, reason);
@@ -443,6 +460,12 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
             scoState == HfpScoConnectState::SCO_DISCONNECTED) {
             AUDIO_INFO_LOG("Sco disconnect, need set audio scene as default.");
             AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_DEFAULT);
+        } else if (scoState == HfpScoConnectState::SCO_CONNECTED) {
+            AudioScene audioScene = AudioHfpManager::GetPolicyAudioScene();
+            if (audioScene != AudioHfpManager::GetCurrentAudioScene()) {
+                AUDIO_INFO_LOG("Sco connect by peripheral device, update scene_ %{public}d", audioScene);
+                AudioHfpManager::UpdateAudioScene(audioScene);
+            }
         }
         bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
         HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
