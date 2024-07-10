@@ -28,7 +28,7 @@ namespace AudioStandard {
 using namespace std;
 
 typedef function<bool(const std::unique_ptr<AudioDeviceDescriptor> &desc)> IsPresentFunc;
-
+std::string GetEncryptAddr(const std::string &addr);
 class AudioDeviceManager {
 public:
     static AudioDeviceManager& GetAudioDeviceManager()
@@ -76,6 +76,7 @@ public:
     std::string GetConnDevicesStr();
     std::string GetConnDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs);
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
+    bool IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDeviceDescriptors);
     
 private:
     AudioDeviceManager();
