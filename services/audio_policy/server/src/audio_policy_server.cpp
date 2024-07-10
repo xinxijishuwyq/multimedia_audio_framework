@@ -1028,8 +1028,9 @@ int32_t AudioPolicyServer::SetRingerModeInternal(AudioRingerMode ringerMode, boo
     if (!hasUpdatedVolume) {
         // need to set volume according to ringermode
         bool muteState = (ringerMode == RINGER_MODE_NORMAL) ? false : true;
-        audioPolicyService_.SetStreamMute(STREAM_RING, muteState);
-    
+        AudioInterrupt audioInterrupt;
+        GetSessionInfoInFocus(audioInterrupt);
+        audioPolicyService_.SetStreamMute(STREAM_RING, muteState, audioInterrupt.streamUsage);
         if (!muteState && GetSystemVolumeLevelInternal(STREAM_RING) == 0) {
             // if mute state is false but volume is 0, set volume to 1. Send volumeChange callback.
             SetSystemVolumeLevelInternal(STREAM_RING, 1, false);

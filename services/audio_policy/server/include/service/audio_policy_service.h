@@ -98,7 +98,8 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) const;
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute);
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute,
+        const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN);
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
@@ -914,8 +915,6 @@ private:
 
     void UpdateRoute(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
-
-    bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage);
 
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
 

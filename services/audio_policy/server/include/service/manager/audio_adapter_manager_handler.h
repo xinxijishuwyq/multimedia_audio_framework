@@ -52,11 +52,12 @@ public:
 
     struct StreamMuteStatusEvent {
         StreamMuteStatusEvent() = delete;
-        StreamMuteStatusEvent(const AudioStreamType &streamType, const bool &mute)
-            : streamType_(streamType), mute_(mute)
+        StreamMuteStatusEvent(const AudioStreamType &streamType, const bool &mute, const StreamUsage &streamUsage)
+            : streamType_(streamType), mute_(mute), streamUsage_(streamUsage)
         {}
         AudioStreamType streamType_;
         bool mute_;
+        StreamUsage streamUsage_;
     };
 
     struct RingerModeEvent {
@@ -69,7 +70,8 @@ public:
 
     bool SendKvDataUpdate(const bool &isFirstBoot);
     bool SendSaveVolume(const DeviceType &deviceType, const AudioStreamType &streamType, const int32_t &volumeLevel);
-    bool SendStreamMuteStatusUpdate(const AudioStreamType &streamType, const bool &mute);
+    bool SendStreamMuteStatusUpdate(const AudioStreamType &streamType, const bool &mute,
+        const StreamUsage &streamUsage);
     bool SendRingerModeUpdate(const AudioRingerMode &ringerMode);
 
 protected:

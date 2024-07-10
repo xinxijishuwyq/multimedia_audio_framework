@@ -857,7 +857,7 @@ float AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
     return streamCollector_.GetSingleStreamVolume(streamId);
 }
 
-int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute)
+int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage)
 {
     int32_t result = SUCCESS;
     if (GetStreamForVolumeMap(streamType) == STREAM_MUSIC &&
@@ -868,7 +868,7 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute)
             AUDIO_WARNING_LOG("Set failed for macAddress:[%{public}s]", GetEncryptAddr(activeBTDevice_).c_str());
         } else {
             configInfoPos->second.mute = mute;
-            audioPolicyManager_.SetStreamMute(streamType, mute);
+            audioPolicyManager_.SetStreamMute(streamType, mute, streamUsage);
 #ifdef BLUETOOTH_ENABLE
             // set to avrcp device
             if (mute) {
@@ -880,7 +880,7 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute)
 #endif
         }
     }
-    result = audioPolicyManager_.SetStreamMute(streamType, mute);
+    result = audioPolicyManager_.SetStreamMute(streamType, mute, streamUsage);
 
     Volume vol = {false, 1.0f, 0};
     vol.isMute = mute;
@@ -2269,7 +2269,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
             rendererChangeInfo->clientUID);
         if (HandleDeviceChangeForFetchOutputDevice(descs.front(), rendererChangeInfo) == ERR_NEED_NOT_SWITCH_DEVICE &&
-            !IsRingerOrAlarmerStreamUsage(rendererChangeInfo->rendererInfo.streamUsage)) {
+            !Util::IsRingerOrAlarmerStreamUsage(rendererChangeInfo->rendererInfo.streamUsage)) {
             continue;
         }
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
@@ -3179,7 +3179,7 @@ int32_t AudioPolicyService::SetRingerMode(AudioRingerMode ringMode)
 {
     int32_t result = audioPolicyManager_.SetRingerMode(ringMode);
     if (result == SUCCESS) {
-        if (audioScene_ == AUDIO_SCENE_RINGING ||audioScene_ == AUDIO_SCENE_VOICE_RINGING) {
+        if (Util::IsRingerAudioScene(audioScene_)) {
             AUDIO_INFO_LOG("fetch output device after switch new ringmode.");
             FetchDevice(true);
         }
@@ -7833,15 +7833,15 @@ void AudioPolicyService::UpdateRoute(unique_ptr<AudioRendererChangeInfo> &render
     StreamUsage streamUsage = rendererChangeInfo->rendererInfo.streamUsage;
     InternalDeviceType deviceType = outputDevices.front()->deviceType_;
     AUDIO_INFO_LOG("update route, streamUsage:%{public}d, 1st devicetype:%{public}d", streamUsage, deviceType);
-    if (IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType)) {
+    if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType)) {
         if (!SelectRingerOrAlarmDevices(outputDevices, rendererChangeInfo)) {
             UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
         }
 
         AudioRingerMode ringerMode = audioPolicyManager_.GetRingerMode();
         if (ringerMode != RINGER_MODE_NORMAL && IsRingerOrAlarmerDualDevicesRange(outputDevices.front()->getType()) &&
-            outputDevices.front()->getType() != DEVICE_TYPE_SPEAKER) {
-            audioPolicyManager_.SetStreamMute(STREAM_RING, false);
+             outputDevices.front()->getType() != DEVICE_TYPE_SPEAKER) {
+            audioPolicyManager_.SetStreamMute(STREAM_RING, false, streamUsage);
             ringerModeMute_ = false;
         } else {
             ringerModeMute_ = true;
@@ -7853,18 +7853,6 @@ void AudioPolicyService::UpdateRoute(unique_ptr<AudioRendererChangeInfo> &render
         }
         ringerModeMute_ = true;
         UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
-    }
-}
-
-bool AudioPolicyService::IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
-{
-    switch (usage) {
-        case STREAM_USAGE_ALARM:
-        case STREAM_USAGE_VOICE_RINGTONE:
-        case STREAM_USAGE_RINGTONE:
-            return true;
-        default:
-            return false;
     }
 }
 
