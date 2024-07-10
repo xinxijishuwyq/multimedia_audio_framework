@@ -141,16 +141,16 @@ static const std::map<AsrWhisperDetectionMode, std::string> WHISPER_DETECTION_MO
 };
 
 static const std::map<std::string, AsrVoiceControlMode> VC_MODE_MAP = {
-    {"Audio2voicetx", AsrVoiceControlMode::AUDIO_2_VOICETX},
+    {"audio2voicetx", AsrVoiceControlMode::AUDIO_2_VOICETX},
     {"audiomix2voicetx", AsrVoiceControlMode::AUDIO_MIX_2_VOICETX},
-    {"Audio2voicetxex", AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX},
+    {"audio2voicetxex", AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX},
     {"audiomix2voicetxex", AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX},
 };
 
 static const std::map<AsrVoiceControlMode, std::string> VC_MODE_MAP_VERSE = {
-    {AsrVoiceControlMode::AUDIO_2_VOICETX, "Audio2voicetx"},
+    {AsrVoiceControlMode::AUDIO_2_VOICETX, "audio2voicetx"},
     {AsrVoiceControlMode::AUDIO_MIX_2_VOICETX, "audiomix2voicetx"},
-    {AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX, "Audio2voicetxex"},
+    {AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX, "audio2voicetxex"},
     {AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX, "audiomix2voicetxex"},
 };
 
