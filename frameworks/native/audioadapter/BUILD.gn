@@ -28,8 +28,11 @@ ohos_shared_library("pulse_audio_service_adapter") {
 
   include_dirs = [
     "include",
+    "../audioutils/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
   ]
+
+  deps = [ "../audioutils:audio_utils" ]
 
   public_configs = [ ":audio_external_library_config" ]
 
