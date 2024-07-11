@@ -1133,7 +1133,7 @@ void AudioEffectChainManager::UpdateRealAudioEffect()
         UpdateCurrSceneType(currSceneType, sceneType);
         audioEffectChain->SetEffectCurrSceneType(currSceneType);
         audioEffectChain->UpdateEffectParam();
-        AUDIO_INFO_LOG("currSceneType is %{public}s", currSceneType.c_str());
+        AUDIO_INFO_LOG("currSceneType is %{public}d", currSceneType);
     }
 }
 
