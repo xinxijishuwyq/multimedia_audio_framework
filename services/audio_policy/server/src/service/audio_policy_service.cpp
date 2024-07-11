@@ -767,11 +767,11 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
         offloadSessionID_ = sessionId;
 
         AUDIO_DEBUG_LOG("sessionId[%{public}d] try get offload stream", sessionId);
+        MoveToNewPipeInner(sessionId, PIPE_TYPE_OFFLOAD);
         SetOffloadMode();
     } else {
         if (sessionId == *(offloadSessionID_)) {
             AUDIO_DEBUG_LOG("sessionId[%{public}d] is already get offload stream", sessionId);
-            SetOffloadMode();
         } else {
             AUDIO_DEBUG_LOG("sessionId[%{public}d] no get offload, current offload sessionId[%{public}d]",
                 sessionId, *(offloadSessionID_));
@@ -4694,6 +4694,10 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
 
     const auto &rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
+    if (rendererState == RENDERER_PREPARED || rendererState == RENDERER_NEW || rendererState == RENDERER_INVALID) {
+        return ret; // only update tracker in new and prepared
+    }
+
     if (rendererState == RENDERER_RELEASED && !streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
         DynamicUnloadModule(PIPE_TYPE_MULTICHANNEL);
     }
@@ -5920,6 +5924,11 @@ bool AudioPolicyService::CheckStreamOffloadMode(int64_t activateSessionId, Audio
         return false;
     }
 
+    if (!streamCollector_.IsOffloadAllowed(activateSessionId)) {
+        AUDIO_INFO_LOG("Offload is not allowed, Skipped");
+        return false;
+    }
+
     if ((streamType != STREAM_MUSIC) && (streamType != STREAM_SPEECH)) {
         AUDIO_DEBUG_LOG("StreamType not allowed get offload mode, Skipped");
         return false;
@@ -6740,6 +6749,10 @@ void AudioPolicyService::GetA2dpOffloadCodecAndSendToDsp()
 void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
     DeviceType deviceType)
 {
+    if (allActiveSessions.size() == 0) {
+        AUDIO_INFO_LOG("no active sessions");
+        return;
+    }
     auto receiveOffloadFlag = NO_A2DP_DEVICE;
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         receiveOffloadFlag = static_cast<BluetoothOffloadState>(Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(

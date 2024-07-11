@@ -2483,6 +2483,7 @@ static void OffloadRewindAndFlush(struct Userdata *u, pa_sink_input *i, bool aft
     pa_assert(ps);
 
     int ret = UpdatePresentationPosition(u);
+    u->offload.sinkAdapter->RendererSinkFlush(u->offload.sinkAdapter);
     if (ret == 0) {
         uint64_t cacheLenInHdi = u->offload.pos > u->offload.hdiPos ? u->offload.pos - u->offload.hdiPos : 0;
         if (cacheLenInHdi != 0) {
@@ -2509,7 +2510,6 @@ static void OffloadRewindAndFlush(struct Userdata *u, pa_sink_input *i, bool aft
             }
         }
     }
-    u->offload.sinkAdapter->RendererSinkFlush(u->offload.sinkAdapter);
     OffloadReset(u);
 }
 

@@ -57,6 +57,7 @@ public:
     float GetLowPowerVolume(int32_t streamId);
     int32_t SetOffloadMode(int32_t streamId, int32_t state, bool isAppBack);
     int32_t UnsetOffloadMode(int32_t streamId);
+    bool IsOffloadAllowed(const int32_t sessionId);
     float GetSingleStreamVolume(int32_t streamId);
     bool GetAndCompareStreamType(StreamUsage targetUsage, AudioRendererInfo rendererInfo);
     int32_t UpdateCapturerInfoMuteStatus(int32_t uid, bool muteStatus);
@@ -102,6 +103,7 @@ private:
     void RegisteredRendererTrackerClientDied(const int32_t uid);
     void RegisteredCapturerTrackerClientDied(const int32_t uid);
     bool CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
+    bool CheckRendererInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     AudioSystemManager *audioSystemMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::shared_ptr<AudioConcurrencyService> audioConcurrencyService_;
