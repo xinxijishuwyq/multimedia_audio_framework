@@ -1240,6 +1240,8 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
             audioEffectChain = SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey];
             commonEffectChainCount_++;
         }
+        AUDIO_DEBUG_LOG("commonSceneTypeAndDeviceKey is %{public}s, commonEffectChainCount_ is %{public}d",
+            commonSceneTypeAndDeviceKey, commonEffectChainCount_);
     }
     return audioEffectChain;
 }
@@ -1260,6 +1262,8 @@ void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string
         } else {
             commonEffectChainCount_--;
         }
+        AUDIO_DEBUG_LOG("commonSceneTypeAndDeviceKey is %{public}s, commonEffectChainCount_ is %{public}d",
+            commonSceneTypeAndDeviceKey, commonEffectChainCount_);
     }
 }
 
