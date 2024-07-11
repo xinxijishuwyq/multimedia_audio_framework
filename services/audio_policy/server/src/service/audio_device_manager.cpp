@@ -828,8 +828,7 @@ bool AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescripto
         if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
             devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             if (desc->deviceType_ == devDesc->deviceType_ &&
-                desc->macAddress_ == devDesc->macAddress_ &&
-                desc->isEnable_ != devDesc->isEnable_) {
+                desc->macAddress_ == devDesc->macAddress_) {
                 desc->isEnable_ = devDesc->isEnable_;
                 updateFlag = true;
             }
@@ -850,8 +849,7 @@ bool AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescrip
         if (deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
             deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             if (desc->deviceType_ == deviceDescriptor->deviceType_ &&
-                desc->macAddress_ == deviceDescriptor->macAddress_ &&
-                desc->exceptionFlag_ != deviceDescriptor->exceptionFlag_) {
+                desc->macAddress_ == deviceDescriptor->macAddress_) {
                 desc->exceptionFlag_ = deviceDescriptor->exceptionFlag_;
                 updateFlag = true;
             }
