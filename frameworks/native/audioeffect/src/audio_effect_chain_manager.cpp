@@ -1242,7 +1242,7 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
             commonEffectChainCount_++;
         }
         AUDIO_INFO_LOG("create new commonSceneTypeAndDeviceKey is %{public}s, commonEffectChainCount_ is %{public}d",
-            commonSceneTypeAndDeviceKey, commonEffectChainCount_);
+            commonSceneTypeAndDeviceKey.c_str(), commonEffectChainCount_);
     }
     return audioEffectChain;
 }
@@ -1264,7 +1264,7 @@ void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string
             commonEffectChainCount_--;
         }
         AUDIO_INFO_LOG("release commonSceneTypeAndDeviceKey is %{public}s, commonEffectChainCount_ is %{public}d",
-            commonSceneTypeAndDeviceKey, commonEffectChainCount_);
+            commonSceneTypeAndDeviceKey.c_str(), commonEffectChainCount_);
     }
 }
 
