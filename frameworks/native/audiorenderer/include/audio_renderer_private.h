@@ -191,7 +191,6 @@ private:
     bool isDirectVoipSupported_ = false;
 
     float speed_ = 1.0;
-    bool isOffloadAllowed_ = true;
 
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> policyServiceDiedCallback_ = nullptr;
 };

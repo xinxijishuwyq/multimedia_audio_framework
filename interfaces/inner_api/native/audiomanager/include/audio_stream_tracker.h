@@ -39,6 +39,8 @@ private:
     int32_t clientUid_ = -1;
     AudioMode eMode_; // to determine renderer or capturer
     State state_;
+    bool isOffloadAllowed = true;
+    AudioPipeType pipeType = PIPE_TYPE_NORMAL_OUT;
     std::mutex trackStateLock_;
 };
 } // namespace AudioStandard

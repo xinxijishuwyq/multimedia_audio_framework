@@ -293,12 +293,37 @@ bool AudioStreamCollector::CheckRendererStateInfoChanged(AudioStreamChangeInfo &
     return true;
 }
 
+bool AudioStreamCollector::CheckRendererInfoChanged(AudioStreamChangeInfo &streamChangeInfo)
+{
+    int32_t sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
+    const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+        [&sessionId](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
+            return changeInfo->sessionId == sessionId;
+        });
+    if (it == audioRendererChangeInfos_.end()) {
+        return true;
+    }
+
+    bool changed = false;
+    bool isOffloadAllowed = (*it)->rendererInfo.isOffloadAllowed;
+    if (isOffloadAllowed != streamChangeInfo.audioRendererChangeInfo.rendererInfo.isOffloadAllowed) {
+        changed = true;
+    }
+    AudioPipeType pipeType = (*it)->rendererInfo.pipeType;
+    if (pipeType != streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType) {
+        changed = true;
+    }
+    return changed;
+}
+
 int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &streamChangeInfo)
 {
     AUDIO_INFO_LOG("UpdateRendererStream client %{public}d state %{public}d session %{public}d",
         streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.rendererState,
         streamChangeInfo.audioRendererChangeInfo.sessionId);
-    if (!CheckRendererStateInfoChanged(streamChangeInfo)) {
+    bool stateChanged = CheckRendererStateInfoChanged(streamChangeInfo);
+    bool infoChanged = CheckRendererInfoChanged(streamChangeInfo);
+    if (!stateChanged && !infoChanged) {
         return SUCCESS;
     }
 
@@ -323,7 +348,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             }
             *it = move(rendererChangeInfo);
 
-            if (audioPolicyServerHandler_ != nullptr) {
+            if (audioPolicyServerHandler_ != nullptr && stateChanged) {
                 audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
             }
             AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
@@ -589,6 +614,20 @@ AudioStreamType AudioStreamCollector::GetStreamType(int32_t sessionId)
         }
     }
     return streamType;
+}
+
+bool AudioStreamCollector::IsOffloadAllowed(const int32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+        [&sessionId](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
+            return changeInfo->sessionId == sessionId;
+        });
+    if (it == audioRendererChangeInfos_.end()) {
+        AUDIO_WARNING_LOG("invalid session id: %{public}d", sessionId);
+        return false;
+    }
+    return (*it)->rendererInfo.isOffloadAllowed;
 }
 
 int32_t AudioStreamCollector::GetChannelCount(int32_t sessionId)

@@ -330,6 +330,7 @@ struct AudioRendererInfo {
     uint8_t encodingType = 0;
     uint64_t channelLayout = 0ULL;
     AudioSampleFormat format = SAMPLE_S16LE;
+    bool isOffloadAllowed = true;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -344,7 +345,8 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(static_cast<int32_t>(samplingRate))
             && parcel.WriteUint8(encodingType)
             && parcel.WriteUint64(channelLayout)
-            && parcel.WriteInt32(format);
+            && parcel.WriteInt32(format)
+            && parcel.WriteBool(isOffloadAllowed);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -360,6 +362,7 @@ struct AudioRendererInfo {
         encodingType = parcel.ReadUint8();
         channelLayout = parcel.ReadUint64();
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
+        isOffloadAllowed = parcel.ReadBool();
     }
 };
 

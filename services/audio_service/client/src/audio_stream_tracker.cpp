@@ -64,12 +64,15 @@ void AudioStreamTracker::UpdateTracker(const int32_t sessionId, const State stat
     AUDIO_DEBUG_LOG("Update tracker entered");
     AudioStreamChangeInfo streamChangeInfo;
 
-    if (state_ == INVALID || state_ == state) {
+    if (state_ == INVALID || (state_ == state &&
+        isOffloadAllowed == rendererInfo.isOffloadAllowed && pipeType == rendererInfo.pipeType)) {
         AUDIO_DEBUG_LOG("Update tracker is called in wrong state/same state");
         return;
     }
 
     state_ = state;
+    isOffloadAllowed = rendererInfo.isOffloadAllowed;
+    pipeType = rendererInfo.pipeType;
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
         streamChangeInfo.audioRendererChangeInfo.clientUID = clientUid_;
         streamChangeInfo.audioRendererChangeInfo.sessionId = sessionId;
