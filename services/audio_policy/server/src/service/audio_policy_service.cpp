@@ -2919,7 +2919,9 @@ int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType)
     if (deviceType == DEVICE_TYPE_USB_HEADSET) {
         string deviceInfo = "";
         if (g_adProxy != nullptr) {
+            std::string identity = IPCSkeleton::ResetCallingIdentity();
             deviceInfo = g_adProxy->GetAudioParameter(LOCAL_NETWORK_ID, USB_DEVICE, "");
+            IPCSkeleton::SetCallingIdentity(identity);
             AUDIO_INFO_LOG("device info from usb hal is %{public}s", deviceInfo.c_str());
         }
         int32_t ret;
@@ -3004,7 +3006,9 @@ int32_t AudioPolicyService::HandleDpDevice(DeviceType deviceType)
         CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
         if (g_adProxy != nullptr) {
+            std::string identity = IPCSkeleton::ResetCallingIdentity();
             getDPInfo = g_adProxy->GetAudioParameter(LOCAL_NETWORK_ID, GET_DP_DEVICE_INFO, defaulyDPInfo);
+            IPCSkeleton::SetCallingIdentity(identity);
             AUDIO_DEBUG_LOG("device info from dp hal is \n defaulyDPInfo:%{public}s \n getDPInfo:%{public}s",
                 defaulyDPInfo.c_str(), getDPInfo.c_str());
         }
@@ -3513,7 +3517,9 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(const AudioDeviceDescr
     }
 
     CHECK_AND_RETURN_RET_LOG(g_adProxy != nullptr, ERROR, "Audio Server Proxy is null");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
     g_adProxy->ResetRouteForDisconnect(updatedDesc.deviceType_);
+    IPCSkeleton::SetCallingIdentity(identity);
 
     return SUCCESS;
 }
@@ -3557,7 +3563,9 @@ int32_t AudioPolicyService::HandleSpecialDeviceType(DeviceType &devType, bool &i
         if (g_adProxy == nullptr) {
             return ERROR;
         }
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
         const std::string value = g_adProxy->GetAudioParameter("need_change_usb_device");
+        IPCSkeleton::SetCallingIdentity(identity);
         AUDIO_INFO_LOG("get value %{public}s  from hal when usb device connect", value.c_str());
         if (value == "false") {
             isArmUsbDevice_ = true;
