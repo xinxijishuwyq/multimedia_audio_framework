@@ -1744,7 +1744,7 @@ void NapiAudioRenderer::RegisterRendererDeviceChangeCallback(napi_env env, napi_
         CHECK_AND_RETURN_LOG(napiRenderer->rendererDeviceChangeCallbackNapi_ != nullptr,
             "rendererDeviceChangeCallbackNapi_ is nullptr, No memery");
 
-        int32_t ret = napiRenderer->audioRenderer_->RegisterAudioRendererEventListener(getpid(),
+        int32_t ret = napiRenderer->audioRenderer_->RegisterOutputDeviceChangeWithInfoCallback(
             napiRenderer->rendererDeviceChangeCallbackNapi_);
         CHECK_AND_RETURN_LOG(ret == SUCCESS,
             "Registering of Renderer Device Change Callback Failed");
@@ -1798,7 +1798,7 @@ void NapiAudioRenderer::UnregisterRendererDeviceChangeCallback(napi_env env, siz
     cb->RemoveCallbackReference(env, callback);
 
     if (callback == nullptr || cb->GetCallbackListSize() == 0) {
-        int32_t ret = napiRenderer->audioRenderer_->UnregisterAudioRendererEventListener(getpid());
+        int32_t ret = napiRenderer->audioRenderer_->UnregisterOutputDeviceChangeWithInfoCallback(cb);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unregistering of Renderer devuce Change Callback Failed");
 
         ret = napiRenderer->audioRenderer_->UnregisterAudioPolicyServerDiedCb(getpid());
@@ -1860,7 +1860,7 @@ void NapiAudioRenderer::UnregisterRendererOutputDeviceChangeWithInfoCallback(nap
     cb->RemoveCallbackReference(env, callback);
 
     if (callback == nullptr || cb->GetCallbackListSize() == 0) {
-        int32_t ret = napiRenderer->audioRenderer_->UnregisterOutputDeviceChangeWithInfoCallback();
+        int32_t ret = napiRenderer->audioRenderer_->UnregisterOutputDeviceChangeWithInfoCallback(cb);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unregistering of Renderer devuce Change Callback Failed");
 
         ret = napiRenderer->audioRenderer_->UnregisterAudioPolicyServerDiedCb(getpid());
@@ -1912,7 +1912,6 @@ void NapiAudioRenderer::DestroyCallbacks()
 {
     CHECK_AND_RETURN_LOG(rendererDeviceChangeCallbackNapi_ != nullptr, "rendererDeviceChangeCallbackNapi_ is nullptr");
     rendererDeviceChangeCallbackNapi_->RemoveAllCallbacks();
-    audioRenderer_->DestroyAudioRendererStateCallback();
     DestroyNAPICallbacks();
 }
 

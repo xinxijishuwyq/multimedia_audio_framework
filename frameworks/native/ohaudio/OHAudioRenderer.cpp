@@ -606,11 +606,10 @@ void OHAudioRenderer::SetRendererCallback(RendererCallback rendererCallbacks, vo
     }
 
     if (rendererCallbacks.callbacks.OH_AudioRenderer_OnStreamEvent != nullptr) {
-        std::shared_ptr<AudioRendererDeviceChangeCallback> callback =
+        std::shared_ptr<AudioRendererOutputDeviceChangeCallback> callback =
             std::make_shared<OHAudioRendererDeviceChangeCallback>(rendererCallbacks.callbacks,
                 (OH_AudioRenderer*)this, userData);
-        int32_t clientPid = getpid();
-        audioRenderer_->RegisterAudioRendererEventListener(clientPid, callback);
+        audioRenderer_->RegisterOutputDeviceChangeWithInfoCallback(callback);
     } else {
         AUDIO_WARNING_LOG("The stream event callback function is not set");
     }
@@ -695,7 +694,8 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
     audioRenderer->Enqueue(bufDesc);
 }
 
-void OHAudioRendererDeviceChangeCallback::OnStateChange(const DeviceInfo &deviceInfo)
+void OHAudioRendererDeviceChangeCallback::OnOutputDeviceChange(const DeviceInfo &deviceInfo,
+    const AudioStreamDeviceChangeReason reason)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
     CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnStreamEvent != nullptr, "pointer to the function is nullptr");

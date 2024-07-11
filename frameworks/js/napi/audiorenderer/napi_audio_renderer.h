@@ -174,7 +174,7 @@ private:
     std::shared_ptr<RendererPositionCallback> positionCbNapi_ = nullptr;
     std::shared_ptr<RendererPeriodPositionCallback> periodPositionCbNapi_ = nullptr;
     std::shared_ptr<AudioRendererWriteCallback> dataRequestCbNapi_ = nullptr;
-    std::shared_ptr<AudioRendererDeviceChangeCallback> rendererDeviceChangeCallbackNapi_ = nullptr;
+    std::shared_ptr<NapiAudioRendererDeviceChangeCallback> rendererDeviceChangeCallbackNapi_ = nullptr;
     std::shared_ptr<NapiAudioRendererOutputDeviceChangeWithInfoCallback>
         rendererOutputDeviceChangeWithInfoCallbackNapi_ = nullptr;
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> rendererPolicyServiceDiedCallbackNapi_ = nullptr;

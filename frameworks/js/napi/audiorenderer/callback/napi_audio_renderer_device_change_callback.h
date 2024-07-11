@@ -23,14 +23,14 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class NapiAudioRendererDeviceChangeCallback : public AudioRendererDeviceChangeCallback {
+class NapiAudioRendererDeviceChangeCallback : public AudioRendererOutputDeviceChangeCallback {
 public:
     explicit NapiAudioRendererDeviceChangeCallback(napi_env env);
     virtual ~NapiAudioRendererDeviceChangeCallback();
     void AddCallbackReference(napi_value args);
     void RemoveCallbackReference(napi_env env, napi_value args);
-    void OnStateChange(const DeviceInfo &deviceInfo) override;
-    void RemoveAllCallbacks() override;
+    void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
+    void RemoveAllCallbacks();
     int32_t GetCallbackListSize() const;
 
 private:

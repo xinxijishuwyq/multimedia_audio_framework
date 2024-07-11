@@ -94,16 +94,15 @@ public:
     int32_t GetCurrentOutputDevices(DeviceInfo &deviceInfo) const override;
     uint32_t GetUnderflowCount() const override;
     void SwitchStream(const uint32_t sessionId, const int32_t streamFlag);
-    int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
-        const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback) override;
-    int32_t UnregisterAudioRendererEventListener(const int32_t clientPid) override;
+
     int32_t RegisterOutputDeviceChangeWithInfoCallback(
         const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) override;
     int32_t UnregisterOutputDeviceChangeWithInfoCallback() override;
+    int32_t UnregisterOutputDeviceChangeWithInfoCallback(
+        const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) override;
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
         const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback) override;
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid) override;
-    void DestroyAudioRendererStateCallback() override;
     AudioEffectMode GetAudioEffectMode() const override;
     int64_t GetFramesWritten() const override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) const override;
@@ -240,44 +239,39 @@ public:
 
     void SaveCallback(const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback)
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        callback_ = callback;
+        std::lock_guard<std::mutex> lock(callbackMutex_);
+        callbacks_.push_back(callback);
     }
 
     void RemoveCallback()
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        callback_.reset();
+        std::lock_guard<std::mutex> lock(callbackMutex_);
+        callbacks_.clear();
     }
 
-    void SaveOldCallback(const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback)
+    void RemoveCallback(const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback)
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        oldCallback_ = callback;
-    }
-
-    void RemoveOldCallback()
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        oldCallback_.reset();
+        std::lock_guard<std::mutex> lock(callbackMutex_);
+        callbacks_.erase(std::remove(callbacks_.begin(), callbacks_.end(), callback), callbacks_.end());
     }
 
     void SetAudioRendererObj(AudioRendererPrivate *rendererObj)
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::mutex> lock(audioRendererObjMutex_);
         renderer_ = rendererObj;
     }
 
     void UnsetAudioRendererObj()
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::mutex> lock(audioRendererObjMutex_);
         renderer_ = nullptr;
     }
 private:
-    std::shared_ptr<AudioRendererOutputDeviceChangeCallback> callback_;
+    std::vector<std::shared_ptr<AudioRendererOutputDeviceChangeCallback>> callbacks_;
     std::shared_ptr<AudioRendererDeviceChangeCallback> oldCallback_;
     AudioRendererPrivate *renderer_ = nullptr;
-    std::mutex mutex_;
+    std::mutex audioRendererObjMutex_;
+    std::mutex callbackMutex_;
 };
 
 class RendererPolicyServiceDiedCallback : public RendererOrCapturerPolicyServiceDiedCallback {

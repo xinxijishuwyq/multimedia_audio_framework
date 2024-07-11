@@ -54,15 +54,14 @@ private:
     AudioEncodingType encodingType_ = ENCODING_INVALID;
 };
 
-class OHAudioRendererDeviceChangeCallback : public AudioRendererDeviceChangeCallback {
+class OHAudioRendererDeviceChangeCallback : public AudioRendererOutputDeviceChangeCallback {
 public:
     OHAudioRendererDeviceChangeCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer *audioRenderer,
         void *userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
     {
     }
 
-    void OnStateChange(const DeviceInfo &deviceInfo) override;
-    void RemoveAllCallbacks() override {};
+    void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
 private:
     OH_AudioRenderer_Callbacks callbacks_;
     OH_AudioRenderer *ohAudioRenderer_;
