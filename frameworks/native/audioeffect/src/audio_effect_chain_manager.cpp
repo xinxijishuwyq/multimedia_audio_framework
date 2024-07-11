@@ -1133,7 +1133,7 @@ void AudioEffectChainManager::UpdateRealAudioEffect()
         UpdateCurrSceneType(currSceneType, sceneType);
         audioEffectChain->SetEffectCurrSceneType(currSceneType);
         audioEffectChain->UpdateEffectParam();
-        AUDIO_INFO_LOG("currSceneType is %{public}d", currSceneType);
+        AUDIO_INFO_LOG("update real info currSceneType is %{public}d", currSceneType);
     }
 }
 
@@ -1241,7 +1241,7 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
             audioEffectChain = SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey];
             commonEffectChainCount_++;
         }
-        AUDIO_INFO_LOG("commonSceneTypeAndDeviceKey is %{public}s, commonEffectChainCount_ is %{public}d",
+        AUDIO_INFO_LOG("create new commonSceneTypeAndDeviceKey is %{public}s, commonEffectChainCount_ is %{public}d",
             commonSceneTypeAndDeviceKey, commonEffectChainCount_);
     }
     return audioEffectChain;
@@ -1263,7 +1263,7 @@ void AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string
         } else {
             commonEffectChainCount_--;
         }
-        AUDIO_INFO_LOG("commonSceneTypeAndDeviceKey is %{public}s, commonEffectChainCount_ is %{public}d",
+        AUDIO_INFO_LOG("release commonSceneTypeAndDeviceKey is %{public}s, commonEffectChainCount_ is %{public}d",
             commonSceneTypeAndDeviceKey, commonEffectChainCount_);
     }
 }
