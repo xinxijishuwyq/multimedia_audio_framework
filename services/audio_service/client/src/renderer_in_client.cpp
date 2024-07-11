@@ -1414,6 +1414,13 @@ bool RendererInClientInner::FlushAudioStream()
         AUDIO_ERR_LOG("Flush failed. Illegal state:%{public}u", state_.load());
         return false;
     }
+
+    // clear cbBufferQueue
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
+        BufferDesc tmpBuffer;
+        while (cbBufferQueue_.PopNotWait(tmpBuffer));
+    }
+
     CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush cache failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
