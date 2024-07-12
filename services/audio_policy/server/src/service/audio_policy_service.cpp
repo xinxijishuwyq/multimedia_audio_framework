@@ -144,9 +144,6 @@ const uint32_t USER_SELECT_BT = 2;
 #endif
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
 const int32_t UID_AUDIO = 1041;
-const int ADDRESS_STR_LEN = 17;
-const int START_POS = 6;
-const int END_POS = 13;
 const int MEDIA_RENDER_ID = 0;
 const int CALL_RENDER_ID = 1;
 const int CALL_CAPTURE_ID = 2;
@@ -168,19 +165,6 @@ const unsigned int BLUETOOTH_TIME_OUT_SECONDS = 8;
 mutex g_btProxyMutex;
 #endif
 bool AudioPolicyService::isBtListenerRegistered = false;
-
-static std::string GetEncryptAddr(const std::string &addr)
-{
-    if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
-        return std::string("");
-    }
-    std::string tmp = "**:**:**:**:**:**";
-    std::string out = addr;
-    for (int i = START_POS; i <= END_POS; i++) {
-        out[i] = tmp[i];
-    }
-    return out;
-}
 
 static string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat)
 {
@@ -1034,20 +1018,7 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
 
 bool AudioPolicyService::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDeviceDescriptors) const
 {
-    size_t connectedDevicesNum = connectedDevices_.size();
-    for (size_t i = 0; i < connectedDevicesNum; i++) {
-        if (connectedDevices_[i] != nullptr) {
-            if (connectedDevices_[i]->deviceRole_ == audioDeviceDescriptors->deviceRole_
-                && connectedDevices_[i]->deviceType_ == audioDeviceDescriptors->deviceType_
-                && connectedDevices_[i]->interruptGroupId_ == audioDeviceDescriptors->interruptGroupId_
-                && connectedDevices_[i]->volumeGroupId_ == audioDeviceDescriptors->volumeGroupId_
-                && connectedDevices_[i]->networkId_ == audioDeviceDescriptors->networkId_
-                && connectedDevices_[i]->macAddress_ == audioDeviceDescriptors->macAddress_) {
-                return true;
-            }
-        }
-    }
-    return false;
+    return audioDeviceManager_.IsDeviceConnected(audioDeviceDescriptors);
 }
 
 int32_t AudioPolicyService::DeviceParamsCheck(DeviceRole targetRole,
@@ -1079,25 +1050,17 @@ void AudioPolicyService::NotifyUserSelectionEventToBt(sptr<AudioDeviceDescriptor
         return;
     }
 #ifdef BLUETOOTH_ENABLE
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-        audioDeviceDescriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
-        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
+        currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        Bluetooth::SendUserSelectionEvent(currentActiveDevice_.deviceType_,
             currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
-        Bluetooth::AudioHfpManager::DisconnectSco();
+        if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            Bluetooth::AudioHfpManager::DisconnectSco();
+        }
     }
-    if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
-        audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
-            audioDeviceDescriptor->macAddress_, USER_SELECT_BT);
-    }
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
-        audioDeviceDescriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
-        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_A2DP,
-            currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
-    }
-    if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
+    if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_A2DP,
+        Bluetooth::SendUserSelectionEvent(audioDeviceDescriptor->deviceType_,
             audioDeviceDescriptor->macAddress_, USER_SELECT_BT);
     }
 #endif
@@ -1400,8 +1363,9 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
-    AUDIO_INFO_LOG("Select input device start for uid[%{public}d] type[%{public}d] mac[%{public}s]",
-        audioCapturerFilter->uid, selectedDesc[0]->deviceType_, GetEncryptAddr(selectedDesc[0]->macAddress_).c_str());
+    AUDIO_INFO_LOG("uid[%{public}d] type[%{public}d] mac[%{public}s] pid[%{public}d]",
+        audioCapturerFilter->uid, selectedDesc[0]->deviceType_,
+        GetEncryptAddr(selectedDesc[0]->macAddress_).c_str(), IPCSkeleton::GetCallingPid());
     // check size == 1 && input device
     int32_t res = DeviceParamsCheck(DeviceRole::INPUT_DEVICE, selectedDesc);
     CHECK_AND_RETURN_RET(res == SUCCESS, res);
@@ -3160,7 +3124,8 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
 
 bool AudioPolicyService::IsDeviceActive(InternalDeviceType deviceType) const
 {
-    AUDIO_INFO_LOG("type [%{public}d]", deviceType);
+    AUDIO_DEBUG_LOG("type [%{public}d]", deviceType);
+    CHECK_AND_RETURN_RET(currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID, false);
     return currentActiveDevice_.deviceType_ == deviceType;
 }
 

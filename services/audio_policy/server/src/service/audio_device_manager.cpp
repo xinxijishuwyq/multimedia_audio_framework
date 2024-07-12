@@ -29,6 +29,22 @@ namespace AudioStandard {
 using namespace std;
 constexpr int32_t MS_PER_S = 1000;
 constexpr int32_t NS_PER_MS = 1000000;
+const int32_t ADDRESS_STR_LEN = 17;
+const int32_t START_POS = 6;
+const int32_t END_POS = 13;
+
+std::string GetEncryptAddr(const std::string &addr)
+{
+    if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
+        return std::string("");
+    }
+    std::string tmp = "**:**:**:**:**:**";
+    std::string out = addr;
+    for (int i = START_POS; i <= END_POS; i++) {
+        out[i] = tmp[i];
+    }
+    return out;
+}
 
 AudioDeviceManager::AudioDeviceManager()
 {
@@ -973,6 +989,25 @@ void AudioDeviceManager::OnReceiveBluetoothEvent(const std::string macAddress, c
             device->deviceName_ = deviceName;
         }
     }
+}
+
+bool AudioDeviceManager::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDeviceDescriptors)
+{
+    size_t connectedDevicesNum = connectedDevices_.size();
+    for (size_t i = 0; i < connectedDevicesNum; i++) {
+        if (connectedDevices_[i] != nullptr) {
+            if (connectedDevices_[i]->deviceRole_ == audioDeviceDescriptors->deviceRole_
+                && connectedDevices_[i]->deviceType_ == audioDeviceDescriptors->deviceType_
+                && connectedDevices_[i]->networkId_ == audioDeviceDescriptors->networkId_
+                && connectedDevices_[i]->macAddress_ == audioDeviceDescriptors->macAddress_) {
+                return true;
+            }
+        }
+    }
+    AUDIO_WARNING_LOG("Role:%{public}d networkId:%{public}s Type:%{public}d macAddress:%{public}s device not found",
+        audioDeviceDescriptors->deviceRole_, GetEncryptStr(audioDeviceDescriptors->networkId_).c_str(),
+        audioDeviceDescriptors->deviceType_, GetEncryptAddr(audioDeviceDescriptors->macAddress_).c_str());
+    return false;
 }
 }
 }
