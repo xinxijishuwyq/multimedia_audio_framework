@@ -47,6 +47,9 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
 AudioProcessInServer::~AudioProcessInServer()
 {
     AUDIO_INFO_LOG("~AudioProcessInServer()");
+    if (convertedBuffer_.buffer != nullptr) {
+        delete [] convertedBuffer_.buffer;
+    }
 }
 
 int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
@@ -233,6 +236,11 @@ AppInfo AudioProcessInServer::GetAppInfo()
     return processConfig_.appInfo;
 }
 
+BufferDesc &AudioProcessInServer::GetConvertedBuffer()
+{
+    return convertedBuffer_;
+}
+
 int AudioProcessInServer::Dump(int fd, const std::vector<std::u16string> &args)
 {
     return SUCCESS;
@@ -316,7 +324,7 @@ int32_t AudioProcessInServer::InitBufferStatus()
 }
 
 int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
-    uint32_t &spanSizeInframe, const std::shared_ptr<OHAudioBuffer> &buffer)
+    uint32_t &spanSizeInframe, DeviceStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBuffer> &buffer)
 {
     if (processBuffer_ != nullptr) {
         AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
@@ -325,12 +333,27 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
     // check
     CHECK_AND_RETURN_RET_LOG(totalSizeInframe != 0 && spanSizeInframe != 0 && totalSizeInframe % spanSizeInframe == 0,
         ERR_INVALID_PARAM, "ConfigProcessBuffer failed: ERR_INVALID_PARAM");
-    totalSizeInframe_ = totalSizeInframe;
-    spanSizeInframe_ = spanSizeInframe;
+    CHECK_AND_RETURN_RET_LOG(serverStreamInfo.samplingRate.size() > 0 && serverStreamInfo.channels.size() > 0,
+        ERR_INVALID_PARAM, "Invalid stream info in server");
+    uint32_t spanTime = spanSizeInframe * AUDIO_MS_PER_SECOND / *serverStreamInfo.samplingRate.rbegin();
+    spanSizeInframe_ = spanTime * processConfig_.streamInfo.samplingRate / AUDIO_MS_PER_SECOND;
+    totalSizeInframe_ = totalSizeInframe / spanSizeInframe * spanSizeInframe_;
 
     uint32_t channel = processConfig_.streamInfo.channels;
     uint32_t formatbyte = PcmFormatToBits(processConfig_.streamInfo.format);
     byteSizePerFrame_ = channel * formatbyte;
+    if (*serverStreamInfo.channels.rbegin() != processConfig_.streamInfo.channels) {
+        size_t spanSizeInByte = 0;
+        if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+            uint32_t serverByteSize = *serverStreamInfo.channels.rbegin() * PcmFormatToBits(serverStreamInfo.format);
+            spanSizeInByte = static_cast<size_t>(spanSizeInframe * serverByteSize);
+        } else {
+            spanSizeInByte = static_cast<size_t>(spanSizeInframe_ * byteSizePerFrame_);
+        }
+        convertedBuffer_.buffer = new uint8_t[spanSizeInByte];
+        convertedBuffer_.bufLength = spanSizeInByte;
+        convertedBuffer_.dataLength = spanSizeInByte;
+    }
 
     if (buffer == nullptr) {
         // create OHAudioBuffer in server.

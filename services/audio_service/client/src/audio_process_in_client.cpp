@@ -52,7 +52,7 @@ class ProcessCbImpl;
 class AudioProcessInClientInner : public AudioProcessInClient,
     public std::enable_shared_from_this<AudioProcessInClientInner> {
 public:
-    explicit AudioProcessInClientInner(const sptr<IAudioProcess> &ipcProxy);
+    AudioProcessInClientInner(const sptr<IAudioProcess> &ipcProxy, bool isVoipMmap);
     ~AudioProcessInClientInner();
 
     int32_t SaveDataCallback(const std::shared_ptr<AudioDataCallback> &dataCallback) override;
@@ -180,6 +180,7 @@ private:
     sptr<IAudioProcess> processProxy_ = nullptr;
     std::shared_ptr<OHAudioBuffer> audioBuffer_ = nullptr;
     uint32_t sessionId_ = 0;
+    bool isVoipMmap_ = false;
 
     uint32_t totalSizeInFrame_ = 0;
     uint32_t spanSizeInFrame_ = 0;
@@ -252,7 +253,8 @@ int32_t ProcessCbImpl::OnEndpointChange(int32_t status)
 std::mutex g_audioServerProxyMutex;
 sptr<IStandardAudioService> gAudioServerProxy = nullptr;
 
-AudioProcessInClientInner::AudioProcessInClientInner(const sptr<IAudioProcess> &ipcProxy) : processProxy_(ipcProxy)
+AudioProcessInClientInner::AudioProcessInClientInner(const sptr<IAudioProcess> &ipcProxy,
+    bool isVoipMmap) : processProxy_(ipcProxy), isVoipMmap_(isVoipMmap)
 {
     processProxy_->GetSessionId(sessionId_);
     AUDIO_INFO_LOG("Construct with sessionId: %{public}d", sessionId_);
@@ -305,15 +307,19 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
     AudioProcessConfig resetConfig = config;
+    bool isVoipMmap = false;
     if (config.rendererInfo.streamUsage != STREAM_USAGE_VOICE_COMMUNICATION &&
         config.capturerInfo.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
         resetConfig.streamInfo = AudioProcessInClientInner::g_targetStreamInfo;
+    } else {
+        isVoipMmap = true;
     }
     sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig);
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, nullptr, "Create failed with null ipcProxy.");
     sptr<IAudioProcess> iProcessProxy = iface_cast<IAudioProcess>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(iProcessProxy != nullptr, nullptr, "Create failed when iface_cast.");
-    std::shared_ptr<AudioProcessInClientInner> process = std::make_shared<AudioProcessInClientInner>(iProcessProxy);
+    std::shared_ptr<AudioProcessInClientInner> process =
+        std::make_shared<AudioProcessInClientInner>(iProcessProxy, isVoipMmap);
     if (!process->Init(config)) {
         AUDIO_ERR_LOG("Init failed!");
         process = nullptr;
@@ -510,12 +516,12 @@ bool AudioProcessInClientInner::InitAudioBuffer()
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
     spanSizeInMs_ = spanSizeInFrame_ * MILLISECOND_PER_SECOND / processConfig_.streamInfo.samplingRate;
 
-    if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK && clientByteSizePerFrame_ != 0) {
-        clientSpanSizeInByte_ = spanSizeInFrame_ * clientByteSizePerFrame_;
+    clientSpanSizeInByte_ = spanSizeInFrame_ * clientByteSizePerFrame_;
+    if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         if (clientSpanSizeInFrame_ != spanSizeInFrame_) {
             clientSpanSizeInFrame_ = spanSizeInFrame_;
         }
-    } else {
+    } else if (!isVoipMmap_) {
         clientSpanSizeInByte_ = spanSizeInByte_;
     }
 
@@ -573,13 +579,12 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
 {
     AUDIO_INFO_LOG("Call Init.");
     processConfig_ = config;
-    if (config.streamInfo.format != g_targetStreamInfo.format ||
-        config.streamInfo.channels != g_targetStreamInfo.channels) {
+    if (!isVoipMmap_ && (config.streamInfo.format != g_targetStreamInfo.format ||
+        config.streamInfo.channels != g_targetStreamInfo.channels)) {
         needConvert_ = true;
     }
-    if (config.audioMode == AUDIO_MODE_PLAYBACK) {
-        clientByteSizePerFrame_ = GetFormatSize(config.streamInfo);
-    }
+    clientByteSizePerFrame_ = GetFormatSize(config.streamInfo);
+
     AUDIO_DEBUG_LOG("Using clientByteSizePerFrame_:%{public}zu", clientByteSizePerFrame_);
     bool isBufferInited = InitAudioBuffer();
     CHECK_AND_RETURN_RET_LOG(isBufferInited, isBufferInited, "%{public}s init audio buffer fail.", __func__);
@@ -681,9 +686,12 @@ int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
 
 bool AudioProcessInClient::CheckIfSupport(const AudioProcessConfig &config)
 {
-    if (config.rendererInfo.streamUsage != STREAM_USAGE_VOICE_COMMUNICATION &&
-        config.capturerInfo.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION &&
-        config.streamInfo.samplingRate != SAMPLE_RATE_48000) {
+    if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+        config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        return true;
+    }
+
+    if (config.streamInfo.samplingRate != SAMPLE_RATE_48000) {
         return false;
     }
 

@@ -40,6 +40,8 @@ public:
 
     virtual AppInfo GetAppInfo() = 0;
 
+    virtual BufferDesc &GetConvertedBuffer() = 0;
+
     virtual ~IAudioProcessStream() = default;
 };
 } // namespace AudioStandard
