@@ -48,7 +48,7 @@ AudioProcessInServer::~AudioProcessInServer()
 {
     AUDIO_INFO_LOG("~AudioProcessInServer()");
     if (convertedBuffer_.buffer != nullptr) {
-        delete []convertedBuffer_.buffer;
+        delete [] convertedBuffer_.buffer;
     }
 }
 

@@ -33,6 +33,7 @@
 #include "bluetooth_renderer_sink.h"
 #include "fast_audio_renderer_sink.h"
 #include "fast_audio_capturer_source.h"
+#include "format_converter.h"
 #include "i_audio_capturer_source.h"
 #include "i_stream_manager.h"
 #include "linear_pos_time_model.h"
