@@ -162,7 +162,7 @@ bool TonePlayerImpl::LoadTone(ToneType toneType)
         return result;
     }
     toneType_ = toneType;
-    amplitudeType_ = std::count(TONE_TYPR_LIST.begin(),TONE_TYPR_LIST.end(),toneType_) > 0 ?
+    amplitudeType_ = std::count(TONE_TYPR_LIST.begin(), TONE_TYPR_LIST.end(), toneType_) > 0 ?
         DIGITAMPLITUDE : AMPLITUDE;
     initialToneInfo_ = AudioPolicyManager::GetInstance().GetToneConfig(toneType);
     if (initialToneInfo_->segmentCnt == 0) {
