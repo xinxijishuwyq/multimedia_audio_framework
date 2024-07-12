@@ -34,8 +34,24 @@ namespace {
 constexpr int32_t C20MS = 20;
 constexpr int32_t C1000MS = 1000;
 constexpr int32_t CDOUBLE = 2;
+constexpr int32_t DIGITAMPLITUDE = 800;
 constexpr int32_t AMPLITUDE = 8000;
 constexpr int32_t BIT8 = 8;
+
+static const std::vector<ToneType> TONE_TYPE_LIST = {
+    TONE_TYPE_DIAL_0,
+    TONE_TYPE_DIAL_1,
+    TONE_TYPE_DIAL_2,
+    TONE_TYPE_DIAL_3,
+    TONE_TYPE_DIAL_4,
+    TONE_TYPE_DIAL_5,
+    TONE_TYPE_DIAL_6,
+    TONE_TYPE_DIAL_7,
+    TONE_TYPE_DIAL_8,
+    TONE_TYPE_DIAL_9,
+    TONE_TYPE_DIAL_S,
+    TONE_TYPE_DIAL_P
+};
 }
 
 TonePlayerImpl::TonePlayerImpl(const std::string cachePath, const AudioRendererInfo &rendereInfo)
@@ -146,6 +162,8 @@ bool TonePlayerImpl::LoadTone(ToneType toneType)
         return result;
     }
     toneType_ = toneType;
+    amplitudeType_ = std::count(TONE_TYPE_LIST.begin(), TONE_TYPE_LIST.end(), toneType_) > 0 ?
+        DIGITAMPLITUDE : AMPLITUDE;
     initialToneInfo_ = AudioPolicyManager::GetInstance().GetToneConfig(toneType);
     if (initialToneInfo_->segmentCnt == 0) {
         AUDIO_ERR_LOG("LoadTone failed, calling GetToneConfig returned invalid");
@@ -292,7 +310,7 @@ int32_t TonePlayerImpl::GetSamples(uint16_t *freqs, int8_t *buffer, uint32_t req
         data = reinterpret_cast<uint8_t*>(buffer);
         double factor = freqVal * 2 * pi / samplingRate_; // 2 is a parameter in the sine wave formula
         for (uint32_t idx = 0; idx < reqSamples; idx++) {
-            int16_t sample = AMPLITUDE * sin(factor * index);
+            int16_t sample = amplitudeType_ * sin(factor * index);
             uint32_t result;
             if (i == 0) {
                 result = (sample & 0xFF);

@@ -71,6 +71,7 @@ private:
 
     std::mutex optMutex_;
     ToneType toneType_ = NUM_TONES;
+    int32_t amplitudeType_ = 0;
     uint32_t currSegment_ = 0;  // Current segment index in ToneDescriptor segments[]
     uint32_t currCount_ = 0;  // Current sequence repeat count
     std::shared_ptr<ToneInfo> toneInfo_;  // pointer to active tone Info
