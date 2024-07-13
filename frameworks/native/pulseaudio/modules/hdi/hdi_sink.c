@@ -103,6 +103,7 @@ const char *DUP_STEAM_NAME = "DupStream"; // should be same with DUP_STEAM in au
 const char *MCH_SINK_NAME = "MCH_Speaker";
 const char *BT_SINK_NAME = "Bt_Speaker";
 const char *OFFLOAD_SINK_NAME = "Offload_Speaker";
+const char *DP_SINK_NAME = "DP_speaker";
 
 const int32_t WAIT_CLOSE_PA_OR_EFFECT_TIME = 4; // secs
 const int32_t MONITOR_CLOSE_PA_TIME_SEC = 5 * 60; // 5min
@@ -2014,7 +2015,7 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     AUTO_CTRACE("hdi_sink::SinkRenderPrimary");
     // Change from pa_sink_render to pa_sink_render_full for alignment issue in 3516
 
-    if (!strcmp(u->sink->name, "DP_speaker")) {
+    if (!strcmp(u->sink->name, DP_SINK_NAME)) {
         pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk);
     } else {
         SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
@@ -3187,7 +3188,7 @@ static void ProcessNormalData(struct Userdata *u)
                 sleepForUsec = MIN_SLEEP_FOR_USEC;
             }
         } else {
-            if (u->primary.timestamp <= now + u->primary.prewrite) {
+            if (u->primary.timestamp <= now + u->primary.prewrite || !strcmp(u->sink->name, DP_SINK_NAME)) {
                 pa_atomic_add(&u->primary.dflag, 1);
                 u->primary.lastProcessDataTime = pa_rtclock_now();
                 ProcessRenderUseTiming(u, now);
