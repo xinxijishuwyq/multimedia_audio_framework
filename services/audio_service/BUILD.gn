@@ -177,7 +177,6 @@ ohos_shared_library("audio_client") {
     "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -191,6 +190,7 @@ ohos_shared_library("audio_client") {
   ]
 
   public_external_deps = [
+    "c_utils:utils",
     "libxml2:libxml2",
     "pulseaudio:sonic",
   ]
