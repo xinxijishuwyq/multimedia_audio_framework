@@ -6825,6 +6825,7 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload(BluetoothOffloadState a2dp
     DeviceType dev = GetActiveOutputDevice();
     UpdateEffectDefaultSink(dev);
     AUDIO_INFO_LOG("Handle A2dpDevice In Offload");
+    UpdateEffectBtOffloadSupported(true);
 
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
@@ -6832,9 +6833,6 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload(BluetoothOffloadState a2dp
 
     std::string activePort = BLUETOOTH_SPEAKER;
     audioPolicyManager_.SuspendAudioDevice(activePort, true);
-
-    std::thread updateEffectOffloadThread(&AudioPolicyService::UpdateEffectBtOffloadSupported, this, true);
-    updateEffectOffloadThread.detach();
     return SUCCESS;
 #else
     return ERROR;

@@ -535,6 +535,7 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
             switchCV_.notify_all();
         }
     }
+    Trace::CountVolume("MultiChannelRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     Trace trace("MchSinkInner::RenderFrame");
 
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
