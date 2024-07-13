@@ -316,7 +316,16 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(const std::string
     std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string commonSceneTypeAndDeviceKey = COMMON_SCENE_TYPE + "_&_" + GetDeviceTypeName();
-    if (SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
+
+    if ((sceneType == COMMON_SCENE_TYPE) && isCommonEffectChainExisted_) {
+        if (SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) &&
+            SceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
+            SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] >= 1) {
+            ChangeEffectChainCountMapForCreate(sceneType);
+            return SUCCESS;
+        }
+        AUDIO_DEBUG_LOG("Current type is common type, and no need to check exist.");
+    } else if (SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         if (!SceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) ||
             SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] < 1) {
             EraseEffectChainSetAndMapForCreate(sceneType);
