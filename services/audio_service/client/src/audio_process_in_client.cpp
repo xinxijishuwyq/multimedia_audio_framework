@@ -984,13 +984,14 @@ int32_t AudioProcessInClientInner::Resume()
 
     startFadein_.store(true);
 
-    StreamStatus targetStatus = StreamStatus::STREAM_PAUSED;
-    bool ret = streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_STARTING);
-    if (!ret) {
+    StreamStatus pausedStatus = StreamStatus::STREAM_PAUSED;
+    StreamStatus stoppedStatus = StreamStatus::STREAM_STOPPED;
+    if (!streamStatus_->compare_exchange_strong(pausedStatus, StreamStatus::STREAM_STARTING) &&
+        !streamStatus_->compare_exchange_strong(stoppedStatus, StreamStatus::STREAM_STARTING)) {
         startFadein_.store(false);
+        AUDIO_ERR_LOG("Resume failed, invalid status : %{public}s", GetStatusInfo(stoppedStatus).c_str());
+        return ERR_ILLEGAL_STATE;
     }
-    CHECK_AND_RETURN_RET_LOG(
-        ret, ERR_ILLEGAL_STATE, "Resume failed, invalid status : %{public}s", GetStatusInfo(targetStatus).c_str());
 
     if (processProxy_->Resume() != SUCCESS) {
         streamStatus_->store(StreamStatus::STREAM_PAUSED);
@@ -1031,8 +1032,6 @@ int32_t AudioProcessInClientInner::Stop()
     }
     streamStatus_->store(StreamStatus::STREAM_STOPPING);
 
-    isCallbackLoopEnd_ = true;
-    threadStatusCV_.notify_all();
     ClockTime::RelativeSleep(MAX_STOP_FADING_DURATION_NANO);
 
     if (processProxy_->Stop() != SUCCESS) {
@@ -1060,6 +1059,8 @@ int32_t AudioProcessInClientInner::Release()
         return SUCCESS;
     }
     Stop();
+    isCallbackLoopEnd_ = true;
+    threadStatusCV_.notify_all();
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
     StreamStatus currentStatus = streamStatus_->load();
     if (currentStatus != STREAM_STOPPED) {
