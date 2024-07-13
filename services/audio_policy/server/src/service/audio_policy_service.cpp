@@ -2796,7 +2796,8 @@ int32_t AudioPolicyService::LoadUsbModule(string deviceInfo)
     for (auto &moduleInfo : moduleInfoList) {
         AUDIO_INFO_LOG("[module_load]::load module[%{public}s]", moduleInfo.name.c_str());
         GetUsbModuleInfo(deviceInfo, moduleInfo);
-        return OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+        int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Load usb failed %{public}d", ret);
     }
 
     return SUCCESS;
