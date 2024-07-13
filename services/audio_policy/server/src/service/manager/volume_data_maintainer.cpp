@@ -203,6 +203,19 @@ bool VolumeDataMaintainer::SaveMuteStatus(DeviceType deviceType, AudioStreamType
     bool muteStatus)
 {
     std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    if (streamType == STREAM_RING) {
+        AUDIO_INFO_LOG("set ring stream mute status to all device.");
+        bool saveMuteResult = false;
+        for (auto &device : DEVICE_TYPE_LIST) {
+            // set ring stream mute status to device
+            saveMuteResult = SaveMuteStatusInternal(device, streamType, muteStatus);
+            if (!saveMuteResult) {
+                AUDIO_INFO_LOG("save mute failed.");
+                break;
+            }
+        }
+        return saveMuteResult;
+    }
     return SaveMuteStatusInternal(deviceType, streamType, muteStatus);
 }
 

@@ -1144,12 +1144,12 @@ void AudioAdapterManager::ResetRemoteCastDeviceVolume()
 void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
 {
     if (isFirstBoot) {
-        AUDIO_INFO_LOG("InitRingerMode Wrote default ringer mode to KvStore");
         ringerMode_ = RINGER_MODE_NORMAL;
         isLoaded_ = true;
         if (!volumeDataMaintainer_.GetRingerMode(ringerMode_)) {
             isLoaded_ = volumeDataMaintainer_.SaveRingerMode(RINGER_MODE_NORMAL);
         }
+        AUDIO_INFO_LOG("InitRingerMode first boot ringermode:%{public}d", ringerMode_);
     } else {
         // read ringerMode from private kvStore
         if (isNeedCopyRingerModeData_ && audioPolicyKvStore_ != nullptr) {
@@ -1226,15 +1226,26 @@ void AudioAdapterManager::TransferMuteStatus(void)
 void AudioAdapterManager::InitMuteStatusMap(bool isFirstBoot)
 {
     if (isFirstBoot) {
-        AUDIO_INFO_LOG("Wrote default mute status to KvStore");
         for (auto &deviceType : DEVICE_TYPE_LIST) {
             for (auto &streamType : VOLUME_TYPE_LIST) {
-                volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, false);
+                CheckAndDealMuteStatus(deviceType, streamType);
             }
         }
         TransferMuteStatus();
     } else {
         LoadMuteStatusMap();
+    }
+}
+
+void  AudioAdapterManager::CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType)
+{
+    if (streamType == STREAM_RING) {
+        bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
+        AUDIO_INFO_LOG("fist boot ringer mode:%{public}d, stream ring mute state:%{public}d", ringerMode_,
+            muteStateForStreamRing);
+        volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, muteStateForStreamRing);
+    } else if (!volumeDataMaintainer_.GetMuteStatus(deviceType, streamType)) {
+        volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, false);
     }
 }
 
@@ -1273,7 +1284,16 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
     for (auto &streamType: VOLUME_TYPE_LIST) {
         bool result = volumeDataMaintainer_.GetMuteStatus(currentActiveDevice_, streamType);
         if (!result) {
-            AUDIO_WARNING_LOG("Could not load mute status for stream type %{public}d from kvStore", streamType);
+            AUDIO_WARNING_LOG("Could not load mute status for stream type %{public}d from database.", streamType);
+        }
+        if (streamType == STREAM_RING) {
+            bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
+            AUDIO_INFO_LOG("ringer mode:%{public}d, stream ring mute state:%{public}d", ringerMode_,
+                muteStateForStreamRing);
+            if (muteStateForStreamRing == GetStreamMute(streamType)) {
+                continue;
+            }
+            volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, muteStateForStreamRing);
         }
     }
     return true;
