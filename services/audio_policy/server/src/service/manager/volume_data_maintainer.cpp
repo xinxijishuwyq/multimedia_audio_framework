@@ -242,6 +242,14 @@ bool VolumeDataMaintainer::SaveMuteStatusInternal(DeviceType deviceType, AudioSt
     return true;
 }
 
+bool VolumeDataMaintainer::SetStreamMuteStatus(AudioStreamType streamType, bool muteStatus)
+{
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+    muteStatusMap_[streamForVolumeMap] = muteStatus;
+    return true;
+}
+
 bool VolumeDataMaintainer::GetMuteStatus(DeviceType deviceType, AudioStreamType streamType)
 {
     std::lock_guard<std::mutex> lock(muteStatusMutex_);
