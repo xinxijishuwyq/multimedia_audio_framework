@@ -239,6 +239,7 @@ private:
     void InitSafeTime(bool isFirstBoot);
     void ConvertSafeTime(void);
     void UpdateSafeVolume();
+    void CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType);
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {
