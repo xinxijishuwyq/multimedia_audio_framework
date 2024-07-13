@@ -139,6 +139,25 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
     std::unique_lock<std::mutex> lock(callServerMutex_);
     notifiedOperation_ = operation;
     notifiedResult_ = result;
+
+    if (notifiedResult_ == SUCCESS) {
+        switch (operation) {
+            case START_STREAM :
+                state_ = RUNNING;
+                break;
+            case PAUSE_STREAM :
+                state_ = PAUSED;
+                break;
+            case STOP_STREAM :
+                state_ = STOPPED;
+                break;
+            default :
+                break;
+        }
+    } else {
+        AUDIO_ERR_LOG("operation %{public}d failed, result: %{public}" PRId64 "", operation, result);
+    }
+
     callServerCV_.notify_all();
     return SUCCESS;
 }
@@ -1215,18 +1234,16 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType)
     }
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == START_STREAM; // will be false when got notified.
+        return state_ == RUNNING; // will be false when got notified.
     });
-
-    if (notifiedOperation_ != START_STREAM || notifiedResult_ != SUCCESS) {
-        AUDIO_ERR_LOG("Start failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
-            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+    if (!stopWaiting) {
+        AUDIO_ERR_LOG("Start failed: timeout");
         ipcStream_->Stop();
         return false;
     }
+
     waitLock.unlock();
 
-    state_ = RUNNING; // change state_ to RUNNING, then notify cbThread
     offloadStartReadPos_ = 0;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         // start the callback-write thread
@@ -1260,20 +1277,15 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     }
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == PAUSE_STREAM; // will be false when got notified.
+        return state_ == PAUSED; // will be false when got notified.
     });
-
-    if (notifiedOperation_ != PAUSE_STREAM || notifiedResult_ != SUCCESS) {
-        AUDIO_ERR_LOG("Pause failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
-            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+    if (!stopWaiting) {
+        AUDIO_ERR_LOG("Pause failed: timeout");
         return false;
     }
+
     waitLock.unlock();
 
-    {
-        std::lock_guard<std::mutex> lock(writeDataMutex_);
-        state_ = PAUSED;
-    }
     FutexTool::FutexWake(clientBuffer_->GetFutex());
     statusLock.unlock();
 
@@ -1297,6 +1309,7 @@ bool RendererInClientInner::StopAudioStream()
         DrainAudioStream(true);
     }
     std::unique_lock<std::mutex> statusLock(statusMutex_);
+
     if (state_ == STOPPED) {
         AUDIO_INFO_LOG("Renderer in client is already stopped");
         return true;
@@ -1306,6 +1319,7 @@ bool RendererInClientInner::StopAudioStream()
         return false;
     }
 
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         state_ = STOPPING;
         AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
@@ -1318,23 +1332,17 @@ bool RendererInClientInner::StopAudioStream()
         return false;
     }
 
-    std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == STOP_STREAM; // will be false when got notified.
+        return state_ == STOPPED; // will be false when got notified.
     });
-
-    if (notifiedOperation_ != STOP_STREAM || notifiedResult_ != SUCCESS) {
-        AUDIO_ERR_LOG("Stop failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
-            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+    if (!stopWaiting) {
+        AUDIO_ERR_LOG("Stop failed: timeout");
         state_ = INVALID;
         return false;
     }
+
     waitLock.unlock();
 
-    {
-        std::lock_guard<std::mutex> lock(writeDataMutex_);
-        state_ = STOPPED;
-    }
     FutexTool::FutexWake(clientBuffer_->GetFutex());
     statusLock.unlock();
 
