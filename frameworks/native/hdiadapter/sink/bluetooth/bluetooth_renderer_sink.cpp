@@ -706,8 +706,6 @@ int32_t BluetoothRendererSinkInner::GetLatency(uint32_t *latency)
 
 int32_t BluetoothRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 {
-    AUDIO_INFO_LOG("GetTransactionId in");
-
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "GetTransactionId failed audio render null");
 

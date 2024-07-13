@@ -629,7 +629,6 @@ std::string FastAudioCapturerSourceInner::GetAudioParameter(const AudioParamKey 
 
 uint64_t FastAudioCapturerSourceInner::GetTransactionId()
 {
-    AUDIO_INFO_LOG("FastAudioCapturerSourceInner::GetTransactionId in");
     return reinterpret_cast<uint64_t>(audioCapture_);
 }
 

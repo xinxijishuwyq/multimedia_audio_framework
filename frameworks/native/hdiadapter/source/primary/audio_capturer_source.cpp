@@ -918,7 +918,6 @@ int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceTyp
 
 uint64_t AudioCapturerSourceInner::GetTransactionId()
 {
-    AUDIO_INFO_LOG("AudioCapturerSourceInner::GetTransactionId");
     return reinterpret_cast<uint64_t>(audioCapture_);
 }
 
