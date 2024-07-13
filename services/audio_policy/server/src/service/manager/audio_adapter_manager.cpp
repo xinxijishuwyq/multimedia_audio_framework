@@ -330,7 +330,7 @@ void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamTyp
 void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
 {
     std::lock_guard<std::mutex> lock(muteStatusMutex_);
-    SetStreamMuteInternal(streamType, mute, streamUsage);
+    volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
 }
 
 void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
@@ -410,13 +410,7 @@ float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
 
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
 {
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
-    auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
-    if (handler != nullptr) {
-        handler->SendStreamMuteStatusUpdate(streamType, mute, streamUsage);
-        return SUCCESS;
-    }
-    return ERROR;
+    return SetStreamMuteInternal(streamType, mute, streamUsage);
 }
 
 int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, bool mute,
@@ -437,7 +431,18 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
             streamType, mute);
         return SUCCESS;
     }
-    volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
+
+    if (streamType == STREAM_RING) {
+        mute = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
+    }
+
+    // set stream mute status to mem.
+    volumeDataMaintainer_.SetStreamMuteStatus(streamType, mute);
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
+    if (handler != nullptr) {
+        handler->SendStreamMuteStatusUpdate(streamType, mute, streamUsage);
+    }
 
     // Achieve the purpose of adjusting the mute status by adjusting the stream volume.
     return SetVolumeDb(streamType);

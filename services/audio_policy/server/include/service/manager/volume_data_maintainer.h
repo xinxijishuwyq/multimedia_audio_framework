@@ -68,6 +68,7 @@ public:
     bool SaveMuteStatus(DeviceType deviceType, AudioStreamType streamType,
         bool muteStatus);
     bool GetMuteStatus(DeviceType deviceType, AudioStreamType streamType);
+    bool SetStreamMuteStatus(AudioStreamType streamType, bool muteStatus);
     bool GetStreamMute(AudioStreamType streamType);
 
     bool GetMuteAffected(int32_t &affected);
