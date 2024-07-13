@@ -599,7 +599,7 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
 
     int64_t stamp = ClockTime::GetCurNano();
     uint32_t frameLen = static_cast<uint32_t>(requestBytes);
-    int32_t = audioCapture_->CaptureFrame(audioCapture_, reinterpret_cast<int8_t*>(frame), &frameLen, &replyBytes);
+    int32_t ret = audioCapture_->CaptureFrame(audioCapture_, reinterpret_cast<int8_t*>(frame), &frameLen, &replyBytes);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_READ_FAILED, "Capture Frame Fail");
     CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
 

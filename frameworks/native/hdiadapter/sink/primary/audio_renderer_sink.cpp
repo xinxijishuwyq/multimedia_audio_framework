@@ -277,7 +277,6 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
 
 AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
 {
-    AUDIO_INFO_LOG("halName: %{public}s", halName.c_str());
     if (halName == "usb") {
         static AudioRendererSinkInner audioRendererUsb(halName);
         return &audioRendererUsb;
