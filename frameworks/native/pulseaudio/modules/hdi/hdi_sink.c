@@ -3308,7 +3308,7 @@ static void ThreadFuncRendererTimerProcessData(struct Userdata *u)
 static void ThreadFuncRendererTimerBus(void *userdata)
 {
     // set audio thread priority
-    ScheduleReportData(getpid(), gettid(), "audio_server");
+    ScheduleThreadInServer(getpid(), gettid());
 
     struct Userdata *u = userdata;
 
@@ -3361,13 +3361,14 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
         ThreadFuncRendererTimerProcessData(u);
     }
+    UnscheduleThreadInServer(gettid());
 }
 
 static void ThreadFuncWriteHDIMultiChannel(void *userdata)
 {
     AUDIO_DEBUG_LOG("ThreadFuncWriteHDIMultiChannel start");
     // set audio thread priority
-    ScheduleReportData(getpid(), gettid(), "audio_server");
+    ScheduleThreadInServer(getpid(), gettid());
 
     struct Userdata *u = userdata;
     pa_assert(u);
@@ -3401,12 +3402,13 @@ static void ThreadFuncWriteHDIMultiChannel(void *userdata)
         }
         pa_asyncmsgq_done(u->multiChannel.dq, 0);
     } while (!quit);
+    UnscheduleThreadInServer(gettid());
 }
 
 static void ThreadFuncWriteHDI(void *userdata)
 {
     // set audio thread priority
-    ScheduleReportData(getpid(), gettid(), "audio_server");
+    ScheduleThreadInServer(getpid(), gettid());
 
     struct Userdata *u = userdata;
     pa_assert(u);
@@ -3447,12 +3449,13 @@ static void ThreadFuncWriteHDI(void *userdata)
         }
         pa_asyncmsgq_done(u->primary.dq, 0);
     } while (!quit);
+    UnscheduleThreadInServer(gettid());
 }
 
 static void TestModeThreadFuncWriteHDI(void *userdata)
 {
     // set audio thread priority
-    ScheduleReportData(getpid(), gettid(), "audio_server");
+    ScheduleThreadInServer(getpid(), gettid());
 
     struct Userdata *u = userdata;
     pa_assert(u);
@@ -3483,6 +3486,7 @@ static void TestModeThreadFuncWriteHDI(void *userdata)
         }
         pa_asyncmsgq_done(u->primary.dq, 0);
     } while (!quit);
+    UnscheduleThreadInServer(gettid());
 }
 
 static void SinkUpdateRequestedLatencyCb(pa_sink *s)
@@ -3937,7 +3941,7 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
 static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
 {
     // set audio thread priority
-    ScheduleReportData(getpid(), gettid(), "audio_server");
+    ScheduleThreadInServer(getpid(), gettid());
 
     pa_sink_new_data data;
     pa_module *m;
@@ -3989,6 +3993,7 @@ static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     return sink;
 
 fail:
+    UnscheduleThreadInServer(gettid());
     return NULL;
 }
 

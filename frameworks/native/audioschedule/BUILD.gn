@@ -15,7 +15,7 @@ import("//build/ohos.gni")
 import("../../../config.gni")
 import("../../../ressche_part.gni")
 
-ohos_static_library("audio_schedule") {
+ohos_shared_library("audio_schedule") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -23,7 +23,10 @@ ohos_static_library("audio_schedule") {
     debug = false
   }
 
-  include_dirs = [ "include" ]
+  include_dirs = [
+    "include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+  ]
 
   sources = [ "audio_schedule.cpp" ]
 
@@ -34,6 +37,7 @@ ohos_static_library("audio_schedule") {
 
   external_deps = [
     "c_utils:utils",
+    "hilog:libhilog",
     "ipc:ipc_single",
     "samgr:samgr_proxy",
   ]
