@@ -22,6 +22,11 @@ AudioPlaybackEngine::AudioPlaybackEngine()
 
 AudioPlaybackEngine::~AudioPlaybackEngine() {}
 
+int32_t AudioPlaybackEngine::Init(const DeviceInfo &type, bool isVoip)
+{
+    return SUCCESS;
+}
+
 int32_t AudioPlaybackEngine::AddRenderer(const std::shared_ptr<IRendererStream> &stream)
 {
     auto it = std::find(streams_.begin(), streams_.end(), stream);

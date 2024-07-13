@@ -22,9 +22,10 @@ namespace OHOS {
 namespace AudioStandard {
 class NoneMixEngine : public AudioPlaybackEngine {
 public:
-    NoneMixEngine(DeviceInfo type, bool isVoip);
+    NoneMixEngine();
     ~NoneMixEngine() override;
 
+    int32_t Init(const DeviceInfo &type, bool isVoip) override;
     int32_t Start() override;
     int32_t Stop() override;
     int32_t Pause() override;
@@ -40,6 +41,7 @@ protected:
 private:
     void StandbySleep();
     int32_t InitSink(const AudioStreamInfo &streamInfo);
+    int32_t InitSink(uint32_t channel, HdiAdapterFormat format, uint32_t rate);
     int32_t SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip);
     void PauseAsync();
     void DoFadeinOut(bool isFadeOut, char* buffer, size_t bufferSize);
@@ -53,6 +55,7 @@ private:
     bool isVoip_;
     bool isStart_;
     bool isPause_;
+    bool isInit_;
     DeviceInfo device_;
     std::atomic<uint32_t> failedCount_;
     uint64_t writeCount_;
