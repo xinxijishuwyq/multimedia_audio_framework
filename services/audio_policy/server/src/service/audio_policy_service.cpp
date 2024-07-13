@@ -3177,7 +3177,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 
     lastAudioScene_ = audioScene_;
     audioScene_ = audioScene;
-
+    Bluetooth::AudioHfpManager::SetAudioSceneFromPolicy(audioScene_);
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {
         audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
         audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());

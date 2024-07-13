@@ -110,11 +110,15 @@ public:
     static std::string GetCurrentActiveHfpDevice();
     static void UpdateAudioScene(AudioStandard::AudioScene scene);
     static void CheckHfpDeviceReconnect();
+    static AudioStandard::AudioScene GetCurrentAudioScene();
+    static AudioStandard::AudioScene GetPolicyAudioScene();
+    static void SetAudioSceneFromPolicy(AudioStandard::AudioScene scene);
 
 private:
     static HandsFreeAudioGateway *hfpInstance_;
     static std::shared_ptr<AudioHfpListener> hfpListener_;
     static AudioStandard::AudioScene scene_;
+    static AudioStandard::AudioScene sceneFromPolicy_;
     static BluetoothRemoteDevice activeHfpDevice_;
 };
 }
