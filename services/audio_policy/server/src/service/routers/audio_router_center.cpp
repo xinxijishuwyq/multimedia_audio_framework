@@ -145,9 +145,12 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
 void AudioRouterCenter::DealRingRenderRouters(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
     StreamUsage streamUsage, int32_t clientUID, RouterType &routerType)
 {
+    AudioScene lastAudioScene = AudioPolicyService::GetAudioPolicyService().GetLastAudioScene();
     AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
-    AUDIO_INFO_LOG("ring render router streamUsage:%{public}d, audioScene:%{public}d.", streamUsage, audioScene);
-    if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT) {
+    AUDIO_INFO_LOG("ring render router streamUsage:%{public}d, lastAudioScene:%{public}d, audioScene:%{public}d.",
+        streamUsage, lastAudioScene, audioScene);
+    if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
+        (lastAudioScene == AUDIO_SCENE_PHONE_CHAT && audioScene == AUDIO_SCENE_VOICE_RINGING)) {
         unique_ptr<AudioDeviceDescriptor> desc = make_unique<AudioDeviceDescriptor>();
         auto isPresent = [] (const unique_ptr<RouterBase> &router) {
             return router->name_ == "package_filter_router";
