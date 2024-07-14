@@ -2800,7 +2800,7 @@ int32_t AudioPolicyService::LoadUsbModule(string deviceInfo, DeviceRole deviceRo
         if (configRole != deviceRole) {continue;}
         GetUsbModuleInfo(deviceInfo, moduleInfo);
         int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, -deviceRole,
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
             "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
     }
 
@@ -2842,14 +2842,13 @@ int32_t AudioPolicyService::LoadDefaultUsbModule(DeviceRole deviceRole)
         moduleInfoList = usbModulesPos->second;
     }
     for (auto &moduleInfo : moduleInfoList) {
-        AUDIO_INFO_LOG("[module_load]::load default module[%{public}s]", moduleInfo.name.c_str());
         DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
-        AUDIO_INFO_LOG("[module_load]::load module[%{public}s], load role[%{public}d] config role[%{public}d]",
+        AUDIO_INFO_LOG("[module_load]::load default module[%{public}s], load role[%{public}d] config role[%{public}d]",
             moduleInfo.name.c_str(), deviceRole, configRole);
         if (configRole != deviceRole) {continue;}
         int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, -deviceRole,
-            "Load usb [%{public}s] failed %{public}d", moduleInfo.role.c_str(), ret);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+            "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
     }
 
     return SUCCESS;
