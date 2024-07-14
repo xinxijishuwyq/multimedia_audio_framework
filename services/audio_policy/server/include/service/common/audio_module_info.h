@@ -75,7 +75,7 @@ enum ClassType {
     TYPE_INVALID
 };
 
-class AudioModuleInfo {
+struct AudioModuleInfo {
 public:
     AudioModuleInfo() = default;
     virtual ~AudioModuleInfo() = default;
