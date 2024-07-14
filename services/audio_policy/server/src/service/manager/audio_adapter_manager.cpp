@@ -1204,8 +1204,13 @@ bool AudioAdapterManager::LoadVolumeMap(void)
         CloneVolumeMap();
     }
 
+    bool result = false;
     for (auto &streamType: VOLUME_TYPE_LIST) {
-        bool result = volumeDataMaintainer_.GetVolume(currentActiveDevice_, streamType);
+        if (Util::IsDualToneStreamType(streamType)) {
+            result = volumeDataMaintainer_.GetVolume(DEVICE_TYPE_SPEAKER, streamType);
+        } else {
+            result = volumeDataMaintainer_.GetVolume(currentActiveDevice_, streamType);
+        }
         if (!result) {
             AUDIO_ERR_LOG("LoadVolumeMap: Could not load volume for streamType[%{public}d] from kvStore", streamType);
         }
