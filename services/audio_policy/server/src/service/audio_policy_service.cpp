@@ -2783,7 +2783,7 @@ int32_t AudioPolicyService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo)
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::LoadUsbModule(string deviceInfo)
+int32_t AudioPolicyService::LoadUsbModule(string deviceInfo, DeviceRole deviceRole)
 {
     std::list<AudioModuleInfo> moduleInfoList;
     {
@@ -2794,10 +2794,14 @@ int32_t AudioPolicyService::LoadUsbModule(string deviceInfo)
         moduleInfoList = usbModulesPos->second;
     }
     for (auto &moduleInfo : moduleInfoList) {
-        AUDIO_INFO_LOG("[module_load]::load module[%{public}s]", moduleInfo.name.c_str());
+        DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
+        AUDIO_INFO_LOG("[module_load]::load module[%{public}s], load role[%{public}d] config role[%{public}d]",
+            moduleInfo.name.c_str(), deviceRole, configRole);
+        if (configRole != deviceRole) {continue;}
         GetUsbModuleInfo(deviceInfo, moduleInfo);
         int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Load usb failed %{public}d", ret);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, -deviceRole,
+            "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
     }
 
     return SUCCESS;
@@ -2825,7 +2829,7 @@ int32_t AudioPolicyService::LoadDpModule(string deviceInfo)
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::LoadDefaultUsbModule()
+int32_t AudioPolicyService::LoadDefaultUsbModule(DeviceRole deviceRole)
 {
     AUDIO_INFO_LOG("LoadDefaultUsbModule");
 
@@ -2839,7 +2843,13 @@ int32_t AudioPolicyService::LoadDefaultUsbModule()
     }
     for (auto &moduleInfo : moduleInfoList) {
         AUDIO_INFO_LOG("[module_load]::load default module[%{public}s]", moduleInfo.name.c_str());
-        return OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+        DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
+        AUDIO_INFO_LOG("[module_load]::load module[%{public}s], load role[%{public}d] config role[%{public}d]",
+            moduleInfo.name.c_str(), deviceRole, configRole);
+        if (configRole != deviceRole) {continue;}
+        int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, -deviceRole,
+            "Load usb [%{public}s] failed %{public}d", moduleInfo.role.c_str(), ret);
     }
 
     return SUCCESS;
@@ -2877,7 +2887,7 @@ int32_t AudioPolicyService::HandleActiveDevice(DeviceType deviceType)
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType)
+int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType, DeviceRole deviceRole)
 {
     Trace trace("AudioPolicyService::HandleArmUsbDevice");
 
@@ -2891,15 +2901,12 @@ int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType)
         }
         int32_t ret;
         if (!deviceInfo.empty()) {
-            ret = LoadUsbModule(deviceInfo);
+            ret = LoadUsbModule(deviceInfo, deviceRole);
         } else {
-            ret = LoadDefaultUsbModule();
+            ret = LoadDefaultUsbModule(deviceRole);
         }
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG ("load usb module failed");
-            isArmUsbDevice_ = false;
-            return ERR_OPERATION_FAILED;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "load usb role[%{public}d] module failed", deviceRole);
+
         std::string activePort = GetSinkPortName(DEVICE_TYPE_USB_ARM_HEADSET);
         AUDIO_DEBUG_LOG("port %{public}s, active arm usb device", activePort.c_str());
     } else if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET) {
@@ -2910,7 +2917,7 @@ int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType)
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::RehandlePnpDevice(DeviceType deviceType)
+int32_t AudioPolicyService::RehandlePnpDevice(DeviceType deviceType, DeviceRole deviceRole)
 {
     Trace trace("AudioPolicyService::RehandlePnpDevice");
 
@@ -2931,7 +2938,7 @@ int32_t AudioPolicyService::RehandlePnpDevice(DeviceType deviceType)
         }
 
         if (deviceType == DEVICE_TYPE_USB_HEADSET) {
-            if (HandleArmUsbDevice(deviceType) == SUCCESS) {
+            if (HandleArmUsbDevice(deviceType, deviceRole) == SUCCESS) {
                 return SUCCESS;
             }
         } else if (deviceType == DEVICE_TYPE_DP) {
@@ -2943,7 +2950,7 @@ int32_t AudioPolicyService::RehandlePnpDevice(DeviceType deviceType)
     }
 
     AUDIO_ERR_LOG("rehandle device[%{public}d] failed", deviceType);
-    return ret;
+    return ERROR;
 }
 
 int32_t AudioPolicyService::GetModuleInfo(ClassType classType, std::string &moduleInfoStr)
@@ -3362,10 +3369,10 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnecting(const AudioDeviceD
     std::vector<sptr<AudioDeviceDescriptor>> &descForCb)
 {
     AUDIO_INFO_LOG("UpdateConnectedDevicesWhenConnecting In, deviceType: %{public}d", updatedDesc.deviceType_);
-    if (IsOutputDevice(updatedDesc.deviceType_)) {
+    if (IsOutputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
         UpdateConnectedDevicesWhenConnectingForOutputDevice(updatedDesc, descForCb);
     }
-    if (IsInputDevice(updatedDesc.deviceType_)) {
+    if (IsInputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
         UpdateConnectedDevicesWhenConnectingForInputDevice(updatedDesc, descForCb);
     }
 }
@@ -3438,7 +3445,7 @@ void AudioPolicyService::UpdateLocalGroupInfo(bool isConnected, const std::strin
     deviceDesc.networkId_ = LOCAL_NETWORK_ID;
 }
 
-int32_t AudioPolicyService::HandleLocalDeviceConnected(const AudioDeviceDescriptor &updatedDesc)
+int32_t AudioPolicyService::HandleLocalDeviceConnected(AudioDeviceDescriptor &updatedDesc)
 {
     AUDIO_INFO_LOG("macAddress:[%{public}s]", GetEncryptAddr(updatedDesc.macAddress_).c_str());
     {
@@ -3450,17 +3457,34 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(const AudioDeviceDescript
     }
 
     if (isArmUsbDevice_ && updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET) {
-        int32_t result = HandleArmUsbDevice(updatedDesc.deviceType_);
-        if (result != SUCCESS) {
-            result = RehandlePnpDevice(updatedDesc.deviceType_);
+        int32_t loadOutputResult = HandleArmUsbDevice(updatedDesc.deviceType_, OUTPUT_DEVICE);
+        if (loadOutputResult != SUCCESS) {
+            loadOutputResult = RehandlePnpDevice(updatedDesc.deviceType_, OUTPUT_DEVICE);
         }
-        return result;
+        int32_t loadInputResult = HandleArmUsbDevice(updatedDesc.deviceType_, INPUT_DEVICE);
+        if (loadInputResult != SUCCESS) {
+            loadInputResult = RehandlePnpDevice(updatedDesc.deviceType_, INPUT_DEVICE);
+        }
+        if (loadOutputResult != SUCCESS && loadInputResult != SUCCESS) {
+            isArmUsbDevice_ = false;
+            AUDIO_ERR_LOG("Load usb failed, set arm usb flag to false");
+            return ERROR;
+        }
+        // Distinguish between USB input and output (need fix)
+        if (loadOutputResult == SUCCESS && loadInputResult == SUCCESS) {
+            updatedDesc.deviceRole_ = DEVICE_ROLE_MAX;
+        } else {
+            updatedDesc.deviceRole_ = (loadOutputResult == SUCCESS) ? OUTPUT_DEVICE : INPUT_DEVICE;
+        }
+        AUDIO_INFO_LOG("Load usb role is %{public}d", updatedDesc.deviceRole_);
+        return SUCCESS;
     }
 
+    // DP device only for output.
     if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {
         int32_t result = HandleDpDevice(updatedDesc.deviceType_);
         if (result != SUCCESS) {
-            result = RehandlePnpDevice(updatedDesc.deviceType_);
+            result = RehandlePnpDevice(updatedDesc.deviceType_, OUTPUT_DEVICE);
         }
         return result;
     }
@@ -3591,9 +3615,11 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         // If device already in list, remove it else do not modify the list
         connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
             connectedDevices_.end());
-        UpdateConnectedDevicesWhenConnecting(updatedDesc, descForCb);
+        // If the pnp device fails to load, it will not connect
         result = HandleLocalDeviceConnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
+        UpdateConnectedDevicesWhenConnecting(updatedDesc, descForCb);
+
         reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
     } else {
         UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
