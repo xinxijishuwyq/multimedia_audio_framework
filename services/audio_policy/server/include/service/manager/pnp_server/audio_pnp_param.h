@@ -73,6 +73,8 @@
 #define UEVENT_POLL_WAIT_TIME 100
 #define WAIT_THREAD_END_TIME_MS 1
 
+#include <string>
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -98,6 +100,13 @@ struct AudioPnpUevent {
 struct AudioDevBusUsbDevice {
     bool isUsed;
     int8_t devName[USB_DEV_NAME_LEN_MAX];
+};
+
+struct AudioEvent {
+    uint32_t eventType;
+    uint32_t deviceType;
+    std::string name;
+    std::string address;
 };
 } // namespace AudioStandard
 } // namespace OHOS

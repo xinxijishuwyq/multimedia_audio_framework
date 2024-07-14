@@ -653,7 +653,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
     deviceDesc.portId = renderPort.portId;
-    deviceDesc.desc = const_cast<char *>("");
+    deviceDesc.desc = const_cast<char *>(attr_.address.c_str());
     deviceDesc.pins = PIN_OUT_SPEAKER;
     if (halName_ == "usb") {
         deviceDesc.pins = PIN_OUT_USB_HEADSET;
@@ -673,7 +673,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
         adapterInited_ = false;
         return ERR_NOT_STARTED;
     }
-    AUDIO_INFO_LOG("Create success rendererid: %{public}u", renderId_);
+    AUDIO_INFO_LOG("Create success rendererid: %{public}u desc: %{public}s", renderId_, deviceDesc.desc);
 
     return 0;
 }
@@ -1293,27 +1293,33 @@ int32_t AudioRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfoStr)
     return SUCCESS;
 }
 
-int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &usbInfoStr)
+int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
 {
-    CHECK_AND_RETURN_RET_LOG(usbInfoStr != "", ERR_INVALID_PARAM, "usb info string error");
+    CHECK_AND_RETURN_RET_LOG(dpInfoStr != "", ERR_INVALID_PARAM, "usb info string error");
 
-    auto sinkRate_begin = usbInfoStr.find("rate=");
-    auto sinkRate_end = usbInfoStr.find_first_of(" ", sinkRate_begin);
-    std::string sampleRateStr = usbInfoStr.substr(sinkRate_begin + std::strlen("rate="),
+    auto sinkRate_begin = dpInfoStr.find("rate=");
+    auto sinkRate_end = dpInfoStr.find_first_of(" ", sinkRate_begin);
+    std::string sampleRateStr = dpInfoStr.substr(sinkRate_begin + std::strlen("rate="),
         sinkRate_end - sinkRate_begin - std::strlen("rate="));
 
-    auto sinkBuffer_begin = usbInfoStr.find("buffer_size=");
-    auto sinkBuffer_end = usbInfoStr.find_first_of(" ", sinkBuffer_begin);
-    std::string bufferSize = usbInfoStr.substr(sinkBuffer_begin + std::strlen("buffer_size="),
+    auto sinkBuffer_begin = dpInfoStr.find("buffer_size=");
+    auto sinkBuffer_end = dpInfoStr.find_first_of(" ", sinkBuffer_begin);
+    std::string bufferSize = dpInfoStr.substr(sinkBuffer_begin + std::strlen("buffer_size="),
         sinkBuffer_end - sinkBuffer_begin - std::strlen("buffer_size="));
 
-    auto sinkChannel_begin = usbInfoStr.find("channels=");
-    auto sinkChannel_end = usbInfoStr.find_first_of(" ", sinkChannel_begin);
-    std::string channeltStr = usbInfoStr.substr(sinkChannel_begin + std::strlen("channels="),
+    auto sinkChannel_begin = dpInfoStr.find("channels=");
+    auto sinkChannel_end = dpInfoStr.find_first_of(" ", sinkChannel_begin);
+    std::string channeltStr = dpInfoStr.substr(sinkChannel_begin + std::strlen("channels="),
         sinkChannel_end - sinkChannel_begin - std::strlen("channels="));
+
+    auto address_begin = dpInfoStr.find("address=");
+    auto address_end = dpInfoStr.find_first_of(" ", address_begin);
+    std::string addressStr = dpInfoStr.substr(address_begin + std::strlen("address="),
+        address_end - address_begin - std::strlen("address="));
 
     attr_.sampleRate = stoi(sampleRateStr);
     attr_.channel = static_cast<uint32_t>(stoi(channeltStr));
+    attr_.address = addressStr;
     uint32_t formatByte = 0;
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
         AUDIO_ERR_LOG("check attr failed channel[%{public}d] sampleRate[%{public}d]", attr_.channel, attr_.sampleRate);
@@ -1324,8 +1330,8 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &usbInfoStr)
     
     attr_.format = static_cast<HdiAdapterFormat>(ConvertByteToAudioFormat(formatByte));
 
-    AUDIO_DEBUG_LOG("UpdateDPAttrs sampleRate %{public}d, format: %{public}d,channelCount: %{public}d",
-        attr_.sampleRate, attr_.format, attr_.channel);
+    AUDIO_DEBUG_LOG("UpdateDPAttrs sampleRate %{public}d,format:%{public}d,channelCount:%{public}d,address:%{public}s",
+        attr_.sampleRate, attr_.format, attr_.channel, addressStr.c_str());
 
     adapterNameCase_ = "dp";
     openSpeaker_ = 0;

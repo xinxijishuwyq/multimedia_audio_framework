@@ -16,6 +16,7 @@
 #ifndef I_AUDIO_RENDERER_SINK_H
 #define I_AUDIO_RENDERER_SINK_H
 
+#include <string>
 #include "audio_info.h"
 #include "audio_hdiadapter_info.h"
 
@@ -34,6 +35,7 @@ typedef struct IAudioSinkAttr {
     int32_t deviceType = 0;
     uint64_t channelLayout = 0;
     int32_t audioStreamFlag = 0;
+    std::string address;
 } IAudioSinkAttr;
 
 class IAudioSinkCallback {

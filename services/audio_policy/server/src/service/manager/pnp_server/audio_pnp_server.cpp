@@ -55,14 +55,14 @@ static std::string GetAudioEventInfo(const AudioEvent audioEvent)
         AUDIO_ERR_LOG("audio event is not updated");
         return event;
     }
-    ret = snprintf_s(event, AUDIO_PNP_INFO_LEN_MAX, AUDIO_PNP_INFO_LEN_MAX - 1, "EVENT_TYPE=%u;DEVICE_TYPE=%u",
-        audioEvent.eventType, audioEvent.deviceType);
+    ret = snprintf_s(event, AUDIO_PNP_INFO_LEN_MAX, AUDIO_PNP_INFO_LEN_MAX - 1,
+        "EVENT_TYPE=%u;DEVICE_TYPE=%u;EVENT_NAME=%s;DEVICE_ADDRESS=%s",
+        audioEvent.eventType, audioEvent.deviceType, audioEvent.name.c_str(), audioEvent.address.c_str());
     if (ret < 0) {
         AUDIO_ERR_LOG("snprintf_s failed");
         return event;
     }
-    AUDIO_DEBUG_LOG("audio event info EVENT_TYPE = [%{public}u], DEVICE_TYPE = [%{public}u]",
-        audioEvent.eventType, audioEvent.deviceType);
+
     return event;
 }
 

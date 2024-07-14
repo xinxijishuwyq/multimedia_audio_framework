@@ -2886,7 +2886,7 @@ int32_t AudioPolicyService::HandleActiveDevice(DeviceType deviceType)
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType, DeviceRole deviceRole)
+int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType, DeviceRole deviceRole, const std::string &address)
 {
     Trace trace("AudioPolicyService::HandleArmUsbDevice");
 
@@ -2894,7 +2894,7 @@ int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType, DeviceRole
         string deviceInfo = "";
         if (g_adProxy != nullptr) {
             std::string identity = IPCSkeleton::ResetCallingIdentity();
-            deviceInfo = g_adProxy->GetAudioParameter(LOCAL_NETWORK_ID, USB_DEVICE, "");
+            deviceInfo = g_adProxy->GetAudioParameter(LOCAL_NETWORK_ID, USB_DEVICE, address);
             IPCSkeleton::SetCallingIdentity(identity);
             AUDIO_INFO_LOG("device info from usb hal is %{public}s", deviceInfo.c_str());
         }
@@ -2916,7 +2916,7 @@ int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType, DeviceRole
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::RehandlePnpDevice(DeviceType deviceType, DeviceRole deviceRole)
+int32_t AudioPolicyService::RehandlePnpDevice(DeviceType deviceType, DeviceRole deviceRole, const std::string &address)
 {
     Trace trace("AudioPolicyService::RehandlePnpDevice");
 
@@ -2929,7 +2929,7 @@ int32_t AudioPolicyService::RehandlePnpDevice(DeviceType deviceType, DeviceRole 
         retryCount++;
         AUDIO_INFO_LOG("rehandle device[%{public}d], retry count[%{public}d]", deviceType, retryCount);
 
-        ret = HandleSpecialDeviceType(deviceType, isConnected);
+        ret = HandleSpecialDeviceType(deviceType, isConnected, address);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Rehandle special device type failed");
         if (deviceType == DEVICE_TYPE_USB_HEADSET && !isArmUsbDevice_) {
             AUDIO_INFO_LOG("rehandle device is not arm usb device, nothing to do");
@@ -2937,11 +2937,11 @@ int32_t AudioPolicyService::RehandlePnpDevice(DeviceType deviceType, DeviceRole 
         }
 
         if (deviceType == DEVICE_TYPE_USB_HEADSET) {
-            if (HandleArmUsbDevice(deviceType, deviceRole) == SUCCESS) {
+            if (HandleArmUsbDevice(deviceType, deviceRole, address) == SUCCESS) {
                 return SUCCESS;
             }
         } else if (deviceType == DEVICE_TYPE_DP) {
-            if (HandleDpDevice(deviceType)  == SUCCESS) {
+            if (HandleDpDevice(deviceType, address)  == SUCCESS) {
                 return SUCCESS;
             }
         }
@@ -2967,7 +2967,7 @@ int32_t AudioPolicyService::GetModuleInfo(ClassType classType, std::string &modu
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::HandleDpDevice(DeviceType deviceType)
+int32_t AudioPolicyService::HandleDpDevice(DeviceType deviceType, const std::string &address)
 {
     Trace trace("AudioPolicyService::HandleDpDevice");
     if (deviceType == DEVICE_TYPE_DP) {
@@ -2978,7 +2978,8 @@ int32_t AudioPolicyService::HandleDpDevice(DeviceType deviceType)
 
         if (g_adProxy != nullptr) {
             std::string identity = IPCSkeleton::ResetCallingIdentity();
-            getDPInfo = g_adProxy->GetAudioParameter(LOCAL_NETWORK_ID, GET_DP_DEVICE_INFO, defaulyDPInfo);
+            getDPInfo = g_adProxy->GetAudioParameter(LOCAL_NETWORK_ID, GET_DP_DEVICE_INFO,
+                defaulyDPInfo + " address=" + address + " ");
             IPCSkeleton::SetCallingIdentity(identity);
             AUDIO_DEBUG_LOG("device info from dp hal is \n defaulyDPInfo:%{public}s \n getDPInfo:%{public}s",
                 defaulyDPInfo.c_str(), getDPInfo.c_str());
@@ -3437,6 +3438,22 @@ void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isCon
     OnDeviceStatusUpdated(devType, isConnected, "", "", streamInfo);
 }
 
+void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected,
+    const std::string &name, const std::string &adderess)
+{
+    CHECK_AND_RETURN_LOG(devType != DEVICE_TYPE_NONE, "devType is none type");
+    if (!hasModulesLoaded) {
+        AUDIO_WARNING_LOG("modules has not loaded");
+        pnpDeviceList_.push_back({devType, isConnected});
+        return;
+    }
+    if (g_adProxy == nullptr) {
+        GetAudioServerProxy();
+    }
+    AudioStreamInfo streamInfo = {};
+    OnDeviceStatusUpdated(devType, isConnected, adderess, name, streamInfo);
+}
+
 void AudioPolicyService::UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
     const std::string& deviceName, const DeviceStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc)
 {
@@ -3461,13 +3478,13 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(AudioDeviceDescriptor &up
     }
 
     if (isArmUsbDevice_ && updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET) {
-        int32_t loadOutputResult = HandleArmUsbDevice(updatedDesc.deviceType_, OUTPUT_DEVICE);
+        int32_t loadOutputResult = HandleArmUsbDevice(updatedDesc.deviceType_, OUTPUT_DEVICE, updatedDesc.macAddress_);
         if (loadOutputResult != SUCCESS) {
-            loadOutputResult = RehandlePnpDevice(updatedDesc.deviceType_, OUTPUT_DEVICE);
+            loadOutputResult = RehandlePnpDevice(updatedDesc.deviceType_, OUTPUT_DEVICE, updatedDesc.macAddress_);
         }
-        int32_t loadInputResult = HandleArmUsbDevice(updatedDesc.deviceType_, INPUT_DEVICE);
+        int32_t loadInputResult = HandleArmUsbDevice(updatedDesc.deviceType_, INPUT_DEVICE, updatedDesc.macAddress_);
         if (loadInputResult != SUCCESS) {
-            loadInputResult = RehandlePnpDevice(updatedDesc.deviceType_, INPUT_DEVICE);
+            loadInputResult = RehandlePnpDevice(updatedDesc.deviceType_, INPUT_DEVICE, updatedDesc.macAddress_);
         }
         if (loadOutputResult != SUCCESS && loadInputResult != SUCCESS) {
             isArmUsbDevice_ = false;
@@ -3486,9 +3503,9 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(AudioDeviceDescriptor &up
 
     // DP device only for output.
     if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {
-        int32_t result = HandleDpDevice(updatedDesc.deviceType_);
+        int32_t result = HandleDpDevice(updatedDesc.deviceType_, updatedDesc.macAddress_);
         if (result != SUCCESS) {
-            result = RehandlePnpDevice(updatedDesc.deviceType_, OUTPUT_DEVICE);
+            result = RehandlePnpDevice(updatedDesc.deviceType_, OUTPUT_DEVICE, updatedDesc.macAddress_);
         }
         return result;
     }
@@ -3550,7 +3567,7 @@ DeviceType AudioPolicyService::FindConnectedHeadset()
     return retType;
 }
 
-int32_t AudioPolicyService::HandleSpecialDeviceType(DeviceType &devType, bool &isConnected)
+int32_t AudioPolicyService::HandleSpecialDeviceType(DeviceType &devType, bool &isConnected, const std::string &address)
 {
     // usb device needs to be distinguished form arm or hifi
     if (devType == DEVICE_TYPE_USB_HEADSET && isConnected) {
@@ -3598,14 +3615,15 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     // Pnp device status update
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
-    AUDIO_INFO_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d]", devType, isConnected);
+    AUDIO_INFO_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d], address[%{public}s]",
+        devType, isConnected, GetEncryptStr(macAddress).c_str());
 
     AudioStreamDeviceChangeReason reason;
     // fill device change action for callback
     std::vector<sptr<AudioDeviceDescriptor>> descForCb = {};
 
     int32_t result = ERROR;
-    result = HandleSpecialDeviceType(devType, isConnected);
+    result = HandleSpecialDeviceType(devType, isConnected, macAddress);
     CHECK_AND_RETURN_LOG(result == SUCCESS, "handle special deviceType failed.");
     AudioDeviceDescriptor updatedDesc(devType, GetDeviceRole(devType));
     UpdateLocalGroupInfo(isConnected, macAddress, deviceName, streamInfo, updatedDesc);
@@ -7341,6 +7359,10 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDumpDeviceInfo(s
             AudioInfoDumpUtils::GetDeviceTypeName(devDesc->deviceType_).c_str());
         AppendFormat(dumpString, "  - device type:%d\n", devDesc->deviceType_);
         AppendFormat(dumpString, "  - device id:%d\n", devDesc->deviceId_);
+        AppendFormat(dumpString, "  - device role:%d\n", devDesc->deviceRole_);
+        AppendFormat(dumpString, "  - device name:%s\n", devDesc->deviceName_.c_str());
+        AppendFormat(dumpString, "  - device mac:%s\n", devDesc->macAddress_.c_str());
+        AppendFormat(dumpString, "  - device network:%s\n", devDesc->networkId_.c_str());
         if (deviceFlag == DeviceFlag::INPUT_DEVICES_FLAG || deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
             conneceType_  = CONNECT_TYPE_LOCAL;
         } else if (deviceFlag == DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG ||
