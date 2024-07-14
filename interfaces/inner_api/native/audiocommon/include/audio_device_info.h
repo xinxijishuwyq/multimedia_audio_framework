@@ -187,6 +187,15 @@ inline bool IsInputDevice(DeviceType deviceType)
     return INPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
 }
 
+inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole)
+{
+    if (deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+        return deviceRole == INPUT_DEVICE || deviceRole == DEVICE_ROLE_MAX;
+    } else {
+        return INPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
+    }
+}
+
 inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_EARPIECE,
     DeviceType::DEVICE_TYPE_SPEAKER,
@@ -204,6 +213,15 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
 inline bool IsOutputDevice(DeviceType deviceType)
 {
     return OUTPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
+}
+
+inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole)
+{
+    if (deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+        return deviceRole == OUTPUT_DEVICE || deviceRole == DEVICE_ROLE_MAX;
+    } else {
+        return OUTPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
+    }
 }
 
 enum DeviceChangeType {

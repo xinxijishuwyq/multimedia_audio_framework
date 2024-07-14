@@ -596,15 +596,15 @@ private:
 
     int32_t LoadA2dpModule(DeviceType deviceType);
 
-    int32_t LoadUsbModule(string deviceInfo);
+    int32_t LoadUsbModule(string deviceInfo, DeviceRole deviceRole);
 
     int32_t LoadDpModule(string deviceInfo);
 
-    int32_t LoadDefaultUsbModule();
+    int32_t LoadDefaultUsbModule(DeviceRole deviceRole);
 
-    int32_t RehandlePnpDevice(DeviceType deviceType);
+    int32_t RehandlePnpDevice(DeviceType deviceType, DeviceRole deviceRole);
 
-    int32_t HandleArmUsbDevice(DeviceType deviceType);
+    int32_t HandleArmUsbDevice(DeviceType deviceType, DeviceRole deviceRole);
 
     int32_t HandleDpDevice(DeviceType deviceType);
 
@@ -723,7 +723,7 @@ private:
     void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
         const std::string& deviceName, const DeviceStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc);
 
-    int32_t HandleLocalDeviceConnected(const AudioDeviceDescriptor &updatedDesc);
+    int32_t HandleLocalDeviceConnected(AudioDeviceDescriptor &updatedDesc);
 
     int32_t HandleLocalDeviceDisconnected(const AudioDeviceDescriptor &updatedDesc);
 
