@@ -889,7 +889,6 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
         if (audioCapturerSourceInstance) {
             transactionId = audioCapturerSourceInstance->GetTransactionId();
         }
-        AUDIO_INFO_LOG("Transaction Id: %{public}" PRIu64, transactionId);
         return transactionId;
     }
 

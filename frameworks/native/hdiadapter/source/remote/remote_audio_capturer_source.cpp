@@ -616,8 +616,6 @@ int32_t RemoteAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, Dev
 
 uint64_t RemoteAudioCapturerSourceInner::GetTransactionId()
 {
-    AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::GetTransactionId in");
-    AUDIO_ERR_LOG("GetTransactionId not supported");
     return ERR_NOT_SUPPORTED;
 }
 

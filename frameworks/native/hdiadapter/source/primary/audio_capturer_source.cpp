@@ -537,7 +537,7 @@ AudioFormat AudioCapturerSourceInner::ConvertToHdiFormat(HdiAdapterFormat format
 int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
 {
     Trace trace("AudioCapturerSourceInner:CreateCapture");
-    int32_t ret;
+
     struct AudioSampleAttributes param;
     // User needs to set
     InitAttrsCapture(param);
@@ -565,9 +565,10 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     }
     deviceDesc.desc = (char *)"";
 
-    AUDIO_INFO_LOG("CreateCapture for audioAdapter_: audio sourceType %{public}d, hdi sourceType %{public}d",
-        attr_.sourceType, param.sourceType);
-    ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_, &captureId_);
+    AUDIO_INFO_LOG("Create capture sourceName:%{public}s, hdisource:%{public}d, " \
+        "rate:%{public}u channel:%{public}u format:%{public}u, devicePin:%{public}u",
+        halName_.c_str(), param.sourceType, param.sampleRate, param.channelCount, param.format, deviceDesc.pins);
+    int32_t ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_, &captureId_);
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr && ret >= 0, ERR_NOT_STARTED, "Create capture failed");
 
     return 0;
@@ -592,13 +593,13 @@ int32_t AudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 
 int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
-    int64_t stamp = ClockTime::GetCurNano();
-    int32_t ret;
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Audio capture Handle is nullptr!");
 
     Trace trace("AudioCapturerSourceInner::CaptureFrame");
+
+    int64_t stamp = ClockTime::GetCurNano();
     uint32_t frameLen = static_cast<uint32_t>(requestBytes);
-    ret = audioCapture_->CaptureFrame(audioCapture_, reinterpret_cast<int8_t*>(frame), &frameLen, &replyBytes);
+    int32_t ret = audioCapture_->CaptureFrame(audioCapture_, reinterpret_cast<int8_t*>(frame), &frameLen, &replyBytes);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_READ_FAILED, "Capture Frame Fail");
     CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
 
@@ -639,8 +640,10 @@ float AudioCapturerSourceInner::GetMaxAmplitude()
 
 int32_t AudioCapturerSourceInner::Start(void)
 {
+    AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
+
     Trace trace("AudioCapturerSourceInner::Start");
-    AUDIO_INFO_LOG("Enter");
+
     InitLatencyMeasurement();
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
@@ -673,13 +676,12 @@ int32_t AudioCapturerSourceInner::Start(void)
         + GetTime() + "_source.pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpName, &dumpFile_);
 
-    int32_t ret;
     if (!started_) {
         if (audioCapturerSourceCallback_ != nullptr) {
             audioCapturerSourceCallback_->OnCapturerState(true);
         }
 
-        ret = audioCapture_->Start(audioCapture_);
+        int32_t ret = audioCapture_->Start(audioCapture_);
         if (ret < 0) {
             return ERR_NOT_STARTED;
         }
@@ -916,19 +918,17 @@ int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceTyp
 
 uint64_t AudioCapturerSourceInner::GetTransactionId()
 {
-    AUDIO_INFO_LOG("AudioCapturerSourceInner::GetTransactionId");
     return reinterpret_cast<uint64_t>(audioCapture_);
 }
 
 int32_t AudioCapturerSourceInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
-    int32_t ret;
     if (audioCapture_ == nullptr) {
         AUDIO_ERR_LOG("failed audioCapture_ is NULL");
         return ERR_INVALID_HANDLE;
     }
     struct AudioTimeStamp timestamp = {};
-    ret = audioCapture_->GetCapturePosition(audioCapture_, &frames, &timestamp);
+    int32_t ret = audioCapture_->GetCapturePosition(audioCapture_, &frames, &timestamp);
     if (ret != 0) {
         AUDIO_ERR_LOG("get position failed");
         return ERR_OPERATION_FAILED;
@@ -949,8 +949,9 @@ int32_t AudioCapturerSourceInner::GetPresentationPosition(uint64_t& frames, int6
 
 int32_t AudioCapturerSourceInner::Stop(void)
 {
+    AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
+
     Trace trace("AudioCapturerSourceInner::Stop");
-    AUDIO_INFO_LOG("Enter");
 
     DeinitLatencyMeasurement();
 
@@ -962,9 +963,9 @@ int32_t AudioCapturerSourceInner::Stop(void)
         AUDIO_WARNING_LOG("keepRunningLock is null, stop can not work well!");
     }
 #endif
-    int32_t ret;
+
     if (started_ && audioCapture_ != nullptr) {
-        ret = audioCapture_->Stop(audioCapture_);
+        int32_t ret = audioCapture_->Stop(audioCapture_);
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "Stop capture Failed");
     }
     started_ = false;
@@ -978,10 +979,11 @@ int32_t AudioCapturerSourceInner::Stop(void)
 
 int32_t AudioCapturerSourceInner::Pause(void)
 {
+    AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
+
     Trace trace("AudioCapturerSourceInner::Pause");
-    int32_t ret;
     if (started_ && audioCapture_ != nullptr) {
-        ret = audioCapture_->Pause(audioCapture_);
+        int32_t ret = audioCapture_->Pause(audioCapture_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "pause capture Failed");
     }
     paused_ = true;
@@ -991,10 +993,11 @@ int32_t AudioCapturerSourceInner::Pause(void)
 
 int32_t AudioCapturerSourceInner::Resume(void)
 {
+    AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
+
     Trace trace("AudioCapturerSourceInner::Resume");
-    int32_t ret;
     if (paused_ && audioCapture_ != nullptr) {
-        ret = audioCapture_->Resume(audioCapture_);
+        int32_t ret = audioCapture_->Resume(audioCapture_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "resume capture Failed");
     }
     paused_ = false;
@@ -1004,6 +1007,8 @@ int32_t AudioCapturerSourceInner::Resume(void)
 
 int32_t AudioCapturerSourceInner::Reset(void)
 {
+    AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
+
     Trace trace("AudioCapturerSourceInner::Reset");
     if (started_ && audioCapture_ != nullptr) {
         audioCapture_->Flush(audioCapture_);
@@ -1014,6 +1019,8 @@ int32_t AudioCapturerSourceInner::Reset(void)
 
 int32_t AudioCapturerSourceInner::Flush(void)
 {
+    AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
+
     Trace trace("AudioCapturerSourceInner::Flush");
     if (started_ && audioCapture_ != nullptr) {
         audioCapture_->Flush(audioCapture_);
@@ -1130,7 +1137,7 @@ int32_t AudioCapturerSourceInner::InitManagerAndAdapter()
 
 int32_t AudioCapturerSourceInner::InitAdapterAndCapture()
 {
-    AUDIO_INFO_LOG("Init adapter start");
+    AUDIO_INFO_LOG("Init adapter start sourceName %{public}s", halName_.c_str());
 
     if (captureInited_) {
         AUDIO_INFO_LOG("Adapter already inited");

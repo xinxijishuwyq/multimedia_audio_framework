@@ -277,7 +277,6 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
 
 AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
 {
-    AUDIO_INFO_LOG("halName: %{public}s", halName.c_str());
     if (halName == "usb") {
         static AudioRendererSinkInner audioRendererUsb(halName);
         return &audioRendererUsb;
@@ -437,13 +436,12 @@ void AudioRendererSinkInner::SetAudioBalanceValue(float audioBalance)
 
 int32_t AudioRendererSinkInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
-    int32_t ret;
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("failed audioRender_ is NULL");
         return ERR_INVALID_HANDLE;
     }
     struct AudioTimeStamp timestamp = {};
-    ret = audioRender_->GetRenderPosition(audioRender_, &frames, &timestamp);
+    int32_t ret = audioRender_->GetRenderPosition(audioRender_, &frames, &timestamp);
     if (ret != 0) {
         AUDIO_ERR_LOG("GetRenderPosition from hdi failed");
         return ERR_OPERATION_FAILED;
@@ -631,7 +629,7 @@ AudioFormat AudioRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat format)
 int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 {
     Trace trace("AudioRendererSinkInner::CreateRender");
-    int32_t ret;
+
     struct AudioSampleAttributes param;
     struct AudioDeviceDescriptor deviceDesc;
     InitAttrs(param);
@@ -654,8 +652,6 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
-    AUDIO_INFO_LOG("Create render halname: %{public}s format: %{public}d, sampleRate:%{public}u channel%{public}u",
-        halName_.c_str(), param.format, param.sampleRate, param.channelCount);
     deviceDesc.portId = renderPort.portId;
     deviceDesc.desc = const_cast<char *>("");
     deviceDesc.pins = PIN_OUT_SPEAKER;
@@ -666,7 +662,11 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     } else {
         deviceDesc.pins = GetAudioPortPin();
     }
-    ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
+
+    AUDIO_INFO_LOG("Create render sinkName:%{public}s, rate:%{public}u channel:%{public}u format:%{public}u, " \
+        "devicePin:%{public}u",
+        halName_.c_str(), param.sampleRate, param.channelCount, param.format, deviceDesc.pins);
+    int32_t ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed.");
         audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
@@ -701,7 +701,6 @@ int32_t AudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
     int64_t stamp = ClockTime::GetCurNano();
-    int32_t ret;
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "Audio Render Handle is nullptr!");
 
@@ -736,7 +735,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
 
     Trace traceRenderFrame("AudioRendererSinkInner::RenderFrame");
-    ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
+    int32_t ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrame failed ret: %{public}x", ret);
 
@@ -782,7 +781,8 @@ float AudioRendererSinkInner::GetMaxAmplitude()
 
 int32_t AudioRendererSinkInner::Start(void)
 {
-    AUDIO_INFO_LOG("Start. sinkName %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("sinkName %{public}s", halName_.c_str());
+
     Trace trace("AudioRendererSinkInner::Start");
 #ifdef FEATURE_POWER_MANAGER
     AudioXCollie audioXCollie("AudioRendererSinkInner::CreateRunningLock", TIME_OUT_SECONDS);
@@ -803,15 +803,16 @@ int32_t AudioRendererSinkInner::Start(void)
     }
     audioXCollie.CancelXCollieTimer();
 #endif
+
     std::string fileName = DUMP_RENDER_SINK_FILENAME;
     if (halName_ == DIRECT_HAL_NAME) {
         fileName = DUMP_DIRECT_RENDER_SINK_FILENAME;
     }
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, fileName, &dumpFile_);
-    int32_t ret;
+
     InitLatencyMeasurement();
     if (!started_) {
-        ret = audioRender_->Start(audioRender_);
+        int32_t ret = audioRender_->Start(audioRender_);
         if (!ret) {
             started_ = true;
             return SUCCESS;
@@ -825,7 +826,6 @@ int32_t AudioRendererSinkInner::Start(void)
 
 int32_t AudioRendererSinkInner::SetVolume(float left, float right)
 {
-    int32_t ret;
     float volume;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -841,7 +841,7 @@ int32_t AudioRendererSinkInner::SetVolume(float left, float right)
         volume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
     }
 
-    ret = audioRender_->SetVolume(audioRender_, volume);
+    int32_t ret = audioRender_->SetVolume(audioRender_, volume);
     if (ret) {
         AUDIO_WARNING_LOG("Set volume failed!");
     }
@@ -1115,7 +1115,6 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector
 
 int32_t AudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 {
-    AUDIO_DEBUG_LOG("GetTransactionId in");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "GetTransactionId failed audio render null");
     CHECK_AND_RETURN_RET_LOG(transactionId, ERR_INVALID_PARAM,
@@ -1139,18 +1138,17 @@ void AudioRendererSinkInner::ReleaseRunningLock()
 
 int32_t AudioRendererSinkInner::Stop(void)
 {
+    AUDIO_INFO_LOG("sinkName %{public}s", halName_.c_str());
+
     Trace trace("AudioRendererSinkInner::Stop");
-    AUDIO_INFO_LOG("Stop. sinkName %{public}s", halName_.c_str());
 
     DeinitLatencyMeasurement();
-
-    int32_t ret;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "Stop failed audioRender_ null");
 
     if (started_) {
-        ret = audioRender_->Stop(audioRender_);
+        int32_t ret = audioRender_->Stop(audioRender_);
         if (!ret) {
             started_ = false;
             ReleaseRunningLock();
@@ -1167,7 +1165,7 @@ int32_t AudioRendererSinkInner::Stop(void)
 
 int32_t AudioRendererSinkInner::Pause(void)
 {
-    int32_t ret;
+    AUDIO_INFO_LOG("sinkName %{public}s", halName_.c_str());
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "Pause failed audioRender_ null");
@@ -1175,7 +1173,7 @@ int32_t AudioRendererSinkInner::Pause(void)
         "Pause invalid state!");
 
     if (!paused_) {
-        ret = audioRender_->Pause(audioRender_);
+        int32_t ret = audioRender_->Pause(audioRender_);
         if (!ret) {
             paused_ = true;
             return SUCCESS;
@@ -1190,7 +1188,7 @@ int32_t AudioRendererSinkInner::Pause(void)
 
 int32_t AudioRendererSinkInner::Resume(void)
 {
-    int32_t ret;
+    AUDIO_INFO_LOG("sinkName %{public}s", halName_.c_str());
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "Resume failed audioRender_ null");
@@ -1198,7 +1196,7 @@ int32_t AudioRendererSinkInner::Resume(void)
         "Resume invalid state!");
 
     if (paused_) {
-        ret = audioRender_->Resume(audioRender_);
+        int32_t ret = audioRender_->Resume(audioRender_);
         if (!ret) {
             paused_ = false;
             return SUCCESS;
@@ -1213,10 +1211,10 @@ int32_t AudioRendererSinkInner::Resume(void)
 
 int32_t AudioRendererSinkInner::Reset(void)
 {
-    int32_t ret;
+    AUDIO_INFO_LOG("sinkName %{public}s", halName_.c_str());
 
     if (started_ && audioRender_ != nullptr) {
-        ret = audioRender_->Flush(audioRender_);
+        int32_t ret = audioRender_->Flush(audioRender_);
         if (!ret) {
             return SUCCESS;
         } else {
@@ -1230,10 +1228,10 @@ int32_t AudioRendererSinkInner::Reset(void)
 
 int32_t AudioRendererSinkInner::Flush(void)
 {
-    int32_t ret;
+    AUDIO_INFO_LOG("sinkName %{public}s", halName_.c_str());
 
     if (started_ && audioRender_ != nullptr) {
-        ret = audioRender_->Flush(audioRender_);
+        int32_t ret = audioRender_->Flush(audioRender_);
         if (!ret) {
             return SUCCESS;
         } else {
@@ -1337,7 +1335,7 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &usbInfoStr)
 
 int32_t AudioRendererSinkInner::InitAdapter()
 {
-    AUDIO_INFO_LOG("Init adapter start");
+    AUDIO_INFO_LOG("Init adapter start sinkName %{public}s", halName_.c_str());
 
     if (adapterInited_) {
         AUDIO_INFO_LOG("Adapter already inited");
@@ -1370,8 +1368,9 @@ int32_t AudioRendererSinkInner::InitAdapter()
 
 int32_t AudioRendererSinkInner::InitRender()
 {
+    AUDIO_INFO_LOG("Init render start sinkName %{public}s", halName_.c_str());
+
     Trace trace("AudioRendererSinkInner::InitRender");
-    AUDIO_INFO_LOG("Init render start");
 
     if (renderInited_) {
         AUDIO_INFO_LOG("Render already inited");
@@ -1427,7 +1426,9 @@ void AudioRendererSinkInner::InitLatencyMeasurement()
     if (!AudioLatencyMeasurement::CheckIfEnabled()) {
         return;
     }
+
     AUDIO_INFO_LOG("LatencyMeas PrimaryRendererSinkInit");
+
     signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
     signalDetectAgent_->sampleFormat_ = attr_.format;

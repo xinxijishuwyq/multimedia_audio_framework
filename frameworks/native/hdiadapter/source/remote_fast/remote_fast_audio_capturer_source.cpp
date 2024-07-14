@@ -625,8 +625,6 @@ int32_t RemoteFastAudioCapturerSourceInner::GetMute(bool &isMute)
 
 uint64_t RemoteFastAudioCapturerSourceInner::GetTransactionId()
 {
-    AUDIO_INFO_LOG("RemoteFastAudioCapturerSourceInner::GetTransactionId");
-    AUDIO_ERR_LOG("GetTransactionId not supported");
     return ERR_NOT_SUPPORTED;
 }
 
