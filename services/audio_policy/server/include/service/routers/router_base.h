@@ -48,7 +48,7 @@ public:
     {
         // remove abnormal device
         for (size_t i = 0; i < descs.size(); i++) {
-            if (descs[i]->exceptionFlag_ || descs[i]->connectState_ == SUSPEND_CONNECTED || !descs[i]->isEnable_) {
+            if (descs[i]->exceptionFlag_ || !descs[i]->isEnable_) {
                 descs.erase(descs.begin() + i);
                 i--;
             }
@@ -71,8 +71,7 @@ public:
             if (captureDesc->deviceId_ != desc->deviceId_) {
                 continue;
             }
-            if (captureDesc->connectState_ != SUSPEND_CONNECTED &&
-                !captureDesc->exceptionFlag_ && captureDesc->isEnable_) {
+            if (!captureDesc->exceptionFlag_ && captureDesc->isEnable_) {
                 return std::move(captureDesc);
             }
             AUDIO_INFO_LOG("unavailable device state, type[%{public}d] connectState[%{public}d] isEnable[%{public}d]" \
