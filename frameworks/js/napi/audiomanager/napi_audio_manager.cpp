@@ -1059,7 +1059,7 @@ napi_value NapiAudioManager::IsMicrophoneMute(napi_env env, napi_callback_info i
         auto *napiAudioManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
             "audio manager state is error.");
-        context->isMute = napiAudioManager->audioMngr_->IsMicrophoneMuteLegacy();
+        context->isMute = napiAudioManager->audioMngr_->IsMicrophoneMute();
     };
 
     auto complete = [env, context](napi_value &output) {

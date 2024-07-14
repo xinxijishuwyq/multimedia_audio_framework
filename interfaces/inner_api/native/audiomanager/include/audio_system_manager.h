@@ -534,7 +534,7 @@ public:
      * @return Returns <b>true</b> if the rendering is successfully started; returns <b>false</b> otherwise.
      * @since 9
      */
-    bool IsMicrophoneMuteLegacy();
+    bool IsMicrophoneMute();
 
     /**
      * @brief Select output device.

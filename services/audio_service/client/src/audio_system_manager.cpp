@@ -603,7 +603,7 @@ int32_t AudioSystemManager::SetMicrophoneMute(bool isMute)
     return AudioPolicyManager::GetInstance().SetMicrophoneMute(isMute);
 }
 
-bool AudioSystemManager::IsMicrophoneMuteLegacy()
+bool AudioSystemManager::IsMicrophoneMute()
 {
     std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
     CHECK_AND_RETURN_RET_LOG(groupManager != nullptr, false, "failed, groupManager is null");
