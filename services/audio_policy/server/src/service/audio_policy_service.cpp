@@ -2641,8 +2641,9 @@ int32_t AudioPolicyService::InitPersistentMicrophoneMuteState(bool &isMute)
 
 bool AudioPolicyService::IsMicrophoneMute()
 {
-    AUDIO_DEBUG_LOG("IsMicrophoneMute start");
-    return isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_;
+    bool res = isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_;
+    AUDIO_INFO_LOG("result:%{public}s", res ? "true" : "false");
+    return res;
 }
 
 int32_t AudioPolicyService::SetSystemSoundUri(const std::string &key, const std::string &uri)

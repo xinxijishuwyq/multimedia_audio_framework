@@ -38,8 +38,9 @@ public:
 
     virtual int32_t GetMinVolumeLevel(AudioVolumeType volumeType) = 0;
 
-    virtual int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel,
-        API_VERSION api_v = API_9, int32_t volumeFlag = 0) = 0;
+    virtual int32_t SetSystemVolumeLevelLegacy(AudioVolumeType volumeType, int32_t volumeLevel) = 0;
+
+    virtual int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
 
     virtual int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) = 0;
 
@@ -49,7 +50,9 @@ public:
 
     virtual float GetSingleStreamVolume(int32_t streamId) = 0;
 
-    virtual int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, API_VERSION api_v = API_9) = 0;
+    virtual int32_t SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute) = 0;
+
+    virtual int32_t SetStreamMute(AudioVolumeType volumeType, bool mute) = 0;
 
     virtual bool GetStreamMute(AudioVolumeType volumeType) = 0;
 
@@ -76,7 +79,9 @@ public:
     virtual std::vector<int32_t> GetSupportedTones() = 0;
 #endif
 
-    virtual int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v = API_9) = 0;
+    virtual int32_t SetRingerModeLegacy(AudioRingerMode ringMode) = 0;
+
+    virtual int32_t SetRingerMode(AudioRingerMode ringMode) = 0;
 
     virtual AudioRingerMode GetRingerMode() = 0;
 
@@ -90,7 +95,9 @@ public:
 
     virtual bool GetPersistentMicMuteState() = 0;
 
-    virtual bool IsMicrophoneMute(API_VERSION api_v = API_9) = 0;
+    virtual bool IsMicrophoneMuteLegacy() = 0;
+
+    virtual bool IsMicrophoneMute() = 0;
 
     virtual AudioScene GetAudioScene() = 0;
 
