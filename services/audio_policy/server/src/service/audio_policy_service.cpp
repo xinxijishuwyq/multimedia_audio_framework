@@ -3262,6 +3262,11 @@ AudioScene AudioPolicyService::GetAudioScene(bool hasSystemPermission) const
     return audioScene_;
 }
 
+AudioScene AudioPolicyService::GetLastAudioScene() const
+{
+    return lastAudioScene_;
+}
+
 void AudioPolicyService::OnUpdateRouteSupport(bool isSupported)
 {
     isUpdateRouteSupported_ = isSupported;
