@@ -646,6 +646,7 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::Start");
+    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.mode);
 
@@ -734,6 +735,7 @@ bool AudioRendererPrivate::Flush() const
 bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::PauseTransitent");
+    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::PauseTransitent. id: %{public}u", sessionID_);
     if (isSwitching_) {
         AUDIO_ERR_LOG("failed. Switching state: %{public}d", isSwitching_);
@@ -757,6 +759,7 @@ bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType) const
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::Pause");
+    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
 
@@ -787,6 +790,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 bool AudioRendererPrivate::Stop() const
 {
     AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
+    std::shared_lock<std::shared_mutex> lock(switchStreamMutex_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
         "AudioRenderer::Stop failed. Switching state: %{public}d", isSwitching_);
     if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
@@ -1121,12 +1125,12 @@ AudioRenderMode AudioRendererPrivate::GetRenderMode() const
 
 int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc) const
 {
-    if (!switchStreamMutex_.try_lock()) {
+    if (!switchStreamMutex_.try_lock_shared()) {
         AUDIO_ERR_LOG("In switch stream process, return");
         return ERR_ILLEGAL_STATE;
     }
     int32_t ret = audioStream_->GetBufferDesc(bufDesc);
-    switchStreamMutex_.unlock();
+    switchStreamMutex_.unlock_shared();
     return ret;
 }
 
@@ -1135,12 +1139,12 @@ int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc) const
     Trace trace("AudioRenderer::Enqueue");
     MockPcmData(bufDesc.buffer, bufDesc.bufLength);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
-    if (!switchStreamMutex_.try_lock()) {
+    if (!switchStreamMutex_.try_lock_shared()) {
         AUDIO_ERR_LOG("In switch stream process, return");
         return ERR_ILLEGAL_STATE;
     }
     int32_t ret = audioStream_->Enqueue(bufDesc);
-    switchStreamMutex_.unlock();
+    switchStreamMutex_.unlock_shared();
     return ret;
 }
 
@@ -1380,6 +1384,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     bool switchResult = false;
     if (audioStream_) {
         Trace trace("SwitchToTargetStream");
+        std::lock_guard<std::shared_mutex> lock(switchStreamMutex_);
         isSwitching_ = true;
         RendererState previousState = GetStatus();
         AUDIO_INFO_LOG("Previous stream state: %{public}d", previousState);
@@ -1387,7 +1392,6 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
             switchResult = audioStream_->StopAudioStream();
             CHECK_AND_RETURN_RET_LOG(switchResult, false, "StopAudioStream failed.");
         }
-        std::lock_guard<std::mutex> lock(switchStreamMutex_);
         IAudioStream::SwitchInfo info;
         audioStream_->GetSwitchInfo(info);
         if (targetClass == IAudioStream::VOIP_STREAM) {
