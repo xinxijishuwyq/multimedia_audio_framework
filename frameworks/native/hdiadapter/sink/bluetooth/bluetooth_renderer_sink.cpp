@@ -430,7 +430,8 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     AUDIO_INFO_LOG("Init: %{public}d", attr.format);
     if (rendererInited_) {
-        AUDIO_ERR_LOG("Already inited");
+        AUDIO_WARNING_LOG("Already inited");
+        initCount_++;
         return true;
     }
 

@@ -29,6 +29,8 @@ namespace OHOS {
 namespace AudioStandard {
 
 static uint64_t g_id = 1;
+static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME = 10000; // 10ms
+static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3ms
 
 AudioService *AudioService::GetInstance()
 {
@@ -79,7 +81,8 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
         AUDIO_INFO_LOG("find endpoint unlink, call delay release.");
         std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
         releasingEndpointSet_.insert(endpointName);
-        int32_t delayTime = 10000;
+        int32_t delayTime = (*paired).second->GetDeviceInfo().deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ?
+            A2DP_ENDPOINT_RELEASE_DELAY_TIME : NORMAL_ENDPOINT_RELEASE_DELAY_TIME;
         std::thread releaseEndpointThread(&AudioService::DelayCallReleaseEndpoint, this, endpointName, delayTime);
         releaseEndpointThread.detach();
     }

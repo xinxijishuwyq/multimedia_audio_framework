@@ -88,6 +88,7 @@ public:
     virtual void Dump(std::string &dumpString) = 0;
 
     virtual DeviceRole GetDeviceRole() = 0;
+    virtual DeviceInfo &GetDeviceInfo() = 0;
     virtual float GetMaxAmplitude() = 0;
 
     virtual ~AudioEndpoint() = default;
@@ -137,6 +138,11 @@ public:
     EndpointStatus GetStatus() override;
 
     void Release() override;
+
+    DeviceInfo &GetDeviceInfo() override
+    {
+        return deviceInfo_;
+    }
 
     DeviceRole GetDeviceRole() override
     {

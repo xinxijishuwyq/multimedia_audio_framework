@@ -149,6 +149,11 @@ public:
 
     void Release() override;
 
+    DeviceInfo &GetDeviceInfo() override
+    {
+        return deviceInfo_;
+    }
+
     DeviceRole GetDeviceRole() override
     {
         return deviceInfo_.deviceRole;
