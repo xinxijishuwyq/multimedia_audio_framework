@@ -16,6 +16,8 @@
 #ifndef AUDIO_RENDERER_PRIVATE_H
 #define AUDIO_RENDERER_PRIVATE_H
 
+#include <shared_mutex>
+
 #include "audio_interrupt_callback.h"
 #include "audio_concurrency_callback.h"
 #include "audio_renderer.h"
@@ -185,7 +187,7 @@ private:
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<AudioLatencyMeasurement> latencyMeasurement_ = nullptr;
     bool isSwitching_ = false;
-    mutable std::mutex switchStreamMutex_;
+    mutable std::shared_mutex switchStreamMutex_;
     mutable AudioRenderMode audioRenderMode_ = RENDER_MODE_NORMAL;
     bool isFastVoipSupported_ = false;
     bool isDirectVoipSupported_ = false;
