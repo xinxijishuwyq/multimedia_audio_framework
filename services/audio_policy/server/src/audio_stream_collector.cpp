@@ -584,7 +584,7 @@ int32_t AudioStreamCollector::UpdateTrackerInternal(AudioMode &mode, AudioStream
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     // update the stream change internal info
     if (mode == AUDIO_MODE_PLAYBACK) {
-        UpdateRendererStreamInternal(streamChangeInfo);
+       return UpdateRendererStreamInternal(streamChangeInfo);
     }
     return SUCCESS;
 }

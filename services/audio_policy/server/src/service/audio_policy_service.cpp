@@ -4719,7 +4719,9 @@ void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
     AudioMode mode = AudioMode::AUDIO_MODE_PLAYBACK;
     // Set prerunningState true to refetch devices when device info change before update tracker to running
     streamChangeInfo.audioRendererChangeInfo.prerunningState = true;
-    streamCollector_.UpdateTrackerInternal(mode, streamChangeInfo);
+    if (streamCollector_.UpdateTrackerInternal(mode, streamChangeInfo) != SUCCESS) {
+        return;
+    }
 
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
     rendererChangeInfo.push_back(
