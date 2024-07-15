@@ -398,7 +398,10 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
 
     // In plan: Total latency will be sum of audio write cache latency plus PA latency
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    uint32_t algorithmLatency = audioEffectChainManager->GetLatency(std::to_string(streamIndex_));
+    uint32_t algorithmLatency = 0;
+    if (audioEffectChainManager != nullptr) {
+        algorithmLatency = audioEffectChainManager->GetLatency(std::to_string(streamIndex_));
+    }
     uint64_t fwLatency = paLatency + cacheLatency + static_cast<uint64_t>(algorithmLatency);
     latency = fwLatency;
     AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", cache latency: %{public}"
