@@ -605,15 +605,6 @@ void OHAudioRenderer::SetRendererCallback(RendererCallback rendererCallbacks, vo
         AUDIO_WARNING_LOG("The write callback function is not set");
     }
 
-    if (rendererCallbacks.callbacks.OH_AudioRenderer_OnStreamEvent != nullptr) {
-        std::shared_ptr<AudioRendererOutputDeviceChangeCallback> callback =
-            std::make_shared<OHAudioRendererDeviceChangeCallback>(rendererCallbacks.callbacks,
-                (OH_AudioRenderer*)this, userData);
-        audioRenderer_->RegisterOutputDeviceChangeWithInfoCallback(callback);
-    } else {
-        AUDIO_WARNING_LOG("The stream event callback function is not set");
-    }
-
     if (rendererCallbacks.callbacks.OH_AudioRenderer_OnInterruptEvent != nullptr) {
         audioRendererCallback_ = std::make_shared<OHAudioRendererCallback>(rendererCallbacks.callbacks,
             (OH_AudioRenderer*)this, userData);
