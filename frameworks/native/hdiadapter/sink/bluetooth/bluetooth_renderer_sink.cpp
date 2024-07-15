@@ -167,6 +167,7 @@ private:
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
+    void UnlockRunningLock();
 #endif
 
     int32_t CreateRender(struct HDI::Audio_Bluetooth::AudioPort &renderPort);
@@ -627,10 +628,25 @@ int32_t BluetoothRendererSinkInner::Start(void)
             }
         }
         AUDIO_ERR_LOG("Start bluetooth render failed for three times, return");
+#ifdef FEATURE_POWER_MANAGER
+        UnlockRunningLock();
+#endif
         return ERR_NOT_STARTED;
     }
     return SUCCESS;
 }
+
+#ifdef FEATURE_POWER_MANAGER
+void BluetoothRendererSinkInner::UnlockRunningLock()
+{
+    if (runningLockManager_ != nullptr) {
+        AUDIO_INFO_LOG("keepRunningLock unLock");
+        runningLockManager_->UnLock();
+    } else {
+        AUDIO_ERR_LOG("running lock is null");
+    }
+}
+#endif
 
 int32_t BluetoothRendererSinkInner::CheckPositionTime()
 {
@@ -723,14 +739,8 @@ int32_t BluetoothRendererSinkInner::Stop(void)
     Trace trace("BluetoothRendererSinkInner::Stop");
 
     DeinitLatencyMeasurement();
-
 #ifdef FEATURE_POWER_MANAGER
-    if (runningLockManager_ != nullptr) {
-        AUDIO_INFO_LOG("keepRunningLock unLock");
-        runningLockManager_->UnLock();
-    } else {
-        AUDIO_ERR_LOG("keepRunningLock is null, playback can not work well!");
-    }
+    UnlockRunningLock();
 #endif
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
