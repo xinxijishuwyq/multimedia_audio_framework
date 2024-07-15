@@ -130,6 +130,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         descs.push_back(FetchCallRenderDevice(streamUsage, clientUID, routerType));
     } else {
         AUDIO_INFO_LOG("streamUsage %{public}d didn't config router strategy, skipped", streamUsage);
+        descs.push_back(make_unique<AudioDeviceDescriptor>());
         return descs;
     }
     if (audioDeviceRefinerCb_ != nullptr) {
