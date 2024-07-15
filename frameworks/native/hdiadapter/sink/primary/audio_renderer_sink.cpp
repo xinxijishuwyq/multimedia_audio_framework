@@ -1002,7 +1002,7 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &outputD
     DeviceType outputDevice = outputDevices.front();
     if (outputDevice == currentActiveDevice_ &&
         outputDevices.size() == static_cast<uint32_t>(currentDevicesSize_)) {
-        AUDIO_INFO_LOG("SetOutputRoutes output device not change");
+        AUDIO_INFO_LOG("SetOutputRoutes output device not change, type:%{public}d", outputDevice);
         return SUCCESS;
     }
     AudioPortPin outputPortPin = GetAudioPortPin();

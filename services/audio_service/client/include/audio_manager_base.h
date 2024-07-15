@@ -215,14 +215,16 @@ public:
      *
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
-    virtual int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) = 0;
+    virtual int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag,
+        BluetoothOffloadState a2dpOffloadFlag) = 0;
 
     /**
      * Update the audio route after devices is detected and route is decided
      *
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
-    virtual int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices) = 0;
+    virtual int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
+        BluetoothOffloadState a2dpOffloadFlag) = 0;
 
     /**
      * Update the audio dual tone state after devices is detected and route is decided
