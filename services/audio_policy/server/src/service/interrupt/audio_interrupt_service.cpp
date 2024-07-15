@@ -471,11 +471,14 @@ AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
             // if the steam is not active or the active stream is an audio capturer stream, skip it.
             continue;
         }
-        AudioInterrupt audioInterrupt = iter->first;
-        streamInFocus = audioInterrupt.audioFocusType.streamType;
-        if (streamInFocus != STREAM_ACCESSIBILITY && streamInFocus != STREAM_ULTRASONIC) {
-            break;
+        AudioStreamType streamType = (iter->first).audioFocusType.streamType;
+        if (streamType == STREAM_ACCESSIBILITY || streamType == STREAM_ULTRASONIC) {
+            // the volume of accessibility and ultrasonic should not be adjusted by volume keys.
+            continue;
         }
+        streamInFocus = streamType;
+        // an active renderer stream has been found
+        break;
     }
 
     return streamInFocus;
