@@ -3419,6 +3419,7 @@ static void ThreadFuncWriteHDI(void *userdata)
         int32_t code = 0;
         pa_memchunk chunk;
 
+        CHECK_AND_RETURN_LOG(u->primary.dq != NULL, "u->primary.dq is NULL");
         pa_assert_se(pa_asyncmsgq_get(u->primary.dq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
 
         switch (code) {
@@ -4133,6 +4134,7 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
 
     pa_atomic_store(&u->primary.dflag, 0);
     u->primary.dq = pa_asyncmsgq_new(0);
+    CHECK_AND_RETURN_RET_LOG(u->primary.dq, -1, "Failed to create u->primary.dq");
 
     u->sink = PaHdiSinkInit(u, ma, driver);
     if (!u->sink) {
@@ -4226,6 +4228,7 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 
     return u->sink;
 fail:
+    AUDIO_ERR_LOG("PaHdiSinkNew failed, free userdata");
     UserdataFree(u);
 
     return NULL;
@@ -4367,6 +4370,7 @@ static void UserdataFree(struct Userdata *u)
 void PaHdiSinkFree(pa_sink *s)
 {
     AUTO_CTRACE("PaHdiSinkFree");
+    AUDIO_INFO_LOG("PaHdiSinkFree, free userdata");
     struct Userdata *u = NULL;
 
     pa_sink_assert_ref(s);
