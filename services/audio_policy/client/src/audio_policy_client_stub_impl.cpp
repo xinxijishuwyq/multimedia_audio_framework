@@ -157,10 +157,19 @@ int32_t AudioPolicyClientStubImpl::AddDeviceChangeCallback(const DeviceFlag &fla
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::RemoveDeviceChangeCallback()
+int32_t AudioPolicyClientStubImpl::RemoveDeviceChangeCallback(DeviceFlag flag,
+    std::shared_ptr<AudioManagerDeviceChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(deviceChangeMutex_);
-    deviceChangeCallbackList_.clear();
+    auto iter = deviceChangeCallbackList_.begin();
+    while (iter != deviceChangeCallbackList_.end()) {
+        if ((iter->first & flag) && (iter->second == cb || cb == nullptr)) {
+            AUDIO_INFO_LOG("remove device change cb flag:%{public}d", flag);
+            iter = deviceChangeCallbackList_.erase(iter);
+        } else {
+            iter++;
+        }
+    }
     return SUCCESS;
 }
 

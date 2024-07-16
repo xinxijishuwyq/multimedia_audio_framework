@@ -832,7 +832,8 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t UnsetDeviceChangeCallback(DeviceFlag flag = DeviceFlag::ALL_DEVICES_FLAG);
+    int32_t UnsetDeviceChangeCallback(DeviceFlag flag = DeviceFlag::ALL_DEVICES_FLAG,
+        std::shared_ptr<AudioManagerDeviceChangeCallback> callback = nullptr);
 
     /**
      * @brief Registers the ringerMode callback listener.
