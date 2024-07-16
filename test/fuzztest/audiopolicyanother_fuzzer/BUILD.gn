@@ -32,6 +32,10 @@ ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
   sources = [ "audio_policy_another_fuzzer.cpp" ]
