@@ -57,7 +57,7 @@ public:
     int32_t RemoveCapturerStateChangeCallback();
     size_t GetCapturerStateChangeCallbackSize() const;
     int32_t AddDeviceChangeWithInfoCallback(
-        const uint32_t sessionId, const std::shared_ptr<DeviceChangeWithInfoCallback> &cb);
+        const uint32_t sessionId, const std::weak_ptr<DeviceChangeWithInfoCallback> &cb);
     int32_t RemoveDeviceChangeWithInfoCallback(const uint32_t sessionId);
 
     int32_t AddHeadTrackingDataRequestedChangeCallback(const std::string &macAddress,
@@ -107,7 +107,7 @@ private:
     std::vector<std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledChangeCallbackList_;
 
     std::unordered_map<uint32_t,
-        std::shared_ptr<DeviceChangeWithInfoCallback>> deviceChangeWithInfoCallbackMap_;
+        std::weak_ptr<DeviceChangeWithInfoCallback>> deviceChangeWithInfoCallbackMap_;
 
     std::unordered_map<std::string,
         std::shared_ptr<HeadTrackingDataRequestedChangeCallback>> headTrackingDataRequestedChangeCallbackMap_;

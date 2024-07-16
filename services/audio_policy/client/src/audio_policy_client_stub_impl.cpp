@@ -333,7 +333,7 @@ size_t AudioPolicyClientStubImpl::GetRendererStateChangeCallbackSize() const
 }
 
 int32_t AudioPolicyClientStubImpl::AddDeviceChangeWithInfoCallback(
-    const uint32_t sessionId, const std::shared_ptr<DeviceChangeWithInfoCallback> &cb)
+    const uint32_t sessionId, const std::weak_ptr<DeviceChangeWithInfoCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(deviceChangeWithInfoCallbackMutex_);
     deviceChangeWithInfoCallbackMap_[sessionId] = cb;
@@ -357,7 +357,11 @@ void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t sessionId,
         if (deviceChangeWithInfoCallbackMap_.count(sessionId) == 0) {
             return;
         }
-        callback = deviceChangeWithInfoCallbackMap_.at(sessionId);
+        callback = deviceChangeWithInfoCallbackMap_.at(sessionId).lock();
+        if (callback == nullptr) {
+            deviceChangeWithInfoCallbackMap_.erase(sessionId);
+            return;
+        }
     }
     if (callback != nullptr) {
         Trace traceCallback("callback->OnDeviceChangeWithInfo sessionid:" + std::to_string(sessionId)
@@ -391,7 +395,7 @@ void AudioPolicyClientStubImpl::OnRecreateRendererStreamEvent(const uint32_t ses
             AUDIO_ERR_LOG("No session id %{public}d", sessionId);
             return;
         }
-        callback = deviceChangeWithInfoCallbackMap_.at(sessionId);
+        callback = deviceChangeWithInfoCallbackMap_.at(sessionId).lock();
     }
     if (callback != nullptr) {
         callback->OnRecreateStreamEvent(sessionId, streamFlag);
@@ -408,7 +412,7 @@ void AudioPolicyClientStubImpl::OnRecreateCapturerStreamEvent(const uint32_t ses
             AUDIO_ERR_LOG("No session id %{public}d", sessionId);
             return;
         }
-        callback = deviceChangeWithInfoCallbackMap_.at(sessionId);
+        callback = deviceChangeWithInfoCallbackMap_.at(sessionId).lock();
     }
     if (callback != nullptr) {
         callback->OnRecreateStreamEvent(sessionId, streamFlag);

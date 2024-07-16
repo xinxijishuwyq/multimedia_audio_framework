@@ -77,7 +77,10 @@ AudioRendererPrivate::~AudioRendererPrivate()
         outputDeviceChangeCallback->RemoveCallback();
         outputDeviceChangeCallback->UnsetAudioRendererObj();
     }
-    AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionID_);
+
+    for (auto id : usedSessionId_) {
+        AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
+    }
 
     RendererState state = GetStatus();
     if (state != RENDERER_RELEASED && state != RENDERER_NEW) {
@@ -362,6 +365,7 @@ int32_t AudioRendererPrivate::InitOutputDeviceChangeCallback()
     int32_t ret = GetAudioStreamId(sessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Get sessionId failed");
 
+    usedSessionId_.push_back(sessionId);
     ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(sessionId,
         outputDeviceChangeCallback_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Register failed");
@@ -823,7 +827,9 @@ bool AudioRendererPrivate::Release() const
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
-    AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionID_);
+    for (auto id : usedSessionId_) {
+        AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
+    }
 
     std::shared_ptr<AudioRendererConcurrencyCallbackImpl> cb = audioConcurrencyCallback_;
     if (cb != nullptr) {
@@ -1108,11 +1114,10 @@ int32_t AudioRendererPrivate::SetRenderMode(AudioRenderMode renderMode)
             AUDIO_ERR_LOG("Switch to target stream failed");
             return ERROR;
         }
+        usedSessionId_.push_back(newSessionId);
         ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(newSessionId,
             outputDeviceChangeCallback_);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Register device change callback for new session failed");
-        ret = AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionId);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Unregister device change callback for old session failed");
     }
 
     return audioStream_->SetRenderMode(renderMode);
@@ -1478,11 +1483,10 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
     if (!SwitchToTargetStream(targetClass, newSessionId) && audioRendererErrorCallback_) {
         audioRendererErrorCallback_->OnError(ERROR_SYSTEM);
     }
+    usedSessionId_.push_back(newSessionId);
     int32_t ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(newSessionId,
         outputDeviceChangeCallback_);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Register device change callback for new session failed");
-    ret = AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionId);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unregister device change callback for old session failed");
 }
 
 void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
