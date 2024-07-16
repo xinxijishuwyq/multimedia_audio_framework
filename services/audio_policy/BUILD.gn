@@ -151,6 +151,12 @@ ohos_shared_library("audio_policy_service") {
     defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
   }
 
+  if (build_variant == "user") {
+    defines += [ "AUDIO_BUILD_VARIANT_USER" ]
+  } else if (build_variant == "root") {
+    defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
+  }
+
   if (audio_framework_feature_support_os_account) {
     defines += [ "SUPPORT_USER_ACCOUNT" ]
   }

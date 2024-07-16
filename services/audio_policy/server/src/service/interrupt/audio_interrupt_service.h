@@ -87,7 +87,6 @@ private:
     static constexpr float DUCK_FACTOR = 0.2f;
     static constexpr int32_t DEFAULT_APP_PID = -1;
     static constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
-    static constexpr uid_t UID_ROOT = 0;
     static constexpr uid_t UID_AUDIO = 1041;
 
     // Inner class for death handler

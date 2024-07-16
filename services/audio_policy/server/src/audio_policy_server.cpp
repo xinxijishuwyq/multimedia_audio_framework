@@ -69,41 +69,14 @@ constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr int32_t API_VERSION_REMAINDER = 1000;
 constexpr int32_t API_VERSION_14 = 14; // for deprecated since 9
 constexpr uid_t UID_ROOT = 0;
-constexpr uid_t UID_MSDP_SA = 6699;
-constexpr uid_t UID_INTELLIGENT_VOICE_SA = 1042;
 constexpr uid_t UID_CAST_ENGINE_SA = 5526;
-constexpr uid_t UID_CAAS_SA = 5527;
-constexpr uid_t UID_DISTRIBUTED_AUDIO_SA = 3055;
-constexpr uid_t UID_MEDIA_SA = 1013;
-constexpr uid_t UID_VM_MANAGER = 7700;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
-constexpr uid_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
-
-const std::list<uid_t> AudioPolicyServer::RECORD_ALLOW_BACKGROUND_LIST = {
-    UID_ROOT,
-    UID_MSDP_SA,
-    UID_INTELLIGENT_VOICE_SA,
-    UID_CAAS_SA,
-    UID_DISTRIBUTED_AUDIO_SA,
-    UID_AUDIO,
-    UID_FOUNDATION_SA,
-    UID_DISTRIBUTED_CALL_SA
-};
-
-const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
-    UID_MEDIA_SA,
-    UID_CAST_ENGINE_SA
-};
-
-const std::set<uid_t> RECORD_CHECK_FORWARD_LIST = {
-    UID_VM_MANAGER
-};
 
 std::map<PolicyType, uint32_t> POLICY_TYPE_MAP = {
     {PolicyType::EDM_POLICY_TYPE, 0},
@@ -615,8 +588,7 @@ int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamTy
 int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid != UID_FOUNDATION_SA &&
-        callerUid != UID_ROOT) {
+    if (callerUid != UID_FOUNDATION_SA) {
         AUDIO_ERR_LOG("SetLowPowerVolume callerUid Error: not foundation or component_schedule_service");
         return ERROR;
     }
@@ -1354,56 +1326,10 @@ int32_t AudioPolicyServer::GetAudioFocusInfoList(std::list<std::pair<AudioInterr
     return ERR_UNKNOWN;
 }
 
-bool AudioPolicyServer::CheckRootCalling(uid_t callingUid, int32_t appUid)
-{
-    if (callingUid == UID_ROOT) {
-        return true;
-    }
-
-    // check original caller if it pass
-    if (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) {
-        if (appUid == UID_ROOT) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     SourceType sourceType)
 {
-    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
-    if (callingUid != UID_AUDIO) {
-        AUDIO_ERR_LOG("Not supported operation");
-        return false;
-    }
-    uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
-    uint64_t callingFullTokenId = IPCSkeleton::GetCallingFullTokenID();
-
-    if (CheckRootCalling(callingUid, appUid)) {
-        AUDIO_INFO_LOG("root user recording");
-        return true;
-    }
-
-    Security::AccessToken::AccessTokenID targetTokenId = GetTargetTokenId(callingUid, callingTokenId, appTokenId);
-    uint64_t targetFullTokenId = GetTargetFullTokenId(callingUid, callingFullTokenId, appFullTokenId);
-    if (sourceType == SOURCE_TYPE_VOICE_CALL) {
-        if (VerifyVoiceCallPermission(targetFullTokenId, targetTokenId) != SUCCESS) {
-            return false;
-        }
-        return true;
-    }
-
-    if (!VerifyPermission(MICROPHONE_PERMISSION, targetTokenId, true)) {
-        return false;
-    }
-
-    if (!CheckAppBackgroundPermission(callingUid, targetFullTokenId, targetTokenId)) {
-        return false;
-    }
-
-    return true;
+    return false;
 }
 
 bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint32_t tokenId, bool isRecording)
@@ -1411,12 +1337,13 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
     AUDIO_DEBUG_LOG("Verify permission [%{public}s]", permissionName.c_str());
 
     if (!isRecording) {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
         // root user case for auto test
         uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
         if (callingUid == UID_ROOT) {
             return true;
         }
-
+#endif
         tokenId = IPCSkeleton::GetCallingTokenID();
     }
 
@@ -1430,84 +1357,12 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 bool AudioPolicyServer::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     AudioPermissionState state)
 {
-    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
-    if (callingUid != UID_AUDIO) {
-        AUDIO_ERR_LOG("Not supported operation");
-        return false;
-    }
-    uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
-    uint64_t callingFullTokenId = IPCSkeleton::GetCallingFullTokenID();
-    Security::AccessToken::AccessTokenID targetTokenId = GetTargetTokenId(callingUid, callingTokenId, appTokenId);
-    uint64_t targetFullTokenId = GetTargetFullTokenId(callingUid, callingFullTokenId, appFullTokenId);
-
-    // start recording need to check app state
-    if (state == AUDIO_PERMISSION_START && !CheckRootCalling(callingUid, appUid)) {
-        if (!CheckAppBackgroundPermission(callingUid, targetFullTokenId, targetTokenId)) {
-            return false;
-        }
-    }
-
-    NotifyPrivacy(targetTokenId, state);
-    return true;
-}
-
-void AudioPolicyServer::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
-{
-    if (state == AUDIO_PERMISSION_START) {
-        int res = PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        if (res != 0) {
-            AUDIO_WARNING_LOG("notice start using perm error");
-        }
-        res = PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
-        if (res != 0) {
-            AUDIO_WARNING_LOG("add mic record error");
-        }
-    } else {
-        int res = PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        if (res != 0) {
-            AUDIO_WARNING_LOG("notice stop using perm error");
-        }
-    }
-}
-
-bool AudioPolicyServer::CheckAppBackgroundPermission(uid_t callingUid, uint64_t targetFullTokenId,
-    uint32_t targetTokenId)
-{
-    if (TokenIdKit::IsSystemAppByFullTokenID(targetFullTokenId)) {
-        AUDIO_INFO_LOG("system app recording");
-        return true;
-    }
-    if (std::count(RECORD_ALLOW_BACKGROUND_LIST.begin(), RECORD_ALLOW_BACKGROUND_LIST.end(), callingUid) > 0) {
-        AUDIO_INFO_LOG("internal sa user directly recording");
-        return true;
-    }
-    return PrivacyKit::IsAllowedUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-}
-
-Security::AccessToken::AccessTokenID AudioPolicyServer::GetTargetTokenId(uid_t callingUid, uint32_t callingTokenId,
-    uint32_t appTokenId)
-{
-    if (RECORD_CHECK_FORWARD_LIST.count(callingUid)) {
-        AUDIO_INFO_LOG("check forward TokenId with callingUid:%{public}d", callingUid);
-        return IPCSkeleton::GetFirstTokenID();
-    }
-    return (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) ?
-        appTokenId : callingTokenId;
-}
-
-uint64_t AudioPolicyServer::GetTargetFullTokenId(uid_t callingUid, uint64_t callingFullTokenId,
-    uint64_t appFullTokenId)
-{
-    if (RECORD_CHECK_FORWARD_LIST.count(callingUid)) {
-        AUDIO_INFO_LOG("check forward FullTokenId with callingUid:%{public}d", callingUid);
-        return IPCSkeleton::GetFirstFullTokenID();
-    }
-    return (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) ?
-        appFullTokenId : callingFullTokenId;
+    return false;
 }
 
 int32_t AudioPolicyServer::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
 {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
     // Only root users should have access to this api
     if (ROOT_UID != IPCSkeleton::GetCallingUid()) {
         AUDIO_INFO_LOG("Unautorized user. Cannot modify channel");
@@ -1515,6 +1370,10 @@ int32_t AudioPolicyServer::ReconfigureAudioChannel(const uint32_t &count, Device
     }
 
     return audioPolicyService_.ReconfigureAudioChannel(count, deviceType);
+#else
+    // this api is not supported
+    return ERR_NOT_SUPPORTED;
+#endif
 }
 
 void AudioPolicyServer::GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos)

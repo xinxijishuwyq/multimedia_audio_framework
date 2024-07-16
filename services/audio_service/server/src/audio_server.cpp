@@ -917,8 +917,8 @@ bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries,
     std::vector<Effect>& successEffectList)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID, false,
-        "LoadAudioEffectLibraries refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, false, "LoadAudioEffectLibraries refused for %{public}d",
+        callingUid);
     bool loadSuccess = audioEffectServer_->LoadAudioEffects(libraries, effects, successEffectList);
     if (!loadSuccess) {
         AUDIO_WARNING_LOG("Load audio effect failed, please check log");
@@ -958,8 +958,8 @@ void AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        ERR_PERMISSION_DENIED, "SetMicrophoneMute refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_PERMISSION_DENIED, "SetMicrophoneMute refused for %{public}d",
+        callingUid);
 
     std::vector<IAudioCapturerSource *> allSourcesInstance;
     IAudioCapturerSource::GetAllInstance(allSourcesInstance);
@@ -973,8 +973,8 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
 int32_t AudioServer::SetVoiceVolume(float volume)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        ERR_NOT_SUPPORTED, "SetVoiceVolume refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_NOT_SUPPORTED, "SetVoiceVolume refused for %{public}d",
+        callingUid);
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
 
     if (audioRendererSinkInstance == nullptr) {
@@ -1003,8 +1003,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
 
     DeviceType activeOutputDevice = activeOutputDevices.front();
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        ERR_NOT_SUPPORTED, "UpdateActiveDeviceRoute refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
     AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS);
     AudioCapturerSource *audioCapturerSourceInstance;
     IAudioRendererSink *audioRendererSinkInstance;
@@ -1110,8 +1109,7 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
 int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, BluetoothOffloadState a2dpOffloadFlag)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        ERR_NOT_SUPPORTED, "UpdateActiveDeviceRoute refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
     std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
     activeDevices.push_back(make_pair(type, flag));
@@ -1122,8 +1120,7 @@ int32_t AudioServer::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, 
     BluetoothOffloadState a2dpOffloadFlag)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        ERR_NOT_SUPPORTED, "UpdateActiveDevicesRoute refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
     return SetIORoutes(activeDevices, a2dpOffloadFlag);
 }
 
@@ -1131,8 +1128,7 @@ void AudioServer::SetAudioMonoState(bool audioMono)
 {
     AUDIO_DEBUG_LOG("audioMono = %{public}s", audioMono? "true": "false");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        "NotifyDeviceInfo refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_LOG(callingUid == audioUid_, "refused for %{public}d", callingUid);
     // Set mono for audio_renderer_sink (primary)
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     if (audioRendererSinkInstance != nullptr) {
@@ -1153,8 +1149,7 @@ void AudioServer::SetAudioMonoState(bool audioMono)
 void AudioServer::SetAudioBalanceValue(float audioBalance)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        "NotifyDeviceInfo refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_LOG(callingUid == audioUid_, "refused for %{public}d", callingUid);
     CHECK_AND_RETURN_LOG(audioBalance >= -1.0f && audioBalance <= 1.0f,
         "audioBalance value %{public}f is out of range [-1.0, 1.0]", audioBalance);
     AUDIO_DEBUG_LOG("audioBalance = %{public}f", audioBalance);
@@ -1179,8 +1174,7 @@ void AudioServer::SetAudioBalanceValue(float audioBalance)
 void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        "NotifyDeviceInfo refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_LOG(callingUid == audioUid_, "refused for %{public}d", callingUid);
     AUDIO_INFO_LOG("notify device info: networkId(%{public}s), connected(%{public}d)",
         GetEncryptStr(networkId).c_str(), connected);
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("remote", networkId.c_str());
@@ -1203,8 +1197,7 @@ inline bool IsParamEnabled(std::string key, bool &isEnabled)
 int32_t AudioServer::RegiestPolicyProvider(const sptr<IRemoteObject> &object)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID, ERR_NOT_SUPPORTED,
-        "RegiestPolicyProvider refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
     sptr<IPolicyProviderIpc> policyProvider = iface_cast<IPolicyProviderIpc>(object);
     CHECK_AND_RETURN_RET_LOG(policyProvider != nullptr, ERR_INVALID_PARAM,
         "policyProvider obj cast failed");
@@ -1414,8 +1407,7 @@ int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole de
         GetEncryptStr(networkId).c_str(), static_cast<int32_t>(deviceRole), (isStartDevice ? "true" : "false"));
 
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        ERR_NOT_SUPPORTED, "CheckRemoteDeviceState refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
     CHECK_AND_RETURN_RET(isStartDevice, SUCCESS);
 
     int32_t ret = SUCCESS;
@@ -1526,8 +1518,7 @@ void AudioServer::OnCapturerState(bool isActive, int32_t num)
 int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        ERR_NOT_SUPPORTED, "SetParameterCallback refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
     std::lock_guard<std::mutex> lock(audioParamCbMtx_);
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioServer:set listener object is nullptr");
 
@@ -1582,13 +1573,15 @@ bool AudioServer::VerifyClientPermission(const std::string &permissionName,
     Security::AccessToken::AccessTokenID tokenId)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    AUDIO_INFO_LOG("AudioServer: ==[%{public}s] [uid:%{public}d]==", permissionName.c_str(), callerUid);
+    AUDIO_INFO_LOG("[%{public}s] for uid:%{public}d tokenId:%{public}u", permissionName.c_str(), callerUid, tokenId);
 
+#ifdef AUDIO_BUILD_VARIANT_ROOT
     // Root users should be whitelisted
     if (callerUid == ROOT_UID) {
         AUDIO_INFO_LOG("Root user. Permission GRANTED!!!");
         return true;
     }
+#endif
     Security::AccessToken::AccessTokenID clientTokenId = tokenId;
     if (clientTokenId == Security::AccessToken::INVALID_TOKENID) {
         clientTokenId = IPCSkeleton::GetCallingTokenID();
@@ -1848,8 +1841,7 @@ int32_t AudioServer::SetCaptureSilentState(bool state)
 int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        ERR_NOT_SUPPORTED, "UpdateSpatializationState refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     if (audioEffectChainManager == nullptr) {
         AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
@@ -1871,8 +1863,7 @@ int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float
 int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        ERR_NOT_SUPPORTED, "set spatialization scene type refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
@@ -1882,8 +1873,7 @@ int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spa
 int32_t AudioServer::ResetRouteForDisconnect(DeviceType type)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     audioRendererSinkInstance->ResetOutputRouteForDisconnect(type);
@@ -1903,8 +1893,7 @@ uint32_t AudioServer::GetEffectLatency(const std::string &sessionId)
 float AudioServer::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        0, "GetMaxAmplitude refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, 0, "GetMaxAmplitude refused for %{public}d", callingUid);
 
     float fastMaxAmplitude = AudioService::GetInstance()->GetMaxAmplitude(isOutputDevice);
     if (isOutputDevice) {
@@ -1939,7 +1928,7 @@ float AudioServer::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
 void AudioServer::ResetAudioEndpoint()
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID, "Refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_LOG(callingUid == audioUid_, "Refused for %{public}d", callingUid);
     AudioService::GetInstance()->ResetAudioEndpoint();
 }
 
@@ -1956,8 +1945,7 @@ void AudioServer::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer
 bool AudioServer::GetEffectOffloadEnabled()
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        ERR_NOT_SUPPORTED, "get effect state refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
@@ -1967,8 +1955,7 @@ bool AudioServer::GetEffectOffloadEnabled()
 int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        ERR_NOT_SUPPORTED, "update dual tone state refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
     if (enable) {
         return AudioService::GetInstance()->EnableDualToneList(static_cast<uint32_t>(sessionId));
@@ -1991,8 +1978,7 @@ int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t d
 void AudioServer::LoadHdiEffectModel()
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        "load hdi effect model refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_LOG(callingUid == audioUid_, "load hdi effect model refused for %{public}d", callingUid);
 
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
@@ -2002,7 +1988,7 @@ void AudioServer::LoadHdiEffectModel()
 void AudioServer::UpdateEffectBtOffloadSupported(const bool &isSupported)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID, "refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_LOG(callingUid == audioUid_, "refused for %{public}d", callingUid);
 
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
