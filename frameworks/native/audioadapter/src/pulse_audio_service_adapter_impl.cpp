@@ -45,6 +45,7 @@ std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndex
 static const int32_t PA_SERVICE_IMPL_TIMEOUT = 8; // 8s
 static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM_MAP = {
     {"voice_call", STREAM_VOICE_CALL},
+    {"voice_call_assistant", STREAM_VOICE_CALL_ASSISTANT},
     {"music", STREAM_MUSIC},
     {"ring", STREAM_RING},
     {"media", STREAM_MEDIA},

@@ -947,6 +947,7 @@ AudioStreamType AudioAdapterManager::GetStreamForVolumeMap(AudioStreamType strea
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
         case STREAM_VOICE_COMMUNICATION:
+        case STREAM_VOICE_CALL_ASSISTANT:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:

@@ -113,6 +113,7 @@
             <streamUsage name="STREAM_USAGE_MOVIE" scene="SCENE_MOVIE"/>
             <streamUsage name="STREAM_USAGE_AUDIOBOOK" scene="SCENE_SPEECH"/>
             <streamUsage name="STREAM_USAGE_VOICE_COMMUNICATION" scene="SCENE_SPEECH"/>
+            <streamUsage name="STREAM_USAGE_VOICE_CALL_ASSISTANT" scene="SCENE_SPEECH"/>
             <streamUsage name="STREAM_USAGE_VOICE_ASSISTANT" scene="SCENE_SPEECH"/>
             <streamUsage name="STREAM_USAGE_ALARM" scene="SCENE_RING"/>
             <streamUsage name="STREAM_USAGE_RINGTONE" scene="SCENE_RING"/>

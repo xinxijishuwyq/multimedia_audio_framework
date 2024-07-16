@@ -1286,6 +1286,7 @@ private:
     virtual ~AudioSystemManager();
 
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
+    static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
     int32_t GetCallingPid();
     std::string GetSelfBundleName();
 

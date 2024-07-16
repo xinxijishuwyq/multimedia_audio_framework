@@ -30,6 +30,8 @@ std::map<std::string, AudioFocusType> AudioFocusParser::audioFocusMap = {
     // stream type for audio interrupt
     {"STREAM_VOICE_CALL",
         {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_VOICE_CALL_ASSISTANT",
+        {AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, SourceType::SOURCE_TYPE_INVALID, true}},
     {"STREAM_VOICE_MESSAGE",
         {AudioStreamType::STREAM_VOICE_MESSAGE, SourceType::SOURCE_TYPE_INVALID, true}},
     {"STREAM_SYSTEM",
