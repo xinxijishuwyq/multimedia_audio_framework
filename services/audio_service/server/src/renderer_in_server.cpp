@@ -845,6 +845,10 @@ int32_t RendererInServer::Release()
         DisableInnerCap();
     }
 
+    if (isDualToneEnabled_) {
+        DisableDualTone();
+    }
+
     return SUCCESS;
 }
 
@@ -987,8 +991,8 @@ int32_t RendererInServer::DisableDualTone()
         return ERR_INVALID_OPERATION;
     }
     isDualToneEnabled_ = false;
-    AUDIO_INFO_LOG("Disable dual tone renderer %{public}u with status: %{public}d", dualToneStreamIndex_, status_);
-    IStreamManager::GetDupPlaybackManager().ReleaseRender(dualToneStreamIndex_);
+    AUDIO_INFO_LOG("Disable dual tone renderer:[%{public}u] with status: %{public}d", dualToneStreamIndex_, status_);
+    IStreamManager::GetDualPlaybackManager().ReleaseRender(dualToneStreamIndex_);
     dupStream_ = nullptr;
 
     return ERROR;
@@ -1002,10 +1006,7 @@ int32_t RendererInServer::InitDualToneStream()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dualToneStream_ != nullptr,
         ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
     dualToneStreamIndex_ = dualToneStream_->GetStreamIndex();
-
-    dualToneStreamCallback_ = std::make_shared<StreamCallbacks>(dualToneStreamIndex_);
-    dualToneStream_->RegisterStatusCallback(dualToneStreamCallback_);
-    dualToneStream_->RegisterWriteCallback(dualToneStreamCallback_);
+    AUDIO_INFO_LOG("init dual tone renderer:[%{public}u]", dualToneStreamIndex_);
 
     isDualToneEnabled_ = true;
 
