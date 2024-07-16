@@ -14,12 +14,15 @@
  */
 #ifndef I_AUDIO_ENGINE_H
 #define I_AUDIO_ENGINE_H
+
+#include "audio_device_info.h"
 namespace OHOS {
 namespace AudioStandard {
 class IAudioEngine {
 public:
     IAudioEngine() = default;
     virtual ~IAudioEngine() = default;
+    virtual int32_t Init(const DeviceInfo &type, bool isVoip) = 0;
     virtual int32_t Start() = 0;
     virtual int32_t Stop() = 0;
     virtual int32_t Pause() = 0;

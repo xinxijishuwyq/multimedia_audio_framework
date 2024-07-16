@@ -30,13 +30,15 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-ProAudioStreamManager::ProAudioStreamManager(ManagerType type) : managerType_(type), playbackEngine_(nullptr)
+ProAudioStreamManager::ProAudioStreamManager(ManagerType type)
+    : managerType_(type), playbackEngine_(std::make_unique<NoneMixEngine>())
 {
     AUDIO_DEBUG_LOG("ProAudioStreamManager");
 }
 
 ProAudioStreamManager::~ProAudioStreamManager()
 {
+    playbackEngine_ = nullptr;
     AUDIO_DEBUG_LOG("~ProAudioStreamManager");
 }
 
@@ -44,18 +46,12 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
 {
     Trace trace("ProAudioStreamManager::CreateRender");
     AUDIO_DEBUG_LOG("Create renderer start,manager type:%{public}d", managerType_);
-    if (playbackEngine_ != nullptr) {
-        AUDIO_ERR_LOG("playbackEngine_ is not nullptr! Only one direct stream is supported");
-        return ERR_NOT_SUPPORTED;
-    }
     uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
-
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init rendererStream");
     int32_t ret = CreatePlayBackEngine(rendererStream);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Create play back engine failed. ret:%{public}d", ret);
-        playbackEngine_ = nullptr;
         rendererStream = nullptr;
         return ret;
     }
@@ -139,7 +135,6 @@ int32_t ProAudioStreamManager::ReleaseRender(uint32_t streamIndex)
     if (playbackEngine_) {
         playbackEngine_->Stop();
         playbackEngine_->RemoveRenderer(currentRender);
-        playbackEngine_ = nullptr;
     }
     if (currentRender->Release() < 0) {
         AUDIO_WARNING_LOG("Release stream %{public}d failed", streamIndex);
@@ -170,17 +165,13 @@ int32_t ProAudioStreamManager::CreatePlayBackEngine(const std::shared_ptr<IRende
 {
     Trace trace("ProAudioStreamManager::CreatePlayBackEngine");
     int32_t ret = SUCCESS;
-    if (!playbackEngine_) {
-        DeviceInfo deviceInfo;
-        AudioProcessConfig config = stream->GetAudioProcessConfig();
-        bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
-        CHECK_AND_RETURN_RET_LOG(result, ERR_DEVICE_INIT, "GetProcessDeviceInfo failed.");
-        playbackEngine_ = std::make_unique<NoneMixEngine>(deviceInfo, managerType_ == VOIP_PLAYBACK);
-        ret = playbackEngine_->AddRenderer(stream);
-    } else {
-        AUDIO_ERR_LOG("only one stream supported");
-        ret = ERR_NOT_SUPPORTED;
-    }
+    DeviceInfo deviceInfo;
+    AudioProcessConfig config = stream->GetAudioProcessConfig();
+    bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+    CHECK_AND_RETURN_RET_LOG(result, ERR_DEVICE_INIT, "GetProcessDeviceInfo failed.");
+    CHECK_AND_RETURN_RET_LOG(playbackEngine_ != nullptr, ERR_NOT_SUPPORTED, "engine not init");
+    playbackEngine_->Init(deviceInfo, managerType_ == VOIP_PLAYBACK);
+    ret = playbackEngine_->AddRenderer(stream);
     return ret;
 }
 

@@ -34,7 +34,8 @@ void AudioEngineManager::AddRenderer(std::shared_ptr<IRendererStream> stream, De
     }
     auto iter = renderEngines_.find(playbackType_);
     if (iter == renderEngines_.end()) {
-        std::shared_ptr<AudioPlaybackEngine> playbackEngine = std::make_shared<NoneMixEngine>(device, !isDirect);
+        std::shared_ptr<AudioPlaybackEngine> playbackEngine = std::make_shared<NoneMixEngine>();
+        playbackEngine->Init(device, !isDirect);
         playbackEngine->AddRenderer(stream);
         renderEngines_.emplace(playbackType_, playbackEngine);
     }
