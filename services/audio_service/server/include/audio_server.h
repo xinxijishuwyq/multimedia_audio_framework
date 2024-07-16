@@ -170,6 +170,10 @@ private:
 
     void ResetRecordConfig(AudioProcessConfig &config);
     AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config);
+    bool CheckStreamInfoFormat(const AudioProcessConfig &config);
+    bool CheckRendererFormat(const AudioProcessConfig &config);
+    bool CheckRecorderFormat(const AudioProcessConfig &config);
+    bool CheckConfigFormat(const AudioProcessConfig &config);
     int32_t GetHapBuildApiVersion(int32_t callerUid);
 
     void AudioServerDied(pid_t pid);

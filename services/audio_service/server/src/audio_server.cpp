@@ -1296,10 +1296,89 @@ AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &con
     return resetConfig;
 }
 
+bool AudioServer::CheckStreamInfoFormat(const AudioProcessConfig &config)
+{
+    if (NotContain(AUDIO_SUPPORTED_SAMPLING_RATES, config.streamInfo.samplingRate)) {
+        AUDIO_ERR_LOG("Check format failed invalid samplingRate:%{public}d", config.streamInfo.samplingRate);
+        return false;
+    }
+
+    if (NotContain(AUDIO_SUPPORTED_FORMATS, config.streamInfo.format)) {
+        AUDIO_ERR_LOG("Check format failed invalid format:%{public}d", config.streamInfo.format);
+        return false;
+    }
+
+    if (NotContain(AUDIO_SUPPORTED_ENCODING_TYPES, config.streamInfo.encoding)) {
+        AUDIO_ERR_LOG("Check format failed invalid encoding:%{public}d", config.streamInfo.encoding);
+        return false;
+    }
+
+    // both renderer and capturer check RENDERER_SUPPORTED_CHANNELLAYOUTS, should we rename it?
+    if (NotContain(RENDERER_SUPPORTED_CHANNELLAYOUTS, config.streamInfo.channelLayout)) {
+        AUDIO_ERR_LOG("Check format failed invalid channelLayout:%{public}" PRId64".", config.streamInfo.channelLayout);
+        return false;
+    }
+
+    if (config.audioMode == AUDIO_MODE_PLAYBACK && NotContain(RENDERER_SUPPORTED_CHANNELS,
+        config.streamInfo.channels)) {
+        AUDIO_ERR_LOG("Check format failed invalid renderer channels:%{public}d", config.streamInfo.channels);
+        return false;
+    }
+
+    if (config.audioMode == AUDIO_MODE_RECORD && NotContain(CAPTURER_SUPPORTED_CHANNELS, config.streamInfo.channels)) {
+        AUDIO_ERR_LOG("Check format failed invalid capturer channels:%{public}d", config.streamInfo.channels);
+        return false;
+    }
+
+    return true;
+}
+
+bool AudioServer::CheckRendererFormat(const AudioProcessConfig &config)
+{
+    if (NotContain(AUDIO_SUPPORTED_STREAM_USAGES, config.rendererInfo.streamUsage)) {
+        AUDIO_ERR_LOG("Check format failed invalid streamUsage:%{public}d", config.rendererInfo.streamUsage);
+        return false;
+    }
+    return true;
+}
+
+bool AudioServer::CheckRecorderFormat(const AudioProcessConfig &config)
+{
+    if (NotContain(AUDIO_SUPPORTED_SOURCE_TYPES, config.capturerInfo.sourceType)) {
+        AUDIO_ERR_LOG("Check format failed invalid sourceType:%{public}d", config.capturerInfo.sourceType);
+        return false;
+    }
+    if (config.capturerInfo.capturerFlags != AUDIO_FLAG_NORMAL && NotContain(AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES,
+        config.capturerInfo.sourceType)) {
+        AUDIO_ERR_LOG("Check format failed invalid fast sourceType:%{public}d", config.capturerInfo.sourceType);
+        return false;
+    }
+    return true;
+}
+
+bool AudioServer::CheckConfigFormat(const AudioProcessConfig &config)
+{
+    if (!CheckStreamInfoFormat(config)) {
+        return false;
+    }
+    if (config.audioMode == AUDIO_MODE_PLAYBACK) {
+        return CheckRendererFormat(config);
+    }
+
+    if (config.audioMode == AUDIO_MODE_RECORD) {
+        return CheckRecorderFormat(config);
+    }
+
+    AUDIO_ERR_LOG("Check format failed invalid mode.");
+    return false;
+}
+
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config)
 {
     Trace trace("AudioServer::CreateAudioProcess");
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
+    CHECK_AND_RETURN_RET_LOG(CheckConfigFormat(resetConfig), nullptr, "AudioProcessConfig format is wrong, please check"
+        ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str());
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 
     if ((IsNormalIpcStream(resetConfig))) {
