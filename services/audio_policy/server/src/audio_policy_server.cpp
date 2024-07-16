@@ -130,6 +130,7 @@ void AudioPolicyServer::OnStart()
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
     AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
     AddSystemAbilityListener(POWER_MANAGER_SERVICE_ID);
+    AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
 #ifdef SUPPORT_USER_ACCOUNT
     AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
 #endif
@@ -180,11 +181,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
 #endif
         case DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID:
-            AUDIO_INFO_LOG("OnAddSystemAbility kv data service start");
-            isFirstKvDataServiceServiceStart_ = true;
-            InitMicrophoneMute();
-            InitKVStore();
-            RegisterDataObserver();
+            HandleKvDataShareEvent();
             break;
         case AUDIO_DISTRIBUTED_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility audio service start");
@@ -210,6 +207,10 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_INFO_LOG("OnAddSystemAbility os_account service start");
             SubscribeOsAccountChangeEvents();
             break;
+        case COMMON_EVENT_SERVICE_ID:
+            AUDIO_INFO_LOG("OnAddSystemAbility common event service start");
+            SubscribeCommonEvent("usual.event.DATA_SHARE_READY");
+            break;
         default:
             AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
@@ -217,6 +218,17 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
     // eg. done systemAbilityId: [3001] cost 780ms
     AUDIO_INFO_LOG("done systemAbilityId: [%{public}d] cost %{public}" PRId64 " ms", systemAbilityId,
         (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
+}
+
+void AudioPolicyServer::HandleKvDataShareEvent()
+{
+    AUDIO_INFO_LOG("OnAddSystemAbility kv data service start");
+    if (isInitMuteState_ == false && audioPolicyService_.IsDataShareReady()) {
+        AUDIO_INFO_LOG("datashare is ready and need init mic mute state");
+        InitMicrophoneMute();
+    }
+    InitKVStore();
+    RegisterDataObserver();
 }
 
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -439,7 +451,6 @@ void AudioPolicyServer::AddAudioServiceOnStart()
         sessionProcessor_.Start();
         RegisterParamCallback();
         LoadEffectLibrary();
-        InitMicrophoneMute();
         isFirstAudioServiceStart_ = true;
     } else {
         AUDIO_WARNING_LOG("OnAddSystemAbility audio service is not first start");
@@ -465,6 +476,41 @@ void AudioPolicyServer::SubscribePowerStateChangeEvents()
     } else {
         AUDIO_INFO_LOG("register power state callback success");
         powerStateCallbackRegister_ = true;
+    }
+}
+
+void AudioCommonEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
+{
+    if (eventReceiver_ == nullptr) {
+        AUDIO_ERR_LOG("eventReceiver_ is nullptr");
+        return;
+    }
+    AUDIO_INFO_LOG("receive DATA_SHARE_READY action success");
+    eventReceiver_(eventData);
+}
+
+void AudioPolicyServer::SubscribeCommonEvent(const std::string event)
+{
+    EventFwk::MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(event);
+    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
+    auto commonSubscribePtr = std::make_shared<AudioCommonEventSubscriber>(subscribeInfo,
+        std::bind(&AudioPolicyServer::OnReceiveEvent, this, std::placeholders::_1));
+    if (commonSubscribePtr == nullptr) {
+        AUDIO_ERR_LOG("commonSubscribePtr is nullptr");
+        return;
+    }
+    AUDIO_INFO_LOG("subscribe event: %s action", event.c_str());
+    EventFwk::CommonEventManager::SubscribeCommonEvent(commonSubscribePtr);
+}
+
+void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
+{
+    const AAFwk::Want& want = eventData.GetWant();
+    std::string action = want.GetAction();
+    if (isInitMuteState_ == false && action == "usual.event.DATA_SHARE_READY") {
+        AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
+        InitMicrophoneMute();
     }
 }
 
@@ -1082,15 +1128,18 @@ std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
 void AudioPolicyServer::InitMicrophoneMute()
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    if (!isFirstKvDataServiceServiceStart_ || isInitMuteState_) {
-        AUDIO_ERR_LOG("kv data service is not start or the state has already been initialized.");
+    if (isInitMuteState_) {
+        AUDIO_ERR_LOG("mic mutestate has already been initialized");
         return;
     }
-    isInitMuteState_ = true;
     bool isMute = false;
     int32_t ret = audioPolicyService_.InitPersistentMicrophoneMuteState(isMute);
     AUDIO_INFO_LOG("Get persistent mic ismute: %{public}d  state from setting db", isMute);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "InitMicrophoneMute InitPersistentMicrophoneMuteState result %{public}d", ret);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("InitMicrophoneMute InitPersistentMicrophoneMuteState result %{public}d", ret);
+        return;
+    }
+    isInitMuteState_ = true;
     if (audioPolicyServerHandler_ != nullptr) {
         MicStateChangeEvent micStateChangeEvent;
         micStateChangeEvent.mute = isMute;
@@ -1105,7 +1154,7 @@ int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, bool isLegacy)
     int32_t ret = audioPolicyService_.SetMicrophoneMute(isMute);
     if (ret == SUCCESS && isMicrophoneMute != isMute && audioPolicyServerHandler_ != nullptr) {
         MicStateChangeEvent micStateChangeEvent;
-        micStateChangeEvent.mute = isMute;
+        micStateChangeEvent.mute = audioPolicyService_.IsMicrophoneMute();
         audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
     }
     return ret;
@@ -1145,7 +1194,7 @@ int32_t AudioPolicyServer::SetMicrophoneMutePersistent(const bool isMute, const 
     ret = audioPolicyService_.SetMicrophoneMutePersistent(isMute);
     if (ret == SUCCESS && audioPolicyServerHandler_ != nullptr) {
         MicStateChangeEvent micStateChangeEvent;
-        micStateChangeEvent.mute = isMute;
+        micStateChangeEvent.mute = audioPolicyService_.IsMicrophoneMute();
         AUDIO_INFO_LOG("SendMicStateUpdatedCallback when set mic mute state persistent.");
         audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
     }

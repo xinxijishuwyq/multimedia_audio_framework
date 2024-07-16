@@ -501,6 +501,9 @@ private:
     void AddAudioServiceOnStart();
     void SubscribeOsAccountChangeEvents();
     void SubscribePowerStateChangeEvents();
+    void SubscribeCommonEvent(const std::string event);
+    void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
+    void HandleKvDataShareEvent();
     void InitMicrophoneMute();
     void InitKVStore();
     void ConnectServiceAdapter();
@@ -528,7 +531,6 @@ private:
 
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
-    std::atomic<bool> isFirstKvDataServiceServiceStart_ = false;
     std::atomic<bool> isInitMuteState_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
@@ -601,6 +603,18 @@ public:
 private:
     BluetoothEventSubscriber() = default;
     sptr<AudioPolicyServer> audioPolicyServer_;
+};
+
+class AudioCommonEventSubscriber : public EventFwk::CommonEventSubscriber {
+public:
+    explicit AudioCommonEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,
+        std::function<void(const EventFwk::CommonEventData&)> receiver)
+        : EventFwk::CommonEventSubscriber(subscribeInfo), eventReceiver_(receiver) {}
+    ~AudioCommonEventSubscriber() {}
+    void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
+private:
+    AudioCommonEventSubscriber() = default;
+    std::function<void(const EventFwk::CommonEventData&)> eventReceiver_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

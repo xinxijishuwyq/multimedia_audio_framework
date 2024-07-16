@@ -4017,6 +4017,27 @@ int32_t AudioPolicyService::GetDeviceNameFromDataShareHelper(std::string &device
     return SUCCESS;
 }
 
+bool AudioPolicyService::IsDataShareReady()
+{
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(samgr != nullptr, false, "[Policy Service] Get samgr failed.");
+    sptr<IRemoteObject> remoteObject = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, false, "[Policy Service] audio service remote object is NULL.");
+    std::pair<int, std::shared_ptr<DataShare::DataShareHelper>> res = DataShare::DataShareHelper::Create(remoteObject,
+        SETTINGS_DATA_BASE_URI, SETTINGS_DATA_EXT_URI);
+    if (res.first == DataShare::E_OK) {
+        AUDIO_INFO_LOG("DataShareHelper is ready.");
+        auto helper = res.second;
+        if (helper != nullptr) {
+            helper->Release();
+        }
+        return true;
+    } else {
+        AUDIO_WARNING_LOG("DataShareHelper::Create failed: E_DATA_SHARE_NOT_READY");
+        return false;
+    }
+}
+
 void AudioPolicyService::RegisterNameMonitorHelper()
 {
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();

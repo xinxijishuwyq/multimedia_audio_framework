@@ -217,6 +217,7 @@ public:
 
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
 
+    bool IsDataShareReady();
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
 
