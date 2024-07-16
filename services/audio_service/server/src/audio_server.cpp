@@ -18,6 +18,7 @@
 #include "audio_server.h"
 
 #include <cinttypes>
+#include <codecvt>
 #include <csignal>
 #include <fstream>
 #include <sstream>
@@ -65,6 +66,7 @@ uint32_t AudioServer::paDaemonTid_;
 std::map<std::string, std::string> AudioServer::audioParameters;
 std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> AudioServer::audioParameterKeys;
 const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
+const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
 static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
@@ -77,6 +79,7 @@ static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
 static const int32_t MODERN_INNER_API_VERSION = 12;
 const int32_t API_VERSION_REMAINDER = 1000;
 static constexpr int32_t VM_MANAGER_UID = 7700;
+static const int32_t FAST_DUMPINFO_LEN = 2;
 constexpr int32_t UID_CAMERA = 1047;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
@@ -250,6 +253,12 @@ void AudioServer::OnDump() {}
 int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 {
     AUDIO_INFO_LOG("Dump Process Invoked");
+    if (args.size() == FAST_DUMPINFO_LEN && args[0] == u"-fb") {
+        std::string bundleName = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(args[1]);
+        std::string result = GetAudioParameter(CHECK_FAST_BLOCK_PREFIX + bundleName);
+        std::string dumpString = "check fast white list :bundle name is" + bundleName + " result is " + result + "\n";
+        return write(fd, dumpString.c_str(), dumpString.size());
+    }
     std::queue<std::u16string> argQue;
     for (decltype(args.size()) index = 0; index < args.size(); ++index) {
         argQue.push(args[index]);
@@ -806,6 +815,10 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
         }
         if (key == "perf_info") {
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::PERF_INFO, key);
+        }
+        if (key.size() > CHECK_FAST_BLOCK_PREFIX.size() &&
+            key.substr(0, CHECK_FAST_BLOCK_PREFIX.size()) == CHECK_FAST_BLOCK_PREFIX) {
+            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::NONE, key);
         }
 
         const std::string mmiPre = "mmi_";
