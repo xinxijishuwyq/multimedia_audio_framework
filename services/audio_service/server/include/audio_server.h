@@ -75,8 +75,9 @@ public:
     const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
         const std::string& condition) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
-    int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
-    int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices) override;
+    int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, BluetoothOffloadState a2dpOffloadFlag) override;
+    int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
+        BluetoothOffloadState a2dpOffloadFlag) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
@@ -174,8 +175,10 @@ private:
     void AudioServerDied(pid_t pid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
-    int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices);
-    int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes);
+    int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
+        BluetoothOffloadState a2dpOffloadFlag);
+    int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
+        BluetoothOffloadState a2dpOffloadFlag);
     bool CheckAndPrintStacktrace(const std::string &key);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter();

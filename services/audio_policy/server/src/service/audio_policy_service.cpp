@@ -1970,7 +1970,7 @@ void AudioPolicyService::UpdateActiveDevicesRoute(std::vector<std::pair<Internal
 
     Trace trace("AudioPolicyService::UpdateActiveDevicesRoute DeviceTypes:" + deviceTypesInfo);
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    ret = g_adProxy->UpdateActiveDevicesRoute(activeDevices);
+    ret = g_adProxy->UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag_);
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}s", deviceTypesInfo.c_str());
 }

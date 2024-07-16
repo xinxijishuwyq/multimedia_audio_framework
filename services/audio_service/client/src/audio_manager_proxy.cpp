@@ -589,7 +589,8 @@ int32_t AudioManagerProxy::CheckRemoteDeviceState(std::string networkId, DeviceR
     return reply.ReadInt32();
 }
 
-int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
+int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag,
+    BluetoothOffloadState a2dpOffloadFlag)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -600,6 +601,7 @@ int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag f
 
     data.WriteInt32(type);
     data.WriteInt32(flag);
+    data.WriteInt32(static_cast<int32_t>(a2dpOffloadFlag));
 
     auto error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_ROUTE_REQ), data, reply, option);
@@ -610,7 +612,8 @@ int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag f
     return result;
 }
 
-int32_t AudioManagerProxy::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices)
+int32_t AudioManagerProxy::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
+    BluetoothOffloadState a2dpOffloadFlag)
 {
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_NONE, "Invalid active output devices.");
@@ -625,6 +628,7 @@ int32_t AudioManagerProxy::UpdateActiveDevicesRoute(std::vector<std::pair<Device
         data.WriteInt32(static_cast<int32_t>(it->first));
         data.WriteInt32(static_cast<int32_t>(it->second));
     }
+    data.WriteInt32(static_cast<int32_t>(a2dpOffloadFlag));
 
     auto error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_ROUTES_REQ), data, reply, option);
