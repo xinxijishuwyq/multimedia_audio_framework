@@ -64,9 +64,9 @@ ohos_shared_library("audio_utils") {
   }
 
   if (build_variant == "user") {
-    cflags = [ "-DAUDIO_BUILD_VARIANT_USER" ]
+    defines += [ "AUDIO_BUILD_VARIANT_USER" ]
   } else if (build_variant == "root") {
-    cflags = [ "-DAUDIO_BUILD_VARIANT_ROOT" ]
+    defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
   }
 
   subsystem_name = "multimedia"

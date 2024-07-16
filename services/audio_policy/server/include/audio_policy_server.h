@@ -484,12 +484,6 @@ private:
 
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
-    bool CheckAppBackgroundPermission(uid_t callingUid, uint64_t targetFullTokenId, uint32_t targetTokenId);
-    Security::AccessToken::AccessTokenID GetTargetTokenId(uid_t callingUid, uint32_t callingTokenId,
-        uint32_t appTokenId);
-    uint64_t GetTargetFullTokenId(uid_t callingUid, uint64_t callingFullTokenId, uint64_t appFullTokenId);
-    bool CheckRootCalling(uid_t callingUid, int32_t appUid);
-    void NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
 
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene);

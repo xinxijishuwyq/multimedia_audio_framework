@@ -977,7 +977,14 @@ void AudioInterruptService::SendFocusChangeEvent(const int32_t zoneId, int32_t c
 bool AudioInterruptService::CheckAudioInterruptZonePermission()
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid == UID_ROOT || callerUid == UID_AUDIO) {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    // 0 for root uid
+    if (callerUid == 0) {
+        AUDIO_INFO_LOG("skip root calling.");
+        return true;
+    }
+#endif
+    if (callerUid == UID_AUDIO) {
         return true;
     }
     return false;
