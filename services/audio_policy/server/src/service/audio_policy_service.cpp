@@ -26,6 +26,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_info.h"
 #include "audio_utils.h"
 #include "audio_manager_listener_stub.h"
 #include "datashare_helper.h"
@@ -1909,6 +1910,13 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDe
             desc->deviceType_ = DEVICE_TYPE_INVALID;
             desc->deviceRole_ = INPUT_DEVICE;
         }
+
+        if (captureInfo.sourceType == SOURCE_TYPE_WAKEUP) {
+            desc->deviceType_ = DEVICE_TYPE_MIC;
+            desc->deviceRole_ = INPUT_DEVICE;
+            desc->networkId_ = LOCAL_NETWORK_ID;
+        }
+
         sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*desc);
         deviceList.push_back(devDesc);
     } else {

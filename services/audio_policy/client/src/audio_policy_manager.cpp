@@ -1102,9 +1102,7 @@ int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clie
 {
     std::lock_guard<std::mutex> lockCbMap(g_cBMapMutex);
     AUDIO_DEBUG_LOG("client pid: %{public}d", clientPid);
-    for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
-        rendererCBMap_.erase(getpid());
-    }
+    rendererCBMap_.erase(getpid());
     return SUCCESS;
 }
 
