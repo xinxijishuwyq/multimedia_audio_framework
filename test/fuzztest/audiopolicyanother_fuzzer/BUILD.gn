@@ -35,7 +35,7 @@ ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
 
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
-  
+
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
   sources = [ "audio_policy_another_fuzzer.cpp" ]
@@ -77,9 +77,4 @@ ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
       "accessibility:accessibilityconfig",
     ]
   }
-}
-
-group("fuzztest") {
-  testonly = true
-  deps = [ ":AudioPolicyAnotherFuzzTest" ]
 }
