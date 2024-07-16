@@ -30,6 +30,7 @@ using namespace std;
 const int32_t LIMITSIZE = 4;
 const int32_t SYSTEM_ABILITY_ID = 3009;
 const bool RUN_ON_CREATE = false;
+const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
 
 void AudioBluetoothManagerFuzzTest(const uint8_t *rawData, size_t size)
 {
@@ -87,6 +88,24 @@ void AudioHfpManagerFuzzTest(const uint8_t *rawData, size_t size)
     Bluetooth::AudioHfpManager::GetScoCategoryFromScene(scene);
     Bluetooth::AudioHfpManager::UpdateAudioScene(scene);
 }
+
+void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    data.WriteBuffer(rawData, size);
+    data.RewindRead(0);
+
+    AudioStreamChangeInfo streamChangeInfo = {};
+    streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
+    std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
+        std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    AudioPolicyServerPtr->audioPolicyService_.FetchOutputDeviceForTrack(streamChangeInfo);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -97,5 +116,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioBluetoothManagerFuzzTest(data, size);
     OHOS::AudioStandard::AudioA2dpManagerFuzzTest(data, size);
     OHOS::AudioStandard::AudioHfpManagerFuzzTest(data, size);
+    OHOS::AudioStandard::FetchOutputDeviceForTrackInternalFuzzTest(data, size);
     return 0;
 }
