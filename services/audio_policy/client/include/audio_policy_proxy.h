@@ -34,8 +34,9 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) override;
 
-    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v,
-        int32_t volumeFlag = 0) override;
+    int32_t SetSystemVolumeLevelLegacy(AudioVolumeType volumeType, int32_t volumeLevel) override;
+
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) override;
 
@@ -45,7 +46,9 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) override;
 
-    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, API_VERSION api_v) override;
+    int32_t SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute) override;
+
+    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute) override;
 
     bool GetStreamMute(AudioVolumeType volumeType) override;
 
@@ -74,7 +77,9 @@ public:
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
 
-    int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v) override;
+    int32_t SetRingerModeLegacy(AudioRingerMode ringMode) override;
+
+    int32_t SetRingerMode(AudioRingerMode ringMode) override;
 
     int32_t ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type) override;
 
@@ -100,7 +105,9 @@ public:
 
     bool GetPersistentMicMuteState() override;
 
-    bool IsMicrophoneMute(API_VERSION api_v) override;
+    bool IsMicrophoneMuteLegacy() override;
+
+    bool IsMicrophoneMute() override;
 
     AudioScene GetAudioScene() override;
 

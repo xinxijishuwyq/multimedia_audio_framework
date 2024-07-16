@@ -178,20 +178,30 @@ int32_t AudioPolicyManager::GetMinVolumeLevel(AudioVolumeType volumeType)
     return gsp->GetMinVolumeLevel(volumeType);
 }
 
-int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v,
+int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy,
     int32_t volumeFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
 
-    return gsp->SetSystemVolumeLevel(volumeType, volumeLevel, api_v, volumeFlag);
+    if (isLegacy) {
+        return gsp->SetSystemVolumeLevelLegacy(volumeType, volumeLevel);
+    }
+    return gsp->SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag);
 }
 
-int32_t AudioPolicyManager::SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v)
+int32_t AudioPolicyManager::SetRingerModeLegacy(AudioRingerMode ringMode)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->SetRingerMode(ringMode, api_v);
+    return gsp->SetRingerModeLegacy(ringMode);
+}
+
+int32_t AudioPolicyManager::SetRingerMode(AudioRingerMode ringMode)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetRingerMode(ringMode);
 }
 
 AudioRingerMode AudioPolicyManager::GetRingerMode()
@@ -243,7 +253,7 @@ bool AudioPolicyManager::GetPersistentMicMuteState()
     return gsp->GetPersistentMicMuteState();
 }
 
-bool AudioPolicyManager::IsMicrophoneMute(API_VERSION api_v)
+bool AudioPolicyManager::IsMicrophoneMuteLegacy()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
@@ -251,7 +261,18 @@ bool AudioPolicyManager::IsMicrophoneMute(API_VERSION api_v)
         RegisterPolicyCallbackClientFunc(gsp);
     }
 
-    return gsp->IsMicrophoneMute(api_v);
+    return gsp->IsMicrophoneMuteLegacy();
+}
+
+bool AudioPolicyManager::IsMicrophoneMute()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    if (!isAudioPolicyClientRegisted_) {
+        RegisterPolicyCallbackClientFunc(gsp);
+    }
+
+    return gsp->IsMicrophoneMute();
 }
 
 AudioScene AudioPolicyManager::GetAudioScene()
@@ -268,11 +289,14 @@ int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType)
     return gsp->GetSystemVolumeLevel(volumeType);
 }
 
-int32_t AudioPolicyManager::SetStreamMute(AudioVolumeType volumeType, bool mute, API_VERSION api_v)
+int32_t AudioPolicyManager::SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->SetStreamMute(volumeType, mute, api_v);
+    if (isLegacy) {
+        return gsp->SetStreamMuteLegacy(volumeType, mute);
+    }
+    return gsp->SetStreamMute(volumeType, mute);
 }
 
 bool AudioPolicyManager::GetStreamMute(AudioVolumeType volumeType)

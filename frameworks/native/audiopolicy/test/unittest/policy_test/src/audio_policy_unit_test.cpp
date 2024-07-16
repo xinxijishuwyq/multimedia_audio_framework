@@ -667,9 +667,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Client_Tracker_Callback_Stub_001, TestSize.Lev
 HWTEST(AudioPolicyUnitTest, Audio_Policy_SetSystemSoundUri_001, TestSize.Level1)
 {
     int32_t ret = -1;
-    API_VERSION api_v = API_9;
     AudioRingerMode ringMode = AudioRingerMode::RINGER_MODE_SILENT;
-    ret = AudioPolicyManager::GetInstance().SetRingerMode(ringMode, api_v);
+    ret = AudioPolicyManager::GetInstance().SetRingerMode(ringMode);
     EXPECT_EQ(SUCCESS, ret);
 
     AudioRingerMode ringModeRet = AudioPolicyManager::GetInstance().GetRingerMode();

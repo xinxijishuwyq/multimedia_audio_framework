@@ -29,8 +29,10 @@ constexpr int MAX_PID_COUNT = 1000;
 const char *g_audioPolicyCodeStrs[] = {
     "GET_MAX_VOLUMELEVEL",
     "GET_MIN_VOLUMELEVEL",
+    "SET_SYSTEM_VOLUMELEVEL_LEGACY",
     "SET_SYSTEM_VOLUMELEVEL",
     "GET_SYSTEM_VOLUMELEVEL",
+    "SET_STREAM_MUTE_LEGACY",
     "SET_STREAM_MUTE",
     "GET_STREAM_MUTE",
     "IS_STREAM_ACTIVE",
@@ -38,12 +40,14 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_DEVICE_ACTIVE",
     "GET_ACTIVE_OUTPUT_DEVICE",
     "GET_ACTIVE_INPUT_DEVICE",
+    "SET_RINGER_MODE_LEGACY",
     "SET_RINGER_MODE",
     "GET_RINGER_MODE",
     "SET_AUDIO_SCENE",
     "GET_AUDIO_SCENE",
     "SET_MICROPHONE_MUTE",
     "SET_MICROPHONE_MUTE_AUDIO_CONFIG",
+    "IS_MICROPHONE_MUTE_LEGACY",
     "IS_MICROPHONE_MUTE",
     "SET_CALLBACK",
     "UNSET_CALLBACK",
@@ -181,21 +185,34 @@ void AudioPolicyManagerStub::GetMinVolumeLevelInternal(MessageParcel &data, Mess
     reply.WriteInt32(minLevel);
 }
 
+void AudioPolicyManagerStub::SetSystemVolumeLevelLegacyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+    int32_t volumeLevel = data.ReadInt32();
+    int result = SetSystemVolumeLevelLegacy(volumeType, volumeLevel);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     int32_t volumeLevel = data.ReadInt32();
-    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
     int32_t volumeFlag = data.ReadInt32();
-    int result = SetSystemVolumeLevel(volumeType, volumeLevel, api_v, volumeFlag);
+    int result = SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetRingerModeLegacyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioRingerMode rMode = static_cast<AudioRingerMode>(data.ReadInt32());
+    int32_t result = SetRingerModeLegacy(rMode);
     reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioRingerMode rMode = static_cast<AudioRingerMode>(data.ReadInt32());
-    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
-    int32_t result = SetRingerMode(rMode, api_v);
+    int32_t result = SetRingerMode(rMode);
     reply.WriteInt32(result);
 }
 
@@ -246,10 +263,15 @@ void AudioPolicyManagerStub::SetMicrophoneMuteAudioConfigInternal(MessageParcel 
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::IsMicrophoneMuteLegacyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = IsMicrophoneMuteLegacy();
+    reply.WriteBool(result);
+}
+
 void AudioPolicyManagerStub::IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply)
 {
-    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
-    int32_t result = IsMicrophoneMute(api_v);
+    int32_t result = IsMicrophoneMute();
     reply.WriteBool(result);
 }
 
@@ -291,12 +313,19 @@ void AudioPolicyManagerStub::GetSingleStreamVolumeInternal(MessageParcel &data, 
     reply.WriteFloat(volume);
 }
 
+void AudioPolicyManagerStub::SetStreamMuteLegacyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+    bool mute = data.ReadBool();
+    int result = SetStreamMuteLegacy(volumeType, mute);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     bool mute = data.ReadBool();
-    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
-    int result = SetStreamMute(volumeType, mute, api_v);
+    int result = SetStreamMute(volumeType, mute);
     reply.WriteInt32(result);
 }
 

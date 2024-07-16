@@ -157,7 +157,6 @@ void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)
     DeviceType device = *reinterpret_cast<const DeviceType *>(data);
     int32_t clientld = *reinterpret_cast<const int32_t *>(data);
     int32_t deviceId = *reinterpret_cast<const int32_t *>(data);
-    API_VERSION api_v = *reinterpret_cast<const API_VERSION *>(data);
     AudioRingerMode ringMode = *reinterpret_cast<const AudioRingerMode *>(data);
     shared_ptr<AudioRingerModeCallbackFuzz> ringerModeCallbackFuzz =
         std::make_shared<AudioRingerModeCallbackFuzz>();
@@ -175,7 +174,7 @@ void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)
     audioGroupMngr_->GetMaxAmplitude(deviceId);
     audioGroupMngr_->SetRingerMode(ringMode);
     audioGroupMngr_->GetRingerMode();
-    audioGroupMngr_->IsMicrophoneMute(api_v);
+    audioGroupMngr_->IsMicrophoneMute();
     audioGroupMngr_->SetRingerModeCallback(clientld, ringerModeCallbackFuzz);
     audioGroupMngr_->UnsetRingerModeCallback(clientld);
 }

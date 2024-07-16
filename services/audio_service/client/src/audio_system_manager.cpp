@@ -423,7 +423,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, API_7);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, true);
 }
 
 int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
@@ -528,7 +528,7 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
     }
 
     /* Call Audio Policy SetStreamMute */
-    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, API_7);
+    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, true);
 }
 
 bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
@@ -603,11 +603,11 @@ int32_t AudioSystemManager::SetMicrophoneMute(bool isMute)
     return AudioPolicyManager::GetInstance().SetMicrophoneMute(isMute);
 }
 
-bool AudioSystemManager::IsMicrophoneMute(API_VERSION api_v)
+bool AudioSystemManager::IsMicrophoneMute()
 {
     std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
     CHECK_AND_RETURN_RET_LOG(groupManager != nullptr, false, "failed, groupManager is null");
-    return groupManager->IsMicrophoneMute(api_v);
+    return groupManager->IsMicrophoneMuteLegacy();
 }
 
 int32_t AudioSystemManager::SelectOutputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const

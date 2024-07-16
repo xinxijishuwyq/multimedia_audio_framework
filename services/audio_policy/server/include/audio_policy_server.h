@@ -97,8 +97,9 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) override;
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9,
-        int32_t volumeFlag = 0) override;
+    int32_t SetSystemVolumeLevelLegacy(AudioVolumeType volumeType, int32_t volumeLevel) override;
+
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
 
@@ -108,7 +109,9 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) override;
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v = API_9) override;
+    int32_t SetStreamMuteLegacy(AudioStreamType streamType, bool mute) override;
+
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute) override;
 
     bool GetStreamMute(AudioStreamType streamType) override;
 
@@ -145,7 +148,9 @@ public:
 
     InternalDeviceType GetActiveInputDevice() override;
 
-    int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v = API_9) override;
+    int32_t SetRingerModeLegacy(AudioRingerMode ringMode) override;
+
+    int32_t SetRingerMode(AudioRingerMode ringMode) override;
 
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones() override;
@@ -157,7 +162,7 @@ public:
 
     int32_t SetAudioScene(AudioScene audioScene) override;
 
-    int32_t SetMicrophoneMuteCommon(bool isMute, API_VERSION api_v);
+    int32_t SetMicrophoneMuteCommon(bool isMute, bool isLegacy);
 
     int32_t SetMicrophoneMute(bool isMute) override;
 
@@ -167,7 +172,9 @@ public:
 
     bool GetPersistentMicMuteState() override;
 
-    bool IsMicrophoneMute(API_VERSION api_v) override;
+    bool IsMicrophoneMuteLegacy() override;
+
+    bool IsMicrophoneMute() override;
 
     AudioScene GetAudioScene() override;
 
@@ -519,6 +526,8 @@ private:
     void PolicyDataDump(std::string &dumpString);
     void ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue);
     void InfoDumpHelp(std::string &dumpString);
+
+    int32_t SetRingerModeInner(AudioRingerMode ringMode);
 
     AudioPolicyService& audioPolicyService_;
     std::shared_ptr<AudioInterruptService> interruptService_;

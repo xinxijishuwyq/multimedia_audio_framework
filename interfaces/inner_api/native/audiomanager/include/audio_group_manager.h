@@ -74,7 +74,8 @@ public:
     int32_t SetMicrophoneMute(bool isMute);
     int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type);
     bool GetPersistentMicMuteState();
-    bool IsMicrophoneMute(API_VERSION api_v = API_9);
+    bool IsMicrophoneMuteLegacy();
+    bool IsMicrophoneMute();
     int32_t SetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
     int32_t UnsetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
     bool IsVolumeUnadjustable();

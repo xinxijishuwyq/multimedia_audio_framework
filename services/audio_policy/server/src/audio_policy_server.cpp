@@ -67,6 +67,7 @@ constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 60;
 constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr int32_t API_VERSION_REMAINDER = 1000;
+constexpr int32_t API_VERSION_14 = 14; // for deprecated since 9
 constexpr uid_t UID_ROOT = 0;
 constexpr uid_t UID_MSDP_SA = 6699;
 constexpr uid_t UID_INTELLIGENT_VOICE_SA = 1042;
@@ -562,10 +563,27 @@ int32_t AudioPolicyServer::GetMinVolumeLevel(AudioVolumeType volumeType)
     return audioPolicyService_.GetMinVolumeLevel(volumeType);
 }
 
-int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v,
-    int32_t volumeFlag)
+int32_t AudioPolicyServer::SetSystemVolumeLevelLegacy(AudioStreamType streamType, int32_t volumeLevel)
 {
-    if (api_v == API_9 && !PermissionUtil::VerifySystemPermission()) {
+    int32_t buildApi = GetApiTargerVersion();
+    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission for legacy call");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    if (!IsVolumeTypeValid(streamType)) {
+        return ERR_NOT_SUPPORTED;
+    }
+    if (!IsVolumeLevelValid(streamType, volumeLevel)) {
+        return ERR_NOT_SUPPORTED;
+    }
+
+    return SetSystemVolumeLevelInternal(streamType, volumeLevel, false);
+}
+
+int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t volumeFlag)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("SetSystemVolumeLevel: No system permission");
         return ERR_PERMISSION_DENIED;
     }
@@ -680,10 +698,21 @@ float AudioPolicyServer::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t
     return audioPolicyService_.GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
 }
 
-int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v)
+int32_t AudioPolicyServer::SetStreamMuteLegacy(AudioStreamType streamType, bool mute)
 {
-    if (api_v == API_9 && !PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("SetStreamMute: No system permission");
+    int32_t buildApi = GetApiTargerVersion();
+    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    return SetStreamMuteInternal(streamType, mute, false);
+}
+
+int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;
     }
 
@@ -995,10 +1024,32 @@ InternalDeviceType AudioPolicyServer::GetActiveInputDevice()
     return audioPolicyService_.GetActiveInputDevice();
 }
 
-int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v)
+// deprecated since 9.
+int32_t AudioPolicyServer::SetRingerModeLegacy(AudioRingerMode ringMode)
 {
-    CHECK_AND_RETURN_RET_LOG(api_v != API_9 || PermissionUtil::VerifySystemPermission(),
-        ERR_PERMISSION_DENIED, "No system permission");
+    AUDIO_INFO_LOG("Set ringer mode to %{public}d in legacy", ringMode);
+    int32_t buildApi = GetApiTargerVersion();
+    if (buildApi >= API_VERSION_14 && !PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    return SetRingerModeInner(ringMode);
+}
+
+int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
+{
+    AUDIO_INFO_LOG("Set ringer mode to %{public}d", ringMode);
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    return SetRingerModeInner(ringMode);
+}
+
+int32_t AudioPolicyServer::SetRingerModeInner(AudioRingerMode ringMode)
+{
     bool isPermissionRequired = false;
 
     if (ringMode == AudioRingerMode::RINGER_MODE_SILENT) {
@@ -1010,6 +1061,7 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode, API_VERSION a
         }
     }
 
+    // only switch to silent need check NOTIFICATION.
     if (isPermissionRequired) {
         bool result = VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION);
         CHECK_AND_RETURN_RET_LOG(result, ERR_PERMISSION_DENIED,
@@ -1074,11 +1126,10 @@ void AudioPolicyServer::InitMicrophoneMute()
     }
 }
 
-int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_v)
+int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, bool isLegacy)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
     std::lock_guard<std::mutex> lock(micStateChangeMutex_);
-    bool isMicrophoneMute = IsMicrophoneMute(api_v);
+    bool isMicrophoneMute = isLegacy ? IsMicrophoneMuteLegacy() : IsMicrophoneMute();
     int32_t ret = audioPolicyService_.SetMicrophoneMute(isMute);
     if (ret == SUCCESS && isMicrophoneMute != isMute && audioPolicyServerHandler_ != nullptr) {
         MicStateChangeEvent micStateChangeEvent;
@@ -1090,22 +1141,22 @@ int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_
 
 int32_t AudioPolicyServer::SetMicrophoneMute(bool isMute)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    AUDIO_INFO_LOG("[%{public}d] set to %{public}s", IPCSkeleton::GetCallingPid(), (isMute ? "true" : "false"));
     bool ret = VerifyPermission(MICROPHONE_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
         "MICROPHONE permission denied");
-    return SetMicrophoneMuteCommon(isMute, API_7);
+    return SetMicrophoneMuteCommon(isMute, true);
 }
 
 int32_t AudioPolicyServer::SetMicrophoneMuteAudioConfig(bool isMute)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    AUDIO_INFO_LOG("[%{public}d] set to %{public}s", IPCSkeleton::GetCallingPid(), (isMute ? "true" : "false"));
     bool ret = VerifyPermission(MANAGE_AUDIO_CONFIG);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
         "MANAGE_AUDIO_CONFIG permission denied");
     lastMicMuteSettingPid_ = IPCSkeleton::GetCallingPid();
     PrivacyKit::SetMutePolicy(POLICY_TYPE_MAP[TEMPORARY_POLCIY_TYPE], MICPHONE_CALLER, isMute);
-    return SetMicrophoneMuteCommon(isMute, API_9);
+    return SetMicrophoneMuteCommon(isMute, false);
 }
 
 int32_t AudioPolicyServer::SetMicrophoneMutePersistent(const bool isMute, const PolicyType type)
@@ -1138,12 +1189,20 @@ bool AudioPolicyServer::GetPersistentMicMuteState()
     return audioPolicyService_.GetPersistentMicMuteState();
 }
 
-bool AudioPolicyServer::IsMicrophoneMute(API_VERSION api_v)
+// deprecated since 9.
+bool AudioPolicyServer::IsMicrophoneMuteLegacy()
 {
-    bool ret = VerifyPermission(MICROPHONE_PERMISSION);
-    CHECK_AND_RETURN_RET_LOG(api_v != API_7 || ret, ERR_PERMISSION_DENIED,
-        "MICROPHONE permission denied");
+    // AudioManager.IsMicrophoneMute check micphone right.
+    if (!VerifyPermission(MICROPHONE_PERMISSION)) {
+        AUDIO_ERR_LOG("MICROPHONE permission denied");
+        return false;
+    }
+    return audioPolicyService_.IsMicrophoneMute();
+}
 
+bool AudioPolicyServer::IsMicrophoneMute()
+{
+    // AudioVolumeGroupManager.IsMicrophoneMute didn't check micphone right.
     return audioPolicyService_.IsMicrophoneMute();
 }
 

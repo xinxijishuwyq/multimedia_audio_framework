@@ -2649,7 +2649,6 @@ int32_t AudioPolicyService::InitPersistentMicrophoneMuteState(bool &isMute)
 
 bool AudioPolicyService::IsMicrophoneMute()
 {
-    AUDIO_DEBUG_LOG("IsMicrophoneMute start");
     return isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_;
 }
 

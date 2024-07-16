@@ -534,7 +534,7 @@ public:
      * @return Returns <b>true</b> if the rendering is successfully started; returns <b>false</b> otherwise.
      * @since 9
      */
-    bool IsMicrophoneMute(API_VERSION api_v = API_7);
+    bool IsMicrophoneMute();
 
     /**
      * @brief Select output device.
