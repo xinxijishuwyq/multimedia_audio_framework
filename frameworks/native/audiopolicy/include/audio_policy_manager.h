@@ -190,7 +190,7 @@ public:
     int32_t UnregisterAudioCapturerEventListener(const int32_t clientPid);
 
     int32_t RegisterDeviceChangeWithInfoCallback(
-        const uint32_t sessionID, const std::shared_ptr<DeviceChangeWithInfoCallback> &callback);
+        const uint32_t sessionID, const std::weak_ptr<DeviceChangeWithInfoCallback> &callback);
     
     int32_t UnregisterDeviceChangeWithInfoCallback(const uint32_t sessionID);
 

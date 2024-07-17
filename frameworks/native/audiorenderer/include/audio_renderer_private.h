@@ -195,6 +195,8 @@ private:
     float speed_ = 1.0;
 
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> policyServiceDiedCallback_ = nullptr;
+
+    std::vector<uint32_t> usedSessionId_ = {};
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

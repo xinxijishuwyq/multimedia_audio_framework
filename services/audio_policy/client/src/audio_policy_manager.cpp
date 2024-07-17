@@ -903,7 +903,7 @@ int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t c
 }
 
 int32_t AudioPolicyManager::RegisterDeviceChangeWithInfoCallback(
-    const uint32_t sessionID, const std::shared_ptr<DeviceChangeWithInfoCallback> &callback)
+    const uint32_t sessionID, const std::weak_ptr<DeviceChangeWithInfoCallback> &callback)
 {
     AUDIO_DEBUG_LOG("In");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -912,8 +912,8 @@ int32_t AudioPolicyManager::RegisterDeviceChangeWithInfoCallback(
         return ERROR;
     }
 
-    if (callback == nullptr) {
-        AUDIO_ERR_LOG("callback is nullptr");
+    if (callback.expired()) {
+        AUDIO_ERR_LOG("callback is expired");
         return ERR_INVALID_PARAM;
     }
 
