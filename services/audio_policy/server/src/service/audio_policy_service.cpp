@@ -3343,7 +3343,8 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     if (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE && (usage == MEDIA || usage == ALL_USAGE)) {
         audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
-    if (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE && (usage == VOICE || usage == ALL_USAGE)) {
+    if ((audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE && audioDescriptor->deviceCategory_ != BT_WATCH) &&
+        (usage == VOICE || usage == ALL_USAGE)) {
         audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
 }
@@ -3371,7 +3372,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForInputDevice(
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
     AddMicrophoneDescriptor(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
-    if (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE) {
+    if (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE && audioDescriptor->deviceCategory_ != BT_WATCH) {
         audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
         audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
