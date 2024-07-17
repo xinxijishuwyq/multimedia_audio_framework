@@ -69,6 +69,11 @@ private:
     static std::vector<BluetoothRemoteDevice> negativeDevices_;
 };
 
+struct BluetoothStopVirtualCallHandle {
+    BluetoothRemoteDevice device;
+    bool isWaitingForStoppingVirtualCall;
+};
+
 class HfpBluetoothDeviceManager {
 public:
     HfpBluetoothDeviceManager() = default;
@@ -83,6 +88,7 @@ public:
     static void HandleWearEnable(const BluetoothRemoteDevice &device);
     static void HandleWearDisable(const BluetoothRemoteDevice &device);
     static void HandleUserSelection(const BluetoothRemoteDevice &device);
+    static void HandleStopVirtualCall(const BluetoothRemoteDevice &device);
     static void AddDeviceInConfigVector(const BluetoothRemoteDevice &device,
         std::vector<BluetoothRemoteDevice> &deviceVector);
     static void RemoveDeviceInConfigVector(const BluetoothRemoteDevice &device,
@@ -103,6 +109,8 @@ private:
     static std::vector<BluetoothRemoteDevice> privacyDevices_;
     static std::vector<BluetoothRemoteDevice> commonDevices_;
     static std::vector<BluetoothRemoteDevice> negativeDevices_;
+    static std::mutex stopVirtualCallHandleLock_;
+    static BluetoothStopVirtualCallHandle stopVirtualCallHandle_;
 };
 } // namespace Bluetooth
 } // namespace OHOS
