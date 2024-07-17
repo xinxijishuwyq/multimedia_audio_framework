@@ -1903,6 +1903,14 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDe
         deviceList.push_back(devDesc);
         return deviceList;
     }
+
+    if (captureInfo.sourceType == SOURCE_TYPE_WAKEUP) {
+        sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE);
+        devDesc->networkId_ = LOCAL_NETWORK_ID;
+        deviceList.push_back(devDesc);
+        return deviceList;
+    }
+
     if (networkId == LOCAL_NETWORK_ID) {
         unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1);
         if (desc->deviceType_ == DEVICE_TYPE_NONE && (captureInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE ||
@@ -1910,13 +1918,6 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDe
             desc->deviceType_ = DEVICE_TYPE_INVALID;
             desc->deviceRole_ = INPUT_DEVICE;
         }
-
-        if (captureInfo.sourceType == SOURCE_TYPE_WAKEUP) {
-            desc->deviceType_ = DEVICE_TYPE_MIC;
-            desc->deviceRole_ = INPUT_DEVICE;
-            desc->networkId_ = LOCAL_NETWORK_ID;
-        }
-
         sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*desc);
         deviceList.push_back(devDesc);
     } else {
