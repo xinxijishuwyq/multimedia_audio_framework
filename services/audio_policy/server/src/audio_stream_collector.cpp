@@ -282,11 +282,11 @@ void AudioStreamCollector::ResetRendererStreamDeviceInfo(const AudioDeviceDescri
     AUDIO_INFO_LOG("ResetRendererStreamDeviceInfo, deviceType:[%{public}d]", updatedDesc.deviceType_);
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
         if ((*it)->outputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
-            (*it)->.outputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
-            (*it)->.outputDeviceInfo.networkId == updatedDesc.networkId_) {
-            (*it)->.outputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
-            (*it)->.outputDeviceInfo.macAddress = "";
-            (*it)->.outputDeviceInfo.networkId = LOCAL_NETWORK_ID;
+            (*it)->outputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
+            (*it)->outputDeviceInfo.networkId == updatedDesc.networkId_) {
+            (*it)->outputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
+            (*it)->outputDeviceInfo.macAddress = "";
+            (*it)->outputDeviceInfo.networkId = LOCAL_NETWORK_ID;
         }
     }
 }
