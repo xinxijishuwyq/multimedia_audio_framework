@@ -86,6 +86,7 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ENFORCED_TONE)] = STREAM_SYSTEM_ENFORCED;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_RINGTONE)] = STREAM_VOICE_RING;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_CALL_ASSISTANT)] = STREAM_VOICE_CALL_ASSISTANT;
 
     return streamMap;
 }
@@ -849,6 +850,7 @@ AudioStreamType AudioStreamCollector::GetVolumeTypeFromContentUsage(ContentType 
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
         case STREAM_VOICE_COMMUNICATION:
+        case STREAM_VOICE_CALL_ASSISTANT:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:

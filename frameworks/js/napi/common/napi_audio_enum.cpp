@@ -138,6 +138,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::streamUsageMap = {
     {"STREAM_USAGE_VOICE_ASSISTANT", STREAM_USAGE_VOICE_ASSISTANT},
     {"STREAM_USAGE_ALARM", STREAM_USAGE_ALARM},
     {"STREAM_USAGE_VOICE_MESSAGE", STREAM_USAGE_VOICE_MESSAGE},
+    {"STREAM_USAGE_VOICE_CALL_ASSISTANT", STREAM_USAGE_VOICE_CALL_ASSISTANT},
     {"STREAM_USAGE_NOTIFICATION_RINGTONE", STREAM_USAGE_NOTIFICATION_RINGTONE},
     {"STREAM_USAGE_RINGTONE", STREAM_USAGE_RINGTONE},
     {"STREAM_USAGE_NOTIFICATION", STREAM_USAGE_NOTIFICATION},
@@ -1186,6 +1187,7 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
         case AudioStreamType::STREAM_VOICE_CALL:
         case AudioStreamType::STREAM_VOICE_MESSAGE:
         case AudioStreamType::STREAM_VOICE_COMMUNICATION:
+        case AudioStreamType::STREAM_VOICE_CALL_ASSISTANT:
             result = NapiAudioEnum::VOICE_CALL;
             break;
         case AudioStreamType::STREAM_RING:
@@ -1334,6 +1336,7 @@ bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
         case STREAM_USAGE_ENFORCED_TONE:
         case STREAM_USAGE_ULTRASONIC:
         case STREAM_USAGE_VIDEO_COMMUNICATION:
+        case STREAM_USAGE_VOICE_CALL_ASSISTANT:
             result = true;
             break;
         default:

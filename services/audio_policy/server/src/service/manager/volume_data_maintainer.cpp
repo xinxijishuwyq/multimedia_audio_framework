@@ -619,6 +619,7 @@ AudioStreamType VolumeDataMaintainer::GetStreamForVolumeMap(AudioStreamType stre
     switch (streamType) {
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
+        case STREAM_VOICE_CALL_ASSISTANT:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:
