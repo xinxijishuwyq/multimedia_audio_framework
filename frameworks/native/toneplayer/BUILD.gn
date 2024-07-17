@@ -72,6 +72,8 @@ if (!audio_framework_feature_dtmf_tone) {
       "pulseaudio:pulse",
     ]
 
+    public_external_deps = [ "bounds_checking_function:libsec_shared" ]
+
     version_script = "../../../audio_framework.versionscript"
     innerapi_tags = [ "platformsdk" ]
 
