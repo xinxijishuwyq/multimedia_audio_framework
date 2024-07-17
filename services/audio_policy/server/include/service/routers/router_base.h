@@ -48,7 +48,8 @@ public:
     {
         // remove abnormal device
         for (size_t i = 0; i < descs.size(); i++) {
-            if (descs[i]->exceptionFlag_ || !descs[i]->isEnable_) {
+            if (descs[i]->exceptionFlag_ || !descs[i]->isEnable_ ||
+                (descs[i]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && descs[i]->connectState_ == SUSPEND_CONNECTED)) {
                 descs.erase(descs.begin() + i);
                 i--;
             }
@@ -71,7 +72,9 @@ public:
             if (captureDesc->deviceId_ != desc->deviceId_) {
                 continue;
             }
-            if (!captureDesc->exceptionFlag_ && captureDesc->isEnable_) {
+            if (!captureDesc->exceptionFlag_ && captureDesc->isEnable_ &&
+                (captureDesc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO ||
+                 captureDesc->connectState_ != SUSPEND_CONNECTED)) {
                 return std::move(captureDesc);
             }
             AUDIO_INFO_LOG("unavailable device state, type[%{public}d] connectState[%{public}d] isEnable[%{public}d]" \

@@ -15,8 +15,12 @@
 #undef LOG_TAG
 #define LOG_TAG "BluetoothDeviceManager"
 
-#include "bluetooth_audio_manager.h"
 #include "bluetooth_device_manager.h"
+
+#include <thread>
+
+#include "bluetooth_audio_manager.h"
+#include "audio_bluetooth_manager.h"
 
 namespace OHOS {
 namespace Bluetooth {
@@ -58,6 +62,8 @@ std::map<std::string, BluetoothDeviceAction> HfpBluetoothDeviceManager::wearDete
 std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::privacyDevices_;
 std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::commonDevices_;
 std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::negativeDevices_;
+std::mutex HfpBluetoothDeviceManager::stopVirtualCallHandleLock_;
+BluetoothStopVirtualCallHandle HfpBluetoothDeviceManager::stopVirtualCallHandle_ = { BluetoothRemoteDevice(), false};
 
 std::string GetEncryptAddr(const std::string &addr)
 {
@@ -487,6 +493,9 @@ void HfpBluetoothDeviceManager::SetHfpStack(const BluetoothRemoteDevice &device,
         case BluetoothDeviceAction::USER_SELECTION_ACTION:
             HandleUserSelection(device);
             break;
+        case BluetoothDeviceAction::STOP_VIRTUAL_CALL:
+            HandleStopVirtualCall(device);
+            break;
         default:
             AUDIO_ERR_LOG("SetHfpStack failed due to the unknow action: %{public}d", action);
             break;
@@ -689,6 +698,18 @@ void HfpBluetoothDeviceManager::HandleUserSelection(const BluetoothRemoteDevice 
     }
 }
 
+void HfpBluetoothDeviceManager::HandleStopVirtualCall(const BluetoothRemoteDevice &device)
+{
+    {
+        std::lock_guard<std::mutex> handleLock(stopVirtualCallHandleLock_);
+        stopVirtualCallHandle_.device = device;
+        stopVirtualCallHandle_.isWaitingForStoppingVirtualCall = true;
+    }
+    AUDIO_INFO_LOG("bluetooth service trigger disconnect sco");
+    std::thread disconnectScoThread = std::thread(&Bluetooth::AudioHfpManager::DisconnectSco);
+    disconnectScoThread.detach();
+}
+
 void HfpBluetoothDeviceManager::AddDeviceInConfigVector(const BluetoothRemoteDevice &device,
     std::vector<BluetoothRemoteDevice> &deviceVector)
 {
@@ -798,6 +819,16 @@ void HfpBluetoothDeviceManager::OnScoStateChanged(const BluetoothRemoteDevice &d
     if (isConnected) {
         desc.connectState_ = ConnectState::CONNECTED;
     } else {
+        {
+            std::lock_guard<std::mutex> handleLock(stopVirtualCallHandleLock_);
+            if (device.GetDeviceAddr() == stopVirtualCallHandle_.device.GetDeviceAddr() &&
+                stopVirtualCallHandle_.isWaitingForStoppingVirtualCall) {
+                AUDIO_INFO_LOG("reason change to %{public}d", HFP_AG_SCO_REMOTE_USER_TERMINATED);
+                reason = HFP_AG_SCO_REMOTE_USER_TERMINATED;
+                stopVirtualCallHandle_.device = BluetoothRemoteDevice();
+                stopVirtualCallHandle_.isWaitingForStoppingVirtualCall = false;
+            }
+        }
         desc.connectState_ = reason == HFP_AG_SCO_REMOTE_USER_TERMINATED ?  ConnectState::SUSPEND_CONNECTED
                                                                          :  ConnectState::DEACTIVE_CONNECTED;
     }
