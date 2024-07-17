@@ -3420,6 +3420,14 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
         }
     }
 
+    // reset disconnected device info in stream
+    if (IsOutputDevice(updatedDesc.deviceType_)) {
+        streamCollector_.ResetRendererStreamDeviceInfo(updatedDesc);
+    }
+    if (IsInputDevice(updatedDesc.deviceType_)) {
+        streamCollector_.ResetCapturerStreamDeviceInfo(updatedDesc);
+    }
+    
     sptr<AudioDeviceDescriptor> devDesc = new (std::nothrow) AudioDeviceDescriptor(updatedDesc);
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Create device descriptor failed");
     audioDeviceManager_.RemoveNewDevice(devDesc);

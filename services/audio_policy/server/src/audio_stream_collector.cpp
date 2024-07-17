@@ -278,6 +278,34 @@ void AudioStreamCollector::SetCapturerStreamParam(AudioStreamChangeInfo &streamC
     capturerChangeInfo->inputDeviceInfo = streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo;
 }
 
+void AudioStreamCollector::ResetRendererStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc)
+{
+    AUDIO_INFO_LOG("ResetRendererStreamDeviceInfo, deviceType:[%{public}d]", updatedDesc.deviceType_);
+    for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
+        if ((*it)->outputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
+            (*it)->outputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
+            (*it)->outputDeviceInfo.networkId == updatedDesc.networkId_) {
+            (*it)->outputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
+            (*it)->outputDeviceInfo.macAddress = "";
+            (*it)->outputDeviceInfo.networkId = LOCAL_NETWORK_ID;
+        }
+    }
+}
+
+void AudioStreamCollector::ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc)
+{
+    AUDIO_INFO_LOG("ResetCapturerStreamDeviceInfo, deviceType:[%{public}d]", updatedDesc.deviceType_);
+    for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
+        if ((*it)->inputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
+            (*it)->inputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
+            (*it)->inputDeviceInfo.networkId == updatedDesc.networkId_) {
+            (*it)->inputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
+            (*it)->inputDeviceInfo.macAddress = "";
+            (*it)->inputDeviceInfo.networkId = LOCAL_NETWORK_ID;
+        }
+    }
+}
+
 bool AudioStreamCollector::CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo)
 {
     if (rendererStatequeue_.find(make_pair(streamChangeInfo.audioRendererChangeInfo.clientUID,

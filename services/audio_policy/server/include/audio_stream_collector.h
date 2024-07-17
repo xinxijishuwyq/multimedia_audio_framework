@@ -72,6 +72,8 @@ public:
     int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
+    void ResetRendererStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
+    void ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
 private:
     std::mutex streamsInfoMutex_;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;
