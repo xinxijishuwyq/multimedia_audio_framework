@@ -2113,11 +2113,6 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     }
 
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
-    if (volumeApplyToAll_) {
-        streamInFocus = AudioStreamType::STREAM_ALL;
-    } else {
-        streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
-    }
 
     if (!IsVolumeLevelValid(streamInFocus, volume)) {
         return ERR_NOT_SUPPORTED;

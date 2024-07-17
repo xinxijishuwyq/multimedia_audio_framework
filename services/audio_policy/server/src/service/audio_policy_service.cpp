@@ -5433,7 +5433,7 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
     }
     configInfoPos->second.volumeLevel = sVolumeLevel;
     bool mute = sVolumeLevel == 0 ? true : false;
-    if (configInfoPos->second.mute != mute) {
+    if (configInfoPos->second.mute != mute || audioPolicyManager_.GetStreamMute(STREAM_MUSIC)) {
         configInfoPos->second.mute = mute;
         audioPolicyManager_.SetStreamMute(STREAM_MUSIC, configInfoPos->second.mute);
     }
