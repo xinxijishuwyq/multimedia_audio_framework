@@ -281,13 +281,12 @@ void AudioStreamCollector::ResetRendererStreamDeviceInfo(const AudioDeviceDescri
 {
     AUDIO_INFO_LOG("ResetRendererStreamDeviceInfo, deviceType:[%{public}d]", updatedDesc.deviceType_);
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
-        AudioRendererChangeInfo audioRendererChangeInfo = **it;
-        if (audioRendererChangeInfo.outputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
-            audioRendererChangeInfo.outputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
-            audioRendererChangeInfo.outputDeviceInfo.networkId == updatedDesc.networkId_) {
-            audioRendererChangeInfo.outputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
-            audioRendererChangeInfo.outputDeviceInfo.macAddress = "";
-            audioRendererChangeInfo.outputDeviceInfo.networkId = LOCAL_NETWORK_ID;
+        if ((*it)->outputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
+            (*it)->.outputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
+            (*it)->.outputDeviceInfo.networkId == updatedDesc.networkId_) {
+            (*it)->.outputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
+            (*it)->.outputDeviceInfo.macAddress = "";
+            (*it)->.outputDeviceInfo.networkId = LOCAL_NETWORK_ID;
         }
     }
 }
@@ -296,13 +295,12 @@ void AudioStreamCollector::ResetCapturerStreamDeviceInfo(const AudioDeviceDescri
 {
     AUDIO_INFO_LOG("ResetCapturerStreamDeviceInfo, deviceType:[%{public}d]", updatedDesc.deviceType_);
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
-        AudioCapturerChangeInfo audioCapturerChangeInfo = **it;
-        if (audioCapturerChangeInfo.inputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
-            audioCapturerChangeInfo.inputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
-            audioCapturerChangeInfo.inputDeviceInfo.networkId == updatedDesc.networkId_) {
-            audioCapturerChangeInfo.inputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
-            audioCapturerChangeInfo.inputDeviceInfo.macAddress = "";
-            audioCapturerChangeInfo.inputDeviceInfo.networkId = LOCAL_NETWORK_ID;
+        if ((*it)->inputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
+            (*it)->inputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
+            (*it)->inputDeviceInfo.networkId == updatedDesc.networkId_) {
+            (*it)->inputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
+            (*it)->inputDeviceInfo.macAddress = "";
+            (*it)->inputDeviceInfo.networkId = LOCAL_NETWORK_ID;
         }
     }
 }
