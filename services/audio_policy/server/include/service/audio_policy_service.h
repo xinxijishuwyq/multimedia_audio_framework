@@ -412,6 +412,8 @@ public:
 
     void OffloadStreamReleaseCheck(uint32_t sessionId);
 
+    void RemoteOffloadStreamRelease(uint32_t sessionId);
+
     void UpdateA2dpOffloadFlagForAllStream(std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap,
         DeviceType deviceType = DEVICE_TYPE_NONE);
 
