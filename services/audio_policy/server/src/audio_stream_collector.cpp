@@ -293,6 +293,38 @@ bool AudioStreamCollector::CheckRendererStateInfoChanged(AudioStreamChangeInfo &
     return true;
 }
 
+void AudioStreamCollector::ResetRendererStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc)
+{
+    AUDIO_INFO_LOG("ResetRendererStreamDeviceInfo, deviceType:[%{public}d]", updatedDesc.deviceType_);
+    for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
+        AudioRendererChangeInfo audioRendererChangeInfo = **it;
+        if (audioRendererChangeInfo.outputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
+            audioRendererChangeInfo.outputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
+            audioRendererChangeInfo.outputDeviceInfo.networkId == updatedDesc.networkId_)
+        {
+            audioRendererChangeInfo.outputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
+            audioRendererChangeInfo.outputDeviceInfo.macAddress = "";
+            audioRendererChangeInfo.outputDeviceInfo.networkId = LOCAL_NETWORK_ID;
+        }
+    }
+}
+
+void AudioStreamCollector::ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc)
+{
+    AUDIO_INFO_LOG("ResetCapturerStreamDeviceInfo, deviceType:[%{public}d]", updatedDesc.deviceType_);
+    for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
+        AudioCapturerChangeInfo audioCapturerChangeInfo = **it;
+        if (audioCapturerChangeInfo.inputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
+            audioCapturerChangeInfo.inputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
+            audioCapturerChangeInfo.inputDeviceInfo.networkId == updatedDesc.networkId_)
+        {
+            audioCapturerChangeInfo.inputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
+            audioCapturerChangeInfo.inputDeviceInfo.macAddress = "";
+            audioCapturerChangeInfo.inputDeviceInfo.networkId = LOCAL_NETWORK_ID;
+        }
+    }
+}
+
 int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &streamChangeInfo)
 {
     AUDIO_INFO_LOG("UpdateRendererStream client %{public}d state %{public}d session %{public}d",
