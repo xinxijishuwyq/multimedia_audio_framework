@@ -372,18 +372,24 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
     }
     lockEndpoint.unlock();
 
-    std::lock_guard<std::mutex> lock(rendererMapMutex_);
-    for (size_t i = 0; i < filteredRendererMap_.size(); i++) {
-        std::shared_ptr<RendererInServer> renderer = filteredRendererMap_[i].lock();
-        if (renderer == nullptr) {
-            AUDIO_WARNING_LOG("Find renderer is already released!");
-            continue;
-        }
-        renderer->DisableInnerCap();
-    }
-    AUDIO_INFO_LOG("Filter removed, clear %{public}zu filtered renderer.", filteredRendererMap_.size());
+    // strong ref to prevent destruct before unlock
+    std::vector<std::shared_ptr<RendererInServer>> renderers;
 
-    filteredRendererMap_.clear();
+    {
+        std::lock_guard<std::mutex> lock(rendererMapMutex_);
+        for (size_t i = 0; i < filteredRendererMap_.size(); i++) {
+            std::shared_ptr<RendererInServer> renderer = filteredRendererMap_[i].lock();
+            if (renderer == nullptr) {
+                AUDIO_WARNING_LOG("Find renderer is already released!");
+                continue;
+            }
+            renderer->DisableInnerCap();
+            renderers.push_back(std::move(renderer));
+        }
+        AUDIO_INFO_LOG("Filter removed, clear %{public}zu filtered renderer.", filteredRendererMap_.size());
+
+        filteredRendererMap_.clear();
+    }
 
     return SUCCESS;
 }
