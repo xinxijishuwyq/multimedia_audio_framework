@@ -284,8 +284,7 @@ void AudioStreamCollector::ResetRendererStreamDeviceInfo(const AudioDeviceDescri
         AudioRendererChangeInfo audioRendererChangeInfo = **it;
         if (audioRendererChangeInfo.outputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
             audioRendererChangeInfo.outputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
-            audioRendererChangeInfo.outputDeviceInfo.networkId == updatedDesc.networkId_)
-        {
+            audioRendererChangeInfo.outputDeviceInfo.networkId == updatedDesc.networkId_) {
             audioRendererChangeInfo.outputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
             audioRendererChangeInfo.outputDeviceInfo.macAddress = "";
             audioRendererChangeInfo.outputDeviceInfo.networkId = LOCAL_NETWORK_ID;
@@ -300,8 +299,7 @@ void AudioStreamCollector::ResetCapturerStreamDeviceInfo(const AudioDeviceDescri
         AudioCapturerChangeInfo audioCapturerChangeInfo = **it;
         if (audioCapturerChangeInfo.inputDeviceInfo.deviceType == updatedDesc.deviceType_ &&
             audioCapturerChangeInfo.inputDeviceInfo.macAddress == updatedDesc.macAddress_ &&
-            audioCapturerChangeInfo.inputDeviceInfo.networkId == updatedDesc.networkId_)
-        {
+            audioCapturerChangeInfo.inputDeviceInfo.networkId == updatedDesc.networkId_) {
             audioCapturerChangeInfo.inputDeviceInfo.deviceType = DEVICE_TYPE_NONE;
             audioCapturerChangeInfo.inputDeviceInfo.macAddress = "";
             audioCapturerChangeInfo.inputDeviceInfo.networkId = LOCAL_NETWORK_ID;
