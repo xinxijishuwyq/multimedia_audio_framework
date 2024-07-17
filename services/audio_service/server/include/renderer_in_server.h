@@ -126,7 +126,6 @@ private:
     std::mutex dualToneMutex_;
     std::atomic<bool> isDualToneEnabled_ = false;
     uint32_t dualToneStreamIndex_ = 0;
-    std::shared_ptr<StreamCallbacks> dualToneStreamCallback_ = nullptr;
     std::shared_ptr<IRendererStream> dualToneStream_ = nullptr;
 
     std::weak_ptr<IStreamListener> streamListener_;

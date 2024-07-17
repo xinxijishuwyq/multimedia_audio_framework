@@ -4734,6 +4734,16 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
         FetchDevice(true);
     }
 
+    if (enableDualHalToneState_ && (mode == AUDIO_MODE_PLAYBACK)
+        && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED)) {
+        const int32_t sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
+        const StreamUsage streamUsage = streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage;
+        if ((sessionId == enableDualHalToneSessionId_) && Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
+            AUDIO_INFO_LOG("disable dual hal tone when ringer/alarm renderer stop/release.");
+            UpdateDualToneState(false, enableDualHalToneSessionId_);
+        }
+    }
+
     UpdateA2dpOffloadFlagForAllStream(currentActiveDevice_.deviceType_);
     return ret;
 }

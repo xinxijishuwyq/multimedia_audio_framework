@@ -96,6 +96,7 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+    AUDIO_DEBUG_LOG("Create [%{public}d] type renderer:[%{public}u]", managerType_, sessionId);
 
     // PaAdapterManager is solely responsible for creating paStream objects
     // while the PaRendererStreamImpl has full authority over the subsequent management of the paStream
@@ -112,7 +113,7 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
 
 int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
 {
-    AUDIO_DEBUG_LOG("Enter ReleaseRender");
+    AUDIO_DEBUG_LOG("Release [%{public}d] type render:[%{public}u]", managerType_, streamIndex);
     std::unique_lock<std::mutex> lock(streamMapMutex_);
     auto it = rendererStreamMap_.find(streamIndex);
     if (it == rendererStreamMap_.end()) {
