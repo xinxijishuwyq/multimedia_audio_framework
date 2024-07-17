@@ -277,22 +277,6 @@ void AudioStreamCollector::SetCapturerStreamParam(AudioStreamChangeInfo &streamC
     capturerChangeInfo->inputDeviceInfo = streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo;
 }
 
-bool AudioStreamCollector::CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo)
-{
-    if (rendererStatequeue_.find(make_pair(streamChangeInfo.audioRendererChangeInfo.clientUID,
-        streamChangeInfo.audioRendererChangeInfo.sessionId)) != rendererStatequeue_.end()) {
-        if (streamChangeInfo.audioRendererChangeInfo.rendererState ==
-            rendererStatequeue_[make_pair(streamChangeInfo.audioRendererChangeInfo.clientUID,
-                streamChangeInfo.audioRendererChangeInfo.sessionId)]) {
-            // Renderer state not changed
-            return false;
-        }
-    } else {
-        AUDIO_INFO_LOG("client %{public}d not found ", streamChangeInfo.audioRendererChangeInfo.clientUID);
-    }
-    return true;
-}
-
 void AudioStreamCollector::ResetRendererStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc)
 {
     AUDIO_INFO_LOG("ResetRendererStreamDeviceInfo, deviceType:[%{public}d]", updatedDesc.deviceType_);
@@ -323,6 +307,22 @@ void AudioStreamCollector::ResetCapturerStreamDeviceInfo(const AudioDeviceDescri
             audioCapturerChangeInfo.inputDeviceInfo.networkId = LOCAL_NETWORK_ID;
         }
     }
+}
+
+bool AudioStreamCollector::CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo)
+{
+    if (rendererStatequeue_.find(make_pair(streamChangeInfo.audioRendererChangeInfo.clientUID,
+        streamChangeInfo.audioRendererChangeInfo.sessionId)) != rendererStatequeue_.end()) {
+        if (streamChangeInfo.audioRendererChangeInfo.rendererState ==
+            rendererStatequeue_[make_pair(streamChangeInfo.audioRendererChangeInfo.clientUID,
+                streamChangeInfo.audioRendererChangeInfo.sessionId)]) {
+            // Renderer state not changed
+            return false;
+        }
+    } else {
+        AUDIO_INFO_LOG("client %{public}d not found ", streamChangeInfo.audioRendererChangeInfo.clientUID);
+    }
+    return true;
 }
 
 int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &streamChangeInfo)
