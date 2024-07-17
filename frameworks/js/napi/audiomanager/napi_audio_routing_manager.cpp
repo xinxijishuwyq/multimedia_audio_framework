@@ -1034,7 +1034,8 @@ void NapiAudioRoutingManager::UnregisterDeviceChangeCallback(napi_env env, napi_
             cb->RemoveRoutingManagerDeviceChangeCbRef(env, callback);
         }
         if (callback == nullptr || cb->GetRoutingManagerDeviceChangeCbListSize() == 0) {
-            int32_t ret = napiRoutingMgr->audioMngr_->UnsetDeviceChangeCallback(DeviceFlag::ALL_L_D_DEVICES_FLAG);
+            int32_t ret = napiRoutingMgr->audioMngr_->UnsetDeviceChangeCallback(DeviceFlag::ALL_L_D_DEVICES_FLAG,
+                napiRoutingMgr->deviceChangeCallbackNapi_);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetDeviceChangeCallback Failed");
             napiRoutingMgr->deviceChangeCallbackNapi_.reset();
             napiRoutingMgr->deviceChangeCallbackNapi_ = nullptr;

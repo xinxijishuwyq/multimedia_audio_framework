@@ -585,11 +585,12 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, cons
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag)
+int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag,
+    std::shared_ptr<AudioManagerDeviceChangeCallback> &cb)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnsetDeviceChangeCallback");
     if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->RemoveDeviceChangeCallback();
+        audioPolicyClientStubCB_->RemoveDeviceChangeCallback(flag, cb);
     }
     return SUCCESS;
 }

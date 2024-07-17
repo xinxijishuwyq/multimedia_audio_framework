@@ -213,7 +213,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetDeviceChangeCallback_001, Te
     int32_t ret = AudioPolicyManager::GetInstance().SetDeviceChangeCallback(clientId, flag, callback);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = AudioPolicyManager::GetInstance().UnsetDeviceChangeCallback(clientId, flag);
+    ret = AudioPolicyManager::GetInstance().UnsetDeviceChangeCallback(clientId, flag, callback);
     EXPECT_EQ(SUCCESS, ret);
 }
 
