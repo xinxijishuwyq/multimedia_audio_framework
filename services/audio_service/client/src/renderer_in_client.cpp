@@ -2136,7 +2136,7 @@ bool RendererInClientInner::GetSpatializationEnabled()
 
 bool RendererInClientInner::GetHighResolutionEnabled()
 {
-    return PolicyHandler::GetInstance().GetHighResolutionExist();
+    return AudioPolicyManager::GetInstance().IsHighResolutionExist();
 }
 
 int32_t RendererInClientInner::RegisterSpatializationStateEventListener()
