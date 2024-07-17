@@ -2886,6 +2886,7 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     }
 
     if (u->offload_enable && !strcmp(i->sink->name, OFFLOAD_SINK_NAME)) {
+        ResetFadeoutPause(i, state);
         PaInputStateChangeCbOffload(u, i, state);
     } else if (u->multichannel_enable && !strcmp(i->sink->name, MCH_SINK_NAME)) {
         PaInputStateChangeCbMultiChannel(u, i, state);
