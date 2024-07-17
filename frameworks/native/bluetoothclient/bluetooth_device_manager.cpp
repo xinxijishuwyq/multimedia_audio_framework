@@ -125,6 +125,21 @@ bool IsBTWearDetectionEnable(const BluetoothRemoteDevice &device)
     return (wearEnabledAbility == WEAR_ENABLED && isWearSupported);
 }
 
+DeviceCategory GetDeviceCategory(const BluetoothRemoteDevice &device)
+{
+    int cod = DEFAULT_COD;
+    int majorClass = DEFAULT_MAJOR_CLASS;
+    int majorMinorClass = DEFAULT_MAJOR_MINOR_CLASS;
+    device.GetDeviceProductType(cod, majorClass, majorMinorClass);
+    AUDIO_INFO_LOG("Device type majorClass: %{public}d, majorMinorClass: %{public}d.", majorClass, majorMinorClass);
+    DeviceCategory bluetoothCategory = CATEGORY_DEFAULT;
+    auto pos = bluetoothDeviceCategoryMap_.find(std::make_pair(majorClass, majorMinorClass));
+    if (pos != bluetoothDeviceCategoryMap_.end()) {
+        bluetoothCategory = pos->second;
+    }
+    return bluetoothCategory;
+}
+
 void MediaBluetoothDeviceManager::SetMediaStack(const BluetoothRemoteDevice &device, int action)
 {
     switch (action) {
@@ -166,17 +181,8 @@ void MediaBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevic
     if (IsA2dpBluetoothDeviceExist(device.GetDeviceAddr())) {
         return;
     }
-    int cod = DEFAULT_COD;
-    int majorClass = DEFAULT_MAJOR_CLASS;
-    int majorMinorClass = DEFAULT_MAJOR_MINOR_CLASS;
-    device.GetDeviceProductType(cod, majorClass, majorMinorClass);
-    AUDIO_INFO_LOG("Device type majorClass: %{public}d, majorMinorClass: %{public}d.", majorClass, majorMinorClass);
-    DeviceCategory bluetoothCategory = CATEGORY_DEFAULT;
-    auto pos = bluetoothDeviceCategoryMap_.find(std::make_pair(majorClass, majorMinorClass));
-    if (pos != bluetoothDeviceCategoryMap_.end()) {
-        bluetoothCategory = pos->second;
-    }
 
+    DeviceCategory bluetoothCategory = GetDeviceCategory(device);
     AudioDeviceDescriptor desc;
     desc.deviceCategory_ = bluetoothCategory;
     switch (bluetoothCategory) {
@@ -507,17 +513,8 @@ void HfpBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevice 
     if (IsHfpBluetoothDeviceExist(device.GetDeviceAddr())) {
         return;
     }
-    int cod = DEFAULT_COD;
-    int majorClass = DEFAULT_MAJOR_CLASS;
-    int majorMinorClass = DEFAULT_MAJOR_MINOR_CLASS;
-    device.GetDeviceProductType(cod, majorClass, majorMinorClass);
-    AUDIO_INFO_LOG("Device type majorClass: %{public}d, majorMinorClass: %{public}d.", majorClass, majorMinorClass);
-    DeviceCategory bluetoothCategory = CATEGORY_DEFAULT;
-    auto pos = bluetoothDeviceCategoryMap_.find(std::make_pair(majorClass, majorMinorClass));
-    if (pos != bluetoothDeviceCategoryMap_.end()) {
-        bluetoothCategory = pos->second;
-    }
 
+    DeviceCategory bluetoothCategory = GetDeviceCategory(device);
     AudioDeviceDescriptor desc;
     desc.deviceCategory_ = bluetoothCategory;
     switch (bluetoothCategory) {
@@ -692,9 +689,24 @@ void HfpBluetoothDeviceManager::HandleWearDisable(const BluetoothRemoteDevice &d
 
 void HfpBluetoothDeviceManager::HandleUserSelection(const BluetoothRemoteDevice &device)
 {
+    std::string deviceAddr = device.GetDeviceAddr();
+    DeviceCategory bluetoothCategory = GetDeviceCategory(device);
+    if (bluetoothCategory == BT_WATCH) {
+        std::lock_guard<std::mutex> wearStateMapLock(g_hfpWearStateMapLock);
+        std::lock_guard<std::mutex> hfpDeviceLock(g_hfpDeviceLock);
+        auto isPresent = [] (BluetoothRemoteDevice &bluetoothRemoteDevice) {
+            return wearDetectionStateMap_[bluetoothRemoteDevice.GetDeviceAddr()] == WEAR_ACTION;
+        };
+        auto deviceIter = std::find_if(privacyDevices_.rbegin(), privacyDevices_.rend(), isPresent);
+        if (deviceIter != privacyDevices_.rend()) {
+            deviceAddr = deviceIter->GetDeviceAddr();
+            AUDIO_INFO_LOG("Change user select device from watch %{public}s to wear headphone %{public}s",
+                device.GetDeviceAddr().c_str(), deviceAddr.c_str());
+        }
+    }
     std::lock_guard<std::mutex> observerLock(g_observerLock);
     if (g_deviceObserver != nullptr) {
-        g_deviceObserver->OnForcedDeviceSelected(DEVICE_TYPE_BLUETOOTH_SCO, device.GetDeviceAddr());
+        g_deviceObserver->OnForcedDeviceSelected(DEVICE_TYPE_BLUETOOTH_SCO, deviceAddr);
     }
 }
 
