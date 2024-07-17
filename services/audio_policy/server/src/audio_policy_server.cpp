@@ -68,7 +68,6 @@ constexpr int32_t EVENT_DES_SIZE = 60;
 constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr int32_t API_VERSION_REMAINDER = 1000;
 constexpr int32_t API_VERSION_14 = 14; // for deprecated since 9
-constexpr uid_t UID_ROOT = 0;
 constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
@@ -1389,7 +1388,7 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 #ifdef AUDIO_BUILD_VARIANT_ROOT
         // root user case for auto test
         uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
-        if (callingUid == UID_ROOT) {
+        if (callingUid == ROOT_UID) {
             return true;
         }
 #endif
