@@ -738,7 +738,7 @@ IMmapAudioRendererSink *AudioEndpointInner::GetFastSink(const DeviceInfo &device
 #endif
     }
 
-    if (deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && deviceInfo.a2dpOffloadFlag == A2DP_NOT_OFFLOAD) {
+    if (deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && deviceInfo.a2dpOffloadFlag != A2DP_OFFLOAD) {
         fastSinkType_ = FAST_SINK_TYPE_BLUETOOTH;
         return BluetoothRendererSink::GetMmapInstance();
     }
