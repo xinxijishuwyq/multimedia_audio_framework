@@ -37,6 +37,7 @@
 #include "xcollie/xcollie.h"
 #include "xcollie/xcollie_define.h"
 #include "securec.h"
+#include "privacy_error.h"
 
 using OHOS::Security::AccessToken::AccessTokenKit;
 
@@ -275,13 +276,13 @@ bool PermissionUtil::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState 
     if (state == AUDIO_PERMISSION_START) {
         Trace trace("PrivacyKit::StartUsingPermission");
         int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        if (res != 0) {
+        if (res != 0 && res != Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING) {
             AUDIO_ERR_LOG("StartUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
                 targetTokenId, res);
             return false;
         }
         res = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
-        if (res != 0) {
+        if (res != 0 && res != Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING) {
             AUDIO_ERR_LOG("AddPermissionUsedRecord for tokenId %{public}u! The PrivacyKit error code is "
                 "%{public}d", targetTokenId, res);
             return false;
