@@ -260,19 +260,26 @@ int32_t AudioService::OnInitInnerCapList()
 {
     AUDIO_INFO_LOG("workingInnerCapId_ is %{public}d", workingInnerCapId_);
     FilterAllFastProcess();
-    std::unique_lock<std::mutex> lock(rendererMapMutex_);
-    for (auto it = allRendererMap_.begin(); it != allRendererMap_.end(); it++) {
-        std::shared_ptr<RendererInServer> renderer = it->second.lock();
-        if (renderer == nullptr) {
-            AUDIO_WARNING_LOG("Renderer is already released!");
-            continue;
-        }
-        if (ShouldBeInnerCap(renderer->processConfig_)) {
-            renderer->EnableInnerCap();
-            filteredRendererMap_.push_back(renderer);
+
+    // strong ref to prevent destruct before unlock
+    std::vector<std::shared_ptr<RendererInServer>> renderers;
+
+    {
+        std::unique_lock<std::mutex> lock(rendererMapMutex_);
+        for (auto it = allRendererMap_.begin(); it != allRendererMap_.end(); it++) {
+            std::shared_ptr<RendererInServer> renderer = it->second.lock();
+            if (renderer == nullptr) {
+                AUDIO_WARNING_LOG("Renderer is already released!");
+                continue;
+            }
+            if (ShouldBeInnerCap(renderer->processConfig_)) {
+                renderer->EnableInnerCap();
+                filteredRendererMap_.push_back(renderer);
+            }
+            renderers.push_back(std::move(renderer));
         }
     }
-    lock.unlock();
+
     return SUCCESS;
 }
 
