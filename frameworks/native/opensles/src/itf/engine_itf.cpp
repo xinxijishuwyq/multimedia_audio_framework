@@ -73,6 +73,9 @@ static SLresult CreateAudioRecorder(
     }
     ClassTable *audioRecorderClass = ObjectIdToClass(SL_OBJECTID_AUDIORECORDER);
     CAudioRecorder *thiz = (CAudioRecorder *) Construct(audioRecorderClass, self);
+    if (thiz == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     thiz->mId = audioRecorderId;
     IObjectInit(&thiz->mObject);
     IRecordInit(&thiz->mRecord, audioRecorderId);
