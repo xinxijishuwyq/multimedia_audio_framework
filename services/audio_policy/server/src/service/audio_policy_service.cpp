@@ -67,6 +67,7 @@ static const std::string PIPE_DISTRIBUTED_OUTPUT = "distributed_output";
 static const std::string PIPE_FAST_DISTRIBUTED_OUTPUT = "fast_distributed_output";
 static const std::string PIPE_DISTRIBUTED_INPUT = "distributed_input";
 static const std::string PIPE_FAST_DISTRIBUTED_INPUT = "fast_distributed_input";
+static const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 std::string PIPE_WAKEUP_INPUT = "wakeup_input";
 static const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_S = 3; // 3s
@@ -5549,12 +5550,24 @@ uint32_t AudioPolicyService::GetSinkLatencyFromXml() const
     return sinkLatencyInMsec_;
 }
 
-int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
+int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName)
 {
     // Use GetPreferredOutputDeviceDescriptors instead of currentActiveDevice, if prefer != current, recreate stream
     std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList = GetPreferredOutputDeviceDescriptors(rendererInfo);
     if (preferredDeviceList.size() == 0) {
         return AUDIO_FLAG_NORMAL;
+    }
+    if (rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
+        std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;
+        if (g_adProxy == nullptr) {
+            AUDIO_ERR_LOG("Invalid g_adProxy");
+            return AUDIO_FLAG_NORMAL;
+        }
+        std::string result = g_adProxy->GetAudioParameter(bundleNamePre);
+        if (result == "true") {
+            AUDIO_INFO_LOG("%{public}s not in fast list", bundleName.c_str());
+            return AUDIO_FLAG_NORMAL;
+        }
     }
     return GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
         rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_);
