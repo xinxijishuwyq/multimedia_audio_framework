@@ -1157,6 +1157,14 @@ void AudioServer::SetAudioMonoState(bool audioMono)
     } else {
         AUDIO_ERR_LOG("AudioServer::SetAudioBalanceValue: a2dp = null");
     }
+
+    // Set mono for offload_audio_renderer_sink (offload)
+    IAudioRendererSink *offloadIAudioRendererSink = IAudioRendererSink::GetInstance("offload", "");
+    if (offloadIAudioRendererSink != nullptr) {
+        offloadIAudioRendererSink->SetAudioMonoState(audioMono);
+    } else {
+        AUDIO_ERR_LOG("AudioServer::SetAudioBalanceValue: offload = null");
+    }
 }
 
 void AudioServer::SetAudioBalanceValue(float audioBalance)
@@ -1181,6 +1189,14 @@ void AudioServer::SetAudioBalanceValue(float audioBalance)
         a2dpIAudioRendererSink->SetAudioBalanceValue(audioBalance);
     } else {
         AUDIO_WARNING_LOG("a2dp = null");
+    }
+
+    // Set balance for offload_audio_renderer_sink (offload)
+    IAudioRendererSink *offloadIAudioRendererSink = IAudioRendererSink::GetInstance("offload", "");
+    if (offloadIAudioRendererSink != nullptr) {
+        offloadIAudioRendererSink->SetAudioBalanceValue(audioBalance);
+    } else {
+        AUDIO_WARNING_LOG("offload = null");
     }
 }
 
