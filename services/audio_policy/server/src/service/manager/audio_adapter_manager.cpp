@@ -432,10 +432,6 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
         return SUCCESS;
     }
 
-    if (streamType == STREAM_RING) {
-        mute = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
-    }
-
     // set stream mute status to mem.
     volumeDataMaintainer_.SetStreamMuteStatus(streamType, mute);
     std::lock_guard<std::mutex> lock(muteStatusMutex_);
