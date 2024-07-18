@@ -36,6 +36,7 @@ namespace AudioStandard {
 using namespace std;
 const unsigned int REQUEST_THREAD_PRIORITY_TIME_OUT_SECONDS = 10;
 constexpr unsigned int GET_BUNDLE_INFO_TIME_OUT_SECONDS = 10;
+constexpr unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
@@ -153,14 +154,20 @@ AudioStreamType AudioSystemManager::GetStreamType(ContentType contentType, Strea
 
 inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
 {
+    AudioXCollie xcollieGetSystemAbilityManager("GetAudioSystemManagerProxy", XCOLLIE_TIME_OUT_SECONDS);
     lock_guard<mutex> lock(g_asProxyMutex);
     if (g_asProxy == nullptr) {
+        AudioXCollie xcollieGetSystemAbilityManager("GetSystemAbilityManager", XCOLLIE_TIME_OUT_SECONDS);
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "get sa manager failed");
+        xcollieGetSystemAbilityManager.CancelXCollieTimer();
+
+        AudioXCollie xcollieGetSystemAbility("GetSystemAbility", XCOLLIE_TIME_OUT_SECONDS);
         sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
         CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "get audio service remote object failed");
         g_asProxy = iface_cast<IStandardAudioService>(object);
         CHECK_AND_RETURN_RET_LOG(g_asProxy != nullptr, nullptr, "get audio service proxy failed");
+        xcollieGetSystemAbility.CancelXCollieTimer();
 
         // register death recipent to restore proxy
         sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
