@@ -1451,11 +1451,6 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    bool effectOffloadFlag = EffectChainManagerCheckEffectOffload();
-    if (!effectOffloadFlag) {
-        return 0;
-    }
-
     int32_t appsUid[MAX_MIX_CHANNELS];
     size_t count = 0;
 
@@ -3000,10 +2995,6 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    bool effectOffloadFlag = EffectChainManagerCheckEffectOffload();
-    if (!effectOffloadFlag) {
-        return;
-    }
     uint32_t sinkChannel = DEFAULT_MULTICHANNEL_NUM;
     uint64_t sinkChannelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
     EffectChainManagerReturnMultiChannelInfo(&sinkChannel, &sinkChannelLayout);
