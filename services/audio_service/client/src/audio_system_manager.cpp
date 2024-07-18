@@ -308,12 +308,14 @@ bool AudioSystemManager::IsStreamActive(AudioVolumeType volumeType) const
 int32_t AudioSystemManager::SetAsrAecMode(const AsrAecMode asrAecMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     return gasp->SetAsrAecMode(asrAecMode);
 }
 
 int32_t AudioSystemManager::GetAsrAecMode(AsrAecMode &asrAecMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     int32_t ret = gasp->GetAsrAecMode(asrAecMode);
     CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrAec Mode audio parameters failed");
     return 0;
@@ -322,12 +324,14 @@ int32_t AudioSystemManager::GetAsrAecMode(AsrAecMode &asrAecMode)
 int32_t AudioSystemManager::SetAsrNoiseSuppressionMode(const AsrNoiseSuppressionMode asrNoiseSuppressionMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     return gasp->SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
 }
 
 int32_t AudioSystemManager::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     int32_t ret = gasp->GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
     CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrAec Mode audio parameters failed");
     return 0;
@@ -336,12 +340,14 @@ int32_t AudioSystemManager::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &
 int32_t AudioSystemManager::SetAsrWhisperDetectionMode(const AsrWhisperDetectionMode asrWhisperDetectionMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     return gasp->SetAsrWhisperDetectionMode(asrWhisperDetectionMode);
 }
 
 int32_t AudioSystemManager::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     int32_t ret = gasp->GetAsrWhisperDetectionMode(asrWhisperDetectionMode);
     CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrWhisperDetection Mode audio parameters failed");
     return 0;
@@ -350,18 +356,21 @@ int32_t AudioSystemManager::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &
 int32_t AudioSystemManager::SetAsrVoiceControlMode(const AsrVoiceControlMode asrVoiceControlMode, bool on)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     return gasp->SetAsrVoiceControlMode(asrVoiceControlMode, on);
 }
 
 int32_t AudioSystemManager::SetAsrVoiceMuteMode(const AsrVoiceMuteMode asrVoiceMuteMode, bool on)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     return gasp->SetAsrVoiceMuteMode(asrVoiceMuteMode, on);
 }
 
 int32_t AudioSystemManager::IsWhispering()
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     return gasp->IsWhispering();
 }
 
