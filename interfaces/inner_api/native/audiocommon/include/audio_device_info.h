@@ -187,9 +187,10 @@ inline bool IsInputDevice(DeviceType deviceType)
     return INPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
 }
 
-inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole)
+inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole, bool isArmUsb)
 {
-    if (deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+    // Arm usb device distinguishes input and output through device roles.
+    if ((deviceType == DEVICE_TYPE_USB_HEADSET && isArmUsb) || deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
         return deviceRole == INPUT_DEVICE || deviceRole == DEVICE_ROLE_MAX;
     } else {
         return INPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
@@ -215,9 +216,10 @@ inline bool IsOutputDevice(DeviceType deviceType)
     return OUTPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
 }
 
-inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole)
+inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole, bool isArmUsb)
 {
-    if (deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+    // Arm usb device distinguishes input and output through device roles.
+    if ((deviceType == DEVICE_TYPE_USB_HEADSET && isArmUsb) || deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
         return deviceRole == OUTPUT_DEVICE || deviceRole == DEVICE_ROLE_MAX;
     } else {
         return OUTPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
