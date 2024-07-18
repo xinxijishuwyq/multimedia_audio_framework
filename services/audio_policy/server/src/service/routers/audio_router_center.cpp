@@ -61,9 +61,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchRingRenderDevi
     int32_t clientUID, RouterType &routerType)
 {
     for (auto &router : ringRenderRouters_) {
+        CHECK_AND_CONTINUE_LOG(router != nullptr, "Invalid router.");
         vector<unique_ptr<AudioDeviceDescriptor>> descs = router->GetRingRenderDevices(streamUsage, clientUID);
         CHECK_AND_CONTINUE_LOG(!descs.empty(), "FetchRingRenderDevices is empty.");
-        if (descs.front()->deviceType_ != DEVICE_TYPE_NONE) {
+        if (descs.front() != nullptr && descs.front()->deviceType_ != DEVICE_TYPE_NONE) {
             AUDIO_INFO_LOG("RingRender streamUsage %{public}d clientUID %{public}d"
                 " fetch descs front:%{public}d", streamUsage, clientUID, descs.front()->deviceType_);
             routerType = router->GetRouterType();
