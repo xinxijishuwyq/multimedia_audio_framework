@@ -999,7 +999,9 @@ bool AudioDeviceManager::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDev
             if (connectedDevices_[i]->deviceRole_ == audioDeviceDescriptors->deviceRole_
                 && connectedDevices_[i]->deviceType_ == audioDeviceDescriptors->deviceType_
                 && connectedDevices_[i]->networkId_ == audioDeviceDescriptors->networkId_
-                && connectedDevices_[i]->macAddress_ == audioDeviceDescriptors->macAddress_) {
+                && connectedDevices_[i]->macAddress_ == audioDeviceDescriptors->macAddress_
+                && connectedDevices_[i]->interruptGroupId_ == audioDeviceDescriptors->interruptGroupId_
+                && connectedDevices_[i]->volumeGroupId_ == audioDeviceDescriptors->volumeGroupId_) {
                 return true;
             }
         }
