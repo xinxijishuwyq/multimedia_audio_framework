@@ -37,11 +37,11 @@ public:
     static void UpdateDeviceState(AudioEvent audioEvent);
     static int32_t DetectUsbHeadsetState(AudioEvent *audioEvent);
     static int32_t DetectAnalogHeadsetState(AudioEvent *audioEvent);
-    static int32_t AudioDpDetectDevice(struct AudioPnpUevent *audioPnpUevent);
+    static int32_t DetectDPState(AudioEvent *audioEvent);
     static AudioEvent audioSocketEvent_;
 
 private:
-    static int32_t SetAudioEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent);
+    static int32_t SetAudioPnpServerEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent);
     static int32_t AudioAnalogHeadsetDetectDevice(struct AudioPnpUevent *audioPnpUevent);
     static int32_t CheckUsbDesc(struct UsbDevice *usbDevice);
     static int32_t ReadAndScanUsbDev(const char *devPath);
@@ -52,6 +52,7 @@ private:
     static int32_t AudioUsbHeadsetDetectDevice(struct AudioPnpUevent *audioPnpUevent);
     static inline bool IsBadName(const char *name);
     static int32_t ScanUsbBusSubDir(const char *subDir);
+    static int32_t AudioDpDetectDevice(struct AudioPnpUevent *audioPnpUevent);
 };
 
 } // namespace AudioStandard

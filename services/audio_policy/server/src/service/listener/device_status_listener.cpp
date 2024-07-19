@@ -36,7 +36,9 @@ const std::string AUDIO_HDI_SERVICE_NAME = "audio_manager_service";
 const std::string AUDIO_HDI_PNP_SERVICE_NAME = "audio_hdi_pnp_service";
 const std::string AUDIO_BLUETOOTH_HDI_SERVICE_NAME = "audio_bluetooth_hdi_service";
 const std::string DAUDIO_HDI_SERVICE_NAME = "daudio_primary_service";
-const uint8_t EVENT_PARAMS = 2;
+const std::string DP_ADDRESS = "card=0;port=";
+const uint8_t EVENT_NUM_TYPE = 2;
+const uint8_t EVENT_PARAMS = 4;
 const uint8_t D_EVENT_PARAMS = 5;
 
 static DeviceType GetInternalDeviceType(AudioDeviceType hdiDeviceType)
@@ -205,16 +207,35 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
     CHECK_AND_RETURN_LOG(!info.empty(), "OnPnpDeviceStatusChange invalid info");
     AudioDeviceType hdiDeviceType = AUDIO_DEVICE_UNKNOWN;
     AudioEventType hdiEventType = AUDIO_EVENT_UNKNOWN;
-    if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;DEVICE_TYPE=%d", &hdiEventType, &hdiDeviceType) < EVENT_PARAMS) {
-        AUDIO_ERR_LOG("[OnPnpDeviceStatusChanged]: Failed to scan info string %{public}s", info.c_str());
+    std::string name = "";
+    std::string address = "";
+ 
+    if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;DEVICE_TYPE=%d;", &hdiEventType, &hdiDeviceType) < EVENT_NUM_TYPE) {
+        AUDIO_ERR_LOG("Failed to scan info string %{public}s", info.c_str());
         return;
     }
+ 
+    auto nameBegin = info.find("EVENT_NAME=");
+    auto nameEnd = info.find_first_of(";", nameBegin);
+    name = info.substr(nameBegin + std::strlen("EVENT_NAME="),
+        nameEnd - nameBegin - std::strlen("EVENT_NAME="));
+
+    auto addressBegin = info.find("DEVICE_ADDRESS=");
+    auto addressEnd = info.find_first_of(";", addressBegin);
+    string portId = info.substr(addressBegin + std::strlen("DEVICE_ADDRESS="),
+        addressEnd - addressBegin - std::strlen("DEVICE_ADDRESS="));
+    address = portId;
+
     DeviceType internalDevice = GetInternalDeviceType(hdiDeviceType);
     CHECK_AND_RETURN_LOG(internalDevice != DEVICE_TYPE_NONE, "Unsupported device %{public}d", hdiDeviceType);
     bool isConnected = (hdiEventType == AUDIO_DEVICE_ADD) ? true : false;
-    AUDIO_INFO_LOG("[OnPnpDeviceStatusChanged]:[device type :%{public}d], [connection state: %{public}d]",
-        internalDevice, isConnected);
-    deviceObserver_.OnPnpDeviceStatusUpdated(internalDevice, isConnected);
+
+    if (internalDevice == DEVICE_TYPE_DP) {
+        address = DP_ADDRESS + portId;
+    }
+    AUDIO_INFO_LOG("[device type :%{public}d], [connection state: %{public}d] "
+        "[name: %{public}s]", internalDevice, isConnected, name.c_str());
+    deviceObserver_.OnPnpDeviceStatusUpdated(internalDevice, isConnected, name, address);
 }
 
 AudioPnpStatusCallback::AudioPnpStatusCallback()

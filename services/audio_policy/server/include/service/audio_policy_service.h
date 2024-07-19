@@ -229,9 +229,12 @@ public:
         const AudioStreamInfo &streamInfo);
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
 
-    int32_t HandleSpecialDeviceType(DeviceType &devType, bool &isConnected);
+    int32_t HandleSpecialDeviceType(DeviceType &devType, bool &isConnected, const std::string &address);
 
     void OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected);
+
+    void OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected,
+        const std::string &name, const std::string &adderess);
 
     void OnDeviceConfigurationChanged(DeviceType deviceType,
         const std::string &macAddress, const std::string &deviceName,
@@ -608,11 +611,11 @@ private:
 
     int32_t LoadDefaultUsbModule(DeviceRole deviceRole);
 
-    int32_t RehandlePnpDevice(DeviceType deviceType, DeviceRole deviceRole);
+    int32_t RehandlePnpDevice(DeviceType deviceType, DeviceRole deviceRole, const std::string &address);
 
-    int32_t HandleArmUsbDevice(DeviceType deviceType, DeviceRole deviceRole);
+    int32_t HandleArmUsbDevice(DeviceType deviceType, DeviceRole deviceRole, const std::string &address);
 
-    int32_t HandleDpDevice(DeviceType deviceType);
+    int32_t HandleDpDevice(DeviceType deviceType, const std::string &address);
 
     int32_t GetModuleInfo(ClassType classType, std::string &moduleInfoStr);
 
