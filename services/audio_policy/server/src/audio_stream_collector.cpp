@@ -1194,5 +1194,29 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
     bean->Add("EFFECT_CHAIN", effectChainType);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
+
+bool AudioStreamCollector::IsCallStreamUsage(StreamUsage usage)
+{
+    if (usage == STREAM_USAGE_VOICE_COMMUNICATION || usage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+        usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        return true;
+    }
+    return false;
+}
+
+StreamUsage AudioStreamCollector::GetLastestRunningCallStreamUsage()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        StreamUsage usage = changeInfo->rendererInfo.streamUsage;
+        RendererState state = changeInfo->rendererState;
+        if ((IsCallStreamUsage(usage) && state == RENDERER_RUNNING) ||
+            usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+            return usage;
+        }
+    }
+    return STREAM_USAGE_UNKNOWN;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
