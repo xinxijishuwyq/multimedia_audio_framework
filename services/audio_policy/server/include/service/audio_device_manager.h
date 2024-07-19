@@ -57,6 +57,7 @@ public:
     vector<unique_ptr<AudioDeviceDescriptor>> GetMediaCapturePublicDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetCapturePrivacyDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetCapturePublicDevices();
+    vector<unique_ptr<AudioDeviceDescriptor>> GetRecongnitionCapturePrivacyDevices();
     unique_ptr<AudioDeviceDescriptor> GetCommRenderDefaultDevice(StreamUsage streamUsage);
     unique_ptr<AudioDeviceDescriptor> GetRenderDefaultDevice();
     unique_ptr<AudioDeviceDescriptor> GetCaptureDefaultDevice();
@@ -144,6 +145,7 @@ private:
     vector<shared_ptr<AudioDeviceDescriptor>> capturePrivacyDevices_;
     vector<shared_ptr<AudioDeviceDescriptor>> capturePublicDevices_;
     vector<shared_ptr<AudioDeviceDescriptor>> connectedDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> reconCapturePrivacyDevices_;
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> devicePrivacyMaps_ = {};
     sptr<AudioDeviceDescriptor> earpiece_ = nullptr;
     sptr<AudioDeviceDescriptor> speaker_ = nullptr;

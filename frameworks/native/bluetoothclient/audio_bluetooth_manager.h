@@ -21,6 +21,7 @@
 #include "bluetooth_avrcp_tg.h"
 #include "bluetooth_hfp_ag.h"
 #include "audio_info.h"
+#include "bluetooth_device_utils.h"
 
 namespace OHOS {
 namespace Bluetooth {
@@ -113,6 +114,8 @@ public:
     static AudioStandard::AudioScene GetCurrentAudioScene();
     static AudioStandard::AudioScene GetPolicyAudioScene();
     static void SetAudioSceneFromPolicy(AudioStandard::AudioScene scene);
+    static int32_t HandleScoWithRecongnition(bool handleFlag, BluetoothRemoteDevice &device);
+    static ScoCategory GetScoCategory();
 
 private:
     static HandsFreeAudioGateway *hfpInstance_;
@@ -120,6 +123,7 @@ private:
     static AudioStandard::AudioScene scene_;
     static AudioStandard::AudioScene sceneFromPolicy_;
     static BluetoothRemoteDevice activeHfpDevice_;
+    static ScoCategory scoCategory;
 };
 }
 }

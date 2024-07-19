@@ -656,6 +656,11 @@ private:
     void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
+    void BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> desc,
+        vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos, SourceType sourceType);
+
+    void BluetoothScoDisconectForRecongnition();
+
     void FetchDevice(bool isOutputDevice = true,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
@@ -940,6 +945,8 @@ private:
     void LoadHdiEffectModel();
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
+
+    int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;

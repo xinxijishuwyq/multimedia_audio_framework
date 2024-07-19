@@ -36,6 +36,7 @@ HandsFreeAudioGateway *AudioHfpManager::hfpInstance_ = nullptr;
 std::shared_ptr<AudioHfpListener> AudioHfpManager::hfpListener_ = std::make_shared<AudioHfpListener>();
 AudioScene AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 AudioScene AudioHfpManager::sceneFromPolicy_ = AUDIO_SCENE_DEFAULT;
+OHOS::Bluetooth::ScoCategory AudioHfpManager::scoCategory = OHOS::Bluetooth::ScoCategory::SCO_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
 std::mutex g_activehfpDeviceLock;
 std::mutex g_audioSceneLock;
@@ -309,6 +310,28 @@ void AudioHfpManager::CheckHfpDeviceReconnect()
         AUDIO_INFO_LOG("reconnect hfp device:%{public}s, wear state:%{public}d",
             GetEncryptAddr(device.GetDeviceAddr()).c_str(), wearState);
     }
+}
+
+int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag, BluetoothRemoteDevice &device)
+{
+    CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
+    int32_t ret;
+    if (handleFlag) {
+        AUDIO_INFO_LOG(" Recongnition sco connect");
+        ret = hfpInstance_->OpenVoiceRecognition(device);
+        AudioHfpManager::scoCategory = ScoCategory::SCO_RECOGNITION;
+    } else {
+        AUDIO_INFO_LOG(" Recongnition sco close");
+        ret = hfpInstance_->CloseVoiceRecognition(device);
+        AudioHfpManager::scoCategory = ScoCategory::SCO_DEFAULT;
+    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "HandleScoWithRecongnition failed, result: %{public}d", ret);
+    return SUCCESS;
+}
+
+ScoCategory AudioHfpManager::GetScoCategory()
+{
+    return scoCategory;
 }
 
 int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
