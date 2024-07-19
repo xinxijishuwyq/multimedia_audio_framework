@@ -35,10 +35,8 @@ public:
     auto Lock(const int32_t TimeoutMs)
     {
         Trace traceLock("AudioRunningLockManager:Lock");
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            lastAppsUid_ = {};
-        }
+        std::lock_guard<std::mutex> lock(mutex_);
+        lastAppsUid_ = {};
 
         Trace traceRunningLock("AudioRunningLockManager:runningLock_->Lock");
         auto ret = runningLock_->Lock(TimeoutMs);
@@ -50,10 +48,16 @@ public:
     auto UnLock()
     {
         Trace traceUnlock("AudioRunningLockManager:UnLock");
+        std::lock_guard<std::mutex> lock(mutex_);
         isLocked_ = false;
+        currentAppsUid_ = {};
+        lastAppsUid_ = {};
 
+        Trace traceUpdateWorkSource("AudioRunningLockManager:runningLock_->UpdateWorkSource");
+        auto ret = runningLock_->UpdateWorkSource({});
+        AUDIO_INFO_LOG("UpdateWorkSource ret: %{public}d", ret);
         Trace traceRunningUnlock("AudioRunningLockManager:runningLock_->UnLock");
-        auto ret = runningLock_->UnLock();
+        ret = runningLock_->UnLock();
         AUDIO_INFO_LOG("Unlock runninglock, ret: %{public}d", ret);
         return ret;
     }
@@ -62,29 +66,26 @@ public:
     int32_t UpdateAppsUid(const U &itBegin, const U &itEnd)
     {
         Trace trace("AudioRunningLockManager:UpdateAppsUid");
+        std::lock_guard<std::mutex> lock(mutex_);
         std::unordered_set<int32_t> appsUidSet(itBegin, itEnd);
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            currentAppsUid_ = std::move(appsUidSet);
-            return SUCCESS;
-        }
+
+        currentAppsUid_ = std::move(appsUidSet);
+        return SUCCESS;
     }
 
     int32_t UpdateAppsUidToPowerMgr()
     {
         Trace trace("AudioRunningLockManager:UpdateAppsUidToPowerMgr");
+        std::lock_guard<std::mutex> lock(mutex_);
         if (!isLocked_) {
             return SUCCESS;
         }
         std::vector<int32_t> appsUid;
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            if (currentAppsUid_ == lastAppsUid_) {
-                return SUCCESS;
-            }
-            lastAppsUid_ = currentAppsUid_;
-            appsUid.insert(appsUid.end(), currentAppsUid_.begin(), currentAppsUid_.end());
+        if (currentAppsUid_ == lastAppsUid_) {
+            return SUCCESS;
         }
+        lastAppsUid_ = currentAppsUid_;
+        appsUid.insert(appsUid.end(), currentAppsUid_.begin(), currentAppsUid_.end());
 
         std::string appsUidInfo;
         for (auto uid : appsUid) {
