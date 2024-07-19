@@ -1213,7 +1213,8 @@ void RendererInClientInner::SetPrivacyType(AudioPrivacyType privacyType)
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Set privacy type failed");
 }
 
-bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType)
+bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
+    AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("RendererInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
@@ -1224,7 +1225,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType)
 
     hasFirstFrameWrited_ = false;
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, clientPid_, rendererInfo_);
+        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, clientPid_, rendererInfo_, reason);
     }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();

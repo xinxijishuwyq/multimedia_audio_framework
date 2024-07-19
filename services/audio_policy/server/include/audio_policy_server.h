@@ -347,7 +347,8 @@ public:
 
     ConverterConfig GetConverterConfig() override;
 
-    void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
+    void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
+        const AudioStreamDeviceChangeReasonExt reason) override;
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
 

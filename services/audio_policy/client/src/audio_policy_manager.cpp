@@ -965,11 +965,12 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     return gsp->UpdateTracker(mode, streamChangeInfo);
 }
 
-void AudioPolicyManager::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
+void AudioPolicyManager::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp != nullptr) {
-        gsp->FetchOutputDeviceForTrack(streamChangeInfo);
+        gsp->FetchOutputDeviceForTrack(streamChangeInfo, reason);
     } else {
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
     }

@@ -31,7 +31,7 @@ public:
     void UpdateTracker(const int32_t sessionId, const State state, const int32_t clientPid,
         const AudioRendererInfo &rendererInfo, const AudioCapturerInfo &capturerInfo);
     void FetchOutputDeviceForTrack(const int32_t sessionId, const State state, const int32_t clientPid,
-        const AudioRendererInfo &rendererInfo);
+        const AudioRendererInfo &rendererInfo, const AudioStreamDeviceChangeReasonExt reason);
     void FetchInputDeviceForTrack(const int32_t sessionId, const State state, const int32_t clientPid,
         const AudioCapturerInfo &capturerInfo);
 

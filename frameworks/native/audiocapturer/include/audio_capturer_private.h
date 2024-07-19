@@ -92,7 +92,8 @@ public:
 
     int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) override;
 
-    void SwitchStream(const uint32_t sessionId, const int32_t streamFlag);
+    void SwitchStream(const uint32_t sessionId, const int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt reason);
     void ConcedeStream();
 
     std::shared_ptr<IAudioStream> audioStream_;
@@ -217,9 +218,10 @@ public:
     virtual ~InputDeviceChangeWithInfoCallbackImpl() = default;
 
     void OnDeviceChangeWithInfo(
-        const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
+        const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) override;
 
-    void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag) override;
+    void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt reason) override;
 
     void SetAudioCapturerObj(AudioCapturerPrivate * capturerObj)
     {

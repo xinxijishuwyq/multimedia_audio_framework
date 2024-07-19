@@ -127,7 +127,8 @@ public:
     void SetPrivacyType(AudioPrivacyType privacyType) override;
 
     // Common APIs
-    bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
+    bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT,
+        AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN) override;
     bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool StopAudioStream() override;
     bool ReleaseAudioStream(bool releaseRunner = true) override;

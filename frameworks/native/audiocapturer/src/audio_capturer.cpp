@@ -1125,7 +1125,8 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     return switchResult;
 }
 
-void AudioCapturerPrivate::SwitchStream(const uint32_t sessionId, const int32_t streamFlag)
+void AudioCapturerPrivate::SwitchStream(const uint32_t sessionId, const int32_t streamFlag,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
     switch (streamFlag) {
@@ -1187,7 +1188,7 @@ void AudioCapturerPrivate::ConcedeStream()
     AudioPipeType pipeType = PIPE_TYPE_NORMAL_IN;
     audioStream_->GetAudioPipeType(pipeType);
     if (pipeType == PIPE_TYPE_LOWLATENCY_IN) {
-        SwitchStream(sessionID_, IAudioStream::PA_STREAM);
+        SwitchStream(sessionID_, IAudioStream::PA_STREAM, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     }
 }
 
@@ -1354,15 +1355,16 @@ void AudioCapturerStateChangeCallbackImpl::HandleCapturerDestructor()
 }
 
 void InputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
-    const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason)
+    const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("For capturer, OnDeviceChangeWithInfo callback is not support");
 }
 
-void InputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag)
+void InputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("Enter");
-    capturer_->SwitchStream(sessionId, streamFlag);
+    capturer_->SwitchStream(sessionId, streamFlag, reason);
 }
 
 CapturerPolicyServiceDiedCallback::CapturerPolicyServiceDiedCallback()

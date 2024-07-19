@@ -282,7 +282,7 @@ void AudioPolicyClientProxy::OnCapturerStateChange(
 }
 
 void AudioPolicyClientProxy::OnRendererDeviceChange(const uint32_t sessionId,
-    const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason)
+    const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -304,7 +304,8 @@ void AudioPolicyClientProxy::OnRendererDeviceChange(const uint32_t sessionId,
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag)
+void AudioPolicyClientProxy::OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -318,6 +319,7 @@ void AudioPolicyClientProxy::OnRecreateRendererStreamEvent(const uint32_t sessio
 
     data.WriteUint32(sessionId);
     data.WriteInt32(streamFlag);
+    data.WriteInt32(static_cast<int32_t>(reason));
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
         AUDIO_ERR_LOG("Error while sending recreate stream event: %{public}d", error);
@@ -325,7 +327,8 @@ void AudioPolicyClientProxy::OnRecreateRendererStreamEvent(const uint32_t sessio
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag)
+void AudioPolicyClientProxy::OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -339,6 +342,7 @@ void AudioPolicyClientProxy::OnRecreateCapturerStreamEvent(const uint32_t sessio
 
     data.WriteUint32(sessionId);
     data.WriteInt32(streamFlag);
+    data.WriteInt32(static_cast<int32_t>(reason));
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
         AUDIO_ERR_LOG("Error while sending recreate stream event: %{public}d", error);

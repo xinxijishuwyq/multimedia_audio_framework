@@ -1244,7 +1244,8 @@ void AudioPolicyManagerStub::FetchOutputDeviceForTrackInternal(MessageParcel &da
 {
     AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
-    FetchOutputDeviceForTrack(streamChangeInfo);
+    AudioStreamDeviceChangeReasonExt reason = static_cast<AudioStreamDeviceChangeReasonExt::ExtEnum>(data.ReadInt32());
+    FetchOutputDeviceForTrack(streamChangeInfo, reason);
 }
 
 void AudioPolicyManagerStub::FetchInputDeviceForTrackInternal(MessageParcel &data, MessageParcel &reply)

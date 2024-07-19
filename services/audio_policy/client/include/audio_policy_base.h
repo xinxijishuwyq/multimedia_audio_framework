@@ -275,7 +275,8 @@ public:
 
     virtual ConverterConfig GetConverterConfig() = 0;
 
-    virtual void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) = 0;
+    virtual void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
+        const AudioStreamDeviceChangeReasonExt reason) = 0;
 
     virtual void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) = 0;
 
