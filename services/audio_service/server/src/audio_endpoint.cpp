@@ -459,7 +459,8 @@ int32_t AudioEndpointInner::InitDupStream()
     }
 
     if (endpointStatus_ == RUNNING || (endpointStatus_ == IDEL && isDeviceRunningInIdel_)) {
-        AUDIO_INFO_LOG("Endpoint %{public}d is already running, let's start the dup stream", deviceInfo_.deviceId);
+        int32_t audioId = deviceInfo_.deviceId;
+        AUDIO_INFO_LOG("Endpoint %{public}d is already running, let's start the dup stream", audioId);
         dupStream_->Start();
     }
     // mark enabled last
