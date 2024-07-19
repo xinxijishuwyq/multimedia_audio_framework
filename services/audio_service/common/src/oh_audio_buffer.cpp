@@ -521,6 +521,7 @@ uint64_t OHAudioBuffer::GetCurWriteFrame()
 
 uint64_t OHAudioBuffer::GetCurReadFrame()
 {
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, 0, "basicBufferInfo_ is null");
     return basicBufferInfo_->curReadFrame.load();
 }
 
