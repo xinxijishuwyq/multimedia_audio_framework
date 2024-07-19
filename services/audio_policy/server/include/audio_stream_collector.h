@@ -74,6 +74,7 @@ public:
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
     void ResetRendererStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     void ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
+    StreamUsage GetLastestRunningCallStreamUsage();
 private:
     std::mutex streamsInfoMutex_;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;
@@ -106,6 +107,7 @@ private:
     void RegisteredCapturerTrackerClientDied(const int32_t uid);
     bool CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     bool CheckRendererInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
+    bool IsCallStreamUsage(StreamUsage usage);
     AudioSystemManager *audioSystemMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::shared_ptr<AudioConcurrencyService> audioConcurrencyService_;

@@ -18,6 +18,7 @@
 #include "audio_router_center.h"
 #include "audio_policy_service.h"
 #include "audio_log.h"
+#include "audio_stream_collector.h"
 
 using namespace std;
 
@@ -117,9 +118,11 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
                 routerType = (*itr)->GetRouterType();
             }
             if (desc->deviceType_ == DEVICE_TYPE_NONE) {
-                streamUsage = audioScene == AUDIO_SCENE_PHONE_CALL ? STREAM_USAGE_VOICE_MODEM_COMMUNICATION
-                                                               : STREAM_USAGE_VOICE_COMMUNICATION;
-                desc = FetchCallRenderDevice(streamUsage, clientUID, routerType);
+                StreamUsage callStreamUsage =
+                    AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
+                AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
+                    callStreamUsage);
+                desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType);
             }
         } else {
             desc = FetchMediaRenderDevice(streamUsage, clientUID, routerType);
