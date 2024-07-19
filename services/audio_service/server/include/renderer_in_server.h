@@ -98,10 +98,6 @@ public:
 private:
     void OnStatusUpdateSub(IOperation operation);
     bool IsHighResolution() const noexcept;
-    void DoFadingOutFor8Bit(BufferDesc& bufferDesc, size_t byteLen);
-    void DoFadingOutFor16Bit(BufferDesc& bufferDesc, size_t byteLen);
-    void DoFadingOutFor24Bit(BufferDesc& bufferDesc, size_t byteLen);
-    void DoFadingOutFor32Bit(BufferDesc& bufferDesc, size_t byteLen);
     void DoFadingOut(BufferDesc& bufferDesc);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     void ReportDataToResSched(bool isSilent);
