@@ -40,7 +40,6 @@ namespace {
     static const int32_t NO_FADING = 0;
     static const int32_t DO_FADINGOUT = 1;
     static const int32_t FADING_OUT_DONE = 2;
-    static const int32_t BYTE_LEN_FOR_INVALID_SAMPLE_FORMAT = 0;
     static const int32_t BYTE_LEN_FOR_8BIT = 1;
     static const int32_t BYTE_LEN_FOR_16BIT = 2;
     static const int32_t BYTE_LEN_FOR_24BIT = 3;
@@ -270,6 +269,7 @@ BufferDesc RendererInServer::DequeueBuffer(size_t length)
 
 void RendererInServer::DoFadingOutFor8Bit(BufferDesc& bufferDesc, size_t byteLen)
 {
+    AUDIO_INFO_LOG("enter");
     if (byteLen == 0) {
         return;
     }
@@ -290,6 +290,7 @@ void RendererInServer::DoFadingOutFor8Bit(BufferDesc& bufferDesc, size_t byteLen
 
 void RendererInServer::DoFadingOutFor16Bit(BufferDesc& bufferDesc, size_t byteLen)
 {
+    AUDIO_INFO_LOG("enter");
     if (byteLen == 0) {
         return;
     }
@@ -314,14 +315,14 @@ void RendererInServer::DoFadingOutFor16Bit(BufferDesc& bufferDesc, size_t byteLe
 
 void RendererInServer::DoFadingOutFor24Bit(BufferDesc& bufferDesc, size_t byteLen)
 {
-    int8_t *data = (int8_t *)bufferDesc.buffer;
+    AUDIO_INFO_LOG("enter");
     size_t length = bufferDesc.bufLength;
     if (length == 0) {
         return;
     }
-
-    uint32_t numChannels = processConfig_.streamInfo.channels;
-    size_t step = byteLen * numChannels;
+    uint32_t channels = processConfig_.streamInfo.channels;
+    size_t step = byteLen * channels;
+    int8_t *data = (int8_t *)bufferDesc.buffer;
     size_t lastPos = 0;
     for (size_t i = 0; i < length;) {
         if ((i + step) < length) {
@@ -340,6 +341,7 @@ void RendererInServer::DoFadingOutFor24Bit(BufferDesc& bufferDesc, size_t byteLe
 
 void RendererInServer::DoFadingOutFor32Bit(BufferDesc& bufferDesc, size_t byteLen)
 {
+    AUDIO_INFO_LOG("enter");
     if (byteLen == 0) {
         return;
     }
@@ -365,55 +367,26 @@ void RendererInServer::DoFadingOutFor32Bit(BufferDesc& bufferDesc, size_t byteLe
 void RendererInServer::DoFadingOut(BufferDesc& bufferDesc)
 {
     std::lock_guard<std::mutex> lock(fadeoutLock_);
-    size_t byteLen;
-
-    switch (processConfig_.streamInfo.format) {
-        case SAMPLE_U8:
-            byteLen = BYTE_LEN_FOR_8BIT;
-            break;
-        case SAMPLE_S16:
-            byteLen = BYTE_LEN_FOR_16BIT;
-            break;
-        case SAMPLE_S24:
-            byteLen = BYTE_LEN_FOR_24BIT;
-            break;
-        case SAMPLE_S32:
-            byteLen = BYTE_LEN_FOR_32BIT;
-            break;
-        default:
-            byteLen = BYTE_LEN_FOR_INVALID_SAMPLE_FORMAT;
-            break;
-    }
-
     if (fadeoutFlag_ == DO_FADINGOUT) {
-        switch (byteLen) {
-            case BYTE_LEN_FOR_8BIT:
-                DoFadingOutFor8Bit(bufferDesc, byteLen);
+        switch (processConfig_.streamInfo.format) {
+            case SAMPLE_U8:
+                DoFadingOutFor8Bit(bufferDesc, BYTE_LEN_FOR_8BIT);
                 break;
-            case BYTE_LEN_FOR_16BIT:
-                DoFadingOutFor16Bit(bufferDesc, byteLen);
+            case SAMPLE_S16:
+                DoFadingOutFor16Bit(bufferDesc, BYTE_LEN_FOR_16BIT);
                 break;
-            case BYTE_LEN_FOR_24BIT:
-                DoFadingOutFor24Bit(bufferDesc, byteLen);
+            case SAMPLE_S24:
+                DoFadingOutFor24Bit(bufferDesc, BYTE_LEN_FOR_24BIT);
                 break;
-            case BYTE_LEN_FOR_32BIT:
-                DoFadingOutFor32Bit(bufferDesc, byteLen);
+            case SAMPLE_S32:
+                DoFadingOutFor32Bit(bufferDesc, BYTE_LEN_FOR_32BIT);
                 break;
             default:
                 break;
         }
-    }
-}
 
-void RendererInServer::CheckFadingOutDone(int32_t fadeoutFlag_, BufferDesc& bufferDesc)
-{
-    std::lock_guard<std::mutex> lock(fadeoutLock_);
-    if (fadeoutFlag_ == FADING_OUT_DONE && processConfig_.streamInfo.format == SAMPLE_U8) {
-        memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0x80, bufferDesc.bufLength);
-        return;
-    }
-    if (fadeoutFlag_ == FADING_OUT_DONE) {
-        memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength);
+        fadeoutFlag_ = FADING_OUT_DONE;
+        AUDIO_INFO_LOG("fadeoutFlag_ = FADING_OUT_DONE");
     }
 }
 
@@ -510,8 +483,9 @@ int32_t RendererInServer::WriteData()
     if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == SUCCESS) {
         VolumeHandle(bufferDesc);
         if (processConfig_.streamType != STREAM_ULTRASONIC) {
-            DoFadingOut(bufferDesc);
-            CheckFadingOutDone(fadeoutFlag_, bufferDesc);
+            if (currentReadFrame + spanSizeInFrame_ == currentWriteFrame) {
+                DoFadingOut(bufferDesc);
+            }
         }
         Trace::CountVolume(traceTag_, *bufferDesc.buffer);
         stream_->EnqueueBuffer(bufferDesc);
@@ -524,11 +498,6 @@ int32_t RendererInServer::WriteData()
         // Client may write the buffer immediately after SetCurReadFrame, so put memset_s before it!
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
-        if (fadeoutFlag_ == DO_FADINGOUT) {
-            std::lock_guard<std::mutex> lock(fadeoutLock_);
-            fadeoutFlag_ = FADING_OUT_DONE;
-            AUDIO_INFO_LOG("fadeoutFlag_ = FADING_OUT_DONE");
-        }
     }
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, SUCCESS, "IStreamListener is nullptr");

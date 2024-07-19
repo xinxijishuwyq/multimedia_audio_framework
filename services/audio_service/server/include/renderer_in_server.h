@@ -103,7 +103,6 @@ private:
     void DoFadingOutFor24Bit(BufferDesc& bufferDesc, size_t byteLen);
     void DoFadingOutFor32Bit(BufferDesc& bufferDesc, size_t byteLen);
     void DoFadingOut(BufferDesc& bufferDesc);
-    void CheckFadingOutDone(int32_t fadeFlag, BufferDesc& bufferDesc);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     void ReportDataToResSched(bool isSilent);
     void OtherStreamEnqueue(const BufferDesc &bufferDesc);
