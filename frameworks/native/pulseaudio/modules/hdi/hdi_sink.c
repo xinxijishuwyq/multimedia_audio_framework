@@ -48,6 +48,7 @@
 #include "audio_schedule.h"
 #include "audio_utils_c.h"
 #include "audio_hdiadapter_info.h"
+#include "volume_tools_c.h"
 #include "renderer_sink_adapter.h"
 #include "audio_effect_chain_adapter.h"
 #include "playback_capturer_adapter.h"

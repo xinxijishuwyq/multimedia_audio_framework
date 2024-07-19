@@ -36,6 +36,7 @@ config("hdi_config") {
     "../../../audioeffect/include",
     "../../../playbackcapturer/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../services/audio_service/common/include",
   ]
 
   cflags = [
@@ -69,6 +70,7 @@ ohos_shared_library("module-hdi-sink") {
   ]
 
   deps = [
+    "../../../../../services/audio_service:audio_common",
     "../../../audioeffect:audio_effect",
     "../../../audioschedule:audio_schedule",
     "../../../audioutils:audio_utils",

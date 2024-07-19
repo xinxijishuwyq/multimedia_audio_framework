@@ -16,6 +16,7 @@
 #define LOG_TAG "VolumeTools"
 
 #include "volume_tools.h"
+#include "volume_tools_c.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 
@@ -220,3 +221,23 @@ int32_t VolumeTools::Process(const BufferDesc &buffer, AudioSampleFormat format,
 }
 } // namespace AudioStandard
 } // namespace OHOS
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+using namespace OHOS::AudioStandard;
+
+int32_t ProcessVol(uint8_t *buffer, size_t length, AudioRawFormat rawformat, float volStart, float volEnd)
+{
+    BufferDesc desc = {0};
+    desc.buffer = buffer;
+    desc.bufLength = length;
+    desc.dataLength = length;
+    ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(static_cast<AudioChannel>(rawformat.channels), volStart,
+        volEnd);
+    return VolumeTools::Process(desc, static_cast<AudioSampleFormat>(rawformat.format), mapVols);
+}
+
+#ifdef __cplusplus
+}
+#endif
