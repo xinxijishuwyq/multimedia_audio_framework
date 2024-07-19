@@ -36,7 +36,8 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
         AUDIO_DEBUG_LOG(" PerferredMediaRenderDevice is null");
         return make_unique<AudioDeviceDescriptor>();
     } else {
-        AUDIO_INFO_LOG(" PerferredMediaRenderDevice deviceId is %{public}d", perDev_->deviceId_);
+        int32_t audioId = perDev_->deviceId_;
+        AUDIO_INFO_LOG(" PerferredMediaRenderDevice audioId is %{public}d", audioId);
         return RouterBase::GetPairCaptureDevice(perDev_, mediaDevices);
     }
 }
@@ -51,7 +52,8 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUs
         AUDIO_DEBUG_LOG(" PerferredCallRenderDevice is null");
         return make_unique<AudioDeviceDescriptor>();
     } else {
-        AUDIO_INFO_LOG(" PerferredCallRenderDevice deviceId is %{public}d", perDev_->deviceId_);
+        int32_t audioId = perDev_->deviceId_;
+        AUDIO_INFO_LOG(" PerferredCallRenderDevice audioId is %{public}d", audioId);
         return RouterBase::GetPairCaptureDevice(perDev_, callDevices);
     }
 }
@@ -66,7 +68,8 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceT
         AUDIO_DEBUG_LOG(" PerferredCallCaptureDevice is null");
         return make_unique<AudioDeviceDescriptor>();
     } else {
-        AUDIO_INFO_LOG(" PerferredCallCaptureDevice deviceId is %{public}d", perDev_->deviceId_);
+        int32_t audioId = perDev_->deviceId_;
+        AUDIO_INFO_LOG(" PerferredCallCaptureDevice audioId is %{public}d", audioId);
         return RouterBase::GetPairCaptureDevice(perDev_, callDevices);
     }
 }
@@ -88,7 +91,8 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(Sourc
         AUDIO_DEBUG_LOG(" PerferredRecordCaptureDevice is null");
         return make_unique<AudioDeviceDescriptor>();
     } else {
-        AUDIO_INFO_LOG(" PerferredRecordCaptureDevice deviceId is %{public}d", perDev_->deviceId_);
+        int32_t audioId = perDev_->deviceId_;
+        AUDIO_INFO_LOG(" PerferredRecordCaptureDevice audioId is %{public}d", audioId);
         return RouterBase::GetPairCaptureDevice(perDev_, recordDevices);
     }
 }

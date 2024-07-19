@@ -349,7 +349,8 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Memory allocation failed");
 
-    AUDIO_INFO_LOG("add type:id %{public}d:%{public}d", deviceDescriptor->getType(), deviceDescriptor->deviceId_);
+    int32_t audioId = deviceDescriptor->deviceId_;
+    AUDIO_INFO_LOG("add type:id %{public}d:%{public}d", deviceDescriptor->getType(), audioId);
 
     if (UpdateExistDeviceDescriptor(deviceDescriptor)) {
         AUDIO_INFO_LOG("The device has been added and will not be added again.");
@@ -406,7 +407,8 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
 
 void AudioDeviceManager::RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devDesc)
 {
-    AUDIO_INFO_LOG("remove type:id %{public}d:%{public}d ", devDesc->getType(), devDesc->deviceId_);
+    int32_t audioId = devDesc->deviceId_;
+    AUDIO_INFO_LOG("remove type:id %{public}d:%{public}d ", devDesc->getType(), audioId);
 
     RemoveConnectedDevices(make_shared<AudioDeviceDescriptor>(devDesc));
     RemoveRemoteDevices(devDesc);
@@ -770,8 +772,9 @@ void AudioDeviceManager::UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor>
             break;
     }
     if (!ret) {
+        int32_t audioId = d->deviceId_;
         AUDIO_ERR_LOG("cant find type:id %{public}d:%{public}d mac:%{public}s networkid:%{public}s in connected list",
-            d->deviceType_, d->deviceId_, GetEncryptStr(d->macAddress_).c_str(), GetEncryptStr(d->networkId_).c_str());
+            d->deviceType_, audioId, GetEncryptStr(d->macAddress_).c_str(), GetEncryptStr(d->networkId_).c_str());
     }
 }
 
