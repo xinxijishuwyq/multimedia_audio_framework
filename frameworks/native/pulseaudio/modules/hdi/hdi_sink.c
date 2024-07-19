@@ -2931,6 +2931,7 @@ void PaInputVolumeChangeCb(pa_sink_input *i)
 
 static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t now, int64_t *sleepForUsec)
 {
+    static uint32_t timeWait = 1; // 1ms init
     const uint64_t pos = u->offload.pos;
     const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
     const uint64_t pw = u->offload.prewrite;
@@ -2946,11 +2947,15 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
             u->offload.minWait = now + 1 * PA_USEC_PER_MSEC; // 1ms for min wait
         } else if (wait) {
             if (u->offload.firstWrite == true) {
-                blockTime = -1;
+                blockTime = timeWait * PA_USEC_PER_MSEC; // timeWait ms for first write no data
             } else {
-                u->offload.minWait = now + 1 * PA_USEC_PER_MSEC; // 1ms for min wait
+                u->offload.minWait = now + timeWait * PA_USEC_PER_MSEC; // timeWait ms for min wait no data
+            }
+            if (timeWait < 20) { // 20ms max wait no data
+                timeWait++;
             }
         } else {
+            timeWait = 1; // 1ms have data reset timeWait
             blockTime = 1 * PA_USEC_PER_MSEC; // 1ms for min wait
         }
     } else if (hdistate == 1) {
@@ -2969,7 +2974,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
             UpdatePresentationPosition(u);
         }
     }
-    if (nInput != 0 && blockTime != -1) {
+    if (blockTime != -1) {
         *sleepForUsec = PA_MAX(blockTime, 0) - (int64_t)(pa_rtclock_now() - now);
         *sleepForUsec = PA_MAX(*sleepForUsec, 0);
     }
