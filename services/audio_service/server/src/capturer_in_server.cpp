@@ -24,6 +24,7 @@
 #include "audio_process_config.h"
 #include "i_stream_manager.h"
 #include "playback_capturer_manager.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -234,7 +235,7 @@ void CapturerInServer::ReadData(size_t length)
     }
     ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
     DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
-    if (AudioDump::GetInstance().versionType == "beta") {
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
     }

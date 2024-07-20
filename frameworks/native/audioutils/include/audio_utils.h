@@ -192,6 +192,7 @@ const std::string DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_capture_aud
 const std::string DUMP_ENDPOINT_DCP_FILENAME = "dump_endpoint_dcp_audio.pcm";
 const std::string DUMP_ENDPOINT_HDI_FILENAME = "dump_endpoint_hdi_audio.pcm";
 const uint32_t PARAM_VALUE_LENTH = 150;
+const std::string BETA_VERSION = "beta";
 
 class DumpFileUtil {
 public:
@@ -380,10 +381,12 @@ private:
 class AudioDump {
 public:
     static AudioDump& GetInstance();
-    std::string versionType = "commercial";
+    void SetVersionType(const std::string& versionType);
+    std::string GetVersionType();
 private:
     AudioDump() {}
     ~AudioDump() {}
+    std::string versionType_ = "commercial";
 };
 
 template <typename EnumType, typename V>

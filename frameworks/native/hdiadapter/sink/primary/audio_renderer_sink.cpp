@@ -715,7 +715,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     if (audioBalanceState_) {AdjustAudioBalance(&data, len);}
 
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
-    if (AudioDump::GetInstance().versionType == "beta") {
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void *>(&data), len);
     }

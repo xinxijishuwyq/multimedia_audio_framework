@@ -355,7 +355,7 @@ uint32_t AudioEffectChain::GetLatency()
 
 void AudioEffectChain::DumpEffectProcessData(std::string fileName, void *buffer, size_t len)
 {
-    if (AudioDump::GetInstance().versionType == "beta") {
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(fileName, buffer, len);
     }
 }

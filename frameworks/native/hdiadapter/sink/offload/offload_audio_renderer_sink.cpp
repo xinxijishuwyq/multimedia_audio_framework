@@ -607,7 +607,7 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         &writeLen);
     if (ret == 0 && writeLen != 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
-        if (AudioDump::GetInstance().versionType == "beta") {
+        if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
                 static_cast<void *>(&data), writeLen);
         }

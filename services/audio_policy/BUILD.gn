@@ -463,4 +463,3 @@ ohos_executable("audio_policy_test") {
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
-

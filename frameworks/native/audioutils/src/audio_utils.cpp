@@ -1174,6 +1174,16 @@ AudioDump& AudioDump::GetInstance()
     static AudioDump mAudioDump;
     return mAudioDump;
 }
+
+void AudioDump::SetVersionType(const std::string& versionType)
+{
+    versionType_ = versionType;
+}
+
+std::string AudioDump::GetVersionType()
+{
+    return versionType_;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 

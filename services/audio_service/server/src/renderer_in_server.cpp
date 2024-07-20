@@ -382,7 +382,7 @@ int32_t RendererInServer::WriteData()
         Trace::CountVolume(traceTag_, *bufferDesc.buffer);
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
-        if (AudioDump::GetInstance().versionType == "beta") {
+        if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
                 static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         }

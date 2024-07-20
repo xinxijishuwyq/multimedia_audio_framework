@@ -606,7 +606,7 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
 
     DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
-    if (AudioDump::GetInstance().versionType == "beta") {
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void*>(frame), replyBytes);
     }
