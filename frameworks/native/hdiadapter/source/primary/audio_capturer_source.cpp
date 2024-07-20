@@ -676,9 +676,9 @@ int32_t AudioCapturerSourceInner::Start(void)
     }
 #endif
     // eg: primary_0_20240527202236189_source_44100_2_1.pcm
-    dumpFileName_ = halName_ + '_' + std::to_string(attr_.sourceType) + "_" + GetTime()
-        + '_source_' + std::to_string(attr_.sampleRate) + '_' + std::to_string(attr_.channel)
-        + '_' + std::to_string(attr_.format) + ".pcm";
+    dumpFileName_ = halName_ + "_" + std::to_string(attr_.sourceType) + "_" + GetTime()
+        + "_source_" + std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel)
+        + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     if (!started_) {
