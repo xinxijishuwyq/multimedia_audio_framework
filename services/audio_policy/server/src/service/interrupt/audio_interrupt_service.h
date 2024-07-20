@@ -133,9 +133,17 @@ private:
     // modern interrupt interfaces
     void ProcessAudioScene(const AudioInterrupt &audioInterrupt, const uint32_t &incomingSessionId,
         const int32_t &zoneId, bool &shouldReturnSuccess);
+    bool IsAudioSourceConcurrency(const SourceType &existSourceType, const SourceType &incomingSourceType,
+        const std::vector<SourceType> &existConcurrentSources,
+        const std::vector<SourceType> &incomingConcurrentSources);
     int32_t ProcessFocusEntry(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
-    void HandleIncomingState(const int32_t zoneId, AudioFocuState incomingState, InterruptEventInternal &interruptEvent,
-        const AudioInterrupt &incomingInterrupt);
+    void AddToAudioFocusInfoList(std::shared_ptr<AudioInterruptZone> &audioInterruptZone,
+        const int32_t &zoneId, const AudioInterrupt &incomingInterrupt, const AudioFocuState &incomingState);
+    void HandleIncomingState(const int32_t &zoneId, AudioFocuState &incomingState,
+        InterruptEventInternal &interruptEvent, const AudioInterrupt &incomingInterrupt);
+    void ProcessExistInterrupt(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator
+        &iterActive, const AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
+        bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
     void ProcessActiveInterrupt(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
     void ResumeAudioFocusList(const int32_t zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> SimulateFocusEntry(const int32_t zoneId);

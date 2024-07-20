@@ -90,6 +90,8 @@ public:
 
     uint32_t GetOverflowCount() const override;
 
+    int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) override;
+
     void SwitchStream(const uint32_t sessionId, const int32_t streamFlag);
     void ConcedeStream();
 

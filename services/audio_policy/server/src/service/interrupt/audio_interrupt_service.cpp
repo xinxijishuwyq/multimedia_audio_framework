@@ -567,6 +567,35 @@ bool AudioInterruptService::IsSameAppInShareMode(const AudioInterrupt incomingIn
     return incomingInterrupt.pid == activateInterrupt.pid;
 }
 
+void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator
+    &iterActive, const AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
+    bool &removeFocusInfo, InterruptEventInternal &interruptEvent)
+{
+    SourceType incomingSourceType = incomingInterrupt.audioFocusType.sourceType;
+    std::vector<SourceType> incomingConcurrentSources = incomingInterrupt.currencySources.sourcesTypes;
+    SourceType existSourceType = (iterActive->first).audioFocusType.sourceType;
+    std::vector<SourceType> existConcurrentSources = (iterActive->first).currencySources.sourcesTypes;
+    switch (focusEntry.hintType) {
+        case INTERRUPT_HINT_STOP:
+            if (IsAudioSourceConcurrency(existSourceType, incomingSourceType, existConcurrentSources,
+                incomingConcurrentSources)) {
+                interruptEvent.hintType = INTERRUPT_HINT_NONE;
+                break;
+            }
+            removeFocusInfo = true;
+            break;
+        case INTERRUPT_HINT_PAUSE:
+            iterActive->second = PAUSE;
+            break;
+        case INTERRUPT_HINT_DUCK:
+            iterActive->second = DUCK;
+            interruptEvent.duckVolume = DUCK_FACTOR;
+            break;
+        default:
+            break;
+    }
+}
+
 void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const AudioInterrupt &incomingInterrupt)
 {
     // Use local variable to record target focus info list, can be optimized
@@ -590,22 +619,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, focusEntry.forceType, focusEntry.hintType, 1.0f};
         uint32_t activeSessionId = (iterActive->first).sessionId;
         bool removeFocusInfo = false;
-
-        switch (focusEntry.hintType) {
-            case INTERRUPT_HINT_STOP:
-                removeFocusInfo = true;
-                break;
-            case INTERRUPT_HINT_PAUSE:
-                iterActive->second = PAUSE;
-                break;
-            case INTERRUPT_HINT_DUCK:
-                iterActive->second = DUCK;
-                interruptEvent.duckVolume = DUCK_FACTOR;
-                break;
-            default:
-                break;
-        }
-
+        ProcessExistInterrupt(iterActive, focusEntry, incomingInterrupt, removeFocusInfo, interruptEvent);
         if (removeFocusInfo) {
             // execute remove from list, iter move to next by erase
             auto pidIt = targetZoneIt->second->pids.find((iterActive->first).pid);
@@ -683,6 +697,19 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
     shouldReturnSuccess = false;
 }
 
+bool AudioInterruptService::IsAudioSourceConcurrency(const SourceType &existSourceType,
+    const SourceType &incomingSourceType, const std::vector<SourceType> &existConcurrentSources,
+    const std::vector<SourceType> &incomingConcurrentSources)
+{
+    if ((incomingConcurrentSources.size() > 0 && existSourceType >= 0 && find(incomingConcurrentSources.begin(),
+        incomingConcurrentSources.end(), existSourceType) != incomingConcurrentSources.end()) ||
+        (existConcurrentSources.size() > 0 && incomingSourceType >= 0 && find(existConcurrentSources.begin(),
+        existConcurrentSources.end(), incomingSourceType) != existConcurrentSources.end())) {
+        return true;
+    }
+    return false;
+}
+
 int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const AudioInterrupt &incomingInterrupt)
 {
     AudioFocuState incomingState = ACTIVE;
@@ -694,6 +721,8 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
         audioFocusInfoList = itZone->second->audioFocusInfoList;
     }
 
+    SourceType incomingSourceType = incomingInterrupt.audioFocusType.sourceType;
+    std::vector<SourceType> incomingConcurrentSources = incomingInterrupt.currencySources.sourcesTypes;
     for (auto iterActive = audioFocusInfoList.begin(); iterActive != audioFocusInfoList.end(); ++iterActive) {
         if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) {
             continue;
@@ -707,6 +736,13 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
             continue;
         }
         if (focusEntry.isReject) {
+            SourceType existSourceType = (iterActive->first).audioFocusType.sourceType;
+            std::vector<SourceType> existConcurrentSources = (iterActive->first).currencySources.sourcesTypes;
+            if (IsAudioSourceConcurrency(existSourceType, incomingSourceType, existConcurrentSources,
+                incomingConcurrentSources)) {
+                continue;
+            }
+
             AUDIO_INFO_LOG("the incoming stream is rejected by sessionId:%{public}d, pid:%{public}d",
                 (iterActive->first).sessionId, (iterActive->first).pid);
             incomingState = STOP;
@@ -717,14 +753,7 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
         incomingState = (newState > incomingState) ? newState : incomingState;
     }
     HandleIncomingState(zoneId, incomingState, interruptEvent, incomingInterrupt);
-    if (incomingState != STOP) {
-        int32_t inComingPid = incomingInterrupt.pid;
-        itZone->second->zoneId = zoneId;
-        itZone->second->pids.insert(inComingPid);
-        itZone->second->audioFocusInfoList.emplace_back(std::make_pair(incomingInterrupt, incomingState));
-        zonesMap_[zoneId] = itZone->second;
-        SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, incomingInterrupt);
-    }
+    AddToAudioFocusInfoList(itZone->second, zoneId, incomingInterrupt, incomingState);
     if (interruptEvent.hintType != INTERRUPT_HINT_NONE && handler_ != nullptr) {
         AUDIO_INFO_LOG("OnInterrupt for incoming sessionId: %{public}d, hintType: %{public}d",
             incomingInterrupt.sessionId, interruptEvent.hintType);
@@ -734,7 +763,20 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
     return incomingState >= PAUSE ? ERR_FOCUS_DENIED : SUCCESS;
 }
 
-void AudioInterruptService::HandleIncomingState(const int32_t zoneId, AudioFocuState incomingState,
+void AudioInterruptService::AddToAudioFocusInfoList(std::shared_ptr<AudioInterruptZone> &audioInterruptZone,
+    const int32_t &zoneId, const AudioInterrupt &incomingInterrupt, const AudioFocuState &incomingState)
+{
+    if (incomingState != STOP) {
+        int32_t inComingPid = incomingInterrupt.pid;
+        audioInterruptZone->zoneId = zoneId;
+        audioInterruptZone->pids.insert(inComingPid);
+        audioInterruptZone->audioFocusInfoList.emplace_back(std::make_pair(incomingInterrupt, incomingState));
+        zonesMap_[zoneId] = audioInterruptZone;
+        SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, incomingInterrupt);
+    }
+}
+
+void AudioInterruptService::HandleIncomingState(const int32_t &zoneId, AudioFocuState &incomingState,
     InterruptEventInternal &interruptEvent, const AudioInterrupt &incomingInterrupt)
 {
     if (incomingState == STOP) {
