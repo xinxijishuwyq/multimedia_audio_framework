@@ -2506,9 +2506,9 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
             continue;
         }
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            int32_t ret = HandleScoInputDeviceFetched(desc, capturerChangeInfos);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet",
-                GetEncryptAddr(desc->macAddress_).c_str());
+            BluetoothScoFetch(std::move(desc), std::move(capturerChangeInfos), sourceType);
+            desc = std::move_if_noexcept(desc);
+            capturerChangeInfos = std::move_if_noexcept(capturerChangeInfos);
         }
         if (needUpdateActiveDevice) {
             if (!IsSameDevice(desc, currentActiveInputDevice_)) {
@@ -2526,11 +2526,37 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
         MoveToNewInputDevice(capturerChangeInfo, desc);
         AddAudioCapturerMicrophoneDescriptor(capturerChangeInfo->sessionId, desc->deviceType_);
     }
+    BluetoothScoDisconectForRecongnition();
     if (isUpdateActiveDevice) {
         OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, currentActiveInputDevice_.networkId_);
     }
     if (runningStreamCount == 0) {
         FetchInputDeviceWhenNoRunningStream();
+    }
+}
+
+void AudioPolicyService::BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> desc,
+    vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos, SourceType sourceType)
+{
+    int32_t ret;
+    unique_ptr<AudioDeviceDescriptor> localDesc = std::move(desc);
+    vector<unique_ptr<AudioCapturerChangeInfo>> localCapturerChangeInfos = std::move(capturerChangeInfos);
+    if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        ret = ScoInputDeviceFetchedForRecongnition(true, localDesc->macAddress_);
+    } else {
+        ret = HandleScoInputDeviceFetched(localDesc, localCapturerChangeInfos);
+    }
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet",
+        GetEncryptAddr(localDesc->macAddress_).c_str());
+}
+
+void AudioPolicyService::BluetoothScoDisconectForRecongnition()
+{
+    if (Bluetooth::AudioHfpManager::GetScoCategory() != Bluetooth::ScoCategory::SCO_RECOGNITION &&
+        currentActiveInputDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO && audioDeviceManager_.GetScoState()) {
+    int32_t ret = ScoInputDeviceFetchedForRecongnition(false, currentActiveInputDevice_.macAddress_);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] disconnected failed",
+        GetEncryptAddr(currentActiveInputDevice_.macAddress_).c_str());
     }
 }
 
@@ -8133,5 +8159,12 @@ void AudioPolicyService::UpdateEffectBtOffloadSupported(const bool &isSupported)
     IPCSkeleton::SetCallingIdentity(identity);
     return;
 }
+
+int32_t AudioPolicyService::ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address)
+{
+    Bluetooth::BluetoothRemoteDevice device = Bluetooth::BluetoothRemoteDevice(address);
+    return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag, device);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

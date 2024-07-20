@@ -255,6 +255,8 @@ void AudioDeviceParser::ParseDeviceUsage(const std::string &deviceUsage, uint32_
             deviceUsageFlag |= DeviceUsage::MEDIA;
         } else if (usage == "voice") {
             deviceUsageFlag |= DeviceUsage::VOICE;
+        } else if (usage == "recongnition") {
+            deviceUsageFlag |= DeviceUsage::RECONGNITION;
         }
     }
 }

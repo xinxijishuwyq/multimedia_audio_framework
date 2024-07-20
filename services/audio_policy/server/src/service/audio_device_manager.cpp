@@ -304,6 +304,8 @@ void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescripto
         capturePrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, ALL_USAGE, "capture public device",
         capturePublicDevices_);
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, RECONGNITION, "capture recon privacy device",
+        reconCapturePrivacyDevices_);
 }
 
 void AudioDeviceManager::HandleScoWithDefaultCategory(const shared_ptr<AudioDeviceDescriptor> &devDesc)
@@ -553,6 +555,18 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDe
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : capturePublicDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
+        descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
+    }
+    return descs;
+}
+
+vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRecongnitionCapturePrivacyDevices()
+{
+    vector<unique_ptr<AudioDeviceDescriptor>> descs;
+    for (const auto &desc : reconCapturePrivacyDevices_) {
         if (desc == nullptr) {
             continue;
         }
@@ -937,6 +951,7 @@ void AudioDeviceManager::RemoveCaptureDevices(const AudioDeviceDescriptor &devDe
 {
     RemoveMatchDeviceInArray(devDesc, "capture privacy device", capturePrivacyDevices_);
     RemoveMatchDeviceInArray(devDesc, "capture public device", capturePublicDevices_);
+    RemoveMatchDeviceInArray(devDesc, "capture recon privacy device", reconCapturePrivacyDevices_);
 }
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetDevicesByFilter(DeviceType devType, DeviceRole devRole,

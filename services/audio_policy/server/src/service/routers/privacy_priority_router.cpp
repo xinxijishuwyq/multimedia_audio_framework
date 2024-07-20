@@ -113,6 +113,14 @@ vector<std::unique_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
 unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(SourceType sourceType,
     int32_t clientUID)
 {
+    if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        vector<unique_ptr<AudioDeviceDescriptor>> descs =
+            AudioDeviceManager::GetAudioDeviceManager().GetRecongnitionCapturePrivacyDevices();
+        unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);
+        AUDIO_DEBUG_LOG(" RecongnitionsourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
+            clientUID, desc->deviceType_);
+        return desc;
+    }
     vector<unique_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePrivacyDevices();
     unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);
