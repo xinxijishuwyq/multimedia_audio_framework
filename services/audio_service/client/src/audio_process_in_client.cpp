@@ -149,7 +149,8 @@ private:
     void CopyWithVolume(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
     void ProcessVolume(const AudioStreamData &targetData) const;
     int32_t ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
-    void CheckIfWakeUpTooLate(int64_t curTime, int64_t &wakeUpTime);
+    void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime);
+    void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime, int64_t clientWriteCost);
 
     void DoFadeInOut(uint64_t &curWritePos);
 
@@ -211,9 +212,6 @@ private:
 
     std::atomic<uint32_t> underflowCount_ = 0;
     std::atomic<uint32_t> overflowCount_ = 0;
-    bool clientWakeUpTooLate_ = false;
-    int64_t clientLateTime_ = 0;
-    int64_t clientLateCount_ = 0;
 
     std::string cachePath_;
     FILE *dumpFile_ = nullptr;
@@ -1544,12 +1542,9 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
         }
         threadStatus_ = INRUNNING;
         Trace traceLoop("AudioProcessInClient::InRunning");
-        curTime = ClockTime::GetCurNano();
         CheckIfWakeUpTooLate(curTime, wakeUpTime);
         curWritePos = audioBuffer_->GetCurWriteFrame();
-        bool prepared = true;
-        prepared = PrepareCurrentLoop(curWritePos);
-        if (!prepared) {
+        if (!PrepareCurrentLoop(curWritePos)) {
             continue;
         }
         // call client write
@@ -1558,24 +1553,16 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
 
         DoFadeInOut(curWritePos);
 
-        bool finished = true;
-        finished = FinishHandleCurrentLoop(curWritePos, clientWriteCost);
-        if (!finished) {
+        if (!FinishHandleCurrentLoop(curWritePos, clientWriteCost)) {
             continue;
         }
-        prepared = ClientPrepareNextLoop(curWritePos, wakeUpTime);
-        if (!prepared) {
+        if (!ClientPrepareNextLoop(curWritePos, wakeUpTime)) {
             break;
         }
         traceLoop.End();
         // start safe sleep
         threadStatus_ = SLEEPING;
-        curTime = ClockTime::GetCurNano();
-        if (wakeUpTime - curTime > static_cast<int64_t>(spanSizeInMs_) * ONE_MILLISECOND_DURATION + clientWriteCost) {
-            Trace trace("BigWakeUpTime curTime[" + std::to_string(curTime) + "] target[" + std::to_string(wakeUpTime) +
-                "] delay " + std::to_string(wakeUpTime - curTime) + "ns");
-            AUDIO_WARNING_LOG("wakeUpTime is too late...");
-        }
+        CheckIfWakeUpTooLate(curTime, wakeUpTime, clientWriteCost);
         ClockTime::AbsoluteSleep(wakeUpTime);
     }
 }
@@ -1678,26 +1665,25 @@ bool AudioProcessInClientInner::PrepareNextIndependent(uint64_t curWritePos, int
     return true;
 }
 
-void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t curTime, int64_t &wakeUpTime)
+void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime)
 {
-    int64_t wakeUpCost = curTime - wakeUpTime;
-    if (wakeUpCost > ONE_MILLISECOND_DURATION) {
-        if (!clientWakeUpTooLate_) {
-            AUDIO_WARNING_LOG("loop wake up late once");
-            clientWakeUpTooLate_ = true;
-        }
-        clientLateCount_++;
-        clientLateTime_ += wakeUpCost;
-        if (clientLateCount_ >= WAKE_UP_LATE_COUNT && (clientLateCount_ % WAKE_UP_LATE_COUNT == 0)) {
-            AUDIO_WARNING_LOG("loop wake up late for 20 times,"
-                " average cost %{public}" PRId64"us", clientLateTime_ / WAKE_UP_LATE_COUNT / AUDIO_MS_PER_SECOND);
-            clientLateTime_ = 0;
-        }
-        if (clientLateCount_ >= INT32_MAX) {
-            AUDIO_WARNING_LOG("loop wake up late for %{public}" PRId64"", clientLateCount_);
-            clientLateCount_ = 0;
-        }
+    curTime = ClockTime::GetCurNano();
+    int64_t wakeupCost = curTime - wakeUpTime;
+    if (wakeupCost > ONE_MILLISECOND_DURATION) {
+        AUDIO_WARNING_LOG("loop wake up too late, cost %{public}" PRId64"us", wakeupCost / AUDIO_MS_PER_SECOND);
         wakeUpTime = curTime;
+    }
+}
+
+void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime, int64_t clientWriteCost)
+{
+    curTime = ClockTime::GetCurNano();
+    int64_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
+    int64_t clientBufferDurationInMs = static_cast<int64_t>(spanSizeInMs_) * ONE_MILLISECOND_DURATION * round;
+    if (wakeUpTime - curTime > clientBufferDurationInMs + clientWriteCost) {
+        Trace trace("BigWakeUpTime curTime[" + std::to_string(curTime) + "] target[" + std::to_string(wakeUpTime) +
+            "] delay " + std::to_string(wakeUpTime - curTime) + "ns");
+        AUDIO_WARNING_LOG("wakeUpTime is too late...");
     }
 }
 } // namespace AudioStandard
