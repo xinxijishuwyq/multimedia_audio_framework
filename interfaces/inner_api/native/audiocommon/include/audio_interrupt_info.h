@@ -21,6 +21,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static constexpr int32_t MAX_SOURCE_TYPE_NUM = 20;
+
 enum ActionTarget {
     CURRENT = 0,
     INCOMING,
@@ -129,6 +131,10 @@ struct AudioFocusEntry {
     bool isReject;
 };
 
+struct AudioFocusConcurrency {
+    std::vector<SourceType> sourcesTypes;
+};
+
 struct AudioFocusType {
     AudioStreamType streamType;
     SourceType sourceType;
@@ -159,6 +165,7 @@ public:
     int32_t pid { -1 };
     InterruptMode mode { SHARE_MODE };
     bool parallelPlayFlag {false};
+    AudioFocusConcurrency currencySources;
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
@@ -167,16 +174,22 @@ public:
     ~AudioInterrupt() = default;
     static bool Marshalling(Parcel &parcel, const AudioInterrupt &interrupt)
     {
-        return parcel.WriteInt32(static_cast<int32_t>(interrupt.streamUsage))
-            && parcel.WriteInt32(static_cast<int32_t>(interrupt.contentType))
-            && parcel.WriteInt32(static_cast<int32_t>(interrupt.audioFocusType.streamType))
-            && parcel.WriteInt32(static_cast<int32_t>(interrupt.audioFocusType.sourceType))
-            && parcel.WriteBool(interrupt.audioFocusType.isPlay)
-            && parcel.WriteUint32(interrupt.sessionId)
-            && parcel.WriteBool(interrupt.pauseWhenDucked)
-            && parcel.WriteInt32(interrupt.pid)
-            && parcel.WriteInt32(static_cast<int32_t>(interrupt.mode))
-            && parcel.WriteBool(interrupt.parallelPlayFlag);
+        bool res = parcel.WriteInt32(static_cast<int32_t>(interrupt.streamUsage));
+        res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.contentType));
+        res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.audioFocusType.streamType));
+        res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.audioFocusType.sourceType));
+        res = res && parcel.WriteBool(interrupt.audioFocusType.isPlay);
+        res = res && parcel.WriteUint32(interrupt.sessionId);
+        res = res && parcel.WriteBool(interrupt.pauseWhenDucked);
+        res = res && parcel.WriteInt32(interrupt.pid);
+        res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.mode));
+        res = res && parcel.WriteBool(interrupt.parallelPlayFlag);
+        size_t vct = interrupt.currencySources.sourcesTypes.size();
+        res = res && parcel.WriteInt32(static_cast<int32_t>(vct));
+        for (size_t i = 0; i < vct; i++) {
+            res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.currencySources.sourcesTypes[i]));
+        }
+        return res;
     }
     static void Unmarshalling(Parcel &parcel, AudioInterrupt &interrupt)
     {
@@ -190,6 +203,15 @@ public:
         interrupt.pid = parcel.ReadInt32();
         interrupt.mode = static_cast<InterruptMode>(parcel.ReadInt32());
         interrupt.parallelPlayFlag = parcel.ReadBool();
+        int32_t vct = parcel.ReadInt32();
+        if (vct > MAX_SOURCE_TYPE_NUM) {
+            return;
+        }
+
+        for (int32_t i = 0; i < vct; i++) {
+            SourceType sourceType = static_cast<SourceType>(parcel.ReadInt32());
+            interrupt.currencySources.sourcesTypes.push_back(sourceType);
+        }
     }
 };
 } // namespace AudioStandard

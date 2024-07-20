@@ -773,6 +773,17 @@ AudioStreamType AudioCapturer::FindStreamTypeBySourceType(SourceType sourceType)
     }
 }
 
+int32_t AudioCapturerPrivate::SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources)
+{
+    if (targetSources.size() <= 0) {
+        AUDIO_ERR_LOG("TargetSources size is 0, set audio source concurrency failed.");
+        return ERR_INVALID_PARAM;
+    }
+    AUDIO_INFO_LOG("Set audio source concurrency success.");
+    audioInterrupt_.currencySources.sourcesTypes = targetSources;
+    return SUCCESS;
+}
+
 int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode)
 {
     AUDIO_INFO_LOG("Capture mode: %{public}d", captureMode);

@@ -28,7 +28,6 @@
 #include "audio_routing_manager.h"
 #include "audio_routing_manager_listener_stub.h"
 #include "audio_system_manager.h"
-#include "audio_system_manager.h"
 #include "i_standard_client_tracker.h"
 #include "audio_log.h"
 #include "microphone_descriptor.h"
