@@ -58,9 +58,9 @@ static void AudioDumpCmd(int opt)
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     vector<pair<string, string>> kvpairs;
     if (opt) {
-        kvpairs.element_back({AudioDumpType, "true"});
+        kvpairs.push_back({AudioDumpType, "true"});
     } else {
-        kvpairs.element_back({AudioDumpType, "false"});
+        kvpairs.push_back({AudioDumpType, "false"});
     }
     audioSystemMgr->SetExtraParameters(AudioDumpKey, kvpairs);
 }
