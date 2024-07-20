@@ -128,11 +128,12 @@ int32_t CapturerInServer::Init()
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterReadCallback(shared_from_this());
 
-    // eg: /data/data/.pulse_dir/100009_48000_2_1_cap_server_out.pcm
+    // eg: /data/data/.pulse_dir/10000_100009_capturer_server_out_48000_2_1.pcm
     AudioStreamInfo tempInfo = processConfig_.streamInfo;
-    std::string dumpName = std::to_string(streamIndex_) + "_" + std::to_string(tempInfo.samplingRate) + "_" +
-        std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "_cap_server_out.pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpName, &dumpS2C_);
+    dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + std::to_string(streamIndex_)
+        + "_capturer_server_out_" + std::to_string(tempInfo.samplingRate) + "_"
+        + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpS2C_);
 
     return SUCCESS;
 }
@@ -233,6 +234,10 @@ void CapturerInServer::ReadData(size_t length)
     }
     ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
     DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
+    if (AudioDump::GetInstance().versionType == "beta") {
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+            static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
+    }
 
     uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
     audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);

@@ -1168,6 +1168,12 @@ std::string GetEncryptStr(const std::string &src)
 
     return dst;
 }
+
+AudioDump& AudioDump::GetInstance()
+{
+    static AudioDump mAudioDump;
+    return mAudioDump;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 

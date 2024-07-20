@@ -328,6 +328,7 @@ ohos_shared_library("audio_process_service") {
     "ipc:ipc_single",
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
+    "media_foundation:media_monitor_client",
   ]
 
   public_external_deps = [ "bounds_checking_function:libsec_static" ]

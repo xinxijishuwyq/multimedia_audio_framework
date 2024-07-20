@@ -23,6 +23,7 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "parameter.h"
+#include "parameters.h"
 
 #include "audio_errors.h"
 #include "audio_log.h"
@@ -354,6 +355,7 @@ bool AudioPolicyService::Init(void)
     }
 
     CreateRecoveryThread();
+    AudioDump::GetInstance().versionType = OHOS::system::GetParameter(const.logsystem.versiontype, "commercial");
     AUDIO_INFO_LOG("Audio policy service init end");
     return true;
 }

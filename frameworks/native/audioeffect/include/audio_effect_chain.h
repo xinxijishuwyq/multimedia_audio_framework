@@ -63,6 +63,7 @@ private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
     int32_t SetEffectParamToHandle(AudioEffectHandle handle, int32_t &replyData);
+    void DumpEffectProcessData(std::string fileName, void *buffer, size_t len);
 
     std::mutex reloadMutex_;
     std::string sceneType_ = "";
@@ -77,6 +78,8 @@ private:
     AudioBuffer audioBufOut_ = {};
     FILE *dumpFileInput_ = nullptr;
     FILE *dumpFileOutput_ = nullptr;
+    std::string dumpNameIn_ = "";
+    std::string dumpNameOut_ = "";
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

@@ -362,6 +362,13 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
     ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set extra parameters failed: no permission.");
 
+    if (key == "PCM_DUMP") {
+        ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set audiodump parameters failed: no permission.");
+        ret = Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(kvpairs);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetMediaParameters failed.");
+    }
+
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
         return ERROR;

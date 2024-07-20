@@ -377,6 +377,15 @@ private:
     size_t extraStrLen_ = 0;
 };
 
+class AudioDump {
+public:
+    static AudioDump& GetInstance();
+    std::string versionType = "commercial";
+private:
+    AudioDump();
+    ~AudioDump();
+};
+
 template <typename EnumType, typename V>
 int32_t GetKeyFromValue(const std::unordered_map<EnumType, V> &map, const V &value)
 {
