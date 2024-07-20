@@ -809,8 +809,6 @@ int32_t AudioRendererSinkInner::Start(void)
     }
     audioXCollie.CancelXCollieTimer();
 #endif
-
-    std::string fileName = DUMP_RENDER_SINK_FILENAME;
     dumpfileName_ = "primary_audiosink_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     if (halName_ == DIRECT_HAL_NAME) {
