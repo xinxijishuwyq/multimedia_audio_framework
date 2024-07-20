@@ -403,14 +403,35 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
 
     std::string deviceName;
     int32_t errorCode = GetDeviceNameForConnect(processConfig, sessionId, deviceName);
-    CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, nullptr, "getdevicename err: %{public}d", errorCode);
+    if (errorCode != SUCCESS) {
+        ReleasePaStream(paStream);
+        AUDIO_ERR_LOG("getdevicename err: %{public}d", errorCode);
+        return nullptr;
+    }
 
     int32_t ret = ConnectStreamToPA(paStream, sampleSpec, deviceName);
     if (ret < 0) {
+        ReleasePaStream(paStream);
         AUDIO_ERR_LOG("ConnectStreamToPA Failed");
         return nullptr;
     }
     return paStream;
+}
+
+void PaAdapterManager::ReleasePaStream(pa_stream *paStream)
+{
+    if (!paStream) {
+        AUDIO_ERR_LOG("paStream is nullptr!");
+        return;
+    }
+    if (!mainLoop_) {
+        AUDIO_ERR_LOG("mainLoop_ is nullptr!");
+        return;
+    }
+
+    PaLockGuard palock(mainLoop_);
+    pa_stream_set_state_callback(paStream, nullptr, nullptr);
+    pa_stream_unref(paStream);
 }
 
 bool PaAdapterManager::IsEffectNone(StreamUsage streamUsage)
