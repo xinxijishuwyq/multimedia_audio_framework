@@ -972,16 +972,18 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
 
 int32_t AudioRendererSinkInner::SetAudioRoute(DeviceType outputDevice, AudioRoute route)
 {
-    CasWithCompare(renderEmptyFrameCount_, 3, std::less<int32_t>()); // preRender 3 frames
-    std::unique_lock<std::mutex> lock(switchMutex_);
-    switchCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_FOR_RENDER_EMPTY), [this] {
-        if (renderEmptyFrameCount_ == 0) {
-            AUDIO_INFO_LOG("Wait for preRender end.");
-            return true;
-        }
-        AUDIO_DEBUG_LOG("Current renderEmptyFrameCount_ is %{public}d", renderEmptyFrameCount_.load());
-        return false;
-    });
+    if (currentAudioScene_ != AUDIO_SCENE_PHONE_CALL) {
+        CasWithCompare(renderEmptyFrameCount_, 3, std::less<int32_t>()); // preRender 3 frames
+        std::unique_lock<std::mutex> lock(switchMutex_);
+        switchCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_FOR_RENDER_EMPTY), [this] {
+            if (renderEmptyFrameCount_ == 0) {
+                AUDIO_INFO_LOG("Wait for preRender end.");
+                return true;
+            }
+            AUDIO_DEBUG_LOG("Current renderEmptyFrameCount_ is %{public}d", renderEmptyFrameCount_.load());
+            return false;
+        });
+    }
     int64_t stamp = ClockTime::GetCurNano();
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "SetOutputRoutes failed with null adapter");
     inSwitch_.store(true);
@@ -989,7 +991,9 @@ int32_t AudioRendererSinkInner::SetAudioRoute(DeviceType outputDevice, AudioRout
     inSwitch_.store(false);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_INFO_LOG("deviceType : %{public}d UpdateAudioRoute cost[%{public}" PRId64 "]ms", outputDevice, stamp);
-    CasWithCompare(renderEmptyFrameCount_, 3, std::less<int32_t>()); // render 3 empty frame
+    if (currentAudioScene_ != AUDIO_SCENE_PHONE_CALL) {
+        CasWithCompare(renderEmptyFrameCount_, 3, std::less<int32_t>()); // render 3 empty frame
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
 
     return SUCCESS;
