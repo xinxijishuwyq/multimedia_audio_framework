@@ -612,7 +612,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
     }
 #endif
     dumpFileName_ = "bluetooth_audiosink_" + std::to_string(attr_.sampleRate) + "_"
-        + std::to_string(att_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
+        + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     InitLatencyMeasurement();
