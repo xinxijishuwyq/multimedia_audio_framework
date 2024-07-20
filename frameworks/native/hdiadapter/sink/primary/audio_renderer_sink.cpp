@@ -715,7 +715,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     if (audioBalanceState_) {AdjustAudioBalance(&data, len);}
 
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
-    if (AudioDump::GeyInstance().versionType == "beta") {
+    if (AudioDump::GetInstance().versionType == "beta") {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void *>(&data), len);
     }
@@ -809,13 +809,13 @@ int32_t AudioRendererSinkInner::Start(void)
     }
     audioXCollie.CancelXCollieTimer();
 #endif
-    dumpfileName_ = "primary_audiosink_" + std::to_string(attr_.sampleRate) + "_"
+    dumpFileName_ = "primary_audiosink_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     if (halName_ == DIRECT_HAL_NAME) {
-        dumpfileName_ = "direct_audiosink_" + std::to_string(attr_.sampleRate) + "_"
+        dumpFileName_ = "direct_audiosink_" + std::to_string(attr_.sampleRate) + "_"
             + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     }
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpfileName_, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     InitLatencyMeasurement();
     if (!started_) {
