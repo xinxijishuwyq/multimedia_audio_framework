@@ -382,8 +382,8 @@ public:
     static AudioDump& GetInstance();
     std::string versionType = "commercial";
 private:
-    AudioDump();
-    ~AudioDump();
+    AudioDump() {}
+    ~AudioDump() {}
 };
 
 template <typename EnumType, typename V>
