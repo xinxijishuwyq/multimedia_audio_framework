@@ -110,6 +110,10 @@ public:
 
     virtual bool IsAbsVolumeScene() const = 0;
 
+    virtual void SetAbsVolumeMute(bool mute) = 0;
+
+    virtual bool IsAbsVolumeMute() const = 0;
+
     virtual float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) = 0;
 
     virtual std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const = 0;
