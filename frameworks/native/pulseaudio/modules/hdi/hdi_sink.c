@@ -84,10 +84,10 @@
 #define OFFLOAD_SET_BUFFER_SIZE_NUM 5
 #define SPATIALIZATION_FADING_FRAMECOUNT 5
 #define POSSIBLY_UNUSED __attribute__((unused))
-#define BYTE_LEN_FOR_8BIT 1
-#define BYTE_LEN_FOR_16BIT 2
-#define BYTE_LEN_FOR_24BIT 3
-#define BYTE_LEN_FOR_32BIT 4
+#define FADE_IN_BEGIN 0.0
+#define FADE_IN_END 1.0
+#define FADE_OUT_BEGIN 1.0
+#define FADE_OUT_END 0.0
 #define PRINT_INTERVAL_FRAME_COUNT 100
 #define MIN_SLEEP_FOR_USEC 2000
 
@@ -1116,138 +1116,48 @@ static void silenceData(pa_mix_info *infoIn, pa_sink *si)
     pa_memblock_release(infoIn->chunk.memblock);
 }
 
-static void Fading8Bit(int8_t *data, int32_t frameLen, int32_t channels, int32_t fadeType)
+static enum HdiAdapterFormat ConvertPaToHdiAdapterFormat(pa_sample_format_t format)
 {
-    AUDIO_INFO_LOG("frameLen:%{public}d channels:%{public}d fadeType:%{public}d", frameLen, channels, fadeType);
-    if (frameLen == 0 || channels == 0) {
-        AUDIO_INFO_LOG("frameLen == 0 || channels == 0");
-        return;
-    }
-    for (int32_t i = 0; i < frameLen / channels; i++) {
-        for (int32_t j = 0; j < channels; j++) {
-            float fadeRatio = 1.0f;
-            if (fadeType == 0) {
-                fadeRatio = (float)(i * channels + j) / frameLen;
-            } else {
-                fadeRatio = (float)(frameLen - (i * channels + j)) / frameLen;
-            }
-            data[i * channels + j] *= fadeRatio;
-        }
-    }
-}
-
-static void Fading16Bit(int16_t *data, int32_t frameLen, int32_t channels, int32_t fadeType)
-{
-    AUDIO_INFO_LOG("frameLen:%{public}d channels:%{public}d fadeType:%{public}d", frameLen, channels, fadeType);
-    if (frameLen == 0 || channels == 0) {
-        AUDIO_INFO_LOG("frameLen == 0 || channels == 0");
-        return;
-    }
-    int32_t lastPos = 0;
-    for (int32_t i = 0; i < frameLen / channels; i++) {
-        for (int32_t j = 0; j < channels; j++) {
-            float fadeRatio = 1.0f;
-            if (fadeType == 0) {
-                fadeRatio = (float)(i * channels + j) / frameLen;
-            } else {
-                fadeRatio = (float)(frameLen - (i * channels + j)) / frameLen;
-            }
-            lastPos = i * channels + j;
-            data[lastPos] *= fadeRatio;
-        }
-    }
-    if (fadeType == 0) {
-        return;
-    }
-    while (lastPos < frameLen) {
-        data[lastPos++] = 0;
-    }
-}
-
-static void Fading24Bit(int8_t *data, int32_t bitSize, int32_t chunkLength, int32_t channels, int32_t fadeType)
-{
-    AUDIO_INFO_LOG("chunkLength:%{public}d bitSize:%{public}d channels:%{public}d fadeType:%{public}d",
-        chunkLength, bitSize, channels, fadeType);
-
-    if (chunkLength == 0 || channels == 0) {
-        AUDIO_INFO_LOG("chunkLength == 0 || channels == 0");
-        return;
-    }
-    int8_t *tmpData = data;
-    int32_t offset = OFFSET_BIT_24 * channels;
-    int32_t lastPos = 0;
-    for (int32_t i = 0; i < chunkLength;) {
-        if (i + offset < chunkLength) {
-            float fadeRatio = 1.0f;
-            if (fadeType == 0) {
-                fadeRatio = (float)(i) / chunkLength;
-            } else {
-                fadeRatio = (float)(chunkLength - i) / chunkLength;
-            }
-            for (int32_t j = 0; j < offset; j++) {
-                tmpData[i + j] *= fadeRatio;
-            }
-            lastPos = i + offset;
-        }
-        i += offset;
-    }
-    if (fadeType == 0) {
-        return;
-    }
-    while (lastPos < chunkLength) {
-        tmpData[lastPos++] = 0;
-    }
-}
-
-static void Fading32Bit(int32_t *data, int32_t frameLen, int32_t channels, int32_t fadeType)
-{
-    AUDIO_INFO_LOG("frameLen:%{public}d channels:%{public}d fadeType:%{public}d", frameLen, channels, fadeType);
-    if (frameLen == 0 || channels == 0) {
-        AUDIO_INFO_LOG("frameLen == 0 || channels == 0");
-        return;
-    }
-    int32_t lastPos = 0;
-    for (int32_t i = 0; i < frameLen / channels; i++) {
-        for (int32_t j = 0; j < channels; j++) {
-            float fadeRatio = 1.0f;
-            if (fadeType == 0) {
-                fadeRatio = (float)(i * channels + j) / frameLen;
-            } else {
-                fadeRatio = (float)(frameLen - (i * channels + j)) / frameLen;
-            }
-            lastPos = i * channels + j;
-            data[lastPos] *= fadeRatio;
-        }
-    }
-    if (fadeType == 0) {
-        return;
-    }
-    while (lastPos < frameLen) {
-        data[lastPos++] = 0;
-    }
-}
-
-static void DoFading(void *data, int32_t chunkLength, int32_t channels, int32_t bitSize, int32_t fadeType)
-{
-    AUDIO_INFO_LOG("length:%{public}d channels:%{public}d fadeType:%{public}d", chunkLength, channels, fadeType);
-    int32_t frameLen = bitSize > 0 ? (int32_t)(chunkLength / bitSize) : 0;
-    switch (bitSize) {
-        case BYTE_LEN_FOR_8BIT:
-            Fading8Bit((int8_t *)data, frameLen, channels, fadeType);
+    enum HdiAdapterFormat adapterFormat;
+    switch (format) {
+        case PA_SAMPLE_U8:
+            adapterFormat = SAMPLE_U8;
             break;
-        case BYTE_LEN_FOR_16BIT:
-            Fading16Bit((int16_t *)data, frameLen, channels, fadeType);
+        case PA_SAMPLE_S16LE:
+            adapterFormat = SAMPLE_S16;
             break;
-        case BYTE_LEN_FOR_24BIT:
-            Fading24Bit((int8_t *)data, bitSize, chunkLength, channels, fadeType);
+        case PA_SAMPLE_S24LE:
+            adapterFormat = SAMPLE_S24;
             break;
-        case BYTE_LEN_FOR_32BIT:
-            Fading32Bit((int32_t *)data, frameLen, channels, fadeType);
+        case PA_SAMPLE_S32LE:
+            adapterFormat = SAMPLE_S32;
             break;
         default:
+            adapterFormat = INVALID_WIDTH;
             break;
     }
+
+    return adapterFormat;
 }
+
+static void DoFading(void *data, int32_t length, struct Userdata *u, int32_t fadeType)
+{
+    AudioRawFormat rawFormat;
+    rawFormat.format = (uint32_t)ConvertPaToHdiAdapterFormat(u->format);
+    rawFormat.channels = (uint32_t)u->ss.channels;
+    AUDIO_INFO_LOG("length:%{public}d channels:%{public}d format:%{public}d fadeType:%{public}d",
+        length, rawFormat.channels, rawFormat.format, fadeType);
+    int32_t ret = 0;
+    if (fadeType == 0) {
+        ret = ProcessVol(data, length, rawFormat, FADE_IN_BEGIN, FADE_IN_END);
+    } else {
+        ret = ProcessVol(data, length, rawFormat, FADE_OUT_BEGIN, FADE_OUT_END);
+    }
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("ProcessVol failed:%{public}d", ret);
+    }
+}
+
 static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_sink *si)
 {
     struct Userdata *u;
@@ -1274,17 +1184,15 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         //do fading in
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
-        int32_t bitSize = (int32_t)pa_sample_size_of_format(u->format);
-        DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 0);
+        DoFading(data, infoIn->chunk.length, u, 0);
         u->primary.primaryFadingInDone = 1;
         pa_memblock_release(infoIn->chunk.memblock);
     }
     if (pa_safe_streq(sinkFadeoutPause, "1")) {
         //do fading out
-        int32_t bitSize = (int32_t)pa_sample_size_of_format(u->format);
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
-        DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 1);
+        DoFading(data, infoIn->chunk.length, u, 1);
         pa_proplist_sets(sinkIn->proplist, "fadeoutPause", "2");
     }
 }
@@ -1409,19 +1317,17 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
             return;
         }
         //do fading in
-        int32_t bitSize = (int32_t)pa_sample_size_of_format(u->format);
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
-        DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 0);
+        DoFading(data, infoIn->chunk.length, u, 0);
         u->multiChannel.multiChannelFadingInDone = 1;
         pa_memblock_release(infoIn->chunk.memblock);
     }
     if (pa_safe_streq(sinkFadeoutPause, "1")) {
         //do fading out
-        int32_t bitSize = (int32_t)pa_sample_size_of_format(u->format);
         pa_memchunk_make_writable(&infoIn->chunk, 0);
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
-        DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 1);
+        DoFading(data, infoIn->chunk.length, u, 1);
         pa_proplist_sets(sinkIn->proplist, "fadeoutPause", "2");
     }
 }
@@ -3793,30 +3699,6 @@ static pa_hook_result_t SinkInputPutCb(pa_core *core, pa_sink_input *i, struct U
     i->state_change = PaInputStateChangeCb;
     i->volume_changed = PaInputVolumeChangeCb;
     return PA_HOOK_OK;
-}
-
-static enum HdiAdapterFormat ConvertPaToHdiAdapterFormat(pa_sample_format_t format)
-{
-    enum HdiAdapterFormat adapterFormat;
-    switch (format) {
-        case PA_SAMPLE_U8:
-            adapterFormat = SAMPLE_U8;
-            break;
-        case PA_SAMPLE_S16LE:
-            adapterFormat = SAMPLE_S16;
-            break;
-        case PA_SAMPLE_S24LE:
-            adapterFormat = SAMPLE_S24;
-            break;
-        case PA_SAMPLE_S32LE:
-            adapterFormat = SAMPLE_S32;
-            break;
-        default:
-            adapterFormat = INVALID_WIDTH;
-            break;
-    }
-
-    return adapterFormat;
 }
 
 static int32_t PrepareDevice(struct Userdata *u, const char *filePath)
