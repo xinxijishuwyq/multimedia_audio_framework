@@ -161,7 +161,6 @@ bool AudioAdapterManager::ConnectServiceAdapter()
 
 void AudioAdapterManager::InitKVStore()
 {
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     InitKVStoreInternal();
 }
 
@@ -329,14 +328,17 @@ void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamTyp
 
 void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
 {
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
 }
 
 void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
 {
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
-    SetRingerModeInternal(ringerMode);
+    // In case if KvStore didnot connect during bootup
+    if (!isLoaded_) {
+        InitKVStoreInternal();
+    }
+
+    volumeDataMaintainer_.SaveRingerMode(ringerMode);
 }
 
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
@@ -434,7 +436,6 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
 
     // set stream mute status to mem.
     volumeDataMaintainer_.SetStreamMuteStatus(streamType, mute);
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
     if (handler != nullptr) {
         handler->SendStreamMuteStatusUpdate(streamType, mute, streamUsage);
@@ -600,7 +601,6 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
         return;
     }
 
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
         SetVolumeDb(STREAM_MUSIC);
         currentActiveDevice_ = deviceType;
@@ -648,29 +648,18 @@ int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutput
 
 int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 {
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
-    ringerMode_ = ringerMode;
-    auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
-    if (handler != nullptr) {
-        handler->SendRingerModeUpdate(ringerMode);
-        return SUCCESS;
-    }
-    return ERROR;
+    return SetRingerModeInternal(ringerMode);
 }
 
 int32_t AudioAdapterManager::SetRingerModeInternal(AudioRingerMode ringerMode)
 {
     AUDIO_INFO_LOG("SetRingerMode: %{public}d", ringerMode);
-    if (ringerMode_ != ringerMode) {
-        ringerMode_ = ringerMode;
-    }
+    ringerMode_ = ringerMode;
 
-    // In case if KvStore didnot connect during bootup
-    if (!isLoaded_) {
-        InitKVStoreInternal();
+    auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
+    if (handler != nullptr) {
+        handler->SendRingerModeUpdate(ringerMode);
     }
-
-    volumeDataMaintainer_.SaveRingerMode(ringerMode);
     return SUCCESS;
 }
 

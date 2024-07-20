@@ -101,8 +101,8 @@ private:
     bool GetStreamMuteInternal(AudioStreamType streamType);
     int32_t GetStreamVolumeInternal(AudioStreamType streamType);
 
-    std::mutex muteStatusMutex_;
     std::mutex volumeMutex_;
+    std::mutex volumeForDbMutex_;
     std::unordered_map<AudioStreamType, bool> muteStatusMap_; // save volume Mutestatus map
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_; // save volume map
     bool isSettingsCloneHaveStarted_ = false;
