@@ -3244,8 +3244,13 @@ static void ThreadFuncRendererTimerBus(void *userdata)
         AUTO_CTRACE("ProcessDataLoop %s sleep:%lld us", deviceClass, sleepForUsec);
         // Hmm, nothing to do. Let's sleep
         if ((ret = pa_rtpoll_run(u->rtpoll)) < 0) {
-            AUDIO_ERR_LOG("Thread %s(use timing bus) shutting down, error %d, pid %d, tid %d",
-                deviceClass, ret, getpid(), gettid());
+            AUDIO_ERR_LOG("Thread %{public}s(use timing bus) shutting down, error %{public}d, "
+                "pid %{public}d, tid %{public}d", deviceClass, ret, getpid(), gettid());
+            if (!strcmp(u->sink->name, DEVICE_CLASS_PRIMARY)) {
+                AUDIO_ERR_LOG("Primary sink's pa_rtpoll_run error, exit");
+                _Exit(0);
+            }
+
             // If this was no regular exit from the loop we have to continue
             // processing messages until we received PA_MESSAGE_SHUTDOWN
             pa_asyncmsgq_post(u->thread_mq.outq, PA_MSGOBJECT(u->core), PA_CORE_MESSAGE_UNLOAD_MODULE,
