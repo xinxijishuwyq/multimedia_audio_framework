@@ -355,7 +355,7 @@ bool AudioPolicyService::Init(void)
     }
 
     CreateRecoveryThread();
-    std::string versionType = OHOS::system::GetParameter(const.logsystem.versiontype, "commercial");
+    std::string versionType = OHOS::system::GetParameter("const.logsystem.versiontype", "commercial");
     AudioDump::GetInstance().SetVersionType(versionType);
     AUDIO_INFO_LOG("Audio policy service init end");
     return true;
