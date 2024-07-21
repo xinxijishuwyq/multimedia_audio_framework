@@ -1637,7 +1637,8 @@ int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo 
     return ret;
 }
 
-void AudioPolicyServer::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
+void AudioPolicyServer::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     auto callerPid = IPCSkeleton::GetCallingPid();
     streamChangeInfo.audioRendererChangeInfo.callerPid = callerPid;
@@ -1651,7 +1652,7 @@ void AudioPolicyServer::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamC
         AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
             streamChangeInfo.audioRendererChangeInfo.clientUID);
     }
-    audioPolicyService_.FetchOutputDeviceForTrack(streamChangeInfo);
+    audioPolicyService_.FetchOutputDeviceForTrack(streamChangeInfo, reason);
 }
 
 void AudioPolicyServer::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)

@@ -40,9 +40,10 @@ public:
     virtual ~DeviceChangeWithInfoCallback() = default;
 
     virtual void OnDeviceChangeWithInfo(
-        const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) = 0;
+        const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) = 0;
 
-    virtual void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag) = 0;
+    virtual void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt reason) = 0;
 };
 
 class AudioCapturerStateChangeCallback {

@@ -93,6 +93,7 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
         int32_t streamFlag;
         std::unordered_map<std::string, bool> headTrackingDeviceChangeInfo;
+        AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     };
 
     struct RendererDeviceChangeEvent {
@@ -105,7 +106,7 @@ public:
         const int32_t clientPid_;
         const uint32_t sessionId_;
         const DeviceInfo outputDeviceInfo_;
-        const AudioStreamDeviceChangeReason reason_;
+        AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     };
 
     struct CapturerCreateEvent {
@@ -153,13 +154,15 @@ public:
     bool SendRendererInfoEvent(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
     bool SendCapturerInfoEvent(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     bool SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
-        const DeviceInfo &outputDeviceInfo, const AudioStreamDeviceChangeReason reason);
+        const DeviceInfo &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason);
     bool SendCapturerCreateEvent(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint64_t sessionId, bool isSync, int32_t &error);
     bool SendCapturerRemovedEvent(uint64_t sessionId, bool isSync);
     bool SendWakeupCloseEvent(bool isSync);
-    bool SendRecreateRendererStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag);
-    bool SendRecreateCapturerStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag);
+    bool SendRecreateRendererStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt reason);
+    bool SendRecreateCapturerStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt reason);
     bool SendHeadTrackingDeviceChangeEvent(const std::unordered_map<std::string, bool> &changeInfo);
     void AddAudioDeviceRefinerCb(const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveAudioDeviceRefinerCb();

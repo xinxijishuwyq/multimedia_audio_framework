@@ -357,7 +357,7 @@ int32_t AudioPolicyClientStubImpl::RemoveDeviceChangeWithInfoCallback(const uint
 }
 
 void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t sessionId,
-    const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason)
+    const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyClientStubImpl::OnRendererDeviceChange");
     std::shared_ptr<DeviceChangeWithInfoCallback> callback = nullptr;
@@ -394,7 +394,8 @@ void AudioPolicyClientStubImpl::OnRendererStateChange(
     }
 }
 
-void AudioPolicyClientStubImpl::OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag)
+void AudioPolicyClientStubImpl::OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("Enter");
     std::shared_ptr<DeviceChangeWithInfoCallback> callback = nullptr;
@@ -407,11 +408,12 @@ void AudioPolicyClientStubImpl::OnRecreateRendererStreamEvent(const uint32_t ses
         callback = deviceChangeWithInfoCallbackMap_.at(sessionId).lock();
     }
     if (callback != nullptr) {
-        callback->OnRecreateStreamEvent(sessionId, streamFlag);
+        callback->OnRecreateStreamEvent(sessionId, streamFlag, reason);
     }
 }
 
-void AudioPolicyClientStubImpl::OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag)
+void AudioPolicyClientStubImpl::OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("Enter");
     std::shared_ptr<DeviceChangeWithInfoCallback> callback = nullptr;
@@ -424,7 +426,7 @@ void AudioPolicyClientStubImpl::OnRecreateCapturerStreamEvent(const uint32_t ses
         callback = deviceChangeWithInfoCallbackMap_.at(sessionId).lock();
     }
     if (callback != nullptr) {
-        callback->OnRecreateStreamEvent(sessionId, streamFlag);
+        callback->OnRecreateStreamEvent(sessionId, streamFlag, reason);
     }
 }
 

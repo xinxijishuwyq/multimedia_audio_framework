@@ -1148,7 +1148,8 @@ int32_t AudioPolicyProxy::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     return reply.ReadInt32();
 }
 
-void AudioPolicyProxy::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
+void AudioPolicyProxy::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1160,6 +1161,8 @@ void AudioPolicyProxy::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamCh
     }
 
     streamChangeInfo.audioRendererChangeInfo.Marshalling(data);
+
+    data.WriteInt32(static_cast<int32_t>(reason));
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::FETCH_OUTPUT_DEVICE_FOR_TRACK), data, reply, option);

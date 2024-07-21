@@ -148,7 +148,8 @@ public:
     void SetCapturerSource(int capturerSource) override;
 
     // Common APIs
-    bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
+    bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT,
+        AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN) override;
     bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool StopAudioStream() override;
     bool FlushAudioStream() override;
@@ -1297,7 +1298,7 @@ void CapturerInClientInner::SetPrivacyType(AudioPrivacyType privacyType)
     return;
 }
 
-bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType)
+bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType, AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("CapturerInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);

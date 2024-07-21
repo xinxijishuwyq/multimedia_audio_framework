@@ -91,7 +91,7 @@ void AudioStreamTracker::UpdateTracker(const int32_t sessionId, const State stat
 }
 
 void AudioStreamTracker::FetchOutputDeviceForTrack(const int32_t sessionId, const State state, const int32_t clientPid,
-    const AudioRendererInfo &rendererInfo)
+    const AudioRendererInfo &rendererInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_DEBUG_LOG("entered");
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
@@ -101,7 +101,7 @@ void AudioStreamTracker::FetchOutputDeviceForTrack(const int32_t sessionId, cons
         streamChangeInfo.audioRendererChangeInfo.clientPid = clientPid;
         streamChangeInfo.audioRendererChangeInfo.rendererState = static_cast<RendererState>(state);
         streamChangeInfo.audioRendererChangeInfo.rendererInfo = rendererInfo;
-        AudioPolicyManager::GetInstance().FetchOutputDeviceForTrack(streamChangeInfo);
+        AudioPolicyManager::GetInstance().FetchOutputDeviceForTrack(streamChangeInfo, reason);
     }
 }
 

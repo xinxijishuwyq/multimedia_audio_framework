@@ -66,9 +66,11 @@ public:
     virtual void OnCapturerStateChange(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
     virtual void OnRendererDeviceChange(const uint32_t sessionId,
-        const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) = 0;
-    virtual void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag) = 0;
-    virtual void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag) = 0;
+        const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) = 0;
+    virtual void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt reason) = 0;
+    virtual void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt reason) = 0;
     virtual void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) = 0;
     virtual void OnSpatializationEnabledChange(const bool &enabled) = 0;
     virtual void OnHeadTrackingEnabledChange(const bool &enabled) = 0;

@@ -22,6 +22,7 @@
 #include "audio_capturer.h"
 #include "audio_renderer.h"
 #include "audio_stream_manager.h"
+#include "audio_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -181,7 +182,8 @@ public:
     virtual int64_t GetFramesRead() = 0;
 
     // Common APIs
-    virtual bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
+    virtual bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT,
+        AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN) = 0;
     virtual bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
     virtual bool StopAudioStream() = 0;
     virtual bool ReleaseAudioStream(bool releaseRunner = true) = 0;

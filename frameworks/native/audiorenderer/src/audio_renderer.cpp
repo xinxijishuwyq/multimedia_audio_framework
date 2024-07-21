@@ -1110,7 +1110,7 @@ int32_t AudioRendererPrivate::SetRenderMode(AudioRenderMode renderMode)
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
             streamClass = IAudioStream::PA_STREAM;
         }
-        if (!SwitchToTargetStream(streamClass, newSessionId)) {
+        if (!SwitchToTargetStream(streamClass, newSessionId, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN)) {
             AUDIO_ERR_LOG("Switch to target stream failed");
             return ERROR;
         }
@@ -1384,7 +1384,8 @@ void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
 }
 
-bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId)
+bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     bool switchResult = false;
     if (audioStream_) {
@@ -1426,7 +1427,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
 
         if (previousState == RENDERER_RUNNING) {
             // restart audio stream
-            switchResult = newAudioStream->StartAudioStream();
+            switchResult = newAudioStream->StartAudioStream(CMD_FROM_CLIENT, reason);
             CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
         }
         audioStream_ = newAudioStream;
@@ -1452,7 +1453,8 @@ void AudioRendererPrivate::WriteSwitchStreamLogMsg()
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t streamFlag)
+void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t streamFlag,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
     switch (streamFlag) {
@@ -1480,7 +1482,7 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
     }
 
     uint32_t newSessionId = 0;
-    if (!SwitchToTargetStream(targetClass, newSessionId) && audioRendererErrorCallback_) {
+    if (!SwitchToTargetStream(targetClass, newSessionId, reason) && audioRendererErrorCallback_) {
         audioRendererErrorCallback_->OnError(ERROR_SYSTEM);
     }
     usedSessionId_.push_back(newSessionId);
@@ -1490,7 +1492,7 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
 }
 
 void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
-    const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason)
+    const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("OnRendererStateChange");
     std::vector<std::shared_ptr<AudioRendererOutputDeviceChangeCallback>> callbacks;
@@ -1518,10 +1520,11 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
     }
 }
 
-void OutputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag)
+void OutputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("Enter, session id: %{public}d, stream flag: %{public}d", sessionId, streamFlag);
-    renderer_->SwitchStream(sessionId, streamFlag);
+    renderer_->SwitchStream(sessionId, streamFlag, reason);
 }
 
 AudioEffectMode AudioRendererPrivate::GetAudioEffectMode() const
@@ -1775,7 +1778,7 @@ void AudioRendererPrivate::ConcedeStream()
     switch (pipeType) {
         case PIPE_TYPE_LOWLATENCY_OUT:
         case PIPE_TYPE_DIRECT_MUSIC:
-            SwitchStream(sessionId, IAudioStream::PA_STREAM);
+            SwitchStream(sessionId, IAudioStream::PA_STREAM, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
             break;
         case PIPE_TYPE_OFFLOAD:
             UnsetOffloadMode();

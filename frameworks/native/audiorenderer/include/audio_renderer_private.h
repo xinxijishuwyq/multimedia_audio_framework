@@ -95,7 +95,8 @@ public:
     float GetMaxStreamVolume() const override;
     int32_t GetCurrentOutputDevices(DeviceInfo &deviceInfo) const override;
     uint32_t GetUnderflowCount() const override;
-    void SwitchStream(const uint32_t sessionId, const int32_t streamFlag);
+    void SwitchStream(const uint32_t sessionId, const int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt reason);
 
     int32_t RegisterOutputDeviceChangeWithInfoCallback(
         const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) override;
@@ -160,7 +161,8 @@ private:
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
     int32_t InitAudioConcurrencyCallback();
     void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
-    bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId);
+    bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId,
+        const AudioStreamDeviceChangeReasonExt reason);
     void WriteSwitchStreamLogMsg();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
@@ -236,9 +238,10 @@ public:
     virtual ~OutputDeviceChangeWithInfoCallbackImpl() = default;
 
     void OnDeviceChangeWithInfo(
-        const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
+        const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) override;
 
-    void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag) override;
+    void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt reason) override;
 
     void SaveCallback(const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback)
     {

@@ -17,11 +17,10 @@
 #include <cstddef>
 #include <cstdint>
 #include "audio_info.h"
-#define private public
 #include "audio_policy_server.h"
-#undef private
 #include "audio_policy_service.h"
 #include "audio_bluetooth_manager.h"
+#include "audio_device_info.h"
 using namespace std;
 
 namespace OHOS {
@@ -104,7 +103,8 @@ void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t si
     streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
     std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
         std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioPolicyServerPtr->audioPolicyService_.FetchOutputDeviceForTrack(streamChangeInfo);
+    AudioPolicyServerPtr->audioPolicyService_.FetchOutputDeviceForTrack(streamChangeInfo,
+        AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
 }
 } // namespace AudioStandard
 } // namesapce OHOS

@@ -468,7 +468,8 @@ public:
 
     ConverterConfig GetConverterConfig();
 
-    void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
+    void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
+        const AudioStreamDeviceChangeReasonExt reason);
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
@@ -648,7 +649,8 @@ private:
     void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
-    bool IsFastFromA2dpToA2dp(const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+    bool IsFastFromA2dpToA2dp(const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+        const AudioStreamDeviceChangeReasonExt reason);
 
     void FetchStreamForA2dpMchStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &descs);
@@ -659,7 +661,7 @@ private:
         vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
 
     void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
-        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> desc,
         vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos, SourceType sourceType);
@@ -799,7 +801,7 @@ private:
 
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
-        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void ResetToSpeaker(DeviceType devType);
 
@@ -876,11 +878,14 @@ private:
         std::string &networkId);
 
     bool NotifyRecreateRendererStream(std::unique_ptr<AudioDeviceDescriptor> &desc,
-        const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+        const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+        const AudioStreamDeviceChangeReasonExt reason);
 
-    void TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag);
+    void TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt reason);
 
-    bool NotifyRecreateDirectStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+    bool NotifyRecreateDirectStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+        const AudioStreamDeviceChangeReasonExt reason);
 
     bool IsDirectSupportedDevice(DeviceType deviceType);
 
@@ -888,9 +893,11 @@ private:
         const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
 
     bool NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
-        const std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
+        const std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
+        const AudioStreamDeviceChangeReasonExt reason);
 
-    void TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag);
+    void TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt reason);
 
     bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
 

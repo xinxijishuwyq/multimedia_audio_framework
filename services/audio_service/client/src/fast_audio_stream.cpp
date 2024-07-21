@@ -461,7 +461,8 @@ int32_t FastAudioStream::ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
     return ERR_OPERATION_FAILED;
 }
 
-bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType)
+bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
+    AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("StartAudioStream enter.");
     CHECK_AND_RETURN_RET_LOG((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED),
@@ -473,7 +474,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType)
         spkProcClientCb_->ResetFirstFrameState();
     }
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, clientPid_, rendererInfo_);
+        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, clientPid_, rendererInfo_, reason);
         audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, RUNNING, clientPid_, capturerInfo_);
     }
     int32_t ret = ERROR;
