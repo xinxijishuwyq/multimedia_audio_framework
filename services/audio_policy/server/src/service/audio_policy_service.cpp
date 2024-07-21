@@ -2405,7 +2405,9 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::unique_ptr<AudioRender
         streamCollector_.GetPipeType(rendererChangeInfo->sessionId, pipeType);
         if (pipeType == PIPE_TYPE_MULTICHANNEL) {
             std::string currentActivePort = MCH_PRIMARY_SPEAKER;
-            AudioIOHandle activateDeviceIOHandle = IOHandles_[currentActivePort];
+            auto ioHandleIter = IOHandles_.find(currentActivePort);
+            CHECK_AND_RETURN_LOG(ioHandleIter != IOHandles_.end(), "Can not find port MCH_PRIMARY_SPEAKER in io map");
+            AudioIOHandle activateDeviceIOHandle = ioHandleIter->second;
             audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
             audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
             IOHandles_.erase(currentActivePort);
