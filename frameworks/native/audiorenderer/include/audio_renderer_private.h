@@ -220,6 +220,7 @@ private:
     AudioInterrupt audioInterrupt_ {};
     bool isForcePaused_ = false;
     bool isForceDucked_ = false;
+    uint32_t sessionID_ = INVALID_SESSION_ID;
 };
 
 class AudioStreamCallbackRenderer : public AudioStreamCallback {
