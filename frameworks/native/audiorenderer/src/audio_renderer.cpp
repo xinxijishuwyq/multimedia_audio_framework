@@ -968,7 +968,8 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
             break;
         case INTERRUPT_HINT_RESUME:
             if ((audioStream_->GetState() != PAUSED && audioStream_->GetState() != PREPARED) || !isForcePaused_) {
-                AUDIO_WARNING_LOG("State of stream is not paused or pause is not forced");
+                AUDIO_WARNING_LOG("sessionId: %{public}u, state: %{public}d.  State of stream is not paused or \
+                    pause is not forced.", sessionID_, static_cast<int32_t>(audioStream_->GetState()));
                 return;
             }
             isForcePaused_ = false;
@@ -1005,8 +1006,12 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
 {
     cb_ = callback_.lock();
     InterruptForceType forceType = interruptEvent.forceType;
-    AUDIO_INFO_LOG("forceType %{public}d, hintType: %{public}d",
-        forceType, interruptEvent.hintType);
+
+    if (audioStream_ != nullptr) {
+        audioStream_->GetAudioSessionID(sessionID_);
+    }
+    AUDIO_INFO_LOG("sessionId: %{public}u, forceType: %{public}d, hintType: %{public}d",
+        sessionID_, forceType, interruptEvent.hintType);
 
     if (forceType != INTERRUPT_FORCE) { // INTERRUPT_SHARE
         AUDIO_DEBUG_LOG("INTERRUPT_SHARE. Let app handle the event");
