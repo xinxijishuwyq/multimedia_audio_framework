@@ -601,12 +601,6 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
         return;
     }
 
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
-        SetVolumeDb(STREAM_MUSIC);
-        currentActiveDevice_ = deviceType;
-        return;
-    }
-
     // The same device does not set the volume
     // Except for A2dp, because the currentActiveDevice_ has already been set in Activea2dpdevice.
     if (GetVolumeGroupForDevice(currentActiveDevice_) == GetVolumeGroupForDevice(deviceType) &&
@@ -1718,6 +1712,19 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
 bool AudioAdapterManager::IsAbsVolumeScene() const
 {
     return isAbsVolumeScene_;
+}
+
+void AudioAdapterManager::SetAbsVolumeMute(bool mute)
+{
+    isAbsVolumeMute_ = mute;
+    float volumeDb = mute ? 0.0f : 1.0f;
+    SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
+}
+
+
+bool AudioAdapterManager::IsAbsVolumeMute() const
+{
+    return isAbsVolumeMute_;
 }
 
 void AudioAdapterManager::NotifyAccountsChanged(const int &id)

@@ -141,6 +141,11 @@ public:
     void SetAbsVolumeScene(bool isAbsVolumeScene);
 
     bool IsAbsVolumeScene() const;
+
+    void SetAbsVolumeMute(bool mute);
+
+    bool IsAbsVolumeMute() const;
+
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
 
     void ResetRemoteCastDeviceVolume();
@@ -285,6 +290,7 @@ private:
     float getSystemVolumeInDb_ = 0.0f;
     bool useNonlinearAlgo_ = false;
     bool isAbsVolumeScene_ = false;
+    bool isAbsVolumeMute_ = false;
     bool isNeedCopyVolumeData_ = false;
     bool isNeedCopyMuteData_ = false;
     bool isNeedCopyRingerModeData_ = false;
@@ -310,15 +316,17 @@ public:
     {
         AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(streamType);
         int32_t volumeLevel = audioAdapterManager_->GetStreamVolume(streamForVolumeMap);
-        bool muteStatus = audioAdapterManager_->GetStreamMute(streamForVolumeMap);
-        if (muteStatus) {
-            return {0.0f, 0};
-        }
 
         bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();
         DeviceType activeDevice = audioAdapterManager_->GetActiveDevice();
         if (streamForVolumeMap == STREAM_MUSIC && activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP && isAbsVolumeScene) {
-            return {1.0f, volumeLevel};
+            int32_t vol = audioAdapterManager_->IsAbsVolumeMute() ? 0.0f : 1.0f;
+            return {vol, volumeLevel};
+        }
+
+        bool muteStatus = audioAdapterManager_->GetStreamMute(streamForVolumeMap);
+        if (muteStatus) {
+            return {0.0f, 0};
         }
 
         float volumeDb = 1.0f;

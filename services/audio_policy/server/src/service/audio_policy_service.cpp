@@ -866,7 +866,7 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute,
             AUDIO_WARNING_LOG("Set failed for macAddress:[%{public}s]", GetEncryptAddr(activeBTDevice_).c_str());
         } else {
             configInfoPos->second.mute = mute;
-            audioPolicyManager_.SetStreamMute(streamType, mute, streamUsage);
+            audioPolicyManager_.SetAbsVolumeMute(mute);
 #ifdef BLUETOOTH_ENABLE
             // set to avrcp device
             if (mute) {
@@ -5514,10 +5514,8 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
     }
     configInfoPos->second.volumeLevel = sVolumeLevel;
     bool mute = sVolumeLevel == 0 ? true : false;
-    if (configInfoPos->second.mute != mute || audioPolicyManager_.GetStreamMute(STREAM_MUSIC)) {
-        configInfoPos->second.mute = mute;
-        audioPolicyManager_.SetStreamMute(STREAM_MUSIC, configInfoPos->second.mute);
-    }
+    configInfoPos->second.mute = mute;
+    audioPolicyManager_.SetAbsVolumeMute(mute);
     AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
         GetEncryptAddr(macAddress).c_str(), sVolumeLevel);
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_UNKNOWN, "safevolume did not deal");
