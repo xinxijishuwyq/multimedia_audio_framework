@@ -37,6 +37,7 @@ static inline bool IsVolumeSame(const float& x, const float& y, const float& eps
 
 class VolumeTools {
 public:
+    static double GetVolDb(AudioSampleFormat format, int32_t vol);
     static bool IsVolumeValid(float volFloat); // 0.0 <= volFloat <= 1.0
     static bool IsVolumeValid(int32_t volInt); // 0 <= volInt <= 65536
     static bool IsVolumeValid(ChannelVolumes vols);
@@ -47,6 +48,9 @@ public:
     // Data size should be rounded to each sample size
     // There will be significant sound quality loss when process uint8_t samples.
     static int32_t Process(const BufferDesc &buffer, AudioSampleFormat format, ChannelVolumes vols);
+
+    // will count volume for each channel, vol sum will be kept in volStart
+    static ChannelVolumes CountVolumeLevel(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel);
 };
 } // namespace AudioStandard
 } // namespace OHOS
