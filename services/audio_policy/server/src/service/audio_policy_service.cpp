@@ -3942,6 +3942,8 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
                 moduleInfo.rate = to_string(streamInfo.samplingRate);
                 moduleInfo.format = ConvertToHDIAudioFormat(streamInfo.format);
                 moduleInfo.bufferSize = to_string(bufferSize);
+                moduleInfo.renderInIdleState = "1";
+                moduleInfo.sinkLatency = "0";
 
                 // First unload the existing bt sink
                 AUDIO_DEBUG_LOG("UnLoad existing a2dp module");
