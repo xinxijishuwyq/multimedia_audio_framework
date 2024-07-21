@@ -326,6 +326,7 @@ ohos_shared_library("audio_process_service") {
     "hicollie:libhicollie",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]

@@ -38,6 +38,7 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "parameters.h"
+#include "media_monitor_manager.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
@@ -182,6 +183,7 @@ private:
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
     FILE *dumpFile_ = nullptr;
+    std::string dumpFileName_ = "";
 };
 
 BluetoothRendererSinkInner::BluetoothRendererSinkInner(bool isBluetoothLowLatency)
@@ -489,16 +491,17 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     if (audioMonoState_) {
         AdjustStereoToMono(&data, len);
     }
-
     if (audioBalanceState_) {
         AdjustAudioBalance(&data, len);
     }
 
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
-
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+            static_cast<void *>(&data), len);
+    }
     CheckUpdateState(&data, len);
-
     if (suspend_) {
         return ret;
     }
@@ -519,7 +522,6 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
             usleep(RENDER_FRAME_INTERVAL_IN_MICROSECONDS);
             continue;
         }
-
         if (ret != 0) {
             AUDIO_ERR_LOG("A2dp RenderFrame failed ret: %{public}x", ret);
             ret = ERR_WRITE_FAILED;
@@ -609,7 +611,9 @@ int32_t BluetoothRendererSinkInner::Start(void)
         AUDIO_ERR_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_BLUETOOTH_RENDER_SINK_FILENAME, &dumpFile_);
+    dumpFileName_ = "bluetooth_audiosink_" + std::to_string(attr_.sampleRate) + "_"
+        + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     InitLatencyMeasurement();
 

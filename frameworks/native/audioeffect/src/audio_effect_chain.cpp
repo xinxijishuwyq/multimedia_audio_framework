@@ -22,6 +22,7 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "securec.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -55,16 +56,14 @@ AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracke
     ioBufferConfig_.outputCfg.format = DATA_FORMAT_F32;
     ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     headTracker_ = headTracker;
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA,
-        "dump_effect_in_" + scene + "_" + std::to_string(ioBufferConfig_.inputCfg.samplingRate) +
-        "_" + std::to_string(ioBufferConfig_.inputCfg.channels) +
-        "_float.pcm",
-        &dumpFileInput_);
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA,
-        "dump_effect_out_" + scene + "_" + std::to_string(ioBufferConfig_.outputCfg.samplingRate) +
-        "_" + std::to_string(ioBufferConfig_.outputCfg.channels) +
-        "_float.pcm",
-        &dumpFileOutput_);
+    dumpNameIn_ = "dump_effect_in_" + scene + "_"
+        + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
+        + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4.pcm";
+    dumpNameOut_ = "dump_effect_out_" + scene + "_"
+        + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
+        + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameIn_, &dumpFileInput_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameOut_, &dumpFileOutput_);
 }
 #else
 AudioEffectChain::AudioEffectChain(std::string scene)
@@ -81,16 +80,14 @@ AudioEffectChain::AudioEffectChain(std::string scene)
     ioBufferConfig_.outputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig_.outputCfg.format = DATA_FORMAT_F32;
     ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA,
-        "dump_effect_in_" + scene + "_" + std::to_string(ioBufferConfig_.inputCfg.samplingRate) +
-        "_" + std::to_string(ioBufferConfig_.inputCfg.channels) +
-        "_float.pcm",
-        &dumpFileInput_);
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA,
-        "dump_effect_out_" + scene + "_" + std::to_string(ioBufferConfig_.outputCfg.samplingRate) +
-        "_" + std::to_string(ioBufferConfig_.outputCfg.channels) +
-        "_float.pcm",
-        &dumpFileOutput_);
+    dumpNameIn_ = "dump_effect_in_" + scene + "_"
+        + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
+        + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4.pcm";
+    dumpNameOut_ = "dump_effect_out_" + scene + "_"
+        + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
+        + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameIn_, &dumpFileInput_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameOut_, &dumpFileOutput_);
 }
 #endif
 
@@ -240,13 +237,13 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
 {
     size_t inTotlen = frameLen * ioBufferConfig_.inputCfg.channels * sizeof(float);
     size_t outTotlen = frameLen * ioBufferConfig_.outputCfg.channels * sizeof(float);
-
-    // dump pcm for bufIn
     DumpFileUtil::WriteDumpFile(dumpFileInput_, static_cast<void *>(bufIn), inTotlen);
+    DumpEffectProcessData(dumpNameIn_, static_cast<void *>(bufIn), inTotlen);
 
     if (IsEmptyEffectHandles()) {
         CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, outTotlen) == 0, "memcpy error in apply effect");
         DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
+        DumpEffectProcessData(dumpNameOut_, static_cast<void *>(bufOut), outTotlen);
         return;
     }
 
@@ -283,8 +280,8 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
         CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, outTotlen) == 0, "memcpy error when last copy");
     }
 
-    // dump pcm for bufOut
     DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
+    DumpEffectProcessData(dumpNameOut_, static_cast<void *>(bufOut), outTotlen);
 }
 
 bool AudioEffectChain::IsEmptyEffectHandles()
@@ -354,6 +351,13 @@ void AudioEffectChain::StoreOldEffectChainInfo(std::string &sceneMode, AudioEffe
 uint32_t AudioEffectChain::GetLatency()
 {
     return latency_;
+}
+
+void AudioEffectChain::DumpEffectProcessData(std::string fileName, void *buffer, size_t len)
+{
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(fileName, buffer, len);
+    }
 }
 
 #ifdef SENSOR_ENABLE

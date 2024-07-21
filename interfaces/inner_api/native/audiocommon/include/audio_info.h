@@ -76,6 +76,7 @@ const std::string CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_
 const std::string RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
 const std::string MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
 const std::string CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
+const std::string DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
 
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
 const std::string REMOTE_NETWORK_ID = "RemoteDevice";

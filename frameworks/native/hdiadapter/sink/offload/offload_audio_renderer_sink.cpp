@@ -34,6 +34,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#include "media_monitor_manager.h"
 
 using namespace std;
 
@@ -172,6 +173,7 @@ private:
 #endif
 
     FILE *dumpFile_ = nullptr;
+    std::string dumpFileName_ = "";
 };
     
 OffloadAudioRendererSinkInner::OffloadAudioRendererSinkInner()
@@ -605,6 +607,10 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         &writeLen);
     if (ret == 0 && writeLen != 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
+        if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+                static_cast<void *>(&data), writeLen);
+        }
         CheckUpdateState(&data, len);
     }
 
@@ -670,7 +676,9 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
         return ERR_NOT_STARTED;
     }
 
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_OFFLOAD_RENDER_SINK_FILENAME, &dumpFile_);
+    dumpFileName_ = "offload_audiosink_" + std::to_string(attr_.sampleRate) + "_"
+        + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     started_ = true;
     renderPos_ = 0;

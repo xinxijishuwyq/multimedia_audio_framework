@@ -34,6 +34,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "parameters.h"
+#include "media_monitor_manager.h"
 
 using namespace std;
 
@@ -144,6 +145,7 @@ private:
 
     std::unique_ptr<ICapturerStateCallback> audioCapturerSourceCallback_ = nullptr;
     FILE *dumpFile_ = nullptr;
+    std::string dumpFileName_ = "";
     bool muteState_ = false;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_INVALID;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
@@ -604,6 +606,10 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
 
     DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+            static_cast<void*>(frame), replyBytes);
+    }
     CheckUpdateState(frame, requestBytes);
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
@@ -669,12 +675,11 @@ int32_t AudioCapturerSourceInner::Start(void)
         AUDIO_WARNING_LOG("keepRunningLock is null, capture can not work well!");
     }
 #endif
-    // eg: primary_0_44100_2_1_20240527202236189_source.pcm
-    std::string dumpName = halName_ + '_' + std::to_string(attr_.sourceType) + '_'
-        + std::to_string(attr_.sampleRate) + '_' + std::to_string(attr_.channel) + '_'
-        + std::to_string(attr_.format) + '_'
-        + GetTime() + "_source.pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpName, &dumpFile_);
+    // eg: primary_0_20240527202236189_source_44100_2_1.pcm
+    dumpFileName_ = halName_ + "_" + std::to_string(attr_.sourceType) + "_" + GetTime()
+        + "_source_" + std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel)
+        + "_" + std::to_string(attr_.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     if (!started_) {
         if (audioCapturerSourceCallback_ != nullptr) {

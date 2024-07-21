@@ -30,6 +30,7 @@
 #endif
 #include "volume_tools.h"
 #include "policy_handler.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -165,11 +166,12 @@ int32_t RendererInServer::Init()
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterWriteCallback(shared_from_this());
 
-    // eg: /data/data/.pulse_dir/100001_48000_2_1_server_in.pcm
+    // eg: /data/data/.pulse_dir/10000_100001_48000_2_1_server_in.pcm
     AudioStreamInfo tempInfo = processConfig_.streamInfo;
-    std::string dumpName = std::to_string(streamIndex_) + "_" + std::to_string(tempInfo.samplingRate) + "_" +
-        std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "_server_in.pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpName, &dumpC2S_);
+    dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + std::to_string(streamIndex_)
+        + "renderer_server_in_" + std::to_string(tempInfo.samplingRate) + "_"
+        + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpC2S_);
 
     return SUCCESS;
 }
@@ -380,6 +382,10 @@ int32_t RendererInServer::WriteData()
         Trace::CountVolume(traceTag_, *bufferDesc.buffer);
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+        if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+                static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+        }
 
         OtherStreamEnqueue(bufferDesc);
 

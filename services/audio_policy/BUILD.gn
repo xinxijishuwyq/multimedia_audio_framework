@@ -403,7 +403,40 @@ ohos_shared_library("audio_policy_client") {
 }
 
 group("audio_policy_test_packages") {
-  deps = [ ":audio_policy_test" ]
+  deps = [
+    ":audio_dump_test",
+    ":audio_policy_test",
+  ]
+}
+
+ohos_executable("audio_dump_test") {
+  install_enable = false
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
+  sources = [ "test/example/audio_dump_test.cpp" ]
+
+  configs = [ ":audio_policy_client_config" ]
+
+  deps = [
+    "../audio_policy:audio_policy_client",
+    "../audio_service:audio_client",
+  ]
+
+  include_dirs = []
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
 }
 
 ohos_executable("audio_policy_test") {
