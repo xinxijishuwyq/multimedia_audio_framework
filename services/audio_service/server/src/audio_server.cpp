@@ -43,6 +43,7 @@
 #include "audio_utils.h"
 #include "i_audio_capturer_source.h"
 #include "i_audio_renderer_sink.h"
+#include "audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_enhance_chain_manager.h"
@@ -1172,6 +1173,22 @@ void AudioServer::SetAudioMonoState(bool audioMono)
     } else {
         AUDIO_ERR_LOG("AudioServer::SetAudioBalanceValue: offload = null");
     }
+
+    // Set mono for audio_renderer_sink (direct)
+    IAudioRendererSink *directRenderSink = AudioRendererSink::GetInstance("direct");
+    if (directRenderSink != nullptr) {
+        directRenderSink->SetAudioMonoState(audioMono);
+    } else {
+        AUDIO_WARNING_LOG("direct = null");
+    }
+
+    // Set mono for audio_renderer_sink (voip)
+    IAudioRendererSink *voipRenderSink = AudioRendererSink::GetInstance("voip");
+    if (voipRenderSink != nullptr) {
+        voipRenderSink->SetAudioMonoState(audioMono);
+    } else {
+        AUDIO_WARNING_LOG("voip = null");
+    }
 }
 
 void AudioServer::SetAudioBalanceValue(float audioBalance)
@@ -1204,6 +1221,22 @@ void AudioServer::SetAudioBalanceValue(float audioBalance)
         offloadIAudioRendererSink->SetAudioBalanceValue(audioBalance);
     } else {
         AUDIO_WARNING_LOG("offload = null");
+    }
+
+    // Set balance for audio_renderer_sink (direct)
+    IAudioRendererSink *directRenderSink = AudioRendererSink::GetInstance("direct");
+    if (directRenderSink != nullptr) {
+        directRenderSink->SetAudioBalanceValue(audioBalance);
+    } else {
+        AUDIO_WARNING_LOG("direct = null");
+    }
+
+    // Set balance for audio_renderer_sink (voip)
+    IAudioRendererSink *voipRenderSink = AudioRendererSink::GetInstance("voip");
+    if (voipRenderSink != nullptr) {
+        voipRenderSink->SetAudioBalanceValue(audioBalance);
+    } else {
+        AUDIO_WARNING_LOG("voip = null");
     }
 }
 
