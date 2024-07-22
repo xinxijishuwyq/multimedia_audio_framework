@@ -307,6 +307,24 @@ static int64_t GetCurrentTimeMS()
     return tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
 }
 
+static uint32_t PcmFormatToBits(AudioSampleFormat format)
+{
+    switch (format) {
+        case SAMPLE_U8:
+            return 1; // 1 byte
+        case SAMPLE_S16LE:
+            return 2; // 2 byte
+        case SAMPLE_S24LE:
+            return 3; // 3 byte
+        case SAMPLE_S32LE:
+            return 4; // 4 byte
+        case SAMPLE_F32LE:
+            return 4; // 4 byte
+        default:
+            return 2; // 2 byte
+    }
+}
+
 AudioPolicyService::~AudioPolicyService()
 {
     AUDIO_DEBUG_LOG("~AudioPolicyService()");
@@ -6620,8 +6638,9 @@ int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessi
     SourceType targetSourceType;
     uint32_t targetRate;
     uint32_t targetChannels;
-    if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        targetSourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION
+        || sessionInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        targetSourceType = sessionInfo.sourceType;
         targetRate = sessionInfo.rate;
         targetChannels = sessionInfo.channels;
         if (primaryMicModuleInfo_.supportedRate_.count(targetRate) == 0) {
@@ -6637,10 +6656,6 @@ int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessi
         }
     } else if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_CALL) {
         targetSourceType = SOURCE_TYPE_VOICE_CALL;
-        targetRate = highestSupportedRate;
-        targetChannels = highestSupportedChannels;
-    } else if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
-        targetSourceType = SOURCE_TYPE_VOICE_RECOGNITION;
         targetRate = highestSupportedRate;
         targetChannels = highestSupportedChannels;
     } else {
@@ -6722,11 +6737,15 @@ void AudioPolicyService::RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::lis
     for (auto &adapterModuleInfo : moduleInfoList) {
         if (moduleInfo.role == adapterModuleInfo.role &&
             adapterModuleInfo.name.find(MODULE_SINK_OFFLOAD) == std::string::npos) {
-            CHECK_AND_CONTINUE_LOG(adapterModuleInfo.rate == std::to_string(targetRate), "rate unmatch.");
-            CHECK_AND_CONTINUE_LOG(adapterModuleInfo.channels == std::to_string(targetChannels), "channels unmatch.");
+            CHECK_AND_CONTINUE_LOG(adapterModuleInfo.supportedRate_.count(targetRate) > 0, "rate unmatch.");
+            CHECK_AND_CONTINUE_LOG(adapterModuleInfo.supportedChannels_.count(targetChannels) > 0, "channels unmatch.");
             moduleInfo.rate = std::to_string(targetRate);
             moduleInfo.channels = std::to_string(targetChannels);
-            moduleInfo.bufferSize = adapterModuleInfo.bufferSize;
+            uint32_t sampleFormatBits = PcmFormatToBits(
+                static_cast<AudioSampleFormat>(std::atoi(moduleInfo.format.c_str())));
+            // 1000ms = 1S, 20ms is default
+            uint32_t bufferSize = (targetRate * targetChannels * sampleFormatBits / 1000) * 20;
+            moduleInfo.bufferSize = std::to_string(bufferSize);
             AUDIO_INFO_LOG("match success. rate:%{public}s, channels:%{public}s, bufferSize:%{public}s",
                 moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str());
         }
