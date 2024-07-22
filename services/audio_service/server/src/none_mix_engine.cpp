@@ -262,6 +262,10 @@ int32_t NoneMixEngine::AddRenderer(const std::shared_ptr<IRendererStream> &strea
 void NoneMixEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> &stream)
 {
     AUDIO_INFO_LOG("step in remove");
+    if (stream_ == nullptr) {
+        AUDIO_INFO_LOG("stream already removed.");
+        return;
+    }
     if (stream->GetStreamIndex() == stream_->GetStreamIndex()) {
         Stop();
         stream_ = nullptr;
