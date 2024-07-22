@@ -224,7 +224,6 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
     auto addressEnd = info.find_first_of(";", addressBegin);
     string portId = info.substr(addressBegin + std::strlen("DEVICE_ADDRESS="),
         addressEnd - addressBegin - std::strlen("DEVICE_ADDRESS="));
-    address = portId;
 
     DeviceType internalDevice = GetInternalDeviceType(hdiDeviceType);
     CHECK_AND_RETURN_LOG(internalDevice != DEVICE_TYPE_NONE, "Unsupported device %{public}d", hdiDeviceType);
