@@ -531,12 +531,12 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
         return SUCCESS;
     }
 #endif
+    auto audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
     if (audioEffectChain != nullptr) {
-        auto audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
         AudioEffectProcInfo procInfo = {headTrackingEnabled_, btOffloadEnabled_};
         audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen, procInfo);
-        return SUCCESS;
     }
+    return SUCCESS;
 }
 
 void AudioEffectChainManager::Dump()
