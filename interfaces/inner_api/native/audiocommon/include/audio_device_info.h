@@ -283,8 +283,8 @@ enum DeviceCategory {
 enum DeviceUsage {
     MEDIA = 1,
     VOICE = 2,
-    RECONGNITION = 3,
-    ALL_USAGE,
+    RECONGNITION = 4,
+    ALL_USAGE = 3,
 };
 
 enum DeviceInfoUpdateCommand {
