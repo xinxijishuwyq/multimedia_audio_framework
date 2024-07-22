@@ -667,7 +667,7 @@ vector<SourceOutput> PulseAudioServiceAdapterImpl::GetAllSourceOutputs()
 void PulseAudioServiceAdapterImpl::Disconnect()
 {
     if (mContext != nullptr) {
-        AUDIO_INFO_LOG("disconnect context!");
+        AUDIO_WARNING_LOG("disconnect context! should not happen");
         pa_context_disconnect(mContext);
         /* Make sure we don't get any further callbacks */
         pa_context_set_state_callback(mContext, nullptr, nullptr);
@@ -676,6 +676,7 @@ void PulseAudioServiceAdapterImpl::Disconnect()
     }
 
     if (mMainLoop != nullptr) {
+        AUDIO_WARNING_LOG("disconnect mainloop! should not happen");
         pa_threaded_mainloop_stop(mMainLoop);
         pa_threaded_mainloop_free(mMainLoop);
     }
