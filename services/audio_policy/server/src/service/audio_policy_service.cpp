@@ -78,6 +78,8 @@ static const int64_t ARM_USB_DEVICE_MUTE_MS = 40000; // 40ms
 static const int64_t DEVICE_TYPE_REMOTE_CAST_MS = 40000; // 40ms
 static const int64_t SET_BT_ABS_SCENE_DELAY_MS = 120000; // 120ms
 static const int64_t NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS = 300000; // 300ms
+static const unsigned int BUFFER_CALC_20MS = 20;
+static const unsigned int BUFFER_CALC_1000MS = 1000;
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -6743,8 +6745,8 @@ void AudioPolicyService::RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::lis
             moduleInfo.channels = std::to_string(targetChannels);
             uint32_t sampleFormatBits = PcmFormatToBits(
                 static_cast<AudioSampleFormat>(std::atoi(moduleInfo.format.c_str())));
-            // 1000ms = 1S, 20ms is default
-            uint32_t bufferSize = (targetRate * targetChannels * sampleFormatBits / 1000) * 20;
+            uint32_t bufferSize = (targetRate * targetChannels * sampleFormatBits / BUFFER_CALC_1000MS)
+                * BUFFER_CALC_20MS;
             moduleInfo.bufferSize = std::to_string(bufferSize);
             AUDIO_INFO_LOG("match success. rate:%{public}s, channels:%{public}s, bufferSize:%{public}s",
                 moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str());
