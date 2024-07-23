@@ -349,6 +349,7 @@ void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     if (audioEffectChainManager == nullptr) {
         AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
+        return;
     }
     audioEffectChainManager->UpdateExtraSceneType(extraSceneType);
 }
