@@ -8222,7 +8222,7 @@ void AudioPolicyService::ResetOffloadModeOnSpatializationChanged(std::vector<int
         spatialState.spatializationEnabled, spatialState.headTrackingEnabled, effectOffloadFlag);
     if (spatialState.spatializationEnabled) {
         if (effectOffloadFlag) {
-            for (auto it = allSession.begin(); it != allSessions.end(); it++) {
+            for (auto it = allSessions.begin(); it != allSessions.end(); it++) {
                 OffloadStreamSetCheck(*it);
             }
         } else {
