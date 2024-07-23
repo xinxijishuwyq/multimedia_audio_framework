@@ -6093,7 +6093,10 @@ bool AudioPolicyService::CheckStreamOffloadMode(int64_t activateSessionId, Audio
         AUDIO_DEBUG_LOG("Skip anco_audio out of offload mode");
         return false;
     }
-
+    if (!GetAudioEffectOffloadFlag()) {
+        AUDIO_INFO_LOG("audio effect is not offload, Skipped");
+        return false;
+    }
     return true;
 }
 
@@ -6172,15 +6175,7 @@ bool AudioPolicyService::CheckStreamMultichannelMode(const int64_t activateSessi
     }
 
     // The multi-channel algorithm needs to be supported in the DSP
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false,
-        "error for g_adProxy null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    bool ret = gsp->GetEffectOffloadEnabled();
-    IPCSkeleton::SetCallingIdentity(identity);
-
-    return ret;
+    return GetAudioEffectOffloadFlag();
 }
 
 AudioModuleInfo AudioPolicyService::ConstructMchAudioModuleInfo(DeviceType deviceType)
@@ -6927,9 +6922,11 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
             a2dpOffloadFlag_ = receiveOffloadFlag;
         }
     } else if (a2dpOffloadFlag_ == A2DP_OFFLOAD) {
-        GetA2dpOffloadCodecAndSendToDsp();
         std::vector<int32_t> allSessions;
         GetAllRunningStreamSession(allSessions);
+        // reset offload mode when effect offload flag changed
+        ResetOffloadModeOnSpatializationChanged(allSessions);
+        GetA2dpOffloadCodecAndSendToDsp();
         OffloadStartPlaying(allSessions);
     }
 }
@@ -8204,5 +8201,34 @@ int32_t AudioPolicyService::ScoInputDeviceFetchedForRecongnition(bool handleFlag
     return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag, device);
 }
 
+bool AudioPolicyService::GetAudioEffectOffloadFlag()
+{
+    // check if audio effect offload
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "gsp null");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    bool effectOffloadFlag = gsp->GetEffectOffloadEnabled();
+    IPCSkeleton::SetCallingIdentity(identity);
+    return effectOffloadFlag;
+}
+
+void AudioPolicyService::ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions)
+{
+    AudioSpatializationState spatialState =
+        AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState();
+    bool effectOffloadFlag = GetAudioEffectOffloadFlag();
+    AUDIO_INFO_LOG("spatialization: %{public}d, headTracking: %{public}d, effectOffloadFlag: %{public}d",
+        spatialState.spatializationEnabled, spatialState.headTrackingEnabled, effectOffloadFlag);
+    if (spatialState.spatializationEnabled) {
+        if (effectOffloadFlag) {
+            for (auto it = allSession.begin(); it != allSessions.end(); it++) {
+                OffloadStreamSetCheck(*it);
+            }
+        } else {
+            OffloadStreamReleaseCheck(*offloadSessionID_);
+        }
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
