@@ -1678,7 +1678,7 @@ void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &
 void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime, int64_t clientWriteCost)
 {
     curTime = ClockTime::GetCurNano();
-    int64_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
+    int64_t round = static_cast<int64_t>(spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
     int64_t clientBufferDurationInMs = static_cast<int64_t>(spanSizeInMs_) * ONE_MILLISECOND_DURATION * round;
     if (wakeUpTime - curTime > clientBufferDurationInMs + clientWriteCost) {
         Trace trace("BigWakeUpTime curTime[" + std::to_string(curTime) + "] target[" + std::to_string(wakeUpTime) +
