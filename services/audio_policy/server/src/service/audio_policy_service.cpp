@@ -1263,6 +1263,9 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkI
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(sinkInputIds[i].streamId, pipeType);
         std::string sinkName = GetSinkPortName(localDeviceDescriptor->deviceType_, pipeType);
+        if (sinkName == MCH_PRIMARY_SPEAKER) {
+            sinkName = CheckStreamMultichannelMode(sinkInputIds[i].streamId) ? sinkName : PRIMARY_SPEAKER;
+        }
         int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
             "move [%{public}d] to local failed", sinkInputIds[i].streamId);
@@ -2032,12 +2035,17 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
         MuteSinkPort(oldDevice, newDevice, reason);
     }
 
+    UpdateEffectDefaultSink(newDevice);
     // MoveSinkInputByIndexOrName
     auto ret = (outputDevices.front()->networkId_ == LOCAL_NETWORK_ID)
                 ? MoveToLocalOutputDevice(targetSinkInputs, new AudioDeviceDescriptor(*outputDevices.front()))
                 : MoveToRemoteOutputDevice(targetSinkInputs, new AudioDeviceDescriptor(*outputDevices.front()));
-    CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move sink input %{public}d to device %{public}d failed!",
-        rendererChangeInfo->sessionId, outputDevices.front()->deviceType_);
+    if (ret != SUCCESS) {
+        UpdateEffectDefaultSink(oldDevice);
+        AUDIO_ERR_LOG("Move sink input %{public}d to device %{public}d failed!",
+            rendererChangeInfo->sessionId, outputDevices.front()->deviceType_);
+        return;
+    }
     SetVolumeForSwitchDevice(newDevice);
     if (isUpdateRouteSupported_ && outputDevices.front()->networkId_ == LOCAL_NETWORK_ID) {
         UpdateRoute(rendererChangeInfo, outputDevices);
@@ -2389,6 +2397,7 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::unique_ptr<AudioRender
         if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
             LoadMchModule();
         }
+        UpdateActiveDeviceRoute(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG);
         std::string portName = GetSinkPortName(descs.front()->deviceType_, PIPE_TYPE_MULTICHANNEL);
         int32_t ret  = MoveToOutputDevice(rendererChangeInfo->sessionId, portName);
         if (ret == SUCCESS) {
