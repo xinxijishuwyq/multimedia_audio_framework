@@ -60,7 +60,6 @@ const uint32_t PRIMARY_OUTPUT_STREAM_ID = 13; // 13 + 0 * 8
 const uint32_t DIRECT_OUTPUT_STREAM_ID = 69;  // 13 + 7 * 8
 const uint32_t VOIP_OUTPUT_STREAM_ID = 77;    // 13 + 8 * 8
 const uint32_t STEREO_CHANNEL_COUNT = 2;
-const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int BUFFER_CALC_20MS = 20;
 const unsigned int BUFFER_CALC_1000MS = 1000;
 const unsigned int FORMAT_1_BYTE = 1;
@@ -68,6 +67,7 @@ const unsigned int FORMAT_2_BYTE = 2;
 const unsigned int FORMAT_3_BYTE = 3;
 const unsigned int FORMAT_4_BYTE = 4;
 #ifdef FEATURE_POWER_MANAGER
+const unsigned int TIME_OUT_SECONDS = 10;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
 const int32_t SLEEP_TIME_FOR_RENDER_EMPTY = 300;
