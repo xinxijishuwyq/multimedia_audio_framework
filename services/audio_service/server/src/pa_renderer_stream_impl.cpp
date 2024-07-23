@@ -34,6 +34,7 @@
 namespace OHOS {
 namespace AudioStandard {
 static SafeMap<void *, std::weak_ptr<PaRendererStreamImpl>> rendererStreamInstanceMap_;
+static const int32_t PA_STREAM_IMPL_TIMEOUT = 15; // 15s
 const uint32_t DOUBLE_VALUE = 2;
 const uint32_t MAX_LENGTH_OFFLOAD = 500;
 const int32_t OFFLOAD_HDI_CACHE1 = 200; // ms, should equal with val in hdi_sink.c
@@ -371,6 +372,12 @@ void PaRendererStreamImpl::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, 
 
 int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
 {
+    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
+    AudioXCollie audioXCollie("PaRendererStreamImpl::GetLatency", PA_STREAM_IMPL_TIMEOUT,
+        [this](void *) {
+            AUDIO_ERR_LOG("Connect timeout, trigger signal");
+            pa_threaded_mainloop_signal(this->mainloop_, 0);
+        }, nullptr, XcollieFlag);
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
