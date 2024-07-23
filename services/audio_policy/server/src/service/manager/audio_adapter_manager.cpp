@@ -549,7 +549,7 @@ int32_t AudioAdapterManager::SelectDevice(DeviceRole deviceRole, InternalDeviceT
     return SUCCESS;
 }
 
-int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType,
+int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
     std::string name, bool active, DeviceFlag flag)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,

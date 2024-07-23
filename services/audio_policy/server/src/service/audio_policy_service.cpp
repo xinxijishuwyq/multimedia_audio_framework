@@ -2959,13 +2959,13 @@ int32_t AudioPolicyService::HandleActiveDevice(DeviceType deviceType)
         return ERR_OPERATION_FAILED;
     }
     if (sinkPortName != PORT_NONE) {
-        AudioIOHandle ioHandle = GetSinkIOHandle(deviceType);
-        audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, sinkPortName, true);
+        GetSinkIOHandle(deviceType);
+        audioPolicyManager_.SetDeviceActive(deviceType, sinkPortName, true);
         audioPolicyManager_.SuspendAudioDevice(sinkPortName, false);
     }
     if (sourcePortName != PORT_NONE) {
-        AudioIOHandle ioHandle = GetSourceIOHandle(deviceType);
-        audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, sourcePortName, true);
+        GetSourceIOHandle(deviceType);
+        audioPolicyManager_.SetDeviceActive(deviceType, sourcePortName, true);
         audioPolicyManager_.SuspendAudioDevice(sourcePortName, false);
     }
     UpdateInputDeviceInfo(deviceType);
@@ -3096,13 +3096,13 @@ int32_t AudioPolicyService::HandleFileDevice(DeviceType deviceType)
     CHECK_AND_RETURN_RET_LOG(sinkPortName != PORT_NONE || sourcePortName != PORT_NONE,
         ERR_OPERATION_FAILED, "failed for sinkPortName and sourcePortName are none");
     if (sinkPortName != PORT_NONE) {
-        AudioIOHandle ioHandle = GetSinkIOHandle(deviceType);
-        audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, sinkPortName, true);
+        GetSinkIOHandle(deviceType);
+        audioPolicyManager_.SetDeviceActive(deviceType, sinkPortName, true);
         audioPolicyManager_.SuspendAudioDevice(sinkPortName, false);
     }
     if (sourcePortName != PORT_NONE) {
-        AudioIOHandle ioHandle = GetSourceIOHandle(deviceType);
-        audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, sourcePortName, true);
+        GetSourceIOHandle(deviceType);
+        audioPolicyManager_.SetDeviceActive(deviceType, sourcePortName, true);
         audioPolicyManager_.SuspendAudioDevice(sourcePortName, false);
     }
     if (isUpdateRouteSupported_) {
@@ -3986,7 +3986,7 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
                 CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
                 IOHandles_[moduleInfo.name] = ioHandle;
                 std::string portName = GetSinkPortName(deviceType);
-                audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, portName, true);
+                audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
                 audioPolicyManager_.SuspendAudioDevice(portName, false);
 
                 auto isPresent = [&macAddress] (const sptr<AudioDeviceDescriptor> &descriptor) {
@@ -4287,10 +4287,10 @@ bool AudioPolicyService::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo 
 {
     auto devType = GetDeviceType(moduleInfo.name);
     if (devType != DEVICE_TYPE_MIC) {
-        AudioIOHandle ioHandle = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+        OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 
         if (devType == DEVICE_TYPE_SPEAKER) {
-            auto result = audioPolicyManager_.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
+            auto result = audioPolicyManager_.SetDeviceActive(devType, moduleInfo.name, true);
             CHECK_AND_RETURN_RET_LOG(result == SUCCESS, false, "[module_load]::Device failed %{public}d", devType);
         }
     }
@@ -4994,8 +4994,8 @@ int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount
         for (auto &moduleInfo : moduleInfoList) {
             if (module == moduleInfo.name) {
                 moduleInfo.channels = to_string(channelCount);
-                AudioIOHandle ioHandle = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-                audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, module, true);
+                OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+                audioPolicyManager_.SetDeviceActive(deviceType, module, true);
             }
         }
     }
@@ -6723,8 +6723,8 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
             }
             AUDIO_INFO_LOG("rate:%{public}s, channels:%{public}s, bufferSize:%{public}s",
                 moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str());
-            auto ioHandle = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-            audioPolicyManager_.SetDeviceActive(ioHandle, currentActiveInputDevice_.deviceType_,
+            OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+            audioPolicyManager_.SetDeviceActive(currentActiveInputDevice_.deviceType_,
                 moduleInfo.name, true, INPUT_DEVICES_FLAG);
         }
         sessionWithNormalSourceType_[sessionID] = sessionInfo;
@@ -7320,7 +7320,7 @@ float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId)
     return 0;
 }
 
-AudioIOHandle AudioPolicyService::OpenPortAndInsertIOHandle(const std::string &moduleName,
+int32_t AudioPolicyService::OpenPortAndInsertIOHandle(const std::string &moduleName,
     const AudioModuleInfo &moduleInfo)
 {
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
@@ -8171,8 +8171,9 @@ void AudioPolicyService::OnReceiveBluetoothEvent(const std::string macAddress, c
     for (auto device : connectedDevices_) {
         if (device->macAddress_ == macAddress) {
             device->deviceName_ = deviceName;
-            AUDIO_INFO_LOG("bluetooth device %{public}d alias name changing to %{public}s",
-                device->deviceId_, device->deviceName_.c_str());
+            int32_t bluetoothId_ = device->deviceId_;
+            std::string name_ = device->deviceName_;
+            AUDIO_INFO_LOG("bluetoothId %{public}d alias name changing to %{public}s", bluetoothId_, name_.c_str());
         }
     }
 }

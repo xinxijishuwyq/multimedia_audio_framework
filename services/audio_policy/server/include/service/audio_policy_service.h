@@ -836,7 +836,7 @@ private:
 
     bool IsConfigInfoHasAttribute(std::list<ConfigInfo> &configInfos, std::string value);
 
-    AudioIOHandle OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
+    int32_t OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
 
     int32_t ClosePortAndEraseIOHandle(const std::string &moduleName);
 
