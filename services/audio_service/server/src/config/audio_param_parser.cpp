@@ -138,8 +138,6 @@ void AudioParamParser::ParseSubKeys(xmlNode *node, std::string &mainKeyName,
     while (subKeyNode != nullptr) {
         if (subKeyNode->type == XML_ELEMENT_NODE) {
             std::string subKeyName = ExtractPropertyValue("name", *subKeyNode);
-            subKeyMap[subKeyName] = {};
-
             std::regex regexDelimiter(",");
             std::string usage = ExtractPropertyValue("usage", *subKeyNode);
             const std::sregex_token_iterator itEnd;

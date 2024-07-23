@@ -344,15 +344,13 @@ void AudioServer::OnStop()
 void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
     const std::string &extraSceneType)
 {
-    if (mainkey == "audio_effect" && subkey == "update_audio_effect_type") {
-        AUDIO_DEBUG_LOG("mainkey is %{public}s, subkey is %{public}s, extraSceneType is %{public}s",
-            mainkey.c_str(), subkey.c_str(), extraSceneType.c_str());
-        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        if (audioEffectChainManager == nullptr) {
-            AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
-        }
-        audioEffectChainManager->UpdateExtraSceneType(extraSceneType);
+    AUDIO_DEBUG_LOG("mainkey is %{public}s, subkey is %{public}s, extraSceneType is %{public}s",
+        mainkey.c_str(), subkey.c_str(), extraSceneType.c_str());
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
     }
+    audioEffectChainManager->UpdateExtraSceneType(extraSceneType);
 }
 
 int32_t AudioServer::SetExtraParameters(const std::string& key,
@@ -387,7 +385,10 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         auto subKeyIt = subKeyMap.find(it->first);
         if (subKeyIt != subKeyMap.end()) {
             value += it->first + "=" + it->second + ";";
-            RecognizeAudioEffectType(key, it->first, it->second);
+            auto valueIter = subKeyIt->second.find("effect");
+            if (valueIter != subKeyIt->second.end()) {
+                RecognizeAudioEffectType(key, it->first, it->second);
+            }
         } else {
             match = false;
             break;
