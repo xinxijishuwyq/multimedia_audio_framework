@@ -92,6 +92,12 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_ALL
 };
 
+static std::map<std::string, uint32_t> formatFromParserStrToEnum = {
+    {"s16le", SAMPLE_S16LE},
+    {"s24le", SAMPLE_S24LE},
+    {"s32le", SAMPLE_S32LE},
+};
+
 std::map<std::string, uint32_t> AudioPolicyService::formatStrToEnum = {
     {"SAMPLE_U8", SAMPLE_U8},
     {"SAMPLE_S16E", SAMPLE_S16LE},
@@ -6743,8 +6749,8 @@ void AudioPolicyService::RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::lis
             CHECK_AND_CONTINUE_LOG(adapterModuleInfo.supportedChannels_.count(targetChannels) > 0, "channels unmatch.");
             moduleInfo.rate = std::to_string(targetRate);
             moduleInfo.channels = std::to_string(targetChannels);
-            uint32_t sampleFormatBits = PcmFormatToBits(
-                static_cast<AudioSampleFormat>(std::atoi(moduleInfo.format.c_str())));
+            uint32_t sampleFormatBits = PcmFormatToBits(static_cast<AudioSampleFormat>(
+                formatFromParserStrToEnum[moduleInfo.format]));
             uint32_t bufferSize = (targetRate * targetChannels * sampleFormatBits / BUFFER_CALC_1000MS)
                 * BUFFER_CALC_20MS;
             moduleInfo.bufferSize = std::to_string(bufferSize);
