@@ -18,6 +18,13 @@ declare_args() {
   audio_framework_feature_opensl_es = true
   sonic_enable = true
   speex_enable = false
+  audio_framework_feature_daudio_enable = true
+  audio_framework_feature_hitrace_enable = true
+  audio_framework_config_policy_enable = true
+  audio_framework_feature_input = true
+  audio_framework_feature_power_manager = true
+  audio_framework_feature_device_manager = true
+
   if (!defined(global_parts_info) ||
       defined(global_parts_info.hdf_drivers_interface_distributed_audio)) {
     audio_framework_feature_daudio_enable = true
