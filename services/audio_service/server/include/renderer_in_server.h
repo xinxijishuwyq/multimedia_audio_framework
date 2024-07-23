@@ -149,7 +149,7 @@ private:
     int32_t fadeoutFlag_ = 0;
     std::time_t startMuteTime_ = 0;
     int32_t silentState_ = 1; // 0:silent 1:unsilent
-    bool silentModeAndMixWithOthers_ = false;
+    std::atomic<bool> silentModeAndMixWithOthers_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

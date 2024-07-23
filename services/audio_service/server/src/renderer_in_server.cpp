@@ -336,6 +336,11 @@ void RendererInServer::VolumeHandle(BufferDesc &desc)
     if (!IsVolumeSame(MAX_FLOAT_VOLUME, duckVolume_, AUDIO_VOLOMUE_EPSILON)) {
         applyVolume *= duckVolume_;
     }
+
+    if (silentModeAndMixWithOthers_) {
+        applyVolume = 0.0f;
+    }
+
     //in plan: put system volume handle here
     if (!IsVolumeSame(MAX_FLOAT_VOLUME, applyVolume, AUDIO_VOLOMUE_EPSILON) ||
         !IsVolumeSame(oldAppliedVolume_, applyVolume, AUDIO_VOLOMUE_EPSILON)) {
