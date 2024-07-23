@@ -136,6 +136,11 @@ private:
     std::condition_variable fadingCondition_;
 
     static inline std::atomic<int32_t> bufferNullCount_ = 0;
+
+    // record latency
+    uint64_t preLatency_ = 50000; // 50000 default
+    pa_usec_t preTimeGetLatency_ = pa_rtclock_now();
+    bool firstGetLatency_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS
