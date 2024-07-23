@@ -17,7 +17,7 @@ import("//build/test.gni")
 import("../../../config.gni")
 ##############################fuzztest##########################################
 ohos_fuzztest("AudioManagerFuzzTest") {
-  module_out_path = "audio_framework/audio_framework"
+  module_out_path = "audio_framework/audio_framework_route"
   fuzz_config_file = "../audiomanager_fuzzer"
 
   include_dirs = [
