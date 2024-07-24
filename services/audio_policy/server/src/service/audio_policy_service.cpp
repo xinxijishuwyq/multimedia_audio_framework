@@ -6078,6 +6078,13 @@ bool AudioPolicyService::CheckStreamOffloadMode(int64_t activateSessionId, Audio
         return false;
     }
 
+    AudioPipeType pipeType;
+    streamCollector_.GetPipeType(activateSessionId, pipeType);
+    if (pipeType == PIPE_TYPE_DIRECT_MUSIC) {
+        AUDIO_INFO_LOG("stream is direct, Skipped");
+        return false;
+    }
+
     int32_t channelCount = GetChannelCount(activateSessionId);
     if ((channelCount != AudioChannel::MONO) && (channelCount != AudioChannel::STEREO)) {
         AUDIO_DEBUG_LOG("ChannelNum not allowed get offload mode, Skipped");
