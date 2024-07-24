@@ -2294,7 +2294,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         }
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            if (IsFastFromA2dpToA2dp(rendererChangeInfo, reason)) { continue; }
+            if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) { continue; }
             int32_t ret = ActivateA2dpDevice(descs.front(), rendererChangeInfos, reason);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed", encryptMacAddr.c_str());
         } else if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -2320,11 +2320,15 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
     }
 }
 
-bool AudioPolicyService::IsFastFromA2dpToA2dp(const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    const AudioStreamDeviceChangeReasonExt reason)
+bool AudioPolicyService::IsFastFromA2dpToA2dp(const std::unique_ptr<AudioDeviceDescriptor> &desc,
+    const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
+    AUDIO_INFO_LOG("Old device type: %{public}d, old device id: %{public}d, new deviceid: %{public}d",
+        rendererChangeInfo->outputDeviceInfo.deviceType, rendererChangeInfo->outputDeviceInfo.deviceId,
+        desc->deviceId_);
     if (rendererChangeInfo->outputDeviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP &&
-        rendererChangeInfo->rendererInfo.originalFlag == AUDIO_FLAG_MMAP) {
+        rendererChangeInfo->rendererInfo.originalFlag == AUDIO_FLAG_MMAP &&
+        rendererChangeInfo->outputDeviceInfo.deviceId != desc->deviceId_) {
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
             AUDIO_FLAG_MMAP, reason);
         AUDIO_INFO_LOG("Switch fast stream from a2dp to a2dp");
