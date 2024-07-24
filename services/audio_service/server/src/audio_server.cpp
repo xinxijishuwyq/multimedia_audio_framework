@@ -2065,5 +2065,20 @@ void AudioServer::UpdateEffectBtOffloadSupported(const bool &isSupported)
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
     audioEffectChainManager->UpdateEffectBtOffloadSupported(isSupported);
 }
+
+void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const int32_t &state)
+{
+    AUDIO_INFO_LOG("Server get sessionID: %{public}d, state: %{public}d", sessionId, state);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID, "refused for %{public}d", callingUid);
+    std::shared_ptr<RendererInServer> renderer =
+        AudioService::GetInstance()->GetRendererBySessionID(static_cast<uint32_t>(sessionId));
+
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("No render in server has sessionID");
+        return;
+    }
+    renderer->OnDataLinkConnectionUpdate(static_cast<IOperation>(state));
+}
 } // namespace AudioStandard
 } // namespace OHOS

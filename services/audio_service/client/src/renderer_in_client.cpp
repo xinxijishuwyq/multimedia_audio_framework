@@ -85,6 +85,7 @@ static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offlo
 static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 3000; // 3000ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
+static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 300; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
@@ -133,6 +134,16 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         }
         offloadEnable_ = static_cast<bool>(result);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
+        return SUCCESS;
+    }
+
+    if (operation == DATA_LINK_CONNECTING || operation == DATA_LINK_CONNECTED) {
+        if (operation == DATA_LINK_CONNECTING) {
+            isDataLinkConnected_ = false;
+        } else {
+            isDataLinkConnected_ = true;
+            dataConnectionCV_.notify_all();
+        }
         return SUCCESS;
     }
 
@@ -1237,6 +1248,20 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
 
     waitLock.unlock();
 
+    AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    UpdateTracker("RUNNING");
+
+    std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
+    if (!isDataLinkConnected_) {
+        AUDIO_INFO_LOG("data-connection blocking starts.");
+        stopWaiting = dataConnectionCV_.wait_for(
+            dataConnectionWaitLock, std::chrono::milliseconds(DATA_CONNECTION_TIMEOUT_IN_MS), [this] {
+                return isDataLinkConnected_;
+            });
+        AUDIO_INFO_LOG("data-connection blocking stops.");
+    }
+    dataConnectionWaitLock.unlock();
+
     offloadStartReadPos_ = 0;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         // start the callback-write thread
@@ -1247,9 +1272,6 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     int64_t param = -1;
     StateCmdTypeToParams(param, state_, cmdType);
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
-
-    AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
-    UpdateTracker("RUNNING");
     return true;
 }
 

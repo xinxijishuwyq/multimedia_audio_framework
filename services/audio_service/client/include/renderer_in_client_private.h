@@ -319,6 +319,8 @@ private:
     // for status operation wait and notify
     std::mutex callServerMutex_;
     std::condition_variable callServerCV_;
+    std::mutex dataConnectionMutex_;
+    std::condition_variable dataConnectionCV_;
 
     Operation notifiedOperation_ = MAX_OPERATION_CODE;
     int64_t notifiedResult_ = 0;
@@ -387,6 +389,7 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
 
     uint64_t lastFlushPosition_ = 0;
+    bool isDataLinkConnected_ = false;
 
     enum {
         STATE_CHANGE_EVENT = 0,

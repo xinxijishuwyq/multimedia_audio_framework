@@ -63,6 +63,15 @@
 
 namespace OHOS {
 namespace AudioStandard {
+enum A2dpOffloadConnectionState : int32_t {
+    CONNECTION_STATUS_DISCONNECTED = 0,
+    CONNECTION_STATUS_CONNECTING = 1,
+    CONNECTION_STATUS_CONNECTED = 2,
+    CONNECTION_STATUS_DISCONNECTING = 3,
+    CONNECTION_STATUS_TIMEOUT = 4,
+};
+
+class AudioA2dpOffloadManager;
 
 class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver,
     public IAudioAccessibilityConfigObserver, public IPolicyProvider {
@@ -527,6 +536,9 @@ public:
 
     AudioScene GetLastAudioScene() const;
 
+    void FetchStreamForA2dpOffload(bool requireReset);
+
+    void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -964,6 +976,8 @@ private:
     
     void ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions);
 
+    bool IsA2dpOffloadConnected();
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
@@ -1129,6 +1143,35 @@ private:
     std::condition_variable offloadCloseCondition_;
 
     bool ringerModeMute_ = true;
+    AudioA2dpOffloadManager *audioA2dpOffloadManager_ = nullptr;
+};
+
+class AudioA2dpOffloadManager : public Bluetooth::AudioA2dpPlayingStateChangedListener {
+private:
+    A2dpOffloadConnectionState currentOffloadconnectionState_ = CONNECTION_STATUS_DISCONNECTED;
+    std::vector<int32_t> connectionTriggerSessionIds_;
+    std::string a2dpOffloadDeviceAddress_ = "";
+    AudioPolicyService *audioPolicyService_ = nullptr;
+    std::mutex connectionMutex_;
+    std::condition_variable connectionCV_;
+    static const int32_t CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
+public:
+    AudioA2dpOffloadManager(AudioPolicyService *audioPolicyService) : audioPolicyService_(audioPolicyService) {
+        Bluetooth::AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(this);
+        return;
+    };
+    void Init();
+    A2dpOffloadConnectionState getA2dOffloadConnectionState() {return currentOffloadconnectionState_;};
+    std::vector<int32_t>& GetConnectTriggerSessionIds() {return connectionTriggerSessionIds_;};
+    std::string GetBluetoothAddress() {return a2dpOffloadDeviceAddress_;};
+
+    void ConnectA2dpOffload(const std::string &deviceAddress, const vector<int32_t> &sessionIds);
+    void DisconnectA2dpOffload();
+    void OnA2dpPlayingStateChanged(std::string deviceAddress, int playingState, int error) override;
+
+    void WaitForConnectionCompleted();
+    bool IsA2dpOffloadConnecting(int32_t sessionId);
+    bool IsA2dpOffloadConnected();
 };
 } // namespace AudioStandard
 } // namespace OHOS

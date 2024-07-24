@@ -427,6 +427,11 @@ public:
      * Update Effect BtOffload Supported state.
      */
     virtual void UpdateEffectBtOffloadSupported(const bool &isSupported) = 0;
+
+    /**
+     * Update Session Connection State.
+     */
+    virtual void UpdateSessionConnectionState(const bool &isSupported) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -493,6 +498,7 @@ private:
     int HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply);
     int HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply);
+    int HandleUpdateSessionConnectionState(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -552,6 +558,7 @@ private:
         &AudioManagerStub::HandleRestoreRenderSink,
         &AudioManagerStub::HandleLoadHdiEffectModel,
         &AudioManagerStub::HandleUpdateEffectBtOffloadSupported,
+        &AudioManagerStub::HandleUpdateSessionConnectionState,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),

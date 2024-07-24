@@ -95,6 +95,7 @@ public:
     bool GetEffectOffloadEnabled() override;
     void LoadHdiEffectModel() override;
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
+    void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };
