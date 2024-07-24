@@ -667,8 +667,6 @@ private:
     void FetchStreamForA2dpMchStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &descs);
 
-    void FetchStreamForA2dpOffload(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
-
     int32_t HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
 
@@ -1160,7 +1158,6 @@ public:
         Bluetooth::AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(this);
         return;
     };
-    void Init();
     A2dpOffloadConnectionState getA2dOffloadConnectionState() {return currentOffloadconnectionState_;};
     std::vector<int32_t>& GetConnectTriggerSessionIds() {return connectionTriggerSessionIds_;};
     std::string GetBluetoothAddress() {return a2dpOffloadDeviceAddress_;};
@@ -1171,7 +1168,6 @@ public:
 
     void WaitForConnectionCompleted();
     bool IsA2dpOffloadConnecting(int32_t sessionId);
-    bool IsA2dpOffloadConnected();
 };
 } // namespace AudioStandard
 } // namespace OHOS
