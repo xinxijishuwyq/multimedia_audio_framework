@@ -730,11 +730,7 @@ int32_t RendererInClientInner::SetVolume(float volume)
         volumeRamp_.Terminate();
     }
     float historyVolume = clientVolume_;
-    if (silentModeAndMixWithOthers_) {
-        cacheVolume_ = volume;
-    } else {
-        clientVolume_ = volume;
-    }
+    clientVolume_ = volume;
     if (getuid() == MEDIA_SERVICE_UID) {
         if (offloadEnable_) {
             SetInnerVolume(MAX_FLOAT_VOLUME); // so volume will not change in RendererInServer
@@ -759,11 +755,7 @@ int32_t RendererInClientInner::SetVolume(float volume)
 float RendererInClientInner::GetVolume()
 {
     Trace trace("RendererInClientInner::GetVolume:" + std::to_string(clientVolume_));
-    if (silentModeAndMixWithOthers_) {
-        return cacheVolume_;
-    } else {
-        return clientVolume_;
-    }
+    return clientVolume_;
 }
 
 int32_t RendererInClientInner::SetDuckVolume(float volume)
@@ -2180,12 +2172,6 @@ void RendererInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool 
 
 void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
-    if (!silentModeAndMixWithOthers_ && on) {
-        cacheVolume_ = clientVolume_;
-        clientVolume_ = 0.0;
-    } else if (silentModeAndMixWithOthers_ && !on) {
-        clientVolume_ = cacheVolume_;
-    }
     silentModeAndMixWithOthers_ = on;
     ipcStream_->SetSilentModeAndMixWithOthers(on);
     return;

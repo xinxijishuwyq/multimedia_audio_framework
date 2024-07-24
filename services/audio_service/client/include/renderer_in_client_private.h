@@ -327,7 +327,6 @@ private:
     float lowPowerVolume_ = 1.0;
     float duckVolume_ = 1.0;
     float clientVolume_ = 1.0;
-    float cacheVolume_ = 1.0;
     bool silentModeAndMixWithOthers_ = false;
 
     uint64_t clientWrittenBytes_ = 0;
