@@ -302,17 +302,5 @@ HWTEST(AudioPolicyExtUnitTest, GetMinStreamVolume_001, TestSize.Level1)
     EXPECT_LT(minStreamVolume, maxStreamVolume);
 }
 
-/**
- * @tc.name  : Test GetMaxStreamVolume via legal state
- * @tc.number: GetMaxStreamVolume_001
- * @tc.desc  : Test GetMaxStreamVolume interface.get max stream volume and return ret.
- */
-HWTEST(AudioPolicyExtUnitTest, GetMaxStreamVolume_001, TestSize.Level1)
-{
-    float minStreamVolume = AudioPolicyManager::GetInstance().GetMinStreamVolume();
-    float maxStreamVolume = AudioPolicyManager::GetInstance().GetMaxStreamVolume();
-    EXPECT_GT(maxStreamVolume, minStreamVolume);
-}
-
 } // namespace AudioStandard
 } // namespace OHOS
