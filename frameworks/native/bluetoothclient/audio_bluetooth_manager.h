@@ -25,6 +25,10 @@
 
 namespace OHOS {
 namespace Bluetooth {
+class AudioA2dpPlayingStateChangedListener {
+public:
+    virtual void OnA2dpPlayingStateChanged(std::string deviceAddress, int playingState, int error) = 0;
+};
 
 // Audio bluetooth a2dp feature support
 class AudioA2dpListener : public A2dpSourceObserver {

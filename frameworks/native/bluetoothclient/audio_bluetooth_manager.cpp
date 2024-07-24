@@ -215,7 +215,6 @@ int32_t AudioA2dpManager::OffloadStopPlaying(const std::vector<int32_t> &session
 int32_t AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(AudioA2dpPlayingStateChangedListener *listener)
 {
     stateChangedListeners_.push_back(listener);
-    AUDIO_INFO_LOG("CXX: listener pushed.");
     return SUCCESS;
 }
 
