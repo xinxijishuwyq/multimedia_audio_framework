@@ -981,6 +981,7 @@ private:
     bool enableFastVoip_ = false;
     bool enableDualHalToneState_ = false;
     int32_t enableDualHalToneSessionId_ = -1;
+    int32_t shouldUpdateDeviceDueToDualTone_ = false;
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 

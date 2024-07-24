@@ -2244,7 +2244,7 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchOutputDevice(unique_ptr<Au
 {
     if (desc->deviceType_ == DEVICE_TYPE_NONE || (IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo) &&
         !NeedRehandleA2DPDevice(desc) && desc->connectState_ != DEACTIVE_CONNECTED &&
-        lastAudioScene_ == audioScene_)) {
+        lastAudioScene_ == audioScene_ && !shouldUpdateDeviceDueToDualTone_)) {
         AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
         if (!IsSameDevice(desc, currentActiveDevice_)) {
             currentActiveDevice_ = AudioDeviceDescriptor(*desc);
@@ -3508,7 +3508,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
     if (IsInputDevice(updatedDesc.deviceType_)) {
         streamCollector_.ResetCapturerStreamDeviceInfo(updatedDesc);
     }
-    
+
     sptr<AudioDeviceDescriptor> devDesc = new (std::nothrow) AudioDeviceDescriptor(updatedDesc);
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Create device descriptor failed");
     audioDeviceManager_.RemoveNewDevice(devDesc);
@@ -8028,6 +8028,7 @@ void AudioPolicyService::UpdateRoute(unique_ptr<AudioRendererChangeInfo> &render
         } else {
             ringerModeMute_ = true;
         }
+        shouldUpdateDeviceDueToDualTone_ = true;
     } else {
         if (enableDualHalToneState_) {
             AUDIO_INFO_LOG("disable dual hal tone for not ringer/alarm.");
@@ -8035,6 +8036,7 @@ void AudioPolicyService::UpdateRoute(unique_ptr<AudioRendererChangeInfo> &render
         }
         ringerModeMute_ = true;
         UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
+        shouldUpdateDeviceDueToDualTone_ = false;
     }
 }
 
