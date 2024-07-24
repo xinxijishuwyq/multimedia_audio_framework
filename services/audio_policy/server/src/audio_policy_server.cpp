@@ -1567,7 +1567,13 @@ uint32_t AudioPolicyServer::GetSinkLatencyFromXml()
 
 int32_t AudioPolicyServer::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
 {
-    return audioPolicyService_.GetPreferredOutputStreamType(rendererInfo);
+    std::string bundleName = "";
+    if (rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
+        bundleName = GetBundleName();
+        AUDIO_INFO_LOG("bundleName %{public}s", bundleName.c_str());
+        return audioPolicyService_.GetPreferredOutputStreamType(rendererInfo, bundleName);
+    }
+    return audioPolicyService_.GetPreferredOutputStreamType(rendererInfo, "");
 }
 
 int32_t AudioPolicyServer::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
@@ -2537,6 +2543,12 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyServer::GetActiveBluetoothDevi
     }
 
     return btdevice;
+}
+
+std::string AudioPolicyServer::GetBundleName()
+{
+    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid();
+    return bundleInfo.name;
 }
 
 ConverterConfig AudioPolicyServer::GetConverterConfig()

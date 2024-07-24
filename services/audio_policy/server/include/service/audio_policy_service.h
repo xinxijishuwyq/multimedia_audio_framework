@@ -171,7 +171,7 @@ public:
 
     uint32_t GetSinkLatencyFromXml() const;
 
-    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo);
+    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
 
