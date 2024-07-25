@@ -312,6 +312,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
     if (handler != nullptr) {
         if (Util::IsDualToneStreamType(streamType)) {
+            AUDIO_INFO_LOG("DualToneStreamType. Save volume for speaker.");
             handler->SendSaveVolume(DEVICE_TYPE_SPEAKER, streamType, volumeLevel);
         } else {
             handler->SendSaveVolume(currentActiveDevice_, streamType, volumeLevel);
