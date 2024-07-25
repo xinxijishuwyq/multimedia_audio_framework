@@ -68,6 +68,7 @@ public:
     void GetCapturerStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioCapturerChangeInfo &capturerInfo);
     int32_t GetPipeType(const int32_t sessionId, AudioPipeType &pipeType);
     bool ExistStreamForPipe(AudioPipeType pipeType);
+    int32_t GetRendererDeviceInfo(const int32_t sessionId, DeviceInfo &outputDeviceInfo);
 
     int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
