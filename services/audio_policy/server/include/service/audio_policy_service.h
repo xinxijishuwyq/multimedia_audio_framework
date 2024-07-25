@@ -1154,7 +1154,8 @@ private:
     std::condition_variable connectionCV_;
     static const int32_t CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
 public:
-    AudioA2dpOffloadManager(AudioPolicyService *audioPolicyService) : audioPolicyService_(audioPolicyService) {
+    AudioA2dpOffloadManager(AudioPolicyService *audioPolicyService) : audioPolicyService_(audioPolicyService)
+    {
         Bluetooth::AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(this);
         return;
     };

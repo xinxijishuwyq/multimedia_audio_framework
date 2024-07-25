@@ -431,7 +431,7 @@ public:
     /**
      * Update Session Connection State.
      */
-    virtual void UpdateSessionConnectionState(const bool &isSupported) = 0;
+    virtual void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };

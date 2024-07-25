@@ -2447,7 +2447,7 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::unique_ptr<AudioRender
 }
 
 void AudioPolicyService::FetchStreamForA2dpOffload(bool requireReset)
- {
+{
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
     AUDIO_INFO_LOG("start for %{public}zu stream", rendererChangeInfos.size());
@@ -4826,10 +4826,8 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     AUDIO_INFO_LOG("Entered AudioPolicyService UpdateTracker");
 
-    if (mode == AUDIO_MODE_RECORD) {
-        if (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED) {
-            audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
-        }
+    if (mode == AUDIO_MODE_RECORD && streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED) {
+        audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
     }
 
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
