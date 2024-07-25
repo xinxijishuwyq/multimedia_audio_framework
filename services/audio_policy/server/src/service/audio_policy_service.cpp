@@ -4836,13 +4836,15 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     if (rendererState == RENDERER_PREPARED || rendererState == RENDERER_NEW || rendererState == RENDERER_INVALID) {
         return ret; // only update tracker in new and prepared
     }
+    
+    if (rendererState == RENDERER_RELEASED) {
+        if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
+            DynamicUnloadModule(PIPE_TYPE_MULTICHANNEL);
+        }
 
-    if (rendererState == RENDERER_RELEASED && !streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
-        DynamicUnloadModule(PIPE_TYPE_MULTICHANNEL);
-    }
-
-    if (rendererState == RENDERER_RELEASED && !streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {
-        DynamicUnloadModule(PIPE_TYPE_OFFLOAD);
+        if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {
+            DynamicUnloadModule(PIPE_TYPE_OFFLOAD);
+        }
     }
 
     if (mode == AUDIO_MODE_PLAYBACK && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_PAUSED)) {
