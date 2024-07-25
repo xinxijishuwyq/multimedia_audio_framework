@@ -67,11 +67,13 @@ vector<std::unique_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
 
     unique_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestConnectDeivce(curDescs);
     if (!latestConnDesc.get()) {
-        AUDIO_INFO_LOG("Have no latest connecte desc, dont add the other device.");
+        AUDIO_INFO_LOG("Have no latest connecte desc, just only add default device.");
+        descs.push_back(make_unique<AudioDeviceDescriptor>());
         return descs;
     }
     if (latestConnDesc->getType() == DEVICE_TYPE_NONE) {
-        AUDIO_INFO_LOG("Latest connecte desc type is none, dont add the other device.");
+        AUDIO_INFO_LOG("Latest connecte desc type is none, just only add default device.");
+        descs.push_back(make_unique<AudioDeviceDescriptor>());
         return descs;
     }
 
