@@ -16,8 +16,10 @@
 #define LOG_TAG "NapiAudioCapturer"
 
 #include "napi_audio_capturer.h"
+#ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "xpower_event_js.h"
+#endif
 #endif
 #include "audio_errors.h"
 #include "audio_utils.h"
@@ -407,8 +409,10 @@ napi_value NapiAudioCapturer::Start(napi_env env, napi_callback_info info)
     auto complete = [env](napi_value &output) {
         output = NapiParamUtils::GetUndefinedValue(env);
     };
+#ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     HiviewDFX::ReportXPowerJsStackSysEvent(env, "STREAM_CHANGE", "SRC=Audio");
+#endif
 #endif
     return NapiAsyncWork::Enqueue(env, context, "Start", executor, complete);
 }

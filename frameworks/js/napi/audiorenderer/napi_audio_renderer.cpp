@@ -20,7 +20,9 @@
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
 #include "errors.h"
 #else
+#ifdef FEATURE_HIVIEW_ENABLE
 #include "xpower_event_js.h"
+#endif
 #endif
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
@@ -479,8 +481,10 @@ napi_value NapiAudioRenderer::Start(napi_env env, napi_callback_info info)
     }
 
     context->GetCbInfo(env, info);
+#ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     HiviewDFX::ReportXPowerJsStackSysEvent(env, "STREAM_CHANGE", "SRC=Audio");
+#endif
 #endif
 
     auto executor = [context]() {
