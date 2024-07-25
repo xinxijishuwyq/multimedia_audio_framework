@@ -293,6 +293,14 @@ enum CallbackChange : int32_t {
     CALLBACK_MAX,
 };
 
+constexpr std::array<CallbackChange, CALLBACK_MAX> CALLBACK_ENUMS = {
+    CALLBACK_UNKNOWN,
+    CALLBACK_FOCUS_INFO_CHANGE,
+    CALLBACK_RENDERER_STATE_CHANGE,
+    CALLBACK_CAPTURER_STATE_CHANGE,
+    CALLBACK_MICMUTE_STATE_CHANGE,
+};
+
 struct VolumeEvent {
     AudioVolumeType volumeType;
     int32_t volume;
