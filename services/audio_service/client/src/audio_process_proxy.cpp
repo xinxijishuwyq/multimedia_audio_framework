@@ -38,7 +38,13 @@ int ProcessCbStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessagePa
         AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
-    return (this->*funcList_[code])(data, reply);
+    switch (code) {
+        case ON_ENDPOINT_CHANGE:
+            return HandleOnEndpointChange(data, reply);
+        default:
+            AUDIO_WARNING_LOG("OnRemoteRequest not supported code:%{public}d.", code);
+            return AUDIO_ERR;
+    }
 }
 
 int32_t ProcessCbStub::HandleOnEndpointChange(MessageParcel &data, MessageParcel &reply)

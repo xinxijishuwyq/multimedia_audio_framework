@@ -493,69 +493,9 @@ private:
     int HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply);
     int HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply);
-
-    using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
-    static inline HandlerFunc handlers[] = {
-        &AudioManagerStub::HandleGetAudioParameter,
-        &AudioManagerStub::HandleSetAudioParameter,
-        &AudioManagerStub::HandleGetExtraAudioParameters,
-        &AudioManagerStub::HandleSetExtraAudioParameters,
-        &AudioManagerStub::HandleSetMicrophoneMute,
-        &AudioManagerStub::HandleSetAudioScene,
-        &AudioManagerStub::HandleUpdateActiveDeviceRoute,
-        &AudioManagerStub::HandleUpdateActiveDevicesRoute,
-        &AudioManagerStub::HandleDualToneState,
-        &AudioManagerStub::HandleGetTransactionId,
-        &AudioManagerStub::HandleSetParameterCallback,
-        &AudioManagerStub::HandleGetRemoteAudioParameter,
-        &AudioManagerStub::HandleSetRemoteAudioParameter,
-        &AudioManagerStub::HandleNotifyDeviceInfo,
-        &AudioManagerStub::HandleCheckRemoteDeviceState,
-        &AudioManagerStub::HandleSetVoiceVolume,
-        &AudioManagerStub::HandleSetAudioMonoState,
-        &AudioManagerStub::HandleSetAudioBalanceValue,
-        &AudioManagerStub::HandleCreateAudioProcess,
-        &AudioManagerStub::HandleLoadAudioEffectLibraries,
-        &AudioManagerStub::HandleRequestThreadPriority,
-        &AudioManagerStub::HandleCreateAudioEffectChainManager,
-        &AudioManagerStub::HandleSetOutputDeviceSink,
-        &AudioManagerStub::HandleCreatePlaybackCapturerManager,
-        &AudioManagerStub::HandleSetSupportStreamUsage,
-        &AudioManagerStub::HandleRegiestPolicyProvider,
-        &AudioManagerStub::HandleSetWakeupSourceCallback,
-        &AudioManagerStub::HandleSetCaptureSilentState,
-        &AudioManagerStub::HandleUpdateSpatializationState,
-        &AudioManagerStub::HandleOffloadSetVolume,
-        &AudioManagerStub::HandleOffloadDrain,
-        &AudioManagerStub::HandleOffloadGetPresentationPosition,
-        &AudioManagerStub::HandleOffloadSetBufferSize,
-        &AudioManagerStub::HandleNotifyStreamVolumeChanged,
-        &AudioManagerStub::HandleGetCapturePresentationPosition,
-        &AudioManagerStub::HandleGetRenderPresentationPosition,
-        &AudioManagerStub::HandleSetSpatializationSceneType,
-        &AudioManagerStub::HandleGetMaxAmplitude,
-        &AudioManagerStub::HandleResetAudioEndpoint,
-        &AudioManagerStub::HandleResetRouteForDisconnect,
-        &AudioManagerStub::HandleGetEffectLatency,
-        &AudioManagerStub::HandleUpdateLatencyTimestamp,
-        &AudioManagerStub::HandleSetAsrAecMode,
-        &AudioManagerStub::HandleGetAsrAecMode,
-        &AudioManagerStub::HandleSetAsrNoiseSuppressionMode,
-        &AudioManagerStub::HandleGetAsrNoiseSuppressionMode,
-        &AudioManagerStub::HandleSetAsrWhisperDetectionMode,
-        &AudioManagerStub::HandleGetAsrWhisperDetectionMode,
-        &AudioManagerStub::HandleSetAsrVoiceControlMode,
-        &AudioManagerStub::HandleSetAsrVoiceMuteMode,
-        &AudioManagerStub::HandleIsWhispering,
-        &AudioManagerStub::HandleGetEffectOffloadEnabled,
-        &AudioManagerStub::HandleSuspendRenderSink,
-        &AudioManagerStub::HandleRestoreRenderSink,
-        &AudioManagerStub::HandleLoadHdiEffectModel,
-        &AudioManagerStub::HandleUpdateEffectBtOffloadSupported,
-    };
-    static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
-    static_assert(handlersNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
-        "please check pulseaudio_ipc_interface_code");
+    int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    int HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
 };
 } // namespace AudioStandard
 } // namespace OHOS

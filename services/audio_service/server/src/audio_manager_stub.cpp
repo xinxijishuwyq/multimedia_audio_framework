@@ -702,13 +702,157 @@ int AudioManagerStub::HandleUpdateLatencyTimestamp(MessageParcel &data, MessageP
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply,
+    MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE):
+            return HandleGetAsrAecMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_NOISE_SUPPRESSION_MODE):
+            return HandleSetAsrNoiseSuppressionMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_NOISE_SUPPRESSION_MODE):
+            return HandleGetAsrNoiseSuppressionMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_WHISPER_DETECTION_MODE):
+            return HandleSetAsrWhisperDetectionMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_WHISPER_DETECTION_MODE):
+            return HandleGetAsrWhisperDetectionMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_VOICE_CONTROL_MODE):
+            return HandleSetAsrVoiceControlMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_VOICE_MUTE_MODE):
+            return HandleSetAsrVoiceMuteMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::IS_WHISPERING):
+            return HandleIsWhispering(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_EFFECT_OFFLOAD_ENABLED):
+            return HandleGetEffectOffloadEnabled(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SUSPEND_RENDERSINK):
+            return HandleSuspendRenderSink(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::RESTORE_RENDERSINK):
+            return HandleRestoreRenderSink(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_HDI_EFFECT_MODEL):
+            return HandleLoadHdiEffectModel(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED):
+            return HandleUpdateEffectBtOffloadSupported(data, reply);
+        default:
+            AUDIO_ERR_LOG("default case, need check AudioManagerStub");
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
+}
+
+int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply,
+    MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_DRAIN):
+            return HandleOffloadDrain(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_GET_PRESENTATION_POSITION):
+            return HandleOffloadGetPresentationPosition(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_BUFFER_SIZE):
+            return HandleOffloadSetBufferSize(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_STREAM_VOLUME_CHANGED):
+            return HandleNotifyStreamVolumeChanged(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_CAPTURE_PRESENTATION_POSITION):
+            return HandleGetCapturePresentationPosition(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_RENDER_PRESENTATION_POSITION):
+            return HandleGetRenderPresentationPosition(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SPATIALIZATION_SCENE_TYPE):
+            return HandleSetSpatializationSceneType(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_MAX_AMPLITUDE):
+            return HandleGetMaxAmplitude(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::RESET_AUDIO_ENDPOINT):
+            return HandleResetAudioEndpoint(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::RESET_ROUTE_FOR_DISCONNECT):
+            return HandleResetRouteForDisconnect(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_EFFECT_LATENCY):
+            return HandleGetEffectLatency(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_LATENCY_TIMESTAMP):
+            return HandleUpdateLatencyTimestamp(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_AEC_MODE):
+            return HandleSetAsrAecMode(data, reply);
+        default:
+            return HandleFourthPartCode(code, data, reply, option);
+    }
+}
+
+int AudioManagerStub::HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply,
+    MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_REMOTE_DEVICE_STATE):
+            return HandleCheckRemoteDeviceState(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_VOICE_VOLUME):
+            return HandleSetVoiceVolume(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_MONO_STATE):
+            return HandleSetAudioMonoState(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_BALANCE_VALUE):
+            return HandleSetAudioBalanceValue(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS):
+            return HandleCreateAudioProcess(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_AUDIO_EFFECT_LIBRARIES):
+            return HandleLoadAudioEffectLibraries(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::REQUEST_THREAD_PRIORITY):
+            return HandleRequestThreadPriority(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIO_EFFECT_CHAIN_MANAGER):
+            return HandleCreateAudioEffectChainManager(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_OUTPUT_DEVICE_SINK):
+            return HandleSetOutputDeviceSink(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_PLAYBACK_CAPTURER_MANAGER):
+            return HandleCreatePlaybackCapturerManager(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SUPPORT_STREAM_USAGE):
+            return HandleSetSupportStreamUsage(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_POLICY_PROVIDER):
+            return HandleRegiestPolicyProvider(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_WAKEUP_CLOSE_CALLBACK):
+            return HandleSetWakeupSourceCallback(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE):
+            return HandleSetCaptureSilentState(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIALIZATION_STATE):
+            return HandleUpdateSpatializationState(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_VOLUME):
+            return HandleOffloadSetVolume(data, reply);
+        default:
+            return HandleThirdPartCode(code, data, reply, option);
+    }
+}
+
 int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(),
         -1, "ReadInterfaceToken failed");
     Trace trace(code >= codeNums ? "invalid audio server code!" : g_audioServerCodeStrs[code]);
-    CHECK_AND_RETURN_RET(code > static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX),
-        (this->*handlers[code])(data, reply));
+    if (code <= static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX)) {
+        switch (code) {
+            case static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_PARAMETER):
+                return HandleGetAudioParameter(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_PARAMETER):
+                return HandleSetAudioParameter(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::GET_EXTRA_AUDIO_PARAMETERS):
+                return HandleGetExtraAudioParameters(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::SET_EXTRA_AUDIO_PARAMETERS):
+                return HandleSetExtraAudioParameters(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::SET_MICROPHONE_MUTE):
+                return HandleSetMicrophoneMute(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_SCENE):
+                return HandleSetAudioScene(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_ROUTE_REQ):
+                return HandleUpdateActiveDeviceRoute(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_ROUTES_REQ):
+                return HandleUpdateActiveDevicesRoute(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_DUAL_TONE_REQ):
+                return HandleDualToneState(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::GET_TRANSACTION_ID):
+                return HandleGetTransactionId(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::SET_PARAMETER_CALLBACK):
+                return HandleSetParameterCallback(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::GET_REMOTE_AUDIO_PARAMETER):
+                return HandleGetRemoteAudioParameter(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::SET_REMOTE_AUDIO_PARAMETER):
+                return HandleSetRemoteAudioParameter(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_DEVICE_INFO):
+                return HandleNotifyDeviceInfo(data, reply);
+            default:
+                return HandleSecondPartCode(code, data, reply, option);
+        }
+    }
     AUDIO_ERR_LOG("default case, need check AudioManagerStub");
     return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
 }
