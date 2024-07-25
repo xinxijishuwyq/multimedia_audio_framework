@@ -787,6 +787,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
     if (ret != 0) {
         AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
     }
+    (void)audioStream_->SetDuckVolume(1.0f);
 
     return result;
 }
@@ -811,7 +812,8 @@ bool AudioRendererPrivate::Stop() const
     if (ret != 0) {
         AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
     }
-
+    (void)audioStream_->SetDuckVolume(1.0f);
+    
     return result;
 }
 
