@@ -1603,7 +1603,8 @@ void RendererInClientInner::FirstFrameProcess()
 {
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_) {
-        AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
+        ipcStream_->RegisterThreadPriority(gettid(),
+            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
         needSetThreadPriority_ = false;
     }
 

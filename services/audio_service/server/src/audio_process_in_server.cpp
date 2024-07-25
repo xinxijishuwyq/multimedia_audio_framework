@@ -22,6 +22,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_schedule.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -182,7 +183,8 @@ int32_t AudioProcessInServer::Stop()
 int32_t AudioProcessInServer::Release()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
-
+    UnscheduleReportData(processConfig_.appInfo.appPid, clientTid_, clientBundleName_.c_str());
+    clientThreadPriorityRequested_ = false;
     isInited_ = false;
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(releaseCallback_ != nullptr, ERR_OPERATION_FAILED, "Failed: no service to notify.");
@@ -405,6 +407,19 @@ int32_t AudioProcessInServer::RemoveProcessStatusListener(std::shared_ptr<IProce
 
     AUDIO_INFO_LOG("%{public}s the endpoint.", (isFind ? "find and remove" : "not find"));
     return SUCCESS;
+}
+
+int32_t AudioProcessInServer::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
+{
+    if (!clientThreadPriorityRequested_) {
+        clientTid_ = tid;
+        clientBundleName_ = bundleName;
+        ScheduleReportData(processConfig_.appInfo.appPid, tid, bundleName.c_str());
+        return SUCCESS;
+    } else {
+        AUDIO_ERR_LOG("client thread priority requested");
+        return ERR_OPERATION_FAILED;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

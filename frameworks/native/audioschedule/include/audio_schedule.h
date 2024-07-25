@@ -24,8 +24,9 @@ extern "C" {
 
 void ScheduleReportData(uint32_t pid, uint32_t tid, const char *bundleName);
 void ScheduleThreadInServer(uint32_t pid, uint32_t tid);
-void UnscheduleThreadInServer(uint32_t tid);
+void UnscheduleThreadInServer(uint32_t pid, uint32_t tid);
 void OnAddResSchedService(uint32_t audioServerPid);
+void UnscheduleReportData(uint32_t pid, uint32_t tid, const char* bundleName);
 
 #ifdef __cplusplus
 }

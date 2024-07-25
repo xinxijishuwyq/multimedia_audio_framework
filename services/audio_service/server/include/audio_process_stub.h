@@ -49,6 +49,7 @@ private:
     int32_t HandleRequestHandleInfo(MessageParcel &data, MessageParcel &reply);
     int32_t HandleRelease(MessageParcel &data, MessageParcel &reply);
     int32_t HandleRegisterProcessCb(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleRegisterThreadPriority(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int32_t(AudioProcessStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc funcList_[IAudioProcessMsg::PROCESS_MAX_MSG] = {
@@ -60,7 +61,8 @@ private:
         &AudioProcessStub::HandleStop,
         &AudioProcessStub::HandleRequestHandleInfo,
         &AudioProcessStub::HandleRelease,
-        &AudioProcessStub::HandleRegisterProcessCb
+        &AudioProcessStub::HandleRegisterProcessCb,
+        &AudioProcessStub::HandleRegisterThreadPriority,
     };
 };
 } // namespace AudioStandard

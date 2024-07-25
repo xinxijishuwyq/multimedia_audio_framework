@@ -510,5 +510,21 @@ int32_t IpcStreamProxy::SetClientVolume()
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set client volume failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();
 }
+
+int32_t IpcStreamProxy::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteUint32(tid);
+    data.WriteString(bundleName);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_REGISTER_THREAD_PRIORITY, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS
