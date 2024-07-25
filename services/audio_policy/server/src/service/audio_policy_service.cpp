@@ -768,6 +768,13 @@ void AudioPolicyService::ResetOffloadMode(int32_t sessionId)
 
 void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
 {
+    DeviceInfo deviceInfo;
+    int32_t ret = streamCollector_.GetRendererDeviceInfo(sessionId, deviceInfo);
+    if (ret != SUCCESS || deviceInfo.deviceType != currentActiveDevice_.deviceType_) {
+        AUDIO_INFO_LOG("sessionId[%{public}d] not fetch device, Offload Skipped", sessionId);
+        return;
+    }
+
     AudioStreamType streamType = GetStreamType(sessionId);
     if (!CheckStreamOffloadMode(sessionId, streamType)) {
         return;
