@@ -108,7 +108,7 @@ int32_t FillinSinkWapper(const char *device, const char *deviceNetworkId, struct
 
 int32_t IAudioRendererSinkInit(struct RendererSinkAdapter *adapter, const SinkAttr *attr)
 {
-    if (adapter == nullptr || adapter->wapper == NULL || attr == NULL) {
+    if (adapter == nullptr || adapter->wapper == nullptr || attr == nullptr) {
         AUDIO_ERR_LOG("%{public}s: Invalid parameter", __func__);
         return ERROR;
     }
