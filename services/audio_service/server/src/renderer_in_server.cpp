@@ -973,7 +973,7 @@ int32_t RendererInServer::UpdateSpatializationState(bool spatializationEnabled, 
 
 int32_t RendererInServer::GetStreamManagerType() const noexcept
 {
-    return managerType_;
+    return managerType_ == DIRECT_PLAYBACK ? AUDIO_DIRECT_MANAGER_TYPE : AUDIO_NORMAL_MANAGER_TYPE;
 }
 
 bool RendererInServer::IsHighResolution() const noexcept
