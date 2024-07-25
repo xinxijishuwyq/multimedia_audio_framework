@@ -3228,7 +3228,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
         if ((ret = pa_rtpoll_run(u->rtpoll)) < 0) {
             AUDIO_ERR_LOG("Thread %{public}s(use timing bus) shutting down, error %{public}d, "
                 "pid %{public}d, tid %{public}d", deviceClass, ret, getpid(), gettid());
-            if (!strcmp(u->sink->name, DEVICE_CLASS_PRIMARY)) {
+            if (!strcmp(deviceClass, DEVICE_CLASS_PRIMARY)) {
                 AUDIO_ERR_LOG("Primary sink's pa_rtpoll_run error, exit");
                 _Exit(0);
             }
