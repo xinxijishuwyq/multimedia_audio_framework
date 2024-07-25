@@ -2846,7 +2846,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
         if (ret < 0) {
             blockTime = 1 * PA_USEC_PER_MSEC; // 1ms for min wait
         } else if (wait) {
-            blockTime = timeWait * PA_USEC_PER_MSEC; // timeWait ms for first write no data
+            blockTime = (int64_t)(timeWait * PA_USEC_PER_MSEC); // timeWait ms for first write no data
             if (timeWait < 20) { // 20ms max wait no data
                 timeWait++;
             }
