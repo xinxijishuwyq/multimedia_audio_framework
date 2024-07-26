@@ -423,7 +423,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
 void PaAdapterManager::ReleasePaStream(pa_stream *paStream)
 {
     if (!paStream) {
-        AUDIO_ERR_LOG("paStream is nullptr!");
+        AUDIO_INFO_LOG("paStream is nullptr. No need to release.");
         return;
     }
     if (!mainLoop_) {
@@ -434,6 +434,7 @@ void PaAdapterManager::ReleasePaStream(pa_stream *paStream)
     PaLockGuard palock(mainLoop_);
     pa_stream_set_state_callback(paStream, nullptr, nullptr);
     pa_stream_unref(paStream);
+    AUDIO_INFO_LOG("Release paStream because of errs");
 }
 
 bool PaAdapterManager::IsEffectNone(StreamUsage streamUsage)
