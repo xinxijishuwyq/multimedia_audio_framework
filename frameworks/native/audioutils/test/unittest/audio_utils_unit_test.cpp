@@ -613,9 +613,6 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetConnectTypeName_003, TestSize.L
     EXPECT_EQ(connectTypeName, "UNKNOWN");
 }
 
-
-
-
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetSourceName  API
 * @tc.type  : FUNC
