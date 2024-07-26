@@ -125,6 +125,14 @@ void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
         AUDIO_INFO_LOG("RecoverAudioPolicyCallbackClient has micStateChangeCallback");
         gsp->SetClientCallbacksEnable(CALLBACK_MICMUTE_STATE_CHANGE, true);
     }
+
+    for (auto enumIndex : CALLBACK_ENUMS) {
+        auto &[mutex, isEnable] = callbackChangeInfos_[enumIndex];
+        std::lock_guard<std::mutex> lock(mutex);
+        if (isEnable) {
+            gsp->SetClientCallbacksEnable(enumIndex, true);
+        }
+    }
 }
 
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
@@ -148,7 +156,7 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
         std::lock_guard<std::mutex> lock(g_apProxyMutex);
         g_apProxy = nullptr;
     }
-    RecoverAudioPolicyCallbackClient();
+    GetInstance().RecoverAudioPolicyCallbackClient();
 
     {
         std::lock_guard<std::mutex> lockCbMap(g_cBDiedMapMutex);
@@ -434,10 +442,11 @@ int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t client
         }
     }
 
-    std::lock_guard<std::mutex> lockCbMap(focusInfoMutex_);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_FOCUS_INFO_CHANGE].mutex);
     audioPolicyClientStubCB_->AddFocusInfoChangeCallback(callback);
     size_t callbackSize = audioPolicyClientStubCB_->GetFocusInfoChangeCallbackSize();
     if (callbackSize == 1) {
+        callbackChangeInfos_[CALLBACK_FOCUS_INFO_CHANGE].isEnable = true;
         SetClientCallbacksEnable(CALLBACK_FOCUS_INFO_CHANGE, true);
     }
 
@@ -447,10 +456,11 @@ int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t client
 int32_t AudioPolicyManager::UnregisterFocusInfoChangeCallback(const int32_t clientId)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterFocusInfoChangeCallback");
-    std::lock_guard<std::mutex> lockCbMap(focusInfoMutex_);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_FOCUS_INFO_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveFocusInfoChangeCallback();
         if (audioPolicyClientStubCB_->GetFocusInfoChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_FOCUS_INFO_CHANGE].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_FOCUS_INFO_CHANGE, false);
         }
     }
@@ -822,10 +832,11 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(
         }
     }
 
-    std::lock_guard<std::mutex> lockCbMap(rendererStateMutex_);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_RENDERER_STATE_CHANGE].mutex);
     audioPolicyClientStubCB_->AddRendererStateChangeCallback(callback);
     size_t callbackSize = audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize();
     if (callbackSize == 1) {
+        callbackChangeInfos_[CALLBACK_RENDERER_STATE_CHANGE].isEnable = true;
         SetClientCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, true);
     }
     isAudioRendererEventListenerRegistered = true;
@@ -836,10 +847,11 @@ int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(
     const std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> &callbacks)
 {
     AUDIO_DEBUG_LOG("in");
-    std::lock_guard<std::mutex> lockCbMap(rendererStateMutex_);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_RENDERER_STATE_CHANGE].mutex);
     if ((audioPolicyClientStubCB_ != nullptr) && isAudioRendererEventListenerRegistered) {
         audioPolicyClientStubCB_->RemoveRendererStateChangeCallback(callbacks);
         if (audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_RENDERER_STATE_CHANGE].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, false);
         }
         isAudioRendererEventListenerRegistered = false;
@@ -851,10 +863,11 @@ int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(
     const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
 {
     AUDIO_DEBUG_LOG("in");
-    std::lock_guard<std::mutex> lockCbMap(rendererStateMutex_);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_RENDERER_STATE_CHANGE].mutex);
     if ((audioPolicyClientStubCB_ != nullptr) && isAudioRendererEventListenerRegistered) {
         audioPolicyClientStubCB_->RemoveRendererStateChangeCallback(callback);
         if (audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_RENDERER_STATE_CHANGE].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, false);
         }
         isAudioRendererEventListenerRegistered = false;
@@ -878,10 +891,11 @@ int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t cli
         }
     }
 
-    std::lock_guard<std::mutex> lockCbMap(capturerStateMutex_);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_CAPTURER_STATE_CHANGE].mutex);
     audioPolicyClientStubCB_->AddCapturerStateChangeCallback(callback);
     size_t callbackSize = audioPolicyClientStubCB_->GetCapturerStateChangeCallbackSize();
     if (callbackSize == 1) {
+        callbackChangeInfos_[CALLBACK_CAPTURER_STATE_CHANGE].isEnable = true;
         SetClientCallbacksEnable(CALLBACK_CAPTURER_STATE_CHANGE, true);
     }
     isAudioCapturerEventListenerRegistered = true;
@@ -891,10 +905,11 @@ int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t cli
 int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t clientPid)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterAudioCapturerEventListener");
-    std::lock_guard<std::mutex> lockCbMap(capturerStateMutex_);
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_CAPTURER_STATE_CHANGE].mutex);
     if ((audioPolicyClientStubCB_ != nullptr) && isAudioCapturerEventListenerRegistered) {
         audioPolicyClientStubCB_->RemoveCapturerStateChangeCallback();
         if (audioPolicyClientStubCB_->GetCapturerStateChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_CAPTURER_STATE_CHANGE].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_CAPTURER_STATE_CHANGE, false);
         }
         isAudioCapturerEventListenerRegistered = false;
