@@ -443,7 +443,7 @@ public:
 
     void ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
 
-    DistributedRoutingInfo GetDistributedRoutingRoleInfo();
+    DistributedRoutingInfo& GetDistributedRoutingRoleInfo();
 
     void OnScoStateChanged(const std::string &macAddress, bool isConnnected);
 
