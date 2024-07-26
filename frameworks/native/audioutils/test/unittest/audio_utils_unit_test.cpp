@@ -369,7 +369,6 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM16Bit_001, TestSize.Level0
 */
 HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM16Bit_002, TestSize.Level0)
 {
-
     int16_t frame[5] = {-6554, -8192, -10923, -16384, -32767};;
     uint64_t nSamples = 5;
     float result = CalculateMaxAmplitudeForPCM16Bit(frame, nSamples);
@@ -384,7 +383,6 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM16Bit_002, TestSize.Level0
 */
 HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM16Bit_003, TestSize.Level0)
 {
-
     int16_t frame[5] = {6554, 8192, 10923, 16384, 32767};;
     uint64_t nSamples = 5;
     float result = CalculateMaxAmplitudeForPCM16Bit(frame, nSamples);
@@ -400,7 +398,6 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM16Bit_003, TestSize.Level0
 */
 HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM16Bit_004, TestSize.Level0)
 {
-
     int16_t frame[5] = {0};;
     uint64_t nSamples = 5;
     float result = CalculateMaxAmplitudeForPCM16Bit(frame, nSamples);
@@ -571,7 +568,6 @@ HWTEST(AudioUtilsUnitTest, GetFormatByteSize_001, TestSize.Level0)
     int32_t formatByteSize = GetFormatByteSize(format);
     EXPECT_EQ(formatByteSize, 2);
 }
-
 /**
 * @tc.name  : Test GetFormatByteSize API
 * @tc.type  : FUNC
@@ -881,7 +877,6 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_015, TestSize.Level0
     const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
     EXPECT_EQ(stramName, "UNKNOWN");
 }
-
 
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetDeviceTypeName  API
