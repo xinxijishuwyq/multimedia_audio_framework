@@ -87,7 +87,6 @@ public:
     std::string lib;
     std::string role;
 
-    // The default rate is the maximun supported rate.
     std::string rate;
 
     std::set<uint32_t> supportedRate_;

@@ -784,7 +784,8 @@ private:
 
     bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
 
-    int32_t FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, SourceInfo &targetInfo);
+    int32_t FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, StreamPropInfo &targetInfo,
+        SourceType &targetSourceType);
 
     void StoreDistributedRoutingRoleInfo(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
 
@@ -1071,6 +1072,8 @@ private:
     std::mutex offloadMutex_;
 
     AudioModuleInfo primaryMicModuleInfo_ = {};
+    std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
+    // sort by channels and samplerate
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 
@@ -1131,6 +1134,8 @@ private:
     std::condition_variable offloadCloseCondition_;
 
     bool ringerModeMute_ = true;
+
+    std::atomic<bool> isPolicyConfigParsered_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

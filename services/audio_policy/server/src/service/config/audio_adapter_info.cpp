@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-PipeInfo* AudioAdapterInfo::GetPipeByName(std::string &pipeName)
+PipeInfo* AudioAdapterInfo::GetPipeByName(const std::string &pipeName)
 {
     for (auto &pipeInfo : pipeInfos_) {
         if (pipeInfo.name_ == pipeName) {
