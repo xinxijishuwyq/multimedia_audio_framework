@@ -209,7 +209,7 @@ int32_t AudioManagerProxy::OffloadSetBufferSize(uint32_t sizeMs)
 }
 
 int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-    DeviceType activeInputDevice)
+    DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag)
 {
     CHECK_AND_RETURN_RET_LOG(!activeOutputDevices.empty() &&
         activeOutputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
@@ -228,6 +228,7 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, std::vector<Devi
         data.WriteInt32(static_cast<int32_t>(activeOutputDevice));
     }
     data.WriteInt32(static_cast<int32_t>(activeInputDevice));
+    data.WriteInt32(static_cast<int32_t>(a2dpOffloadFlag));
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_SCENE), data, reply, option);
