@@ -30,11 +30,6 @@ private:
     static bool CheckInterfaceToken(MessageParcel &data);
 
     int32_t HandleOnOperationHandled(MessageParcel &data, MessageParcel &reply);
-
-    using HandlerFunc = int32_t(IpcStreamListenerStub::*)(MessageParcel &data, MessageParcel &reply);
-    static inline HandlerFunc funcList_[IpcStreamListenerMsg::IPC_STREAM_LISTENER_MAX_MSG] = {
-        &IpcStreamListenerStub::HandleOnOperationHandled
-    };
 };
 } // namespace AudioStandard
 } // namespace OHOS

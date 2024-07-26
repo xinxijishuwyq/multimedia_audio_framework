@@ -30,11 +30,6 @@ private:
     static bool CheckInterfaceToken(MessageParcel &data);
 
     int32_t HandleOnEndpointChange(MessageParcel &data, MessageParcel &reply);
-
-    using HandlerFunc = int32_t(ProcessCbStub::*)(MessageParcel &data, MessageParcel &reply);
-    static inline HandlerFunc funcList_[IProcessCbMsg::PROCESS_CB_MAX_MSG] = {
-        &ProcessCbStub::HandleOnEndpointChange
-    };
 };
 } // namespace AudioStandard
 } // namespace OHOS
