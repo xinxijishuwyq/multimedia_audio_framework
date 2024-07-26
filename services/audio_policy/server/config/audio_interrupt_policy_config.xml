@@ -55,7 +55,7 @@
             </private>
         </focus_table>
     </focus_type>
-    <focus_type value="STREAM_VOICE_CALL_ASSISTANT">F
+    <focus_type value="STREAM_VOICE_CALL_ASSISTANT">
         <focus_table>
             <deny>
                 <focus_type value="STREAM_VOICE_CALL_ASSISTANT"/>
