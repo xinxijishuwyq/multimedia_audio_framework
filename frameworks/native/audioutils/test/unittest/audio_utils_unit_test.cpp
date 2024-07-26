@@ -226,6 +226,484 @@ HWTEST(AudioUtilsUnitTest, GetSysPara_001, TestSize.Level1)
     bool result4 = GetSysPara(key, strValue);
     EXPECT_EQ(true, result4);
 }
+
+/**
+* @tc.name  : Test UpdateMaxAmplitude API
+* @tc.type  : FUNC
+* @tc.number: UpdateMaxAmplitude_001
+* @tc.desc  : Test UpdateMaxAmplitude interface  when adapterFormat is SAMPLE_U8_C.
+*/
+HWTEST(AudioUtilsUnitTest, UpdateMaxAmplitude_001, TestSize.Level0)
+{
+    ConvertHdiFormat adapterFormat = SAMPLE_U8_C;
+    char frame[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    uint64_t replyBytes = 10;
+    float result = UpdateMaxAmplitude(adapterFormat, frame, replyBytes);
+    EXPECT_NEAR(result, 0.0708661452, 0.00000001);
+}
+
+/**
+* @tc.name  : Test UpdateMaxAmplitude API
+* @tc.type  : FUNC
+* @tc.number: UpdateMaxAmplitude_002
+* @tc.desc  : Test UpdateMaxAmplitude interface  when adapterFormat is SAMPLE_S16_C.
+*/
+HWTEST(AudioUtilsUnitTest, UpdateMaxAmplitude_002, TestSize.Level0)
+{
+    ConvertHdiFormat adapterFormat = SAMPLE_S16_C;
+    char frame[20] = {0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9};
+    uint64_t replyBytes = 10;
+    float result = UpdateMaxAmplitude(adapterFormat, frame, replyBytes);
+    EXPECT_NEAR(result, 0.0313730277, 0.00000001);
+}
+
+/**
+* @tc.name  : Test UpdateMaxAmplitude API
+* @tc.type  : FUNC
+* @tc.number: UpdateMaxAmplitude_003
+* @tc.desc  : Test UpdateMaxAmplitude interface  when adapterFormat is SAMPLE_S24_C.
+*/
+HWTEST(AudioUtilsUnitTest, UpdateMaxAmplitude_003, TestSize.Level0)
+{
+    ConvertHdiFormat adapterFormat = SAMPLE_S24_C;
+    char frame[30] = {0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4,
+                     5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9};
+    uint64_t replyBytes = 10;
+    float result = UpdateMaxAmplitude(adapterFormat, frame, replyBytes);
+    EXPECT_NEAR(result, 0.0156862754, 0.00000001);
+}
+
+/**
+* @tc.name  : Test UpdateMaxAmplitude API
+* @tc.type  : FUNC
+* @tc.number: UpdateMaxAmplitude_004
+* @tc.desc  : Test UpdateMaxAmplitude interface  when adapterFormat is SAMPLE_S32_C.
+*/
+HWTEST(AudioUtilsUnitTest, UpdateMaxAmplitude_004, TestSize.Level0)
+{
+    ConvertHdiFormat adapterFormat = SAMPLE_S32_C;
+    char frame[40] = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4,
+                    5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9};
+    uint64_t replyBytes = 10;
+    float result = UpdateMaxAmplitude(adapterFormat, frame, replyBytes);
+    EXPECT_NEAR(result, 0.007843, 0.00001);
+}
+
+/**
+* @tc.name  : Test UpdateMaxAmplitude API
+* @tc.type  : FUNC
+* @tc.number: UpdateMaxAmplitude_005
+* @tc.desc  : Test UpdateMaxAmplitude interface when adapterFormat is not supported then AUDIO_INFO_LOG is called
+*/
+HWTEST(AudioUtilsUnitTest, UpdateMaxAmplitude_005, TestSize.Level0)
+{
+    ConvertHdiFormat adapterFormat = INVALID_WIDTH_C;
+    char frame[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    uint64_t replyBytes = 10;
+    float result = UpdateMaxAmplitude(adapterFormat, frame, replyBytes);
+    EXPECT_EQ(result, 0);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM8Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM8Bit_001
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM8Bit interfaceReturn 0 when frame is null arry
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM8Bit_001, TestSize.Level0)
+{
+    int8_t frame[0];
+    uint64_t nSamples = 0;
+    float result = CalculateMaxAmplitudeForPCM8Bit(frame, nSamples);
+    EXPECT_EQ(result, 0);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM8Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM8Bit_002
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM8Bit interface Return 0 when nSamples is 0 
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM8Bit_002, TestSize.Level0)
+{
+    int8_t frame1[1] = {1};
+    uint64_t nSamples1 = 0;
+    float result = CalculateMaxAmplitudeForPCM8Bit(frame1, nSamples1);
+    EXPECT_EQ(result, 0);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM8Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM8Bit_003
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM8Bit interface 
+*             Return MaxAmplitude when frame is not null arry and nSamples is not 0
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM8Bit_003, TestSize.Level0)
+{
+    int8_t frame2[3] = {1, -2, 3};
+    uint64_t nSamples2 = 3;
+    float result = CalculateMaxAmplitudeForPCM8Bit(frame2, nSamples2);
+    EXPECT_FLOAT_EQ(result, 3.0f/ SCHAR_MAX);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM16Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM16Bit_001
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM16Bit interface .Return 0 when  nSamples is 0
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM16Bit_001, TestSize.Level0)
+{
+    int16_t frame[1] = {100};
+    uint64_t nSamples = 0;
+    float result = CalculateMaxAmplitudeForPCM16Bit(frame, nSamples);
+    EXPECT_EQ(result, 0);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM16Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM16Bit_002
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM16Bit interface .Return 1.0 when value < 0
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM16Bit_002, TestSize.Level0)
+{
+
+    int16_t frame[5] = {-6554, -8192, -10923, -16384, -32767};;
+    uint64_t nSamples = 5;
+    float result = CalculateMaxAmplitudeForPCM16Bit(frame, nSamples);
+    EXPECT_NEAR(result, 1.0, 0.1);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM16Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM16Bit_003
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM16Bit interface .update curMaxAmplitude when curMaxAmplitude < value
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM16Bit_003, TestSize.Level0)
+{
+
+    int16_t frame[5] = {6554, 8192, 10923, 16384, 32767};;
+    uint64_t nSamples = 5;
+    float result = CalculateMaxAmplitudeForPCM16Bit(frame, nSamples);
+    EXPECT_NEAR(result, 1.0, 0.001);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM16Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM16Bit_004
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM16Bit interface
+*               when value isn't bigger than curMaxAmplitude and smaller than 0.
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM16Bit_004, TestSize.Level0)
+{
+
+    int16_t frame[5] = {0};;
+    uint64_t nSamples = 5;
+    float result = CalculateMaxAmplitudeForPCM16Bit(frame, nSamples);
+    EXPECT_EQ(result, 0);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM16Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM16Bit_005
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM16Bit interface when value contains  negative and positive numbers.
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM16Bit_005, TestSize.Level0)
+{
+    int16_t frame[5] = {-6554, -8192, 0, 10923, 16384};
+    uint64_t nSamples = 5;
+    float result = CalculateMaxAmplitudeForPCM16Bit(frame, nSamples);
+    EXPECT_NEAR(result, 0.5, 0.001);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM24Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM24Bit_001
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM24Bit interface .Return 0 when  nSamples is 0
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM24Bit_001, TestSize.Level0)
+{
+    char frame[1] = {100};
+    uint64_t nSamples = 0;
+    float result = CalculateMaxAmplitudeForPCM24Bit(frame, nSamples);
+    EXPECT_EQ(result, 0);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM24Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM24Bit_002
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM24Bit interface .Return 1.0 when value < 0
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM24Bit_002, TestSize.Level0)
+{
+    char frame[15] = {0xC0, 0x00, 0x00, 0xE0, 0x00, 0x00, 0xF0, 0x00, 0x00, 0xF8, 0x00, 0x00, 0xF4, 0x00, 0x00};
+
+    uint64_t nSamples = 5;
+    float result = CalculateMaxAmplitudeForPCM24Bit(frame, nSamples);
+    EXPECT_NEAR(result, 3.0e-05, 0.1e-05);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM24Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM24Bit_003
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM24Bit interface .update curMaxAmplitude when curMaxAmplitude < value
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM24Bit_003, TestSize.Level0)
+{
+    char frame[15] = {0x40, 0x00, 0x00, 0x20, 0x00, 0x00, 0x10, 0x00, 0x00, 0x08, 0x00, 0x00, 0x04, 0x00, 0x00};
+    uint64_t nSamples = 5;
+    float result = CalculateMaxAmplitudeForPCM24Bit(frame, nSamples);
+    EXPECT_NEAR(result, 0.76e-05,0.1e-05);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM24Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM24Bit_004
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM24Bit interface
+*               when value isn't bigger than curMaxAmplitude and smaller than 0.
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM24Bit_004, TestSize.Level0)
+{
+    char frame[3] = {0x00, 0x00, 0x00};
+    uint64_t nSamples = 1;
+    float result = CalculateMaxAmplitudeForPCM24Bit(frame, nSamples);
+    EXPECT_NEAR(result, 0, 0.1);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM24Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM24Bit_005
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM24Bit interface when value contains  negative and positive numbers.
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM24Bit_005, TestSize.Level0)
+{
+    char frame[15] = {0xC0, 0x00, 0x00, 0xE0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x40, 0x00, 0x00};
+    uint64_t nSamples = 5;
+    float result = CalculateMaxAmplitudeForPCM24Bit(frame, nSamples);
+    EXPECT_NEAR(result,  2.7e-05, 0.1e-05);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM32Bit_001
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM32Bit interface .Return 0 when  nSamples is 0
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_001, TestSize.Level0)
+{
+    int32_t frame[1] = {100};
+    uint64_t nSamples = 0;
+    float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
+    EXPECT_EQ(result, 0);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM32Bit_002
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM32Bit interface .Return 1.0 when value < 0
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_002, TestSize.Level0)
+{
+    int32_t frame[4] ={0XBFFFFFFF, 0X8FFFFFFF, 0XAFFFFFFF, 0XFFFFFFFF};
+    uint64_t nSamples = 4;
+    float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
+    EXPECT_NEAR(result, 0.875, 0.1);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM32Bit_003
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM32Bit interface .update curMaxAmplitude when curMaxAmplitude < value
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_003, TestSize.Level0)
+{
+
+    int32_t frame[4] ={0X3FFFFFF, 0X7FFFFFF, 0X1FFFFFFF, 0X3FFFFFFF};
+    uint64_t nSamples =4;
+    float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
+    EXPECT_NEAR(result, 0.5, 0.1);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM32Bit_004
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM32Bit interface
+*               when value isn't bigger than curMaxAmplitude and smaller than 0.
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_004, TestSize.Level0)
+{
+    int32_t frame[6] = {0};
+    uint64_t nSamples = 6;
+    float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
+    EXPECT_EQ(result, 0);
+}
+
+/**
+* @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
+* @tc.type  : FUNC
+* @tc.number: CalculateMaxAmplitudeForPCM32Bit_005
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM32Bit interface when value contains  negative and positive numbers.
+*/
+HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_005, TestSize.Level0)
+{
+    int32_t frame[5] ={0XBFFFFFFF, 0X8FFFFFFF, 0, 0X1FFFFFFF, 0X3FFFFFFF};
+    uint64_t nSamples = 5;
+    float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
+    EXPECT_NEAR(result, 0.875, 0.1);
+}
+
+/**
+* @tc.name  : Test GetFormatByteSize API
+* @tc.type  : FUNC
+* @tc.number: GetFormatByteSize_001
+* @tc.desc  : Test GetFormatByteSize interface Return 2 when format is  SAMPLE_S16LE
+*/
+HWTEST(AudioUtilsUnitTest, GetFormatByteSize_001, TestSize.Level0)
+{
+    int32_t format = 100;
+    int32_t formatByteSize = GetFormatByteSize(format);
+    EXPECT_EQ(formatByteSize, 2);
+}
+
+/**
+* @tc.name  : Test GetFormatByteSize API
+* @tc.type  : FUNC
+* @tc.number: GetFormatByteSize_002
+* @tc.desc  : Test GetFormatByteSize interface Return 2 when  when format is other int32_t
+*/
+HWTEST(AudioUtilsUnitTest, GetFormatByteSize_002, TestSize.Level0)
+{
+    int32_t format = SAMPLE_S16LE;
+    int32_t formatByteSize = GetFormatByteSize(format);
+    EXPECT_EQ(formatByteSize, 2);
+}
+
+/**
+* @tc.name  : Test GetFormatByteSize API
+* @tc.type  : FUNC
+* @tc.number: GetFormatByteSize_003
+* @tc.desc  : Test GetFormatByteSize interface Return 3 when format is  SAMPLE_S24LE
+*/
+HWTEST(AudioUtilsUnitTest, GetFormatByteSize_003, TestSize.Level0)
+{
+    int32_t format = SAMPLE_S24LE;
+    int32_t formatByteSize = GetFormatByteSize(format);
+    EXPECT_EQ(formatByteSize, 3);
+}
+
+/**
+* @tc.name  : Test GetFormatByteSize API
+* @tc.type  : FUNC
+* @tc.number: GetFormatByteSize_004
+* @tc.desc  : Test GetFormatByteSize interface Return 4 when format is  SAMPLE_S32LE
+*/
+HWTEST(AudioUtilsUnitTest, GetFormatByteSize_004, TestSize.Level0)
+{
+    int32_t format = SAMPLE_S32LE;
+    int32_t formatByteSize = GetFormatByteSize(format);
+    EXPECT_EQ(formatByteSize, 4);
+}
+
+/**
+* @tc.name  : Test SignalDetectAgent::DetectSignalData API
+* @tc.type  : FUNC
+* @tc.number: SignalDetectAgent_DetectSignalData_001
+* @tc.desc  : Test DetectSignalData interface Return  false when bufferLen is 0
+*/
+HWTEST(AudioUtilsUnitTest, SignalDetectAgent_DetectSignalData_001, TestSize.Level0)
+{
+    int32_t buffer[10] = {0};
+    size_t bufferLen = 0;
+    
+    struct SignalDetectAgent signalDetectAgent;
+    bool ret = signalDetectAgent.DetectSignalData(buffer, bufferLen);
+    EXPECT_EQ(ret, false);
+
+}
+
+/**
+* @tc.name  : Test SignalDetectAgent::DetectSignalData API
+* @tc.type  : FUNC
+* @tc.number: SignalDetectAgent_DetectSignalData_002
+* @tc.desc  : Test DetectSignalData interface Return  false when NearZero(tempMax) is true and NearZero(tempMin) is true
+*/
+HWTEST(AudioUtilsUnitTest, SignalDetectAgent_DetectSignalData_002, TestSize.Level0)
+{
+    int32_t buffer[10] = {2, 3, 2, 3, 2, 3, 2, 3, 2, 3};
+    size_t bufferLen = 10*sizeof(int32_t);
+    
+    struct SignalDetectAgent signalDetectAgent;
+    bool ret = signalDetectAgent.DetectSignalData(buffer, bufferLen);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test SignalDetectAgent::DetectSignalData API
+* @tc.type  : FUNC
+* @tc.number: SignalDetectAgent_DetectSignalData_003
+* @tc.desc  : Test DetectSignalData interface Return  true when currentPeakIndex is -1
+*/
+HWTEST(AudioUtilsUnitTest, SignalDetectAgent_DetectSignalData_003, TestSize.Level0)
+{
+    int32_t buffer[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    size_t bufferLen = 10*sizeof(int32_t);
+    
+    struct SignalDetectAgent signalDetectAgent;
+    signalDetectAgent.ResetDetectResult();
+    signalDetectAgent.channels_ = 1;
+    bool ret = signalDetectAgent.DetectSignalData(buffer, bufferLen);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test SignalDetectAgent::DetectSignalData API
+* @tc.type  : FUNC
+* @tc.number: SignalDetectAgent_DetectSignalData_004
+* @tc.desc  : Test DetectSignalData interface Return  true when blankPeriod_ < thresholdBlankPeriod
+*/
+HWTEST(AudioUtilsUnitTest, SignalDetectAgent_DetectSignalData_004, TestSize.Level0)
+{
+    int32_t buffer[10] = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
+    size_t bufferLen = 10*sizeof(int32_t);
+    
+    struct SignalDetectAgent signalDetectAgent;
+    signalDetectAgent.ResetDetectResult();
+    signalDetectAgent.channels_ = 1 ;
+    signalDetectAgent.sampleRate_ = 100;
+    bool ret = signalDetectAgent.DetectSignalData(buffer, bufferLen);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test SignalDetectAgent::ResetDetectResult API
+* @tc.type  : FUNC
+* @tc.number: SignalDetectAgent_ResetDetectResult_001
+* @tc.desc  : Test ResetDetectResult interface.
+*/
+HWTEST(AudioUtilsUnitTest, SignalDetectAgent_ResetDetectResult_001, TestSize.Level0)
+{
+    struct SignalDetectAgent signalDetectAgent;
+    signalDetectAgent.ResetDetectResult();
+    EXPECT_EQ(signalDetectAgent.blankHaveOutput_, true);
+    EXPECT_EQ(signalDetectAgent.hasFirstNoneZero_, false);
+    EXPECT_EQ(signalDetectAgent.lastPeakSignal_, SHRT_MIN);
+    EXPECT_EQ(signalDetectAgent.signalDetected_, true);
+    EXPECT_EQ(signalDetectAgent.dspTimestampGot_, false);
+}
+
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetStreamName  API
 * @tc.type  : FUNC
