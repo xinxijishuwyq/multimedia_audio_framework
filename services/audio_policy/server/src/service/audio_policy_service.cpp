@@ -2554,6 +2554,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
         runningStreamCount++;
         unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(sourceType,
             capturerChangeInfo->clientUID);
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "audioRouterCenter return nullptr");
         DeviceInfo inputDeviceInfo = capturerChangeInfo->inputDeviceInfo;
         if (desc->deviceType_ == DEVICE_TYPE_NONE ||
             (IsSameDevice(desc, inputDeviceInfo) && desc->connectState_ != DEACTIVE_CONNECTED)) {
@@ -2574,9 +2575,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
             }
             needUpdateActiveDevice = false;
         }
-        if (NotifyRecreateCapturerStream(isUpdateActiveDevice, capturerChangeInfo, reason)) {
-            continue;
-        }
+        if (NotifyRecreateCapturerStream(isUpdateActiveDevice, capturerChangeInfo, reason)) {continue;}
         // move sourceoutput to target device
         MoveToNewInputDevice(capturerChangeInfo, desc);
         AddAudioCapturerMicrophoneDescriptor(capturerChangeInfo->sessionId, desc->deviceType_);
