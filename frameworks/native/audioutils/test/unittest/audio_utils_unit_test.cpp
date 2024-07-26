@@ -308,7 +308,7 @@ HWTEST(AudioUtilsUnitTest, UpdateMaxAmplitude_005, TestSize.Level0)
 * @tc.name  : Test CalculateMaxAmplitudeForPCM8Bit API
 * @tc.type  : FUNC
 * @tc.number: CalculateMaxAmplitudeForPCM8Bit_001
-* @tc.desc  : Test CalculateMaxAmplitudeForPCM8Bit interfaceReturn 0 when frame is null arry
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM8Bit interface Return 0 when frame is null arry
 */
 HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM8Bit_001, TestSize.Level0)
 {
@@ -322,7 +322,7 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM8Bit_001, TestSize.Level0)
 * @tc.name  : Test CalculateMaxAmplitudeForPCM8Bit API
 * @tc.type  : FUNC
 * @tc.number: CalculateMaxAmplitudeForPCM8Bit_002
-* @tc.desc  : Test CalculateMaxAmplitudeForPCM8Bit interface Return 0 when nSamples is 0 
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM8Bit interface Return 0 when nSamples is 0
 */
 HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM8Bit_002, TestSize.Level0)
 {
@@ -336,7 +336,7 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM8Bit_002, TestSize.Level0)
 * @tc.name  : Test CalculateMaxAmplitudeForPCM8Bit API
 * @tc.type  : FUNC
 * @tc.number: CalculateMaxAmplitudeForPCM8Bit_003
-* @tc.desc  : Test CalculateMaxAmplitudeForPCM8Bit interface 
+* @tc.desc  : Test CalculateMaxAmplitudeForPCM8Bit interface
 *             Return MaxAmplitude when frame is not null arry and nSamples is not 0
 */
 HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM8Bit_003, TestSize.Level0)
@@ -461,7 +461,7 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM24Bit_003, TestSize.Level0
     char frame[15] = {0x40, 0x00, 0x00, 0x20, 0x00, 0x00, 0x10, 0x00, 0x00, 0x08, 0x00, 0x00, 0x04, 0x00, 0x00};
     uint64_t nSamples = 5;
     float result = CalculateMaxAmplitudeForPCM24Bit(frame, nSamples);
-    EXPECT_NEAR(result, 0.76e-05,0.1e-05);
+    EXPECT_NEAR(result, 0.76e-05, 0.1e-05);
 }
 
 /**
@@ -627,13 +627,10 @@ HWTEST(AudioUtilsUnitTest, SignalDetectAgent_DetectSignalData_001, TestSize.Leve
 {
     int32_t buffer[10] = {0};
     size_t bufferLen = 0;
-    
     struct SignalDetectAgent signalDetectAgent;
     bool ret = signalDetectAgent.DetectSignalData(buffer, bufferLen);
     EXPECT_EQ(ret, false);
-
 }
-
 /**
 * @tc.name  : Test SignalDetectAgent::DetectSignalData API
 * @tc.type  : FUNC
