@@ -232,7 +232,7 @@ public:
     AudioAdapterInfo() = default;
     virtual ~AudioAdapterInfo() = default;
 
-    PipeInfo *GetPipeByName(std::string &pipeName);
+    PipeInfo *GetPipeByName(const std::string &pipeName);
     AudioPipeDeviceInfo *GetDeviceInfoByDeviceType(DeviceType deviceType);
 
     std::string adapterName_ = STR_INIT;

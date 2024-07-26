@@ -351,9 +351,11 @@ bool AudioPolicyService::Init(void)
     bool ret = audioPolicyConfigParser_.LoadConfiguration();
     if (!ret) {
         WriteServiceStartupError("Audio Policy Config Load Configuration failed");
+        isPolicyConfigParsered_ = true;
     }
     CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Policy Config Load Configuration failed");
     ret = audioPolicyConfigParser_.Parse();
+    isPolicyConfigParsered_ = true;
     if (!ret) {
         WriteServiceStartupError("Audio Config Parse failed");
     }
@@ -4324,6 +4326,8 @@ bool AudioPolicyService::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo 
     if (devType == DEVICE_TYPE_SPEAKER || devType == DEVICE_TYPE_MIC) {
         AddAudioDevice(moduleInfo, devType);
     }
+
+    isPrimaryMicModuleInfoLoaded_ = true;
     return true;
 }
 
@@ -6688,44 +6692,39 @@ void AudioPolicyService::RemoveAudioCapturerMicrophoneDescriptor(int32_t uid)
     }
 }
 
-int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, SourceInfo &targetInfo)
+int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, StreamPropInfo &targetInfo,
+    SourceType &targetSourceType)
 {
-    if (primaryMicModuleInfo_.supportedRate_.empty() || primaryMicModuleInfo_.supportedChannels_.empty()) {
+    const PipeInfo *pipeInfoPtr = nullptr;
+    if (adapterInfoMap_.count(AdaptersType::TYPE_PRIMARY) > 0) {
+        pipeInfoPtr = adapterInfoMap_.at(AdaptersType::TYPE_PRIMARY).GetPipeByName(PIPE_PRIMARY_INPUT);
+    }
+    CHECK_AND_RETURN_RET_LOG(pipeInfoPtr != nullptr, ERROR, "pipeInfoPtr is null");
+
+    const auto &streamPropInfoList = pipeInfoPtr->streamPropInfos_;
+
+    if (streamPropInfoList.empty()) {
         AUDIO_ERR_LOG("supportedRate or supportedChannels is empty");
         return ERROR;
     }
-    uint32_t highestSupportedRate = *(primaryMicModuleInfo_.supportedRate_.rbegin());
-    uint32_t highestSupportedChannels = *(primaryMicModuleInfo_.supportedChannels_.rbegin());
-    SourceType targetSourceType;
-    uint32_t targetRate;
-    uint32_t targetChannels;
+    StreamPropInfo targetStreamPropInfo = *streamPropInfoList.begin();
     if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION
         || sessionInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
         targetSourceType = sessionInfo.sourceType;
-        targetRate = sessionInfo.rate;
-        targetChannels = sessionInfo.channels;
-        if (primaryMicModuleInfo_.supportedRate_.count(targetRate) == 0) {
-            AUDIO_DEBUG_LOG("targetRate: %{public}u is not supported rate, using highestSupportedRate: %{public}u",
-                targetRate, highestSupportedRate);
-            targetRate = highestSupportedRate;
-        }
-        if (primaryMicModuleInfo_.supportedChannels_.count(targetChannels) == 0) {
-            AUDIO_DEBUG_LOG(
-                "targetChannels: %{public}u is not supported rate, using highestSupportedChannels: %{public}u",
-                targetChannels, highestSupportedChannels);
-            targetChannels = highestSupportedChannels;
+        for (const auto &streamPropInfo : streamPropInfoList) {
+            if (sessionInfo.channels == streamPropInfo.channelLayout_
+                && sessionInfo.rate == streamPropInfo.sampleRate_) {
+                targetStreamPropInfo = streamPropInfo;
+                break;
+            }
         }
     } else if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_CALL) {
         targetSourceType = SOURCE_TYPE_VOICE_CALL;
-        targetRate = highestSupportedRate;
-        targetChannels = highestSupportedChannels;
     } else {
         // For normal sourcetype, continue to use the default value
         targetSourceType = SOURCE_TYPE_MIC;
-        targetRate = highestSupportedRate;
-        targetChannels = highestSupportedChannels;
     }
-    targetInfo = {targetSourceType, targetRate, targetChannels};
+    targetInfo = targetStreamPropInfo;
     return SUCCESS;
 }
 
@@ -6755,27 +6754,30 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
 int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo,
     AudioStreamInfo streamInfo)
 {
+    CHECK_AND_RETURN_RET_LOG(isPolicyConfigParsered_ && isPrimaryMicModuleInfoLoaded_, ERROR,
+        "policyConfig not loaded");
     if (sessionIdisRemovedSet_.count(sessionID) > 0) {
         sessionIdisRemovedSet_.erase(sessionID);
         AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " had already been removed earlier", sessionID);
         return SUCCESS;
     }
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
-        SourceInfo targetInfo;
-        int32_t res = FetchTargetInfoForSessionAdd(sessionInfo, targetInfo);
+        StreamPropInfo targetInfo;
+        SourceType sourcetype;
+        int32_t res = FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, sourcetype);
         CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res,
             "FetchTargetInfoForSessionAdd error, maybe device not support recorder");
         bool isSourceLoaded = !sessionWithNormalSourceType_.empty();
         if (!isSourceLoaded) {
             auto moduleInfo = primaryMicModuleInfo_;
-            ClassType curClassType = classStrToEnum[moduleInfo.className];
-            for (auto&[classType, moduleInfoList] : deviceClassInfo_) {
-                CHECK_AND_CONTINUE_LOG(curClassType == classType, "module class name unmatch.");
-                RectifyModuleInfo(moduleInfo, moduleInfoList, targetInfo);
-                break;
-            }
-            AUDIO_INFO_LOG("rate:%{public}s, channels:%{public}s, bufferSize:%{public}s",
-                moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str());
+            // current layout represents the number of channel. This will need to be modify in the future.
+            moduleInfo.channels = std::to_string(targetInfo.channelLayout_);
+            moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
+            moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
+            moduleInfo.format = targetInfo.format_;
+            AUDIO_INFO_LOG("rate:%{public}s, channels:%{public}s, bufferSize:%{public}s format:%{public}s",
+                moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str(),
+                moduleInfo.format.c_str());
             OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
             audioPolicyManager_.SetDeviceActive(currentActiveInputDevice_.deviceType_,
                 moduleInfo.name, true, INPUT_DEVICES_FLAG);
