@@ -506,7 +506,6 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_001, TestSize.Level0
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_EQ(result, 0);
 }
-
 /**
 * @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
 * @tc.type  : FUNC
@@ -520,7 +519,6 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_002, TestSize.Level0
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_NEAR(result, 0.875, 0.1);
 }
-
 /**
 * @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
 * @tc.type  : FUNC
@@ -529,13 +527,11 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_002, TestSize.Level0
 */
 HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_003, TestSize.Level0)
 {
-
     int32_t frame[4] ={0X3FFFFFF, 0X7FFFFFF, 0X1FFFFFFF, 0X3FFFFFFF};
     uint64_t nSamples =4;
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_NEAR(result, 0.5, 0.1);
 }
-
 /**
 * @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
 * @tc.type  : FUNC
@@ -550,7 +546,6 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_004, TestSize.Level0
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_EQ(result, 0);
 }
-
 /**
 * @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
 * @tc.type  : FUNC
@@ -564,7 +559,6 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_005, TestSize.Level0
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_NEAR(result, 0.875, 0.1);
 }
-
 /**
 * @tc.name  : Test GetFormatByteSize API
 * @tc.type  : FUNC
@@ -590,7 +584,6 @@ HWTEST(AudioUtilsUnitTest, GetFormatByteSize_002, TestSize.Level0)
     int32_t formatByteSize = GetFormatByteSize(format);
     EXPECT_EQ(formatByteSize, 2);
 }
-
 /**
 * @tc.name  : Test GetFormatByteSize API
 * @tc.type  : FUNC
@@ -603,7 +596,6 @@ HWTEST(AudioUtilsUnitTest, GetFormatByteSize_003, TestSize.Level0)
     int32_t formatByteSize = GetFormatByteSize(format);
     EXPECT_EQ(formatByteSize, 3);
 }
-
 /**
 * @tc.name  : Test GetFormatByteSize API
 * @tc.type  : FUNC
