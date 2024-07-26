@@ -537,6 +537,16 @@ void AudioPolicyService::Deinit(void)
         calculateLoopSafeTime_.reset();
         calculateLoopSafeTime_ = nullptr;
     }
+    if (safeVolumeDialogThrd_ != nullptr && safeVolumeDialogThrd_->joinable()) {
+        safeVolumeDialogThrd_->join();
+        safeVolumeDialogThrd_.reset();
+        safeVolumeDialogThrd_ = nullptr;
+    }
+    if (RecoveryDevicesThread_ != nullptr && RecoveryDevicesThread_->joinable()) {
+        RecoveryDevicesThread_->join();
+        RecoveryDevicesThread_.reset();
+        RecoveryDevicesThread_ = nullptr;
+    }
 
     return;
 }
