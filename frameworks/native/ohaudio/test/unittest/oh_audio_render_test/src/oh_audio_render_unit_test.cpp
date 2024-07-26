@@ -1518,5 +1518,296 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_006, TestSize.Le
 
     CleanupAudioResources(builder, audioRenderer);
 }
+/**
+ * @tc.name  : Test OH_AudioRenderer_GetChannelCount API via illegal state.
+ * @tc.number: OH_Audio_Render_GetChannelCount_001
+ * @tc.desc  : Test OH_AudioRenderer_GetChannelCount interface with nullptr audioRenderer.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetChannelCount_001, TestSize.Level0)
+{
+    int32_t channelCount = 0;
+    OH_AudioStream_Result result = OH_AudioRenderer_GetChannelCount(nullptr, &channelCount);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+}
+/**
+ * @tc.name  : Test OH_AudioRenderer_GetChannelCount API via legal state.
+ * @tc.number: OH_AudioRenderer_GetChannelCount_002
+ * @tc.desc  : Test OH_AudioRenderer_GetChannelCount interface. Returns AUDIOSTREAM_SUCCESS.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetChannelCount_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    int32_t channelCount = 0;
+    result = OH_AudioRenderer_GetChannelCount(audioRenderer, &channelCount);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+/**
+ * @tc.name  : Test OH_AudioRenderer_GetTimestamp API via legal state.
+ * @tc.number: OH_AudioRenderer_GetTimestamp_002
+ * @tc.desc  : Test OH_AudioRenderer_GetTimestamp interface. Returns  AUDIOSTREAM_ERROR_INVALID_PARAM
+ *             if GetAudioTime error
+ */
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetTimestamp_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    clockid_t clockId = CLOCK_MONOTONIC;
+    int64_t framePosition = 0;
+    int64_t timestamp = 0;
+
+    result = OH_AudioRenderer_GetTimestamp(audioRenderer, clockId, &framePosition, &timestamp);
+
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+/**
+ * @tc.name  : Test OH_AudioRenderer_GetTimestamp API via legal state.
+ * @tc.number: OH_AudioRenderer_GetTimestamp_003
+ * @tc.desc  : Test OH_AudioRenderer_GetTimestamp interface. Returns  AUDIOSTREAM_ERROR_INVALID_PARAM
+ *             if audioRenderer is nullptr.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetTimestamp_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    clockid_t clockId = CLOCK_MONOTONIC;
+    int64_t framePosition = 0;
+    int64_t timestamp = 0;
+
+    result = OH_AudioRenderer_GetTimestamp(nullptr, clockId, &framePosition, &timestamp);
+
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_GetTimestamp API via legal state.
+ * @tc.number: OH_AudioRenderer_GetTimestamp_004
+ * @tc.desc  : Test OH_AudioRenderer_GetTimestamp interface. Returns  AUDIOSTREAM_ERROR_INVALID_PARAM
+ *             when clockId is CLOCK_REALTIME instead of CLOCK_MONOTONIC .
+ */
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetTimestamp_004, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    clockid_t clockId = CLOCK_REALTIME;
+    int64_t framePosition = 0;
+    int64_t timestamp = 0;
+
+    result = OH_AudioRenderer_GetTimestamp(audioRenderer, clockId, &framePosition, &timestamp);
+
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_GetFrameSizeInCallback API via legal state.
+ * @tc.number: OH_AudioRenderer_GetFrameSizeInCallback_001
+ * @tc.desc  : Test OH_AudioRenderer_GetFrameSizeInCallback interface. Returns  AUDIOSTREAM_ERROR_INVALID_PARAM
+ *             if audioRenderer is nullptr.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetFrameSizeInCallback_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    int32_t frameSize = 0;
+
+    result = OH_AudioRenderer_GetFrameSizeInCallback(nullptr, &frameSize);
+
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_GetFrameSizeInCallback API via legal state.
+ * @tc.number: OH_AudioRenderer_GetFrameSizeInCallback_002
+ * @tc.desc  : Test OH_AudioRenderer_GetFrameSizeInCallback interface. Returns  AUDIOSTREAM_SUCCESS
+ *             if all is right.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetFrameSizeInCallback_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    int32_t frameSize = 0;
+
+    result = OH_AudioRenderer_GetFrameSizeInCallback(audioRenderer, &frameSize);
+
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_GetSpeed API via legal state.
+ * @tc.number: OH_AudioRenderer_GetSpeed_001
+ * @tc.desc  : Test OH_AudioRenderer_GetSpeed interface. Returns  AUDIOSTREAM_ERROR_INVALID_PARAM
+ *             if audioRenderer is nullptr.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetSpeed_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    float speed = 1.0 ;
+
+    result = OH_AudioRenderer_GetSpeed(nullptr, &speed);
+
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_GetSpeed API via legal state.
+ * @tc.number: OH_AudioRenderer_GetSpeed_002
+ * @tc.desc  : Test OH_AudioRenderer_GetSpeed interface. Returns  AUDIOSTREAM_SUCCESS
+ *             if all is right.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetSpeed_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    float speed = 1.0 ;
+
+    result = OH_AudioRenderer_GetSpeed(audioRenderer, &speed);
+
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_SetSpeed API via legal state.
+ * @tc.number: OH_AudioRenderer_SetSpeed_001
+ * @tc.desc  : Test OH_AudioRenderer_SetSpeed interface. Returns  AUDIOSTREAM_ERROR_INVALID_PARAM
+ *             if audioRenderer is nullptr.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_SetSpeed_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    float speed = 1.0 ;
+
+    result = OH_AudioRenderer_SetSpeed(nullptr, speed);
+
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_SetSpeed API via legal state.
+ * @tc.number: OH_AudioRenderer_SetSpeed_002
+ * @tc.desc  : Test OH_AudioRenderer_SetSpeed interface. Returns  AUDIOSTREAM_SUCCESS
+ *             if all is right.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_SetSpeed_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    float speed = 1.0;
+
+    result = OH_AudioRenderer_SetSpeed(audioRenderer, speed);
+
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    float expSpeed ;
+    result =OH_AudioRenderer_GetSpeed(audioRenderer, &expSpeed);
+    EXPECT_EQ(speed, expSpeed);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_SetSilentModeAndMixWithOthers API via legal state.
+ * @tc.number: OH_AudioRenderer_SetSilentModeAndMixWithOthers_001
+ * @tc.desc  : Test OH_AudioRenderer_SetSilentModeAndMixWithOthers interface. Returns  AUDIOSTREAM_ERROR_INVALID_PARAM
+ *             if audioRenderer is nullptr.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_SetSilentModeAndMixWithOthers_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    bool on = true;
+    result = OH_AudioRenderer_SetSilentModeAndMixWithOthers(nullptr, on);
+
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_SetSilentModeAndMixWithOthers API via legal state.
+ * @tc.number: OH_AudioRenderer_SetSilentModeAndMixWithOthers_002
+ * @tc.desc  : Test OH_AudioRenderer_SetSilentModeAndMixWithOthers interface. Returns  AUDIOSTREAM_SUCCESS
+ *             if all is right.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_SetSilentModeAndMixWithOthers_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    bool on = true;
+    result = OH_AudioRenderer_SetSilentModeAndMixWithOthers(audioRenderer, on);
+
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_GetSilentModeAndMixWithOthers API via legal state.
+ * @tc.number: OH_AudioRenderer_GetSilentModeAndMixWithOthers_001
+ * @tc.desc  : Test OH_AudioRenderer_GetSilentModeAndMixWithOthers interface. Returns  AUDIOSTREAM_ERROR_INVALID_PARAM
+ *             if audioRenderer is nullptr.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetSilentModeAndMixWithOthers_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    bool on = true;
+    result = OH_AudioRenderer_GetSilentModeAndMixWithOthers(nullptr, &on);
+
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_GetSilentModeAndMixWithOthers API via legal state.
+ * @tc.number: OH_AudioRenderer_GetSilentModeAndMixWithOthers_002
+ * @tc.desc  : Test OH_AudioRenderer_GetSilentModeAndMixWithOthers interface. Returns  AUDIOSTREAM_SUCCESS
+ *             if renderer is not nullptr .
+ */
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetSilentModeAndMixWithOthers_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    bool on = true;
+    result = OH_AudioRenderer_SetSilentModeAndMixWithOthers(audioRenderer, on);
+    result = OH_AudioRenderer_GetSilentModeAndMixWithOthers(audioRenderer, &on);
+
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
 } // namespace AudioStandard
 } // namespace OHOS
