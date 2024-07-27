@@ -6775,9 +6775,11 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
             moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
             moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
             moduleInfo.format = targetInfo.format_;
-            AUDIO_INFO_LOG("rate:%{public}s, channels:%{public}s, bufferSize:%{public}s format:%{public}s",
+            moduleInfo.sourceType = std::to_string(sourcetype);
+            AUDIO_INFO_LOG("rate:%{public}s, channels:%{public}s, bufferSize:%{public}s format:%{public}s, "
+                "sourcetype: %{public}s",
                 moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str(),
-                moduleInfo.format.c_str());
+                moduleInfo.format.c_str(), moduleInfo.sourceType.c_str());
             OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
             audioPolicyManager_.SetDeviceActive(currentActiveInputDevice_.deviceType_,
                 moduleInfo.name, true, INPUT_DEVICES_FLAG);

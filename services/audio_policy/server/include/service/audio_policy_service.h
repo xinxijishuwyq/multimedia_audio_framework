@@ -1073,7 +1073,6 @@ private:
 
     AudioModuleInfo primaryMicModuleInfo_ = {};
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
-    // sort by channels and samplerate
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 
