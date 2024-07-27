@@ -2397,12 +2397,8 @@ bool AudioPolicyService::NotifyRecreateDirectStream(std::unique_ptr<AudioRendere
     const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("current pipe type is:%{public}d", rendererChangeInfo->rendererInfo.pipeType);
-    if (IsDirectSupportedDevice(rendererChangeInfo->outputDeviceInfo.deviceType)
-        && rendererChangeInfo->rendererInfo.pipeType == PIPE_TYPE_DIRECT_MUSIC) {
-        if (rendererChangeInfo->outputDeviceInfo.isArmUsbDevice) {
-            AUDIO_INFO_LOG("normal stream,is arm device");
-            return false;
-        }
+    if (IsDirectSupportedDevice(rendererChangeInfo->outputDeviceInfo.deviceType) &&
+        rendererChangeInfo->rendererInfo.pipeType == PIPE_TYPE_DIRECT_MUSIC) {
         AUDIO_DEBUG_LOG("direct stream changed to normal.");
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
             AUDIO_FLAG_DIRECT, reason);
