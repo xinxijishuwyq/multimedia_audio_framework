@@ -226,7 +226,9 @@ int32_t PaRendererStreamImpl::Flush()
         return ERR_OPERATION_FAILED;
     }
     Trace trace("PaRendererStreamImpl::InitAudioEffectChainDynamic");
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(effectSceneName_);
+    if (effectMode_ == EFFECT_DEFAULT) {
+        AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(effectSceneName_);
+    }
     pa_operation_unref(operation);
     return SUCCESS;
 }
