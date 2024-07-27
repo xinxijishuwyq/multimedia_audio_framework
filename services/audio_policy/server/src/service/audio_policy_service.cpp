@@ -416,7 +416,7 @@ void AudioPolicyService::CreateRecoveryThread()
     if (RecoveryDevicesThread_ != nullptr) {
         RecoveryDevicesThread_->detach();
     }
-    RecoveryDevicesThread_ = std::make_unique<std::thread>(&AudioPolicyService::RecoveryPerferredDevices, this);
+    RecoveryDevicesThread_ = std::make_unique<std::thread>([this] { this->RecoveryPerferredDevices(); });
     pthread_setname_np(RecoveryDevicesThread_->native_handle(), "APSRecovery");
 }
 
@@ -3147,7 +3147,10 @@ int32_t AudioPolicyService::ActivateNormalNewDevice(DeviceType deviceType, bool 
                 "Invalid port %{public}s",
                 sinkPortName.c_str());
             audioPolicyManager_.SetSinkMute(sinkPortName, true);
-            std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, sinkPortName, deviceType);
+            auto switchFirThread = [this, muteDuration, sinkPortName, deviceType] {
+                this->KeepPortMute(muteDuration, sinkPortName, deviceType);
+            };
+            std::thread switchThread(switchFirThread);
             switchThread.detach();
             int32_t beforSwitchDelay = 300000; // 300 ms
             usleep(beforSwitchDelay);
@@ -5467,7 +5470,7 @@ int32_t AudioPolicyService::CheckActiveMusicTime()
 void AudioPolicyService::CreateCheckMusicActiveThread()
 {
     if (calculateLoopSafeTime_ == nullptr) {
-        calculateLoopSafeTime_ = std::make_unique<std::thread>(&AudioPolicyService::CheckActiveMusicTime, this);
+        calculateLoopSafeTime_ = std::make_unique<std::thread>([this] { this->CheckActiveMusicTime(); });
         pthread_setname_np(calculateLoopSafeTime_->native_handle(), "OS_AudioPolicySafe");
     }
 }
@@ -5484,7 +5487,7 @@ void AudioPolicyService::CreateSafeVolumeDialogThread()
     }
 
     AUDIO_INFO_LOG("create thread begin");
-    safeVolumeDialogThrd_ = std::make_unique<std::thread>(&AudioPolicyService::ShowDialog, this);
+    safeVolumeDialogThrd_ = std::make_unique<std::thread>([this] { this->ShowDialog(); });
     pthread_setname_np(safeVolumeDialogThrd_->native_handle(), "OS_AudioSafeDialog");
     isSafeVolumeDialogShowing_.store(true);
     AUDIO_INFO_LOG("create thread end");
@@ -6307,7 +6310,8 @@ int32_t AudioPolicyService::DynamicUnloadModule(const AudioPipeType pipeType)
     switch (pipeType) {
         case PIPE_TYPE_OFFLOAD:
             if (isOffloadOpened_.load()) {
-                std::thread unloadOffloadThrd(&AudioPolicyService::UnloadOffloadModule, this);
+                auto unloadFirOffloadThrd = [this] { this->UnloadOffloadModule(); };
+                std::thread unloadOffloadThrd(unloadFirOffloadThrd);
                 unloadOffloadThrd.detach();
             }
             break;
@@ -6401,8 +6405,9 @@ const sptr<IStandardAudioService> RegisterBluetoothDeathCallback()
         // register death recipent
         sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb(std::bind(&AudioPolicyService::BluetoothServiceCrashedCallback,
-                std::placeholders::_1));
+            asDeathRecipient->SetNotifyCb([] (pid_t pid) {
+                AudioPolicyService::BluetoothServiceCrashedCallback(pid);
+            });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_ERR_LOG("failed to add deathRecipient");

@@ -545,8 +545,7 @@ const sptr<IStandardAudioService> CapturerInClientInner::GetAudioServerProxy()
         // register death recipent to restore proxy
         sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb(std::bind(&CapturerInClientInner::AudioServerDied,
-                std::placeholders::_1));
+            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioServerDied(pid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_ERR_LOG("GetAudioServerProxy: failed to add deathRecipient");
@@ -1050,7 +1049,7 @@ int32_t CapturerInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
     capturerMode_ = captureMode;
 
     // init callbackLoop_
-    callbackLoop_ = std::thread(&CapturerInClientInner::ReadCallbackFunc, this);
+    callbackLoop_ = std::thread([this] { this->ReadCallbackFunc(); });
     pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioReadCB");
 
     std::unique_lock<std::mutex> threadStartlock(statusMutex_);

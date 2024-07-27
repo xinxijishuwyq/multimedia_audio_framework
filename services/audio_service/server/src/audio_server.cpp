@@ -1857,7 +1857,7 @@ void AudioServer::RegisterPolicyServerDeathRecipient()
         CHECK_AND_RETURN_LOG(samgr != nullptr, "Failed to obtain system ability manager");
         sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_POLICY_SERVICE_ID);
         CHECK_AND_RETURN_LOG(object != nullptr, "Policy service unavailable");
-        deathRecipient_->SetNotifyCb(std::bind(&AudioServer::AudioServerDied, this, std::placeholders::_1));
+        deathRecipient_->SetNotifyCb([this] (pid_t pid) { this->AudioServerDied(pid); });
         bool result = object->AddDeathRecipient(deathRecipient_);
         if (!result) {
             AUDIO_ERR_LOG("Failed to add deathRecipient");

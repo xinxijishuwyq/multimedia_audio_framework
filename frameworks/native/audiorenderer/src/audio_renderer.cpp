@@ -1654,7 +1654,7 @@ void RendererPolicyServiceDiedCallback::OnAudioPolicyServiceDied()
     if (restoreThread_ != nullptr) {
         restoreThread_->detach();
     }
-    restoreThread_ = std::make_unique<std::thread>(&RendererPolicyServiceDiedCallback::RestoreTheadLoop, this);
+    restoreThread_ = std::make_unique<std::thread>([this] { this->RestoreTheadLoop(); });
     pthread_setname_np(restoreThread_->native_handle(), "OS_ARPSRestore");
 }
 

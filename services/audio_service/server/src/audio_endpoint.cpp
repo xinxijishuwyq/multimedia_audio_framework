@@ -633,10 +633,10 @@ bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
 
     endpointStatus_ = UNLINKED;
     isInited_.store(true);
-    endpointWorkThread_ = std::thread(&AudioEndpointInner::RecordEndpointWorkLoopFuc, this);
+    endpointWorkThread_ = std::thread([this] { this->RecordEndpointWorkLoopFuc(); });
     pthread_setname_np(endpointWorkThread_.native_handle(), "OS_AudioEpLoop");
 
-    updatePosTimeThread_ = std::thread(&AudioEndpointInner::AsyncGetPosTime, this);
+    updatePosTimeThread_ = std::thread([this] { this->AsyncGetPosTime(); });
     pthread_setname_np(updatePosTimeThread_.native_handle(), "OS_AudioEpUpdate");
 
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
@@ -717,10 +717,10 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
 
     endpointStatus_ = UNLINKED;
     isInited_.store(true);
-    endpointWorkThread_ = std::thread(&AudioEndpointInner::EndpointWorkLoopFuc, this);
+    endpointWorkThread_ = std::thread([this] { this->EndpointWorkLoopFuc(); });
     pthread_setname_np(endpointWorkThread_.native_handle(), "OS_AudioEpLoop");
 
-    updatePosTimeThread_ = std::thread(&AudioEndpointInner::AsyncGetPosTime, this);
+    updatePosTimeThread_ = std::thread([this] { this->AsyncGetPosTime(); });
     pthread_setname_np(updatePosTimeThread_.native_handle(), "OS_AudioEpUpdate");
 
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
