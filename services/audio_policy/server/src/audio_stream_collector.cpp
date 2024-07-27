@@ -558,7 +558,7 @@ int32_t AudioStreamCollector::UpdateRendererPipeInfo(const int32_t sessionId, co
 
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
         if ((*it)->sessionId == sessionId && (*it)->rendererInfo.pipeType != pipeType) {
-            AUDIO_DEBUG_LOG("sessionId %{public}d update pipeType: old %{public}d, new %{public}d",
+            AUDIO_INFO_LOG("sessionId %{public}d update pipeType: old %{public}d, new %{public}d",
                 sessionId, (*it)->rendererInfo.pipeType, pipeType);
             (*it)->rendererInfo.pipeType = pipeType;
             pipeTypeUpdated = true;

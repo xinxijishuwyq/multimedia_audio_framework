@@ -427,6 +427,11 @@ public:
      * Update Effect BtOffload Supported state.
      */
     virtual void UpdateEffectBtOffloadSupported(const bool &isSupported) = 0;
+
+    /**
+     * Set Sink Mute For Switch Device.
+     */
+    virtual int32_t SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -493,6 +498,7 @@ private:
     int HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply);
     int HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply);
+    int HandleSetSinkMuteForSwitchDevice(MessageParcel &data, MessageParcel &reply);
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
