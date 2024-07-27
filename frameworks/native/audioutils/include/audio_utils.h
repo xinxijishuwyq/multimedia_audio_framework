@@ -112,6 +112,7 @@ public:
 
 class PermissionUtil {
 public:
+    static bool VerifyIsShell();
     static bool VerifyIsSystemApp();
     static bool VerifySelfPermission();
     static bool VerifySystemPermission();
