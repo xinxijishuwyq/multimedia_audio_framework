@@ -7124,6 +7124,9 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
                 desc.macAddress_ == currentActiveDevice_.macAddress_) {
                 Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
+            } else if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+                desc.macAddress_ == currentActiveDevice_.macAddress_) {
+                Bluetooth::AudioHfpManager::DisconnectSco();
             }
 #endif
         } else {
