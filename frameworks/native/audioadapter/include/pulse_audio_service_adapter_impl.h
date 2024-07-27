@@ -15,8 +15,8 @@
 
 #ifndef ST_PULSEAUDIO_AUDIO_SERVICE_ADAPTER_H
 #define ST_PULSEAUDIO_AUDIO_SERVICE_ADAPTER_H
-#include <unordered_map>
 #include <mutex>
+#include "safe_map.h"
 
 #include <pulse/pulseaudio.h>
 #include <vector>
@@ -86,8 +86,8 @@ private:
     static constexpr uint32_t PA_CONNECT_RETRY_SLEEP_IN_MICRO_SECONDS = 500000;
     pa_context *mContext = NULL;
     pa_threaded_mainloop *mMainLoop = NULL;
-    static std::unordered_map<uint32_t, uint32_t> sinkIndexSessionIDMap;
-    static std::unordered_map<uint32_t, uint32_t> sourceIndexSessionIDMap;
+    static SafeMap<uint32_t, uint32_t> sinkIndexSessionIDMap;
+    static SafeMap<uint32_t, uint32_t> sourceIndexSessionIDMap;
     std::mutex lock_;
     bool isSetDefaultSink_ = false;
     bool isSetDefaultSource_ = false;
