@@ -1238,9 +1238,19 @@ void  AudioAdapterManager::CheckAndDealMuteStatus(const DeviceType &deviceType, 
         bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
         AUDIO_INFO_LOG("fist boot ringer mode:%{public}d, stream ring mute state:%{public}d", ringerMode_,
             muteStateForStreamRing);
+        // set stream mute status to mem.
+        if (currentActiveDevice_ == deviceType) {
+            volumeDataMaintainer_.SetStreamMuteStatus(streamType, muteStateForStreamRing);
+        }
         volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, muteStateForStreamRing);
     } else if (!volumeDataMaintainer_.GetMuteStatus(deviceType, streamType)) {
+        if (currentActiveDevice_ == deviceType) {
+            volumeDataMaintainer_.SetStreamMuteStatus(streamType, false);
+        }
         volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, false);
+    }
+    if (currentActiveDevice_ == deviceType) {
+        SetVolumeDb(streamType);
     }
 }
 
@@ -1262,6 +1272,9 @@ void AudioAdapterManager::CloneMuteStatusMap(void)
             }
             bool muteStatus = TransferByteArrayToType<int>(value.Data());
             // clone data to VolumeToShareData
+            if (currentActiveDevice_ == deviceType) {
+                volumeDataMaintainer_.SetStreamMuteStatus(streamType, muteStatus);
+            }
             volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, muteStatus);
         }
     }
@@ -1289,6 +1302,7 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
                 continue;
             }
             volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, muteStateForStreamRing);
+            SetStreamMute(streamType, muteStateForStreamRing);
         }
     }
     return true;
