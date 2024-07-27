@@ -2340,9 +2340,6 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
 bool AudioPolicyService::IsFastFromA2dpToA2dp(const std::unique_ptr<AudioDeviceDescriptor> &desc,
     const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_INFO_LOG("Old device type: %{public}d, old device id: %{public}d, new deviceid: %{public}d",
-        rendererChangeInfo->outputDeviceInfo.deviceType, rendererChangeInfo->outputDeviceInfo.deviceId,
-        desc->deviceId_);
     if (rendererChangeInfo->outputDeviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP &&
         rendererChangeInfo->rendererInfo.originalFlag == AUDIO_FLAG_MMAP &&
         rendererChangeInfo->outputDeviceInfo.deviceId != desc->deviceId_) {
