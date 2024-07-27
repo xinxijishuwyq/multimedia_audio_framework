@@ -211,7 +211,12 @@ class OHAudioRenderer {
         std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
         std::shared_ptr<OHAudioRendererDeviceChangeCallbackWithInfo> audioRendererDeviceChangeCallbackWithInfo_;
         std::shared_ptr<OHRendererPositionCallback> rendererPositionCallback_;
-        WriteDataCallbackType writeDataCallbackType_ = CALLBACKS_ON_WRITE_DATA;
+        WriteDataCallbackType writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
+
+        void SetWriteDataCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData,
+            AudioEncodingType encodingType);
+        void SetInterruptCallback(RendererCallback rendererCallbacks, void *userData);
+        void SetErrorCallback(RendererCallback rendererCallbacks, void *userData);
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
