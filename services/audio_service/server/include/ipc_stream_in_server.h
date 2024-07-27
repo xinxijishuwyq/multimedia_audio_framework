@@ -120,7 +120,7 @@ private:
     int32_t ConfigCapturer();
 
 private:
-    uint32_t clientTid_;
+    uint32_t clientTid_ = 0;
     std::string clientBundleName_;
     bool clientThreadPriorityRequested_ = false;
     AudioProcessConfig config_;
