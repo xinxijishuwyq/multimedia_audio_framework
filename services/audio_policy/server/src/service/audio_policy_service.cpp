@@ -7439,6 +7439,9 @@ int32_t AudioPolicyService::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt 
 {
     FetchDevice(true, reason);
     FetchDevice(false, reason);
+
+    // update a2dp offload
+    UpdateA2dpOffloadFlagForAllStream();
     return SUCCESS;
 }
 
