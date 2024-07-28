@@ -3452,8 +3452,8 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     if (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE && (usage == MEDIA || usage == ALL_USAGE)) {
         audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
-    if ((audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE && audioDescriptor->deviceCategory_ != BT_WATCH) &&
-        (usage == VOICE || usage == ALL_USAGE)) {
+    if ((audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE && audioDescriptor->deviceCategory_ != BT_WATCH &&
+        audioDescriptor->deviceCategory_ != BT_SOUNDBOX) && (usage == VOICE || usage == ALL_USAGE)) {
         audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
 }
