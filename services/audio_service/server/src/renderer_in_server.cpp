@@ -201,8 +201,13 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             stateListener->OnOperationHandled(FLUSH_STREAM, 0);
             break;
         case OPERATION_DRAINED:
-            status_ = I_STATUS_STARTED;
-            stateListener->OnOperationHandled(DRAIN_STREAM, 0);
+            // Client's StopAudioStream will call Drain first and then Stop. If server's drain times out,
+            // Stop will be completed first. After a period of time, when Drain's callback goes here,
+            // state of server should not be changed to STARTED while the client state is Stopped.
+            if (status_ == I_STATUS_DRAINING) {
+                status_ = I_STATUS_STARTED;
+                stateListener->OnOperationHandled(DRAIN_STREAM, 0);
+            }
             afterDrain = true;
             break;
         case OPERATION_RELEASED:
