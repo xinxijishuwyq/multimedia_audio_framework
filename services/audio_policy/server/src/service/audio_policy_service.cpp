@@ -2561,7 +2561,6 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
         runningStreamCount++;
         unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(sourceType,
             capturerChangeInfo->clientUID);
-        CHECK_AND_CONTINUE_LOG(desc != nullptr, "audioRouterCenter return nullptr");
         DeviceInfo inputDeviceInfo = capturerChangeInfo->inputDeviceInfo;
         if (desc->deviceType_ == DEVICE_TYPE_NONE ||
             (IsSameDevice(desc, inputDeviceInfo) && desc->connectState_ != DEACTIVE_CONNECTED)) {
@@ -2569,9 +2568,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
             continue;
         }
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            BluetoothScoFetch(std::move(desc), std::move(capturerChangeInfos), sourceType);
-            desc = std::move_if_noexcept(desc);
-            capturerChangeInfos = std::move_if_noexcept(capturerChangeInfos);
+            BluetoothScoFetch(desc, capturerChangeInfos, sourceType);
         }
         if (needUpdateActiveDevice) {
             if (!IsSameDevice(desc, currentActiveInputDevice_)) {
@@ -2596,19 +2593,17 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
     }
 }
 
-void AudioPolicyService::BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> desc,
-    vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos, SourceType sourceType)
+void AudioPolicyService::BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> &desc,
+    vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType)
 {
     int32_t ret;
-    unique_ptr<AudioDeviceDescriptor> localDesc = std::move(desc);
-    vector<unique_ptr<AudioCapturerChangeInfo>> localCapturerChangeInfos = std::move(capturerChangeInfos);
     if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
-        ret = ScoInputDeviceFetchedForRecongnition(true, localDesc->macAddress_);
+        ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_);
     } else {
-        ret = HandleScoInputDeviceFetched(localDesc, localCapturerChangeInfos);
+        ret = HandleScoInputDeviceFetched(desc, capturerChangeInfos);
     }
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet",
-        GetEncryptAddr(localDesc->macAddress_).c_str());
+        GetEncryptAddr(desc->macAddress_).c_str());
 }
 
 void AudioPolicyService::BluetoothScoDisconectForRecongnition()
