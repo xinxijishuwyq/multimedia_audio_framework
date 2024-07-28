@@ -541,9 +541,9 @@ void AudioPolicyService::Deinit(void)
     return;
 }
 
-int32_t AudioPolicyService::SetAudioSessionCallback(AudioSessionCallback *callback)
+int32_t AudioPolicyService::SetAudioStreamRemovedCallback(AudioStreamRemovedCallback *callback)
 {
-    return audioPolicyManager_.SetAudioSessionCallback(callback);
+    return audioPolicyManager_.SetAudioStreamRemovedCallback(callback);
 }
 
 int32_t AudioPolicyService::GetMaxVolumeLevel(AudioVolumeType volumeType) const

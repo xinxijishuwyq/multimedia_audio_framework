@@ -116,8 +116,8 @@ void AudioPolicyServer::OnStart()
 
     interruptService_->SetCallbackHandler(audioPolicyServerHandler_);
 
-    if (audioPolicyService_.SetAudioSessionCallback(this)) {
-        AUDIO_ERR_LOG("SetAudioSessionCallback failed");
+    if (audioPolicyService_.SetAudioStreamRemovedCallback(this)) {
+        AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
     }
     audioPolicyService_.Init();
 
@@ -1329,7 +1329,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     return ERR_UNKNOWN;
 }
 
-void AudioPolicyServer::OnSessionRemoved(const uint64_t sessionID)
+void AudioPolicyServer::OnAudioStreamRemoved(const uint64_t sessionID)
 {
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionID, false);

@@ -244,10 +244,10 @@ void AudioAdapterManager::Deinit(void)
     return audioServiceAdapter_->Disconnect();
 }
 
-int32_t AudioAdapterManager::SetAudioSessionCallback(AudioSessionCallback *callback)
+int32_t AudioAdapterManager::SetAudioStreamRemovedCallback(AudioStreamRemovedCallback *callback)
 {
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "SetAudioSessionCallback callback == nullptr");
+        "SetAudioStreamRemovedCallback callback == nullptr");
 
     sessionCallback_ = callback;
     return SUCCESS;
