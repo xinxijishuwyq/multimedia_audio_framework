@@ -20,7 +20,7 @@
 #include "audio_info.h"
 #include "audio_policy_manager.h"
 #include "audio_policy_ipc_interface_code.h"
-#include "audio_session_callback.h"
+#include "audio_stream_removed_callback.h"
 #include "audio_volume_config.h"
 #include "volume_data_maintainer.h"
 
@@ -82,7 +82,7 @@ public:
 
     virtual AudioRingerMode GetRingerMode() const = 0;
 
-    virtual int32_t SetAudioSessionCallback(AudioSessionCallback *callback) = 0;
+    virtual int32_t SetAudioStreamRemovedCallback(AudioStreamRemovedCallback *callback) = 0;
 
     virtual int32_t SuspendAudioDevice(std::string &name, bool isSuspend) = 0;
 

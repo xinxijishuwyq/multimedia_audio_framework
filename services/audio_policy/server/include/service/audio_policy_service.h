@@ -264,7 +264,7 @@ public:
 
     void LoadEffectLibrary();
 
-    int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
+    int32_t SetAudioStreamRemovedCallback(AudioStreamRemovedCallback *callback);
 
     void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
 

@@ -36,7 +36,7 @@ public:
      */
     virtual std::pair<float, int32_t> OnGetVolumeDbCb(AudioStreamType streamType) = 0;
 
-    virtual void OnSessionRemoved(const uint64_t sessionID) = 0;
+    virtual void OnAudioStreamRemoved(const uint64_t sessionID) = 0;
 
     virtual ~AudioServiceAdapterCallback() {}
 };
