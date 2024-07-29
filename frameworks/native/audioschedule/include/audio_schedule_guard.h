@@ -24,49 +24,19 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioScheduleGuard {
 public:
-    AudioScheduleGuard(uint32_t pid, uint32_t tid, const std::string &bundleName = "audio_server")
-        : pid_(pid), tid_(tid), bundleName_(bundleName)
-    {
-        ScheduleReportData(pid, tid, bundleName.c_str());
-        isReported_ = true;
-    }
+    AudioScheduleGuard(uint32_t pid, uint32_t tid, const std::string &bundleName = "audio_server");
 
     AudioScheduleGuard(const AudioScheduleGuard&) = delete;
 
     AudioScheduleGuard operator=(const AudioScheduleGuard&) = delete;
 
-    AudioScheduleGuard(AudioScheduleGuard&& audioScheduleGuard)
-        : pid_(audioScheduleGuard.pid_), tid_(audioScheduleGuard.tid_),
-        bundleName_(std::move(audioScheduleGuard.bundleName_)), isReported_(audioScheduleGuard.isReported_)
-    {
-        audioScheduleGuard.isReported_ = false;
-    }
+    AudioScheduleGuard(AudioScheduleGuard&& audioScheduleGuard);
 
     bool operator==(const AudioScheduleGuard&) const = default;
 
-    AudioScheduleGuard& operator=(AudioScheduleGuard&& audioScheduleGuard)
-    {
-        if (*this == audioScheduleGuard) {
-            audioScheduleGuard.isReported_ = false;
-            return *this;
-        }
+    AudioScheduleGuard& operator=(AudioScheduleGuard&& audioScheduleGuard);
 
-        AudioScheduleGuard temp(std::move(*this));
-        this->bundleName_ = std::move(audioScheduleGuard.bundleName_);
-        this->isReported_ = audioScheduleGuard.isReported_;
-        this->pid_ = audioScheduleGuard.pid_;
-        this->tid_ = audioScheduleGuard.tid_;
-        audioScheduleGuard.isReported_ = false;
-
-        return *this;
-    }
-
-    ~AudioScheduleGuard()
-    {
-        if (isReported_) {
-            UnscheduleReportData(pid_, tid_, bundleName_.c_str());
-        }
-    }
+    ~AudioScheduleGuard();
 private:
     uint32_t pid_;
     uint32_t tid_;

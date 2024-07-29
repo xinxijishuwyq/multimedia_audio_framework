@@ -15,6 +15,7 @@
 #include "audio_thread_task.h"
 #include <pthread.h>
 #include "ipc_skeleton.h"
+#include "audio_schedule_guard.h"
 
 namespace OHOS {
 namespace AudioStandard {

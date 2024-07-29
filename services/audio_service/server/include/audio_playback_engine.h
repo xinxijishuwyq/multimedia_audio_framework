@@ -19,7 +19,6 @@
 #include "i_renderer_stream.h"
 #include "audio_renderer_sink.h"
 #include "audio_thread_task.h"
-#include "audio_schedule_guard.h"
 
 namespace OHOS {
 namespace AudioStandard {
