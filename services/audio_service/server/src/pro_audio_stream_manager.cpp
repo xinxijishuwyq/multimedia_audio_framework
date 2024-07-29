@@ -18,7 +18,7 @@
 #include "pro_audio_stream_manager.h"
 #include <sstream>
 #include <atomic>
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_errors.h"
 #include "policy_handler.h"
 #include "pro_renderer_stream_impl.h"

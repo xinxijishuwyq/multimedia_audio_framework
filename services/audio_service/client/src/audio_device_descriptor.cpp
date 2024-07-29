@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_system_manager.h"
 
 namespace OHOS {

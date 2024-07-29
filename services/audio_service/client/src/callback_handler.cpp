@@ -18,7 +18,7 @@
 #include "callback_handler.h"
 #include "event_handler.h"
 #include "event_runner.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

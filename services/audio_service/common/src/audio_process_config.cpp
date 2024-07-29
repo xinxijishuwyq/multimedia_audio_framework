@@ -21,7 +21,7 @@
 #include <sstream>
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

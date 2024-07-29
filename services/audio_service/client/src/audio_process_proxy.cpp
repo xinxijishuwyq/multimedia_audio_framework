@@ -17,7 +17,7 @@
 
 #include "audio_process_cb_stub.h"
 #include "audio_process_proxy.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_errors.h"
 
 namespace OHOS {

@@ -21,7 +21,7 @@
 #include "memory"
 #include <dlfcn.h>
 #include "unistd.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_effect_server.h"
 #include "media_monitor_manager.h"
 

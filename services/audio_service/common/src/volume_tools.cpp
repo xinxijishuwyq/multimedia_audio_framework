@@ -18,7 +18,7 @@
 #include "volume_tools.h"
 #include "volume_tools_c.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 
 namespace {
 static const int32_t UINT8_SHIFT = 0x80;

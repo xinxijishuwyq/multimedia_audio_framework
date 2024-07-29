@@ -27,7 +27,7 @@
 #include "pa_adapter_tools.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_utils.h"
 #include "i_audio_renderer_sink.h"
 

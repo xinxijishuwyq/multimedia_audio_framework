@@ -16,7 +16,7 @@
 #define LOG_TAG "AudioCapturerProxyObj"
 
 #include "audio_capturer_proxy_obj.h"
-#include "audio_log.h"
+#include "audio_capturer_log.h"
 
 using namespace std;
 
