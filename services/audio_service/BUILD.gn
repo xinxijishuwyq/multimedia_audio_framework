@@ -37,6 +37,7 @@ ohos_shared_library("audio_common") {
 
   include_dirs = [
     "common/include",
+    "../../frameworks/native/audioschedule/include",
     "../../interfaces/inner_api/native/audiocommon/include",
   ]
 
@@ -62,7 +63,10 @@ ohos_shared_library("audio_common") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
   }
 
-  deps = [ "../../frameworks/native/audioutils:audio_utils" ]
+  deps = [
+    "../../frameworks/native/audioschedule:audio_schedule",
+    "../../frameworks/native/audioutils:audio_utils",
+  ]
 
   external_deps = [
     "c_utils:utils",
@@ -80,6 +84,9 @@ ohos_shared_library("audio_common") {
     include_dirs += [ "//third_party/pulseaudio/speex/include" ]
     external_deps += [ "pulseaudio:speexresampler" ]
   }
+
+  cflags_cc = cflags
+  cflags_cc += [ "-std=c++20" ]
 
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
@@ -262,6 +269,9 @@ config("audio_service_config") {
   if (audio_framework_feature_daudio_enable == true) {
     cflags += [ "-DDAUDIO_ENABLE" ]
   }
+
+  cflags_cc = cflags
+  cflags_cc += [ "-std=c++20" ]
 }
 
 ohos_shared_library("audio_process_service") {
