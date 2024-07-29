@@ -48,13 +48,13 @@ const int32_t DURATIONMS = 40; // 40:fade out latency ms
 
 static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
     void* userData,
-    void *buffer,
+    void* buffer,
     int32_t bufferLen)
 {
     return 0;
 }
 
-static void AudioRendererOnMarkReachedCb(OH_AudioRenderer* renderer, uint32_t samplePos, void* userData)
+static void AudioRendererOnMarkReachedCb(OH_AudioRenderer *renderer, uint32_t samplePos, void* userData)
 {
     g_flag = samplePos;
     printf("AudioRendererOnMarkReachedCb samplePos: %d \n", samplePos);
@@ -62,8 +62,8 @@ static void AudioRendererOnMarkReachedCb(OH_AudioRenderer* renderer, uint32_t sa
 
 class OHAudioRendererWriteCallbackMock {
 public:
-    void OnWriteData(OH_AudioRenderer* renderer, void* userData,
-    void *buffer,
+    void OnWriteData(OH_AudioRenderer *renderer, void* userData,
+    void* buffer,
     int32_t bufferLen)
     {
         exeCount_++;
@@ -86,9 +86,9 @@ private:
     std::atomic<uint32_t> exeCount_ = 0;
 };
 
-static int32_t AudioRendererOnWriteDataMock(OH_AudioRenderer* renderer,
+static int32_t AudioRendererOnWriteDataMock(OH_AudioRenderer *renderer,
     void* userData,
-    void *buffer,
+    void* buffer,
     int32_t bufferLen)
 {
     OHAudioRendererWriteCallbackMock *mockPtr = static_cast<OHAudioRendererWriteCallbackMock*>(userData);
@@ -97,17 +97,17 @@ static int32_t AudioRendererOnWriteDataMock(OH_AudioRenderer* renderer,
     return 0;
 }
 
-static OH_AudioData_Callback_Result OnWriteDataCallbackWithValidData(OH_AudioRenderer* renderer,
+static OH_AudioData_Callback_Result OnWriteDataCallbackWithValidData(OH_AudioRenderer *renderer,
     void* userData,
-    void *buffer,
+    void* buffer,
     int32_t bufferLen)
 {
     return AUDIO_DATA_CALLBACK_RESULT_VALID;
 }
 
-static OH_AudioData_Callback_Result OnWriteDataCallbackWithInvalidData(OH_AudioRenderer* renderer,
+static OH_AudioData_Callback_Result OnWriteDataCallbackWithInvalidData(OH_AudioRenderer *renderer,
     void* userData,
-    void *buffer,
+    void* buffer,
     int32_t bufferLen)
 {
     return AUDIO_DATA_CALLBACK_RESULT_INVALID;
@@ -122,9 +122,9 @@ public:
     } writeDataCallbackType;
 };
 
-static int32_t OnWriteDataCbMock(OH_AudioRenderer* renderer,
+static int32_t OnWriteDataCbMock(OH_AudioRenderer *renderer,
     void* userData,
-    void *buffer,
+    void* buffer,
     int32_t bufferLer)
 {
     UserData *u = static_cast<UserData*>(userData);
@@ -132,9 +132,9 @@ static int32_t OnWriteDataCbMock(OH_AudioRenderer* renderer,
     return 0;
 }
 
-static OH_AudioData_Callback_Result OnWriteDataCbWithValidDataMock(OH_AudioRenderer* renderer,
+static OH_AudioData_Callback_Result OnWriteDataCbWithValidDataMock(OH_AudioRenderer *renderer,
     void* userData,
-    void *buffer,
+    void* buffer,
     int32_t bufferLen)
 {
     UserData *u = static_cast<UserData*>(userData);
@@ -142,9 +142,9 @@ static OH_AudioData_Callback_Result OnWriteDataCbWithValidDataMock(OH_AudioRende
     return AUDIO_DATA_CALLBACK_RESULT_VALID;
 }
 
-static OH_AudioData_Callback_Result OnWriteDataCbWithInvalidDataMock(OH_AudioRenderer* renderer,
+static OH_AudioData_Callback_Result OnWriteDataCbWithInvalidDataMock(OH_AudioRenderer *renderer,
     void* userData,
-    void *buffer,
+    void* buffer,
     int32_t bufferLen)
 {
     UserData *u = static_cast<UserData*>(userData);
@@ -1114,8 +1114,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_001, TestSize.L
     std::mutex mutex;
     std::condition_variable cv;
     int32_t count = 0;
-    writeCallbackMock.Install([&count, &mutex, &cv](OH_AudioRenderer* renderer, void* userData,
-        void *buffer,
+    writeCallbackMock.Install([&count, &mutex, &cv](OH_AudioRenderer *renderer, void* userData,
+        void* buffer,
         int32_t bufferLen) {
             std::lock_guard lock(mutex);
             cv.notify_one();
@@ -1175,8 +1175,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_002, TestSize.L
     std::mutex mutex;
     std::condition_variable cv;
     int32_t count = 0;
-    writeCallbackMock.Install([&count, &mutex, &cv](OH_AudioRenderer* renderer, void* userData,
-        void *buffer,
+    writeCallbackMock.Install([&count, &mutex, &cv](OH_AudioRenderer *renderer, void* userData,
+        void* buffer,
         int32_t bufferLen) {
             std::lock_guard lock(mutex);
             cv.notify_one();
@@ -1276,8 +1276,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_004, TestSize.L
         std::mutex mutex;
         std::condition_variable cv;
         int32_t count = 0;
-        writeCallbackMock.Install([&count, &mutex, &cv, sleepTimes](OH_AudioRenderer* renderer, void* userData,
-            void *buffer,
+        writeCallbackMock.Install([&count, &mutex, &cv, sleepTimes](OH_AudioRenderer *renderer, void* userData,
+            void* buffer,
             int32_t bufferLen) {
                 std::lock_guard lock(mutex);
                 cv.notify_one();
