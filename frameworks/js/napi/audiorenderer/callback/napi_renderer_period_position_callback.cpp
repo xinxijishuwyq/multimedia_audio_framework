@@ -17,7 +17,7 @@
 
 #include "napi_renderer_period_position_callback.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_renderer_log.h"
 #include "napi_audio_renderer_callback.h"
 
 namespace OHOS {

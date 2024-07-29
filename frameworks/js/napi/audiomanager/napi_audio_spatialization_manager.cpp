@@ -22,7 +22,7 @@
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_manager_log.h"
 #include "audio_utils.h"
 #include "napi_audio_spatialization_manager_callback.h"
 

@@ -24,7 +24,7 @@
 #include "distributed_kv_data_manager.h"
 #include "iaudio_policy_interface.h"
 #include "types.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_volume_config.h"
 #include "volume_data_maintainer.h"
 

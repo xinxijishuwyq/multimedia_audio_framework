@@ -24,7 +24,7 @@
 #include "mutex"
 
 #include "audio_setting_provider.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_info.h"
 
 namespace OHOS {
