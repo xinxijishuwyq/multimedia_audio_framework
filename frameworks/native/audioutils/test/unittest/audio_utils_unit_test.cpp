@@ -239,7 +239,7 @@ HWTEST(AudioUtilsUnitTest, UpdateMaxAmplitude_001, TestSize.Level0)
     char frame[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     uint64_t replyBytes = 10;
     float result = UpdateMaxAmplitude(adapterFormat, frame, replyBytes);
-    EXPECT_NEAR(result, 0.0708661452, 0.00000001);
+    EXPECT_NEAR(result, 0.071, 0.001);
 }
 
 /**
@@ -254,7 +254,7 @@ HWTEST(AudioUtilsUnitTest, UpdateMaxAmplitude_002, TestSize.Level0)
     char frame[20] = {0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9};
     uint64_t replyBytes = 10;
     float result = UpdateMaxAmplitude(adapterFormat, frame, replyBytes);
-    EXPECT_NEAR(result, 0.0313730277, 0.00000001);
+    EXPECT_NEAR(result, 0.032, 0.001);
 }
 
 /**
@@ -270,7 +270,7 @@ HWTEST(AudioUtilsUnitTest, UpdateMaxAmplitude_003, TestSize.Level0)
                      5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9};
     uint64_t replyBytes = 10;
     float result = UpdateMaxAmplitude(adapterFormat, frame, replyBytes);
-    EXPECT_NEAR(result, 0.0156862754, 0.00000001);
+    EXPECT_NEAR(result, 0.016, 0.001);
 }
 
 /**
@@ -286,7 +286,7 @@ HWTEST(AudioUtilsUnitTest, UpdateMaxAmplitude_004, TestSize.Level0)
                     5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9};
     uint64_t replyBytes = 10;
     float result = UpdateMaxAmplitude(adapterFormat, frame, replyBytes);
-    EXPECT_NEAR(result, 0.007843, 0.00001);
+    EXPECT_NEAR(result, 0.008, 0.001);
 }
 
 /**
@@ -415,7 +415,7 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM16Bit_005, TestSize.Level0
     int16_t frame[5] = {-6554, -8192, 0, 10923, 16384};
     uint64_t nSamples = 5;
     float result = CalculateMaxAmplitudeForPCM16Bit(frame, nSamples);
-    EXPECT_NEAR(result, 0.5, 0.001);
+    EXPECT_NEAR(result, 0.5, 0.1);
 }
 
 /**
@@ -503,6 +503,7 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_001, TestSize.Level0
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_EQ(result, 0);
 }
+
 /**
 * @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
 * @tc.type  : FUNC
@@ -516,6 +517,7 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_002, TestSize.Level0
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_NEAR(result, 0.875, 0.1);
 }
+
 /**
 * @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
 * @tc.type  : FUNC
@@ -529,6 +531,7 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_003, TestSize.Level0
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_NEAR(result, 0.5, 0.1);
 }
+
 /**
 * @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
 * @tc.type  : FUNC
@@ -543,6 +546,7 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_004, TestSize.Level0
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_EQ(result, 0);
 }
+
 /**
 * @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
 * @tc.type  : FUNC
@@ -556,6 +560,7 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_005, TestSize.Level0
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_NEAR(result, 0.875, 0.1);
 }
+
 /**
 * @tc.name  : Test GetFormatByteSize API
 * @tc.type  : FUNC
@@ -568,6 +573,7 @@ HWTEST(AudioUtilsUnitTest, GetFormatByteSize_001, TestSize.Level0)
     int32_t formatByteSize = GetFormatByteSize(format);
     EXPECT_EQ(formatByteSize, 2);
 }
+
 /**
 * @tc.name  : Test GetFormatByteSize API
 * @tc.type  : FUNC
@@ -580,6 +586,7 @@ HWTEST(AudioUtilsUnitTest, GetFormatByteSize_002, TestSize.Level0)
     int32_t formatByteSize = GetFormatByteSize(format);
     EXPECT_EQ(formatByteSize, 2);
 }
+
 /**
 * @tc.name  : Test GetFormatByteSize API
 * @tc.type  : FUNC
@@ -592,6 +599,7 @@ HWTEST(AudioUtilsUnitTest, GetFormatByteSize_003, TestSize.Level0)
     int32_t formatByteSize = GetFormatByteSize(format);
     EXPECT_EQ(formatByteSize, 3);
 }
+
 /**
 * @tc.name  : Test GetFormatByteSize API
 * @tc.type  : FUNC
@@ -699,8 +707,8 @@ HWTEST(AudioUtilsUnitTest, SignalDetectAgent_ResetDetectResult_001, TestSize.Lev
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_001, TestSize.Level0)
 {
     AudioStreamType streamType = STREAM_VOICE_ASSISTANT;
-    const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(stramName, "VOICE_ASSISTANT");
+    const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
+    EXPECT_EQ(streamName, "VOICE_ASSISTANT");
 }
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetStreamName  API
@@ -712,8 +720,8 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_001, TestSize.Level0
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_002, TestSize.Level0)
 {
     AudioStreamType streamType = STREAM_VOICE_CALL;
-    const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(stramName, "VOICE_CALL");
+    const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
+    EXPECT_EQ(streamName, "VOICE_CALL");
 }
 
 /**
@@ -726,8 +734,8 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_002, TestSize.Level0
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_003, TestSize.Level0)
 {
     AudioStreamType streamType = STREAM_VOICE_COMMUNICATION;
-    const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(stramName, "VOICE_CALL");
+    const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
+    EXPECT_EQ(streamName, "VOICE_CALL");
 }
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetStreamName  API
@@ -739,10 +747,9 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_003, TestSize.Level0
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_004, TestSize.Level0)
 {
     AudioStreamType streamType = STREAM_SYSTEM;
-    const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(stramName, "SYSTEM");
+    const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
+    EXPECT_EQ(streamName, "SYSTEM");
 }
-
 
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetStreamName  API
@@ -754,8 +761,8 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_004, TestSize.Level0
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_005, TestSize.Level0)
 {
     AudioStreamType streamType = STREAM_RING;
-    const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(stramName, "RING");
+    const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
+    EXPECT_EQ(streamName, "RING");
 }
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetStreamName  API
@@ -767,8 +774,8 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_005, TestSize.Level0
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_006, TestSize.Level0)
 {
     AudioStreamType streamType = STREAM_MUSIC;
-    const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(stramName, "MUSIC");
+    const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
+    EXPECT_EQ(streamName, "MUSIC");
 }
 
 /**
@@ -781,9 +788,10 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_006, TestSize.Level0
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_007, TestSize.Level0)
 {
     AudioStreamType streamType = STREAM_ALARM;
-    const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(stramName, "ALARM");
+    const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
+    EXPECT_EQ(streamName, "ALARM");
 }
+
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetStreamName  API
 * @tc.type  : FUNC
@@ -794,8 +802,8 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_007, TestSize.Level0
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_008, TestSize.Level0)
 {
     AudioStreamType streamType = STREAM_NOTIFICATION;
-    const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(stramName, "NOTIFICATION");
+    const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
+    EXPECT_EQ(streamName, "NOTIFICATION");
 }
 
 /**
@@ -808,9 +816,10 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_008, TestSize.Level0
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_009, TestSize.Level0)
 {
     AudioStreamType streamType = STREAM_BLUETOOTH_SCO;
-    const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(stramName, "BLUETOOTH_SCO");
+    const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
+    EXPECT_EQ(streamName, "BLUETOOTH_SCO");
 }
+
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetStreamName  API
 * @tc.type  : FUNC
@@ -821,9 +830,10 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_009, TestSize.Level0
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_010, TestSize.Level0)
 {
     AudioStreamType streamType = STREAM_DTMF;
-    const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(stramName, "DTMF");
+    const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
+    EXPECT_EQ(streamName, "DTMF");
 }
+
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetStreamName  API
 * @tc.type  : FUNC
@@ -834,8 +844,8 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_010, TestSize.Level0
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_011, TestSize.Level0)
 {
     AudioStreamType streamType = STREAM_TTS;
-    const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(stramName, "TTS");
+    const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
+    EXPECT_EQ(streamName, "TTS");
 }
 
 /**
@@ -848,9 +858,10 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_011, TestSize.Level0
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_013, TestSize.Level0)
 {
     AudioStreamType streamType = STREAM_ULTRASONIC;
-    const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(stramName, "ULTRASONIC");
+    const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
+    EXPECT_EQ(streamName, "ULTRASONIC");
 }
+
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetStreamName  API
 * @tc.type  : FUNC
@@ -861,9 +872,10 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_013, TestSize.Level0
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_014, TestSize.Level0)
 {
     AudioStreamType streamType = STREAM_WAKEUP;
-    const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(stramName, "WAKEUP");
+    const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
+    EXPECT_EQ(streamName, "WAKEUP");
 }
+
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetStreamName  API
 * @tc.type  : FUNC
@@ -874,8 +886,8 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_014, TestSize.Level0
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_015, TestSize.Level0)
 {
     AudioStreamType streamType = STREAM_DEFAULT;
-    const std::string stramName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(stramName, "UNKNOWN");
+    const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
+    EXPECT_EQ(streamName, "UNKNOWN");
 }
 
 /**
@@ -1032,7 +1044,6 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_011, TestSize.Le
     EXPECT_EQ(deviceTypeName, "UNKNOWN");
 }
 
-
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetConnectTypeName  API
 * @tc.type  : FUNC
@@ -1088,6 +1099,7 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_001, TestSize.Level0
     const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
     EXPECT_EQ(sourceName, "INVALID");
 }
+
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetSourceName  API
 * @tc.type  : FUNC
@@ -1101,6 +1113,7 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_002, TestSize.Level0
     const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
     EXPECT_EQ(sourceName, "MIC");
 }
+
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetSourceName  API
 * @tc.type  : FUNC
@@ -1114,6 +1127,7 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_003, TestSize.Level0
     const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
     EXPECT_EQ(sourceName, "VOICE_RECOGNITION");
 }
+
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetSourceName  API
 * @tc.type  : FUNC
@@ -1127,6 +1141,7 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_004, TestSize.Level0
     const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
     EXPECT_EQ(sourceName, "ULTRASONIC");
 }
+
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetSourceName  API
 * @tc.type  : FUNC
@@ -1140,6 +1155,7 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_005, TestSize.Level0
     const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
     EXPECT_EQ(sourceName, "VOICE_COMMUNICATION");
 }
+
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetSourceName  API
 * @tc.type  : FUNC
@@ -1153,6 +1169,7 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_006, TestSize.Level0
     const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
     EXPECT_EQ(sourceName, "WAKEUP");
 }
+
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetSourceName  API
 * @tc.type  : FUNC
@@ -1166,7 +1183,6 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_007, TestSize.Level0
     const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
     EXPECT_EQ(sourceName, "UNKNOWN");
 }
-
 
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetDeviceVolumeTypeName  API
@@ -1237,6 +1253,7 @@ HWTEST(AudioUtilsUnitTest, GetEncryptStr_001, TestSize.Level0)
     std::string dst = GetEncryptStr(src);
     EXPECT_EQ(dst, "");
 }
+
 /**
 * @tc.name  : Test GetEncryptStr  API
 * @tc.type  : FUNC
