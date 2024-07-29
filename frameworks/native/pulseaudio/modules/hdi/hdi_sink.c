@@ -4234,6 +4234,9 @@ static void UserdataFree(struct Userdata *u)
     u->bufferAttr->tempBufIn = NULL;
     u->bufferAttr->tempBufOut = NULL;
 
+    pa_xfree(u->bufferAttr);
+    u->bufferAttr = NULL;
+
     pa_xfree(u);
 
     AUDIO_DEBUG_LOG("UserdataFree done");

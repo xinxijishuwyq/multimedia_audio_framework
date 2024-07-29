@@ -23,6 +23,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+const int32_t DEVICE_SIZE_LIMIT = 100;
 AudioRoutingManagerListenerProxy::AudioRoutingManagerListenerProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardAudioRoutingManagerListener>(impl)
 {
@@ -78,9 +79,10 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioOutputDeviceRefined(
     int32_t result = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
         "OnAudioOutputDeviceRefined callback failed, error %{public}d", result);
-    
+
     descs.clear();
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size < DEVICE_SIZE_LIMIT, ERROR, "reply size reach limit");
     for (int32_t i = 0; i < size; i++) {
         descs.push_back(std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(reply)));
     }
@@ -113,9 +115,10 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioInputDeviceRefined(
     int32_t result = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
         "OnAudioInputDeviceRefined callback failed, error %{public}d", result);
-    
+
     descs.clear();
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size < DEVICE_SIZE_LIMIT, ERROR, "reply size reach limit");
     for (int32_t i = 0; i < size; i++) {
         descs.push_back(std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(reply)));
     }
