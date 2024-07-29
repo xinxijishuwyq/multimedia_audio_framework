@@ -1765,6 +1765,13 @@ int32_t AudioPolicyManager::ActivateAudioConcurrency(const AudioPipeType &pipeTy
     return gsp->ActivateAudioConcurrency(pipeType);
 }
 
+int32_t AudioPolicyManager::InjectInterruption(const std::string networkId, InterruptEvent &event)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->InjectInterruption(networkId, event);
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;
