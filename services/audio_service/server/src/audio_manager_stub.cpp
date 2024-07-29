@@ -86,6 +86,7 @@ const char *g_audioServerCodeStrs[] = {
     "RESTORE_RENDERSINK",
     "LOAD_HDI_EFFECT_MODEL",
     "UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED",
+    "SET_SINK_MUTE_FOR_SWITCH_DEVICE",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -733,6 +734,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleLoadHdiEffectModel(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED):
             return HandleUpdateEffectBtOffloadSupported(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINK_MUTE_FOR_SWITCH_DEVICE):
+            return HandleSetSinkMuteForSwitchDevice(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -869,5 +872,16 @@ int AudioManagerStub::HandleUpdateEffectBtOffloadSupported(MessageParcel &data, 
     UpdateEffectBtOffloadSupported(data.ReadBool());
     return AUDIO_OK;
 }
+
+int AudioManagerStub::HandleSetSinkMuteForSwitchDevice(MessageParcel &data, MessageParcel &reply)
+{
+    const std::string deviceClass = data.ReadString();
+    int32_t duration = data.ReadInt32();
+    int32_t mute = data.ReadBool();
+    int32_t result = SetSinkMuteForSwitchDevice(deviceClass, duration, mute);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

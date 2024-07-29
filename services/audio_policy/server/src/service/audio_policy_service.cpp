@@ -72,7 +72,9 @@ static const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_S = 3; // 3s
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
 static const int64_t SELECT_DEVICE_MUTE_MS = 200000; // 200ms
+static const int64_t SELECT_OFFLOAD_DEVICE_MUTE_MS = 600000; // 600ms
 static const int64_t NEW_DEVICE_AVALIABLE_MUTE_MS = 300000; // 300ms
+static const int64_t NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS = 1000000; // 1s
 static const int64_t ARM_USB_DEVICE_MUTE_MS = 40000; // 40ms
 static const int64_t DEVICE_TYPE_REMOTE_CAST_MS = 40000; // 40ms
 static const int64_t SET_BT_ABS_SCENE_DELAY_MS = 120000; // 120ms
@@ -667,7 +669,7 @@ AudioStreamType AudioPolicyService::OffloadStreamType()
     return offloadSessionID_.has_value() ? GetStreamType(*offloadSessionID_) : STREAM_MUSIC;
 }
 
-void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
+void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType, const std::string &newSinkName)
 {
     Trace trace("AudioPolicyService::SetVolumeForSwitchDevice:" + std::to_string(deviceType));
     // Load volume from KvStore and set volume for each stream type
@@ -682,7 +684,7 @@ void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
 
     if (deviceType == DEVICE_TYPE_SPEAKER || deviceType == DEVICE_TYPE_USB_HEADSET) {
         SetOffloadVolume(OffloadStreamType(), GetSystemVolumeLevel(OffloadStreamType()));
-    } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && newSinkName == OFFLOAD_PRIMARY_SPEAKER) {
         int32_t vol = audioPolicyManager_.IsAbsVolumeScene() ?
             audioPolicyManager_.GetMaxVolumeLevel(OffloadStreamType()) : GetSystemVolumeLevel(OffloadStreamType());
         SetOffloadVolume(OffloadStreamType(), vol);
@@ -1313,6 +1315,8 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkI
         if (sinkName == MCH_PRIMARY_SPEAKER) {
             sinkName = CheckStreamMultichannelMode(sinkInputIds[i].streamId) ? sinkName : PRIMARY_SPEAKER;
         }
+        AUDIO_INFO_LOG("move for session [%{public}d], portName %{public}s pipeType %{public}d",
+            sinkInputIds[i].streamId, sinkName.c_str(), pipeType);
         int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
             "move [%{public}d] to local failed", sinkInputIds[i].streamId);
@@ -2070,8 +2074,13 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
         outputDevices.front()->deviceType_, GetEncryptAddr(outputDevices.front()->macAddress_).c_str(),
         static_cast<int>(reason));
 
+    UpdateEffectDefaultSink(outputDevices.front()->deviceType_);
     DeviceType oldDevice = rendererChangeInfo->outputDeviceInfo.deviceType;
     DeviceType newDevice = outputDevices.front()->deviceType_;
+    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+    streamCollector_.GetPipeType(rendererChangeInfo->sessionId, pipeType);
+    std::string oldSinkname = GetSinkPortName(oldDevice, pipeType);
+    std::string newSinkName = GetSinkPortName(newDevice, pipeType);
 
     UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo,
         new AudioDeviceDescriptor(*outputDevices.front()), true, true);
@@ -2079,10 +2088,9 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
     if (needTriggerCallback) {
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
-        MuteSinkPort(oldDevice, newDevice, reason);
+        if (outputDevices.size() == 1) {MuteSinkPort(oldSinkname, newSinkName, reason);}
     }
 
-    UpdateEffectDefaultSink(newDevice);
     // MoveSinkInputByIndexOrName
     auto ret = (outputDevices.front()->networkId_ == LOCAL_NETWORK_ID)
                 ? MoveToLocalOutputDevice(targetSinkInputs, new AudioDeviceDescriptor(*outputDevices.front()))
@@ -2093,7 +2101,8 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
             rendererChangeInfo->sessionId, outputDevices.front()->deviceType_);
         return;
     }
-    SetVolumeForSwitchDevice(newDevice);
+    SetVolumeForSwitchDevice(outputDevices.front()->deviceType_, newSinkName);
+
     if (isUpdateRouteSupported_ && outputDevices.front()->networkId_ == LOCAL_NETWORK_ID) {
         UpdateRoute(rendererChangeInfo, outputDevices);
     }
@@ -2234,34 +2243,62 @@ void AudioPolicyService::MuteSinkPort(DeviceType deviceType, int32_t duration, b
     switchThread.detach(); // add another sleep before switch local can avoid pop in some case
 }
 
-void AudioPolicyService::MuteSinkPort(DeviceType oldDevice, DeviceType newDevice,
+void AudioPolicyService::MuteSinkPort(const std::string &portName, int32_t duration, bool isSync)
+{
+    if (g_adProxy != nullptr) {
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
+        if (portName == PRIMARY_SPEAKER) {
+            g_adProxy->SetSinkMuteForSwitchDevice("primary", duration, true);
+        } else if (portName == OFFLOAD_PRIMARY_SPEAKER) {
+            g_adProxy->SetSinkMuteForSwitchDevice("offload", duration, true);
+        }
+        IPCSkeleton::SetCallingIdentity(identity);
+    }
+
+    audioPolicyManager_.SetSinkMute(portName, true, isSync);
+    thread switchThread(&AudioPolicyService::KeepPortMute, this, duration, portName, DEVICE_TYPE_NONE);
+    switchThread.detach();
+}
+
+void AudioPolicyService::MuteSinkPort(const std::string &oldSinkname, const std::string &newSinkName,
     AudioStreamDeviceChangeReasonExt reason)
 {
     if (reason.isOverride()) {
-        MuteSinkPort(newDevice, SELECT_DEVICE_MUTE_MS, true);
-        MuteSinkPort(oldDevice, SELECT_DEVICE_MUTE_MS, true);
-        if (oldDevice == DEVICE_TYPE_SPEAKER &&
-            (newDevice == DEVICE_TYPE_BLUETOOTH_A2DP || (newDevice == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_))) {
+        int64_t muteTime = SELECT_DEVICE_MUTE_MS;
+        if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkname == OFFLOAD_PRIMARY_SPEAKER) {
+            muteTime = SELECT_OFFLOAD_DEVICE_MUTE_MS;
+        }
+        MuteSinkPort(newSinkName, SELECT_DEVICE_MUTE_MS, true);
+        MuteSinkPort(oldSinkname, muteTime, true);
+
+        if (oldSinkname == PRIMARY_SPEAKER &&
+            (newSinkName == BLUETOOTH_SPEAKER || (newSinkName == USB_SPEAKER))) {
             usleep(ARM_USB_DEVICE_MUTE_MS); // spk->arm_usb or spk->a2dp sleep 40 ms fix pop
         }
 
-        if (oldDevice == DEVICE_TYPE_REMOTE_CAST) {
+        if (oldSinkname == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
             usleep(DEVICE_TYPE_REMOTE_CAST_MS); // remote cast -> spk or other device 40 ms fix pop
         }
     } else if (reason == AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE) {
-        MuteSinkPort(newDevice, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
-        MuteSinkPort(oldDevice, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
-        if ((oldDevice == DEVICE_TYPE_USB_HEADSET || newDevice == DEVICE_TYPE_USB_HEADSET) && isArmUsbDevice_) {
+        int64_t muteTime = NEW_DEVICE_AVALIABLE_MUTE_MS;
+        if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkname == OFFLOAD_PRIMARY_SPEAKER) {
+            muteTime = NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS;
+        }
+        MuteSinkPort(newSinkName, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
+        MuteSinkPort(oldSinkname, muteTime, true);
+
+        if (oldSinkname == USB_SPEAKER || newSinkName == USB_SPEAKER) {
             usleep(ARM_USB_DEVICE_MUTE_MS); // ->arm_usb or arm_usb-> sleep 40 ms fix pop
         }
     } else if (reason.IsOldDeviceUnavaliable() && audioScene_ == AUDIO_SCENE_DEFAULT) {
-        MuteSinkPort(newDevice, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
-        if (oldDevice == DEVICE_TYPE_REMOTE_CAST) {
+        MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
+        if (oldSinkname == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
             usleep(DEVICE_TYPE_REMOTE_CAST_MS); // remote cast -> spk or other device 40 ms fix pop
         }
-    } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN && oldDevice == DEVICE_TYPE_REMOTE_CAST) {
+    } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN &&
+        oldSinkname == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
         // remote cast -> earpiece 300ms fix sound leak
-        MuteSinkPort(newDevice, NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS, true);
+        MuteSinkPort(newSinkName, NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS, true);
     }
 }
 
@@ -3179,8 +3216,14 @@ int32_t AudioPolicyService::ActivateNormalNewDevice(DeviceType deviceType, bool 
 void AudioPolicyService::KeepPortMute(int32_t muteDuration, std::string portName, DeviceType deviceType)
 {
     Trace trace("AudioPolicyService::KeepPortMute:" + portName + " for " + std::to_string(muteDuration) + "us");
-    AUDIO_INFO_LOG("%{public}d us for device type[%{public}d]", muteDuration, deviceType);
+    AUDIO_INFO_LOG("%{public}d us for device type[%{public}s]", muteDuration, portName.c_str());
     usleep(muteDuration);
+    if (portName == OFFLOAD_PRIMARY_SPEAKER) {
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
+        g_adProxy->SetSinkMuteForSwitchDevice("offload", muteDuration, false);
+        IPCSkeleton::SetCallingIdentity(identity);
+    }
+
     audioPolicyManager_.SetSinkMute(portName, false);
 }
 

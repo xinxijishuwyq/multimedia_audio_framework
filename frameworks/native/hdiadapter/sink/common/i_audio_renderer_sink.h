@@ -105,6 +105,12 @@ public:
         // Only operate on primary for now
         return 0;
     }
+
+    virtual int32_t SetSinkMuteForSwitchDevice(bool mute)
+    {
+        // Only operate on offload for now
+        return 0;
+    }
 };
 
 class IMmapAudioRendererSink : public IAudioRendererSink {
