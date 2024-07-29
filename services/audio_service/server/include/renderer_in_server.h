@@ -102,13 +102,18 @@ private:
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     void ReportDataToResSched(bool isSilent);
     void OtherStreamEnqueue(const BufferDesc &bufferDesc);
+    void StandByCheck();
+    bool ShouldEnableStandBy();
+
+private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
     std::shared_ptr<IRendererStream> stream_ = nullptr;
     uint32_t streamIndex_ = -1;
     std::string traceTag_;
-    IOperation operation_ = OPERATION_INVALID;
     IStatus status_ = I_STATUS_IDLE;
+    bool offloadEnable_ = false;
+    bool standByEnable_ = false;
 
     // for inner-cap
     std::mutex dupMutex_;
@@ -138,12 +143,13 @@ private:
     float oldAppliedVolume_ = MAX_FLOAT_VOLUME;
     std::mutex updateIndexLock_;
     uint32_t underrunCount_ = 0;
+    uint32_t standByCounter_ = 0;
+    int64_t lastWriteTime_ = 0;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
     std::mutex writeLock_;
     FILE *dumpC2S_ = nullptr; // client to server dump file
     std::string dumpFileName_ = "";
-    uint32_t underRunLogFlag_ = 0;
     ManagerType managerType_;
     std::mutex fadeoutLock_;
     int32_t fadeoutFlag_ = 0;

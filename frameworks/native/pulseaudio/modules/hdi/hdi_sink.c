@@ -1371,6 +1371,7 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
 
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
                 AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
+                pa_sink_input_handle_ohos_underrun(sinkIn);
             } else if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
                 PrepareMultiChannelFading(sinkIn, infoIn, si);
                 CheckMultiChannelFadeinIsDone(si, sinkIn);
