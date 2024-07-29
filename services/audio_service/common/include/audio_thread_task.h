@@ -22,7 +22,6 @@
 #include <memory>
 #include <mutex>
 #include "nocopyable.h"
-#include "audio_schedule_guard.h"
 namespace OHOS {
 namespace AudioStandard {
 class __attribute__((visibility("default"))) AudioThreadTask : public NoCopyable {
