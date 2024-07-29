@@ -14,6 +14,7 @@
  */
 #include "audio_thread_task.h"
 #include <pthread.h>
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -130,6 +131,7 @@ void AudioThreadTask::doEmptyJob() {}
 
 void AudioThreadTask::RunJob()
 {
+    AudioScheduleGuard scheduleGuard(getpid(), gettid());
     for (;;) {
         if (state_.load() == RunningState::STARTED) {
             job_();
