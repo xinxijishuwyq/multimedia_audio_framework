@@ -2759,5 +2759,18 @@ void AudioPolicyServer::UnregisterCommonEventReceiver()
         AUDIO_INFO_LOG("unregister bluetooth device name commonevent");
     }
 }
+
+int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, InterruptEvent &event)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_CAST_ENGINE_SA) {
+        AUDIO_ERR_LOG("InjectInterruption callerUid is Error: not cast_engine");
+        return ERROR;
+    }
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
+    InterruptEventInternal interruptEvent { event.eventType, event.forceType, event.hintType, 0.2f};
+    return audioPolicyServerHandler_->SendInterruptEventInternalCallback(interruptEvent);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -156,6 +156,7 @@ private:
     void SetRingerStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
     void GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
+    void InjectInterruptionInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -286,6 +287,7 @@ private:
         &AudioPolicyManagerStub::SetRingerStreamMuteInternal,
         &AudioPolicyManagerStub::SetMicrophoneMutePersistentInternal,
         &AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal,
+        &AudioPolicyManagerStub::InjectInterruptionInternal,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),

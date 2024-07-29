@@ -1536,5 +1536,10 @@ int32_t AudioSystemManager::DisableSafeMediaVolume()
 {
     return AudioPolicyManager::GetInstance().DisableSafeMediaVolume();
 }
+
+int32_t AudioSystemManager::InjectInterruption(const std::string networkId, InterruptEvent &event)
+{
+    return AudioPolicyManager::GetInstance().InjectInterruption(networkId, event);
+}
 } // namespace AudioStandard
 } // namespace OHOS
