@@ -88,6 +88,7 @@ public:
 
     AppInfo GetAppInfo() override final;
     BufferDesc &GetConvertedBuffer() override;
+    int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
 public:
     const AudioProcessConfig processConfig_;
 
@@ -105,6 +106,10 @@ private:
     bool isInited_ = false;
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     std::mutex statusLock_;
+
+    uint32_t clientTid_ = 0;
+    std::string clientBundleName_;
+    bool clientThreadPriorityRequested_ = false;
 
     uint32_t totalSizeInframe_ = 0;
     uint32_t spanSizeInframe_ = 0;

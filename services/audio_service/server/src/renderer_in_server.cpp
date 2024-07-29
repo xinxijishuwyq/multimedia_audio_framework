@@ -201,8 +201,13 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             stateListener->OnOperationHandled(FLUSH_STREAM, 0);
             break;
         case OPERATION_DRAINED:
-            status_ = I_STATUS_STARTED;
-            stateListener->OnOperationHandled(DRAIN_STREAM, 0);
+            // Client's StopAudioStream will call Drain first and then Stop. If server's drain times out,
+            // Stop will be completed first. After a period of time, when Drain's callback goes here,
+            // state of server should not be changed to STARTED while the client state is Stopped.
+            if (status_ == I_STATUS_DRAINING) {
+                status_ = I_STATUS_STARTED;
+                stateListener->OnOperationHandled(DRAIN_STREAM, 0);
+            }
             afterDrain = true;
             break;
         case OPERATION_RELEASED:
@@ -973,7 +978,7 @@ int32_t RendererInServer::UpdateSpatializationState(bool spatializationEnabled, 
 
 int32_t RendererInServer::GetStreamManagerType() const noexcept
 {
-    return managerType_;
+    return managerType_ == DIRECT_PLAYBACK ? AUDIO_DIRECT_MANAGER_TYPE : AUDIO_NORMAL_MANAGER_TYPE;
 }
 
 bool RendererInServer::IsHighResolution() const noexcept
@@ -983,6 +988,15 @@ bool RendererInServer::IsHighResolution() const noexcept
         processConfig_.deviceType != DEVICE_TYPE_USB_HEADSET) {
         AUDIO_INFO_LOG("normal stream,device type:%{public}d", processConfig_.deviceType);
         return false;
+    }
+    if (processConfig_.deviceType == DEVICE_TYPE_USB_HEADSET) {
+        DeviceInfo deviceInfo;
+        bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(processConfig_, deviceInfo);
+        CHECK_AND_RETURN_RET_LOG(result, false, "GetProcessDeviceInfo failed.");
+        if (deviceInfo.isArmUsbDevice) {
+            AUDIO_INFO_LOG("normal stream,device is arm usb");
+            return false;
+        }
     }
     if (processConfig_.streamType != STREAM_MUSIC || processConfig_.streamInfo.samplingRate < SAMPLE_RATE_48000 ||
         processConfig_.streamInfo.format < SAMPLE_S24LE ||

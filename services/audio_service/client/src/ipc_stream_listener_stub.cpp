@@ -42,7 +42,13 @@ int IpcStreamListenerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
         AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
-    return (this->*funcList_[code])(data, reply);
+    switch (code) {
+        case ON_OPERATION_HANDLED:
+            return HandleOnOperationHandled(data, reply);
+        default:
+            AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
 }
 
 int32_t IpcStreamListenerStub::HandleOnOperationHandled(MessageParcel &data, MessageParcel &reply)

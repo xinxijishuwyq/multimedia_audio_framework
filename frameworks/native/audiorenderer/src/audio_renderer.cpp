@@ -787,6 +787,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
     if (ret != 0) {
         AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
     }
+    (void)audioStream_->SetDuckVolume(1.0f);
 
     return result;
 }
@@ -811,7 +812,8 @@ bool AudioRendererPrivate::Stop() const
     if (ret != 0) {
         AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
     }
-
+    (void)audioStream_->SetDuckVolume(1.0f);
+    
     return result;
 }
 
@@ -966,6 +968,7 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
                 AUDIO_DEBUG_LOG("To pause incoming, no need to pause");
             } else if (audioStream_->GetState() == RUNNING) {
                 (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
+                (void)audioStream_->SetDuckVolume(1.0f);
             } else {
                 AUDIO_WARNING_LOG("State of stream is not running.No need to pause");
                 return;
@@ -983,6 +986,7 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
             return; // return, sending callback is taken care in NotifyForcePausedToResume
         case INTERRUPT_HINT_STOP:
             (void)audioStream_->StopAudioStream();
+            (void)audioStream_->SetDuckVolume(1.0f);
             break;
         case INTERRUPT_HINT_DUCK:
             if (!HandleForceDucking(interruptEvent)) {
@@ -992,10 +996,7 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
             isForceDucked_ = true;
             break;
         case INTERRUPT_HINT_UNDUCK:
-            if (!isForceDucked_) {
-                AUDIO_WARNING_LOG("It is not forced ducked, don't unduck or notify app");
-                return;
-            }
+            CHECK_AND_RETURN_LOG(isForceDucked_, "It is not forced ducked, don't unduck or notify app");
             (void)audioStream_->SetDuckVolume(1.0f);
             AUDIO_INFO_LOG("Unduck Volume successfully");
             isForceDucked_ = false;

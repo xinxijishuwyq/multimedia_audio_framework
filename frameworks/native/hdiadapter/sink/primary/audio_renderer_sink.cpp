@@ -70,7 +70,6 @@ const unsigned int FORMAT_4_BYTE = 4;
 const unsigned int TIME_OUT_SECONDS = 10;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
-const int32_t SLEEP_TIME_FOR_RENDER_EMPTY = 300;
 
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 
@@ -225,11 +224,6 @@ private:
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
-    // for device switch
-    std::atomic<bool> inSwitch_ = false;
-    std::atomic<int32_t> renderEmptyFrameCount_ = 0;
-    std::mutex switchMutex_;
-    std::condition_variable switchCV_;
     std::string audioAttrInfo_ = "";
 
 private:
@@ -721,22 +715,6 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     }
     CheckUpdateState(&data, len);
 
-    if (inSwitch_) {
-        Trace traceInSwitch("AudioRendererSinkInner::RenderFrame::inSwitch");
-        writeLen = len;
-        return SUCCESS;
-    }
-    if (renderEmptyFrameCount_ > 0) {
-        Trace traceEmpty("AudioRendererSinkInner::RenderFrame::renderEmpty");
-        if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
-            static_cast<size_t>(len)) != EOK) {
-            AUDIO_WARNING_LOG("call memset_s failed");
-        }
-        renderEmptyFrameCount_--;
-        if (renderEmptyFrameCount_ == 0) {
-            switchCV_.notify_all();
-        }
-    }
     Trace::CountVolume("AudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
 
@@ -809,12 +787,8 @@ int32_t AudioRendererSinkInner::Start(void)
     }
     audioXCollie.CancelXCollieTimer();
 #endif
-    dumpFileName_ = "primary_audiosink_" + std::to_string(attr_.sampleRate) + "_"
+    dumpFileName_ = halName_ + "_audiosink_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
-    if (halName_ == DIRECT_HAL_NAME) {
-        dumpFileName_ = "direct_audiosink_" + std::to_string(attr_.sampleRate) + "_"
-            + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
-    }
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     InitLatencyMeasurement();
@@ -931,6 +905,8 @@ AudioPortPin AudioRendererSinkInner::GetAudioPortPin() const noexcept
             return PIN_OUT_BLUETOOTH_SCO;
         case DEVICE_TYPE_USB_HEADSET:
             return PIN_OUT_USB_EXT;
+        case DEVICE_TYPE_NONE:
+            return PIN_NONE;
         default:
             return PIN_OUT_SPEAKER;
     }
@@ -969,6 +945,10 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
             sink.ext.device.type = PIN_OUT_BLUETOOTH_A2DP;
             sink.ext.device.desc = (char *)"pin_out_bluetooth_a2dp";
             break;
+        case DEVICE_TYPE_NONE:
+            sink.ext.device.type = PIN_NONE;
+            sink.ext.device.desc = (char *)"pin_out_none";
+            break;
         default:
             ret = ERR_NOT_SUPPORTED;
             break;
@@ -979,28 +959,11 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
 
 int32_t AudioRendererSinkInner::SetAudioRoute(DeviceType outputDevice, AudioRoute route)
 {
-    if (currentAudioScene_ != AUDIO_SCENE_PHONE_CALL) {
-        CasWithCompare(renderEmptyFrameCount_, 3, std::less<int32_t>()); // preRender 3 frames
-        std::unique_lock<std::mutex> lock(switchMutex_);
-        switchCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_FOR_RENDER_EMPTY), [this] {
-            if (renderEmptyFrameCount_ == 0) {
-                AUDIO_INFO_LOG("Wait for preRender end.");
-                return true;
-            }
-            AUDIO_DEBUG_LOG("Current renderEmptyFrameCount_ is %{public}d", renderEmptyFrameCount_.load());
-            return false;
-        });
-    }
     int64_t stamp = ClockTime::GetCurNano();
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "SetOutputRoutes failed with null adapter");
-    inSwitch_.store(true);
     int32_t ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
-    inSwitch_.store(false);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_INFO_LOG("deviceType : %{public}d UpdateAudioRoute cost[%{public}" PRId64 "]ms", outputDevice, stamp);
-    if (currentAudioScene_ != AUDIO_SCENE_PHONE_CALL) {
-        CasWithCompare(renderEmptyFrameCount_, 3, std::less<int32_t>()); // render 3 empty frame
-    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
 
     return SUCCESS;
@@ -1606,7 +1569,6 @@ int32_t AudioRendererSinkInner::SetRenderEmpty(int32_t durationUs)
 {
     int32_t emptyCount = durationUs / 1000 / BUFFER_CALC_20MS; // 1000 us->ms
     AUDIO_INFO_LOG("render %{public}d empty", emptyCount);
-    CasWithCompare(renderEmptyFrameCount_, emptyCount, std::less<int32_t>());
     return SUCCESS;
 }
 } // namespace AudioStandard

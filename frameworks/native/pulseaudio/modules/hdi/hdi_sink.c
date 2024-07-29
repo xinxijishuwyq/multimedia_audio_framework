@@ -200,7 +200,6 @@ struct Userdata {
         pa_usec_t hdiPos;
         pa_usec_t hdiPosTs;
         pa_usec_t prewrite;
-        pa_usec_t minWait;
         pa_thread *thread;
         pa_asyncmsgq *msgq;
         bool isHDISinkStarted;
@@ -590,11 +589,6 @@ static void OffloadCallback(const enum RenderCallbackType type, int8_t *userdata
                 pa_atomic_store(&u->offload.hdistate, 0);
                 OffloadLock(u);
                 UpdatePresentationPosition(u);
-                uint64_t cacheLenInHdi = u->offload.pos > u->offload.hdiPos ? u->offload.pos - u->offload.hdiPos : 0;
-                pa_usec_t now = pa_rtclock_now();
-                if (cacheLenInHdi > 200 * PA_USEC_PER_MSEC) { // 200 is min wait length
-                    u->offload.minWait = now + 10 * PA_USEC_PER_MSEC; // 10ms for min wait
-                }
             }
             if (u->thread_mq.inq) {
                 pa_asyncmsgq_post(u->thread_mq.inq, NULL, 0, NULL, 0, NULL, NULL);
@@ -2251,7 +2245,6 @@ static void OffloadReset(struct Userdata *u)
     u->offload.hdiPos = 0;
     u->offload.hdiPosTs = pa_rtclock_now();
     u->offload.prewrite = OFFLOAD_HDI_CACHE1_PLUS * PA_USEC_PER_MSEC;
-    u->offload.minWait = 0;
     u->offload.firstWrite = true;
     u->offload.firstWriteHdi = true;
     u->offload.setHdiBufferSizeNum = OFFLOAD_SET_BUFFER_SIZE_NUM;
@@ -2851,13 +2844,9 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
         int32_t writen = -1;
         int ret = ProcessRenderUseTimingOffload(u, &wait, &nInput, &writen);
         if (ret < 0) {
-            u->offload.minWait = now + 1 * PA_USEC_PER_MSEC; // 1ms for min wait
+            blockTime = 1 * PA_USEC_PER_MSEC; // 1ms for min wait
         } else if (wait) {
-            if (u->offload.firstWrite == true) {
-                blockTime = timeWait * PA_USEC_PER_MSEC; // timeWait ms for first write no data
-            } else {
-                u->offload.minWait = now + timeWait * PA_USEC_PER_MSEC; // timeWait ms for min wait no data
-            }
+            blockTime = (int64_t)(timeWait * PA_USEC_PER_MSEC); // timeWait ms for first write no data
             if (timeWait < 20) { // 20ms max wait no data
                 timeWait++;
             }
@@ -2870,7 +2859,6 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
         if (blockTime < 0) {
             blockTime = OFFLOAD_FRAME_SIZE * PA_USEC_PER_MSEC; // block for one frame
         }
-        u->offload.minWait = now + 1 * PA_USEC_PER_MSEC; // 1ms for min wait
     }
     if (pos < hdiPos) {
         if (pos != 0) {
@@ -2890,13 +2878,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
 static void ThreadFuncRendererTimerOffloadFlag(struct Userdata *u, pa_usec_t now, bool *flagOut, int64_t *sleepForUsec)
 {
     bool flag = PA_SINK_IS_RUNNING(u->sink->thread_info.state);
-    if (flag) {
-        int64_t delta = (int64_t)(u->offload.minWait) - (int64_t)now;
-        if (delta > 0) {
-            flag = false;
-            *sleepForUsec = delta;
-        }
-    } else if (!PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
+    if (!flag && !PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
         OffloadUnlock(u);
     }
     *flagOut = flag;
@@ -3246,7 +3228,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
         if ((ret = pa_rtpoll_run(u->rtpoll)) < 0) {
             AUDIO_ERR_LOG("Thread %{public}s(use timing bus) shutting down, error %{public}d, "
                 "pid %{public}d, tid %{public}d", deviceClass, ret, getpid(), gettid());
-            if (!strcmp(u->sink->name, DEVICE_CLASS_PRIMARY)) {
+            if (!strcmp(deviceClass, DEVICE_CLASS_PRIMARY)) {
                 AUDIO_ERR_LOG("Primary sink's pa_rtpoll_run error, exit");
                 _Exit(0);
             }
@@ -3270,7 +3252,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
         ThreadFuncRendererTimerProcessData(u);
     }
-    UnscheduleThreadInServer(gettid());
+    UnscheduleThreadInServer(getpid(), gettid());
 }
 
 static void ThreadFuncWriteHDIMultiChannel(void *userdata)
@@ -3311,7 +3293,7 @@ static void ThreadFuncWriteHDIMultiChannel(void *userdata)
         }
         pa_asyncmsgq_done(u->multiChannel.dq, 0);
     } while (!quit);
-    UnscheduleThreadInServer(gettid());
+    UnscheduleThreadInServer(getpid(), gettid());
 }
 
 static void ThreadFuncWriteHDI(void *userdata)
@@ -3359,7 +3341,7 @@ static void ThreadFuncWriteHDI(void *userdata)
         }
         pa_asyncmsgq_done(u->primary.dq, 0);
     } while (!quit);
-    UnscheduleThreadInServer(gettid());
+    UnscheduleThreadInServer(getpid(), gettid());
 }
 
 static void TestModeThreadFuncWriteHDI(void *userdata)
@@ -3396,7 +3378,7 @@ static void TestModeThreadFuncWriteHDI(void *userdata)
         }
         pa_asyncmsgq_done(u->primary.dq, 0);
     } while (!quit);
-    UnscheduleThreadInServer(gettid());
+    UnscheduleThreadInServer(getpid(), gettid());
 }
 
 static void SinkUpdateRequestedLatencyCb(pa_sink *s)
@@ -3426,7 +3408,11 @@ static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t
 
     switch (code) {
         case PA_SINK_MESSAGE_GET_LATENCY: {
-            if (u->sink_latency && strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_OFFLOAD)) {
+            if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_OFFLOAD)) {
+                uint64_t pos = u->offload.pos;
+                uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
+                *((uint64_t *)data) = pos > hdiPos ? (pos - hdiPos) : 0;
+            } else if (u->sink_latency) {
                 *((uint64_t *)data) = u->sink_latency * PA_USEC_PER_MSEC;
             } else {
                 uint64_t latency;
@@ -3879,7 +3865,7 @@ static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     return sink;
 
 fail:
-    UnscheduleThreadInServer(gettid());
+    UnscheduleThreadInServer(getpid(), gettid());
     return NULL;
 }
 

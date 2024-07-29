@@ -69,6 +69,7 @@ public:
     virtual ~IAudioProcess() = default;
 
     virtual int32_t RegisterProcessCb(sptr<IRemoteObject> object) = 0;
+    virtual int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) = 0;
 
     // IPC code.
     enum IAudioProcessMsg : uint32_t {
@@ -81,6 +82,7 @@ public:
         ON_REQUEST_HANDLE_INFO,
         ON_RELEASE,
         ON_REGISTER_PROCESS_CB,
+        ON_REGISTER_THREAD_PRIORITY,
         PROCESS_MAX_MSG
     };
 

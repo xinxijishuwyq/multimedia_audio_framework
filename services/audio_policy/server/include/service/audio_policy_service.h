@@ -180,7 +180,7 @@ public:
 
     uint32_t GetSinkLatencyFromXml() const;
 
-    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo);
+    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
 
@@ -273,7 +273,7 @@ public:
 
     void LoadEffectLibrary();
 
-    int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
+    int32_t SetAudioStreamRemovedCallback(AudioStreamRemovedCallback *callback);
 
     void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
 
@@ -452,7 +452,7 @@ public:
 
     void ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
 
-    DistributedRoutingInfo GetDistributedRoutingRoleInfo();
+    DistributedRoutingInfo& GetDistributedRoutingRoleInfo();
 
     void OnScoStateChanged(const std::string &macAddress, bool isConnnected);
 
@@ -661,7 +661,8 @@ private:
     void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
-    bool IsFastFromA2dpToA2dp(const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+    bool IsFastFromA2dpToA2dp(const std::unique_ptr<AudioDeviceDescriptor> &desc,
+        const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         const AudioStreamDeviceChangeReasonExt reason);
 
     void FetchStreamForA2dpMchStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -673,8 +674,8 @@ private:
     void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
-    void BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> desc,
-        vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos, SourceType sourceType);
+    void BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> &desc,
+        vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType);
 
     void BluetoothScoDisconectForRecongnition();
 
@@ -793,7 +794,8 @@ private:
 
     bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
 
-    int32_t FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, SourceInfo &targetInfo);
+    int32_t FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, StreamPropInfo &targetInfo,
+        SourceType &targetSourceType);
 
     void StoreDistributedRoutingRoleInfo(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
 
@@ -993,6 +995,7 @@ private:
     bool enableFastVoip_ = false;
     bool enableDualHalToneState_ = false;
     int32_t enableDualHalToneSessionId_ = -1;
+    int32_t shouldUpdateDeviceDueToDualTone_ = false;
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 
@@ -1081,6 +1084,7 @@ private:
     std::mutex offloadMutex_;
 
     AudioModuleInfo primaryMicModuleInfo_ = {};
+    std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 
@@ -1141,6 +1145,7 @@ private:
     std::condition_variable offloadCloseCondition_;
 
     bool ringerModeMute_ = true;
+    std::atomic<bool> isPolicyConfigParsered_ = false;
     AudioA2dpOffloadManager *audioA2dpOffloadManager_ = nullptr;
 };
 

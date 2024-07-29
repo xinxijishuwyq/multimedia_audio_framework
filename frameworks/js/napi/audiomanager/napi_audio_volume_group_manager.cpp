@@ -25,8 +25,10 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "xpower_event_js.h"
+#endif
 #endif
 
 namespace OHOS {
@@ -298,8 +300,10 @@ napi_value NapiAudioVolumeGroupManager::SetVolume(napi_env env, napi_callback_in
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volLevel failed", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
+#ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     HiviewDFX::ReportXPowerJsStackSysEvent(env, "VOLUME_CHANGE", "SRC=Audio");
+#endif
 #endif
 
     auto executor = [context]() {
@@ -343,8 +347,10 @@ napi_value NapiAudioVolumeGroupManager::SetVolumeWithFlag(napi_env env, napi_cal
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volFlag failed", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
+#ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     HiviewDFX::ReportXPowerJsStackSysEvent(env, "VOLUME_CHANGE", "SRC=Audio");
+#endif
 #endif
 
     auto executor = [context]() {

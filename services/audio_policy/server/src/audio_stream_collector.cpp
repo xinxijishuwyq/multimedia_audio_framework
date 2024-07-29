@@ -191,6 +191,20 @@ bool AudioStreamCollector::ExistStreamForPipe(AudioPipeType pipeType)
     return true;
 }
 
+int32_t AudioStreamCollector::GetRendererDeviceInfo(const int32_t sessionId, DeviceInfo &outputDeviceInfo)
+{
+    const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+        [&sessionId](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
+            return changeInfo->sessionId == sessionId;
+        });
+    if (it == audioRendererChangeInfos_.end()) {
+        AUDIO_WARNING_LOG("invalid session id: %{public}d", sessionId);
+        return ERROR;
+    }
+    outputDeviceInfo = (*it)->outputDeviceInfo;
+    return SUCCESS;
+}
+
 int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamChangeInfo)
 {
     AUDIO_INFO_LOG("Add recording client uid %{public}d sessionId %{public}d",

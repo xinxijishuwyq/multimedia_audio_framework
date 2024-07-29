@@ -62,7 +62,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t OffloadSetVolume(float volume) override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-        DeviceType activeInputDevice) override;
+        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag) override;
     static void *paDaemonThread(void *arg);
     int32_t SetExtraParameters(const std::string& key,
         const std::vector<std::pair<std::string, std::string>>& kvpairs) override;
@@ -192,6 +192,8 @@ private:
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
+    const std::string GetBundleNameFromUid(int32_t uid);
+    bool IsFastBlocked(int32_t uid);
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

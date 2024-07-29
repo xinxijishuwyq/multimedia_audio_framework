@@ -226,7 +226,9 @@ int32_t PaRendererStreamImpl::Flush()
         return ERR_OPERATION_FAILED;
     }
     Trace trace("PaRendererStreamImpl::InitAudioEffectChainDynamic");
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(effectSceneName_);
+    if (effectMode_ == EFFECT_DEFAULT) {
+        AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(effectSceneName_);
+    }
     pa_operation_unref(operation);
     return SUCCESS;
 }
@@ -372,12 +374,18 @@ void PaRendererStreamImpl::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, 
 
 int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
 {
+    Trace trace("PaRendererStreamImpl::GetLatency");
     int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PaRendererStreamImpl::GetLatency", PA_STREAM_IMPL_TIMEOUT,
         [this](void *) {
             AUDIO_ERR_LOG("Connect timeout, trigger signal");
             pa_threaded_mainloop_signal(this->mainloop_, 0);
         }, nullptr, XcollieFlag);
+    pa_usec_t curTimeGetLatency = pa_rtclock_now();
+    if (curTimeGetLatency - preTimeGetLatency_ < 20000 && !firstGetLatency_ && offloadEnable_) { // 20000 cycle time
+        latency = preLatency_;
+        return SUCCESS;
+    }
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -414,6 +422,9 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
     AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", cache latency: %{public}"
         PRIu64 ", algo latency: %{public}u", latency, paLatency, cacheLatency, algorithmLatency);
 
+    preLatency_ = latency;
+    preTimeGetLatency_ = curTimeGetLatency;
+    firstGetLatency_ = false;
     return SUCCESS;
 }
 
@@ -724,8 +735,10 @@ void PaRendererStreamImpl::PAStreamPauseSuccessCb(pa_stream *stream, int32_t suc
     CHECK_AND_RETURN_LOG(streamImpl, "PAStreamWriteCb: userdata is null");
 
     streamImpl->state_ = PAUSED;
-    streamImpl->offloadTsLast_ = 0;
-    streamImpl->ResetOffload();
+    if (streamImpl->offloadEnable_) {
+        streamImpl->offloadTsLast_ = 0;
+        streamImpl->ResetOffload();
+    }
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_PAUSED);

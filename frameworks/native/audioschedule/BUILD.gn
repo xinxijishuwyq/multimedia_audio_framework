@@ -25,6 +25,7 @@ ohos_shared_library("audio_schedule") {
 
   include_dirs = [
     "include",
+    "../audioutils/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
@@ -34,6 +35,8 @@ ohos_shared_library("audio_schedule") {
     "-Wall",
     "-Werror",
   ]
+
+  deps = [ "../audioutils:audio_utils" ]
 
   external_deps = [
     "c_utils:utils",
@@ -46,6 +49,9 @@ ohos_shared_library("audio_schedule") {
     external_deps += [ "resource_schedule_service:ressched_client" ]
     cflags += [ "-DRESSCHE_ENABLE" ]
   }
+
+  cflags_cc = cflags
+  cflags_cc += [ "-std=c++20" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

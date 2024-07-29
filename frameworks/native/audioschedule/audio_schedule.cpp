@@ -26,14 +26,19 @@
 #include "res_sched_client.h"
 #endif
 
+#include "audio_utils.h"
 #include "audio_log.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+using namespace OHOS::AudioStandard;
+
 #ifdef RESSCHE_ENABLE
 const uint32_t AUDIO_QOS_LEVEL = 7;
+const int32_t DEFAULT_QOS_LEVEL = -1;
+const uint32_t REPORTDATA_TIMEOUT = 8;
 static std::mutex g_rssMutex;
 static std::set<uint32_t> g_tidToReport = {};
 constexpr uint32_t g_type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
@@ -53,19 +58,33 @@ void ConfigPayload(uint32_t pid, uint32_t tid, const char *bundleName, int32_t q
 
 void ScheduleReportData(uint32_t pid, uint32_t tid, const char *bundleName)
 {
+    AudioXCollie audioXcollie("RSS::ReportData with qos level 7, pid " + std::to_string(pid) +
+        ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT);
+    Trace trace ("Rss::ReportData with qos level 7");
     AUDIO_INFO_LOG("Report tid %{public}u", tid);
     std::unordered_map<std::string, std::string> mapPayload;
     ConfigPayload(pid, tid, bundleName, AUDIO_QOS_LEVEL, mapPayload);
     OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(g_type, g_value, mapPayload);
 }
 
-void UnscheduleThreadInServer(uint32_t tid)
+void UnscheduleReportData(uint32_t pid, uint32_t tid, const char* bundleName)
+{
+    AudioXCollie audioXcollie("RSS::ReportData with qos level -1, pid " + std::to_string(pid) +
+        ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT);
+    Trace trace ("Rss::ReportData with qos level -1");
+    std::unordered_map<std::string, std::string> mapPayload;
+    ConfigPayload(pid, tid, bundleName, DEFAULT_QOS_LEVEL, mapPayload);
+    OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(g_type, g_value, mapPayload);
+}
+
+void UnscheduleThreadInServer(uint32_t pid, uint32_t tid)
 {
     std::lock_guard<std::mutex> lock(g_rssMutex);
     if (g_tidToReport.find(tid) != g_tidToReport.end()) {
         AUDIO_INFO_LOG("Remove tid in server %{public}u", tid);
         g_tidToReport.erase(tid);
     }
+    UnscheduleReportData(pid, tid, "audio_server");
 }
 
 void ScheduleThreadInServer(uint32_t pid, uint32_t tid)
@@ -91,6 +110,7 @@ void ScheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* b
 void ScheduleThreadInServer(uint32_t pid, uint32_t tid) {};
 void UnscheduleThreadInServer(uint32_t tid) {};
 void OnAddResSchedService(uint32_t audioServerPid) {};
+void UnscheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
 #endif
 
 #ifdef __cplusplus

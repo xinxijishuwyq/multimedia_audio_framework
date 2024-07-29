@@ -102,10 +102,15 @@ ohos_shared_library("audio") {
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
     "hilog:libhilog",
-    "hiview:libxpower_event_js",
     "libuv:uv",
     "napi:ace_napi",
   ]
+
+  if (audio_framework_feature_hiview_enable) {
+    defines += [ "FEATURE_HIVIEW_ENABLE" ]
+    external_deps += [ "hiview:libxpower_event_js" ]
+  }
+
   relative_install_dir = "module/multimedia"
   part_name = "audio_framework"
   subsystem_name = "multimedia"

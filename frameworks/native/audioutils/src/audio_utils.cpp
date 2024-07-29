@@ -191,6 +191,16 @@ void AudioXCollie::CancelXCollieTimer()
     }
 }
 
+bool PermissionUtil::VerifyIsShell()
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
+    if (tokenTypeFlag == Security::AccessToken::TOKEN_SHELL) {
+        return true;
+    }
+    return false;
+}
+
 bool PermissionUtil::VerifyIsSystemApp()
 {
     uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
@@ -224,9 +234,9 @@ bool PermissionUtil::VerifySystemPermission()
     auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
 
     CHECK_AND_RETURN_RET(tokenTypeFlag != Security::AccessToken::TOKEN_NATIVE, true);
-
+#ifdef AUDIO_BUILD_VARIANT_ROOT
     CHECK_AND_RETURN_RET(tokenTypeFlag != Security::AccessToken::TOKEN_SHELL, true);
-
+#endif
     bool tmp = VerifyIsSystemApp();
     CHECK_AND_RETURN_RET(!tmp, true);
 
@@ -633,7 +643,9 @@ FILE *DumpFileUtil::OpenDumpFileInner(std::string para, std::string fileName, Au
         CHECK_AND_RETURN_RET_LOG(dumpFile != nullptr, dumpFile,
             "Error opening pcm dump file:%{public}s", filePath.c_str());
     }
-    AUDIO_INFO_LOG("Dump file path: %{public}s", filePath.c_str());
+    if (dumpFile != nullptr) {
+        AUDIO_INFO_LOG("Dump file path: %{public}s", filePath.c_str());
+    }
     g_lastPara[para] = dumpPara;
     return dumpFile;
 }

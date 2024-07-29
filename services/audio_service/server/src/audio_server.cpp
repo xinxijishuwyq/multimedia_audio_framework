@@ -81,6 +81,7 @@ static const int32_t MODERN_INNER_API_VERSION = 12;
 const int32_t API_VERSION_REMAINDER = 1000;
 static constexpr int32_t VM_MANAGER_UID = 7700;
 static const int32_t FAST_DUMPINFO_LEN = 2;
+static const int32_t BUNDLENAME_LENGTH_LIMIT = 1024;
 constexpr int32_t UID_CAMERA = 1047;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
@@ -257,7 +258,7 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
     if (args.size() == FAST_DUMPINFO_LEN && args[0] == u"-fb") {
         std::string bundleName = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(args[1]);
         std::string result = GetAudioParameter(CHECK_FAST_BLOCK_PREFIX + bundleName);
-        std::string dumpString = "check fast white list :bundle name is" + bundleName + " result is " + result + "\n";
+        std::string dumpString = "check fast list :bundle name is" + bundleName + " result is " + result + "\n";
         return write(fd, dumpString.c_str(), dumpString.size());
     }
     std::queue<std::u16string> argQue;
@@ -826,7 +827,7 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
         if (key == "perf_info") {
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::PERF_INFO, key);
         }
-        if (key.size() > CHECK_FAST_BLOCK_PREFIX.size() &&
+        if (key.size() < BUNDLENAME_LENGTH_LIMIT && key.size() > CHECK_FAST_BLOCK_PREFIX.size() &&
             key.substr(0, CHECK_FAST_BLOCK_PREFIX.size()) == CHECK_FAST_BLOCK_PREFIX) {
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::NONE, key);
         }
@@ -1020,7 +1021,7 @@ int32_t AudioServer::OffloadSetVolume(float volume)
 }
 
 int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-    DeviceType activeInputDevice)
+    DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag)
 {
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
 
@@ -1050,8 +1051,9 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     if (audioRendererSinkInstance == nullptr || !audioRendererSinkInstance->IsInited()) {
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
-        std::vector<DeviceType> deviceTypes;
-        deviceTypes.push_back(activeOutputDevice);
+        if (activeOutputDevice == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
+            activeOutputDevices[0] = DEVICE_TYPE_NONE;
+        }
         audioRendererSinkInstance->SetAudioScene(audioScene, activeOutputDevices);
     }
 
@@ -1093,7 +1095,7 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         }
         if (type == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD &&
             deviceTypes.size() == 1 && deviceTypes[0] == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            deviceTypes[0] = DEVICE_TYPE_SPEAKER;
+            deviceTypes[0] = DEVICE_TYPE_NONE;
         }
     }
     CHECK_AND_RETURN_RET_LOG(audioCapturerSourceInstance != nullptr && audioRendererSinkInstance != nullptr,
@@ -1437,6 +1439,32 @@ bool AudioServer::CheckConfigFormat(const AudioProcessConfig &config)
     return false;
 }
 
+const std::string AudioServer::GetBundleNameFromUid(int32_t uid)
+{
+    AudioXCollie audioXCollie("AudioServer::GetBundleNameFromUid",
+        GET_BUNDLE_TIME_OUT_SECONDS);
+    std::string bundleName {""};
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, "", "systemAbilityManager is nullptr");
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, "", "remoteObject is nullptr");
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, "", "bundleMgrProxy is nullptr");
+
+    bundleMgrProxy->GetNameForUid(uid, bundleName);
+
+    return bundleName;
+}
+
+bool AudioServer::IsFastBlocked(int32_t uid)
+{
+    std::string bundleName = GetBundleNameFromUid(uid);
+    std::string result = GetAudioParameter(CHECK_FAST_BLOCK_PREFIX + bundleName);
+    return result == "true";
+}
+
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config)
 {
     Trace trace("AudioServer::CreateAudioProcess");
@@ -1445,7 +1473,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str());
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 
-    if ((IsNormalIpcStream(resetConfig))) {
+    if ((IsNormalIpcStream(resetConfig)) || IsFastBlocked(resetConfig.appInfo.appUid)) {
         AUDIO_INFO_LOG("Create normal ipc stream.");
         int32_t ret = 0;
         sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(resetConfig, ret);

@@ -60,6 +60,7 @@ constexpr uint32_t STREAM_FLAG_DIRECT = 2;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr int32_t EMPTY_UID = 0;
+constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 
 const float MIN_FLOAT_VOLUME = 0.0f;
@@ -290,6 +291,14 @@ enum CallbackChange : int32_t {
     CALLBACK_CAPTURER_STATE_CHANGE,
     CALLBACK_MICMUTE_STATE_CHANGE,
     CALLBACK_MAX,
+};
+
+constexpr std::array<CallbackChange, CALLBACK_MAX> CALLBACK_ENUMS = {
+    CALLBACK_UNKNOWN,
+    CALLBACK_FOCUS_INFO_CHANGE,
+    CALLBACK_RENDERER_STATE_CHANGE,
+    CALLBACK_CAPTURER_STATE_CHANGE,
+    CALLBACK_MICMUTE_STATE_CHANGE,
 };
 
 struct VolumeEvent {
@@ -1142,20 +1151,15 @@ enum RenderMode {
 
 enum WriteDataCallbackType {
     /**
-     * Use OH_AudioRenderer_Callbacks.
+     * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnWriteData
      * @since 12
      */
-    CALLBACKS_ON_WRITE_DATA = 0,
+    WRITE_DATA_CALLBACK_WITHOUT_RESULT = 0,
     /**
      * Use OH_AudioRenderer_OnWriteDataCallback.
      * @since 12
      */
-    ON_WRITE_DATA_CALLBACK = 1,
-    /**
-     * Use OH_AudioRenderer_WriteDataWithMetadataCallback.
-     * @since 12
-     */
-    WRITE_DATA_WITH_METADATA_CALLBACK = 2
+    WRITE_DATA_CALLBACK_WITH_RESULT = 1
 };
 
 enum PolicyType {

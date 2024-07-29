@@ -24,9 +24,6 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
-#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
-#include "xpower_event_js.h"
-#endif
 #include "napi_audio_spatialization_manager_callback.h"
 
 namespace OHOS {
