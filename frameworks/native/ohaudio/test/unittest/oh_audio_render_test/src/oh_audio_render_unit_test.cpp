@@ -48,7 +48,7 @@ const int32_t DURATIONMS = 40; // 40:fade out latency ms
 
 static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
     void* userData,
-    void* buffer,
+    void *buffer,
     int32_t bufferLen)
 {
     return 0;
@@ -63,7 +63,7 @@ static void AudioRendererOnMarkReachedCb(OH_AudioRenderer* renderer, uint32_t sa
 class OHAudioRendererWriteCallbackMock {
 public:
     void OnWriteData(OH_AudioRenderer* renderer, void* userData,
-    void* buffer,
+    void *buffer,
     int32_t bufferLen)
     {
         exeCount_++;
@@ -88,7 +88,7 @@ private:
 
 static int32_t AudioRendererOnWriteDataMock(OH_AudioRenderer* renderer,
     void* userData,
-    void* buffer,
+    void *buffer,
     int32_t bufferLen)
 {
     OHAudioRendererWriteCallbackMock *mockPtr = static_cast<OHAudioRendererWriteCallbackMock*>(userData);
@@ -99,7 +99,7 @@ static int32_t AudioRendererOnWriteDataMock(OH_AudioRenderer* renderer,
 
 static OH_AudioData_Callback_Result OnWriteDataCallbackWithValidData(OH_AudioRenderer* renderer,
     void* userData,
-    void* buffer,
+    void *buffer,
     int32_t bufferLen)
 {
     return AUDIO_DATA_CALLBACK_RESULT_VALID;
@@ -107,7 +107,7 @@ static OH_AudioData_Callback_Result OnWriteDataCallbackWithValidData(OH_AudioRen
 
 static OH_AudioData_Callback_Result OnWriteDataCallbackWithInvalidData(OH_AudioRenderer* renderer,
     void* userData,
-    void* buffer,
+    void *buffer,
     int32_t bufferLen)
 {
     return AUDIO_DATA_CALLBACK_RESULT_INVALID;
@@ -124,7 +124,7 @@ public:
 
 static int32_t OnWriteDataCbMock(OH_AudioRenderer* renderer,
     void* userData,
-    void* buffer,
+    void *buffer,
     int32_t bufferLer)
 {
     UserData *u = static_cast<UserData*>(userData);
@@ -134,7 +134,7 @@ static int32_t OnWriteDataCbMock(OH_AudioRenderer* renderer,
 
 static OH_AudioData_Callback_Result OnWriteDataCbWithValidDataMock(OH_AudioRenderer* renderer,
     void* userData,
-    void* buffer,
+    void *buffer,
     int32_t bufferLen)
 {
     UserData *u = static_cast<UserData*>(userData);
@@ -144,7 +144,7 @@ static OH_AudioData_Callback_Result OnWriteDataCbWithValidDataMock(OH_AudioRende
 
 static OH_AudioData_Callback_Result OnWriteDataCbWithInvalidDataMock(OH_AudioRenderer* renderer,
     void* userData,
-    void* buffer,
+    void *buffer,
     int32_t bufferLen)
 {
     UserData *u = static_cast<UserData*>(userData);
@@ -154,7 +154,7 @@ static OH_AudioData_Callback_Result OnWriteDataCbWithInvalidDataMock(OH_AudioRen
 
 OH_AudioStreamBuilder* OHAudioRenderUnitTest::CreateRenderBuilder()
 {
-    OH_AudioStreamBuilder* builder;
+    OH_AudioStreamBuilder *builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStreamBuilder_Create(&builder, type);
     return builder;
@@ -163,7 +163,7 @@ OH_AudioStreamBuilder* OHAudioRenderUnitTest::CreateRenderBuilder()
 OH_AudioStreamBuilder* InitRenderBuilder()
 {
     // create builder
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
     // set params and callbacks
     OH_AudioStreamBuilder_SetSamplingRate(builder, SAMPLING_RATE);
@@ -175,7 +175,7 @@ OH_AudioStreamBuilder* InitRenderBuilder()
     return builder;
 }
 
-void CleanupAudioResources(OH_AudioStreamBuilder* builder, OH_AudioRenderer* audioRenderer)
+void CleanupAudioResources(OH_AudioStreamBuilder *builder, OH_AudioRenderer *audioRenderer)
 {
     // stop and release client
     OH_AudioStream_Result result = OH_AudioRenderer_Stop(audioRenderer);
@@ -194,9 +194,9 @@ void CleanupAudioResources(OH_AudioStreamBuilder* builder, OH_AudioRenderer* aud
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Generate_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
 
@@ -211,12 +211,12 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Generate_001, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Generate_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder;
+    OH_AudioStreamBuilder *builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 }
@@ -228,9 +228,9 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Generate_002, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Start_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     result = OH_AudioRenderer_Start(audioRenderer);
@@ -247,9 +247,9 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Start_001, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Start_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     result = OH_AudioRenderer_Start(audioRenderer);
@@ -268,9 +268,9 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Start_002, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Pause_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     result = OH_AudioRenderer_Start(audioRenderer);
 
@@ -288,9 +288,9 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Pause_001, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Pause_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     result = OH_AudioRenderer_Pause(audioRenderer);
@@ -307,9 +307,9 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Pause_002, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Stop_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     result = OH_AudioRenderer_Start(audioRenderer);
 
@@ -327,9 +327,9 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Stop_001, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Stop_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     result = OH_AudioRenderer_Stop(audioRenderer);
@@ -346,9 +346,9 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Stop_002, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Flush_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     result = OH_AudioRenderer_Start(audioRenderer);
 
@@ -366,9 +366,9 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Flush_001, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Flush_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     result = OH_AudioRenderer_Flush(audioRenderer);
@@ -385,9 +385,9 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Flush_002, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Release_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     result = OH_AudioRenderer_Start(audioRenderer);
 
@@ -404,9 +404,9 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Release_001, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Release_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioRenderer_Release(audioRenderer);
@@ -424,8 +424,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Release_002, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioStream_State state;
@@ -443,8 +443,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_001, TestSize.Lev
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioRenderer_Start(audioRenderer);
@@ -464,8 +464,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_002, TestSize.Lev
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_003, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioRenderer_Start(audioRenderer);
@@ -486,8 +486,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_003, TestSize.Lev
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_004, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioRenderer_Start(audioRenderer);
@@ -508,8 +508,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_004, TestSize.Lev
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_005, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioRenderer_Start(audioRenderer);
@@ -530,8 +530,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_005, TestSize.Lev
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetParameter_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioStream_LatencyMode latencyMode = AUDIOSTREAM_LATENCY_MODE_NORMAL;
@@ -548,8 +548,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetParameter_001, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetParameter_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     uint32_t streamId;
@@ -566,8 +566,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetParameter_002, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetSamplingRate_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     int32_t rate;
@@ -585,8 +585,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetSamplingRate_001, TestSize.Leve
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetSampleFormat, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioStream_SampleFormat sampleFormat;
@@ -604,8 +604,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetSampleFormat, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetEncodingType_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioStream_EncodingType encodingType;
@@ -623,8 +623,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetEncodingType_001, TestSize.Leve
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetRendererInfo_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioStream_Usage usage;
@@ -641,8 +641,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetRendererInfo_001, TestSize.Leve
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetRendererPrivacy_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioStream_PrivacyType privacyType;
@@ -659,11 +659,11 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetRendererPrivacy_001, TestSize.
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetRendererPrivacy_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
     OH_AudioStream_Result privacyResult = OH_AudioStreamBuilder_SetRendererPrivacy(builder,
         AUDIO_STREAM_PRIVACY_TYPE_PRIVATE);
     EXPECT_EQ(privacyResult, AUDIOSTREAM_SUCCESS);
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioStream_PrivacyType privacyType;
@@ -719,7 +719,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetEffectMode_001, TestSize.Level
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_001, TestSize.Level0)
 {
-    OH_AudioRenderer* audioRenderer = nullptr;
+    OH_AudioRenderer *audioRenderer = nullptr;
     float volume;
     OH_AudioStream_Result result = OH_AudioRenderer_GetVolume(audioRenderer, &volume);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
@@ -732,8 +732,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_001, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     float volume;
     result = OH_AudioRenderer_GetVolume(audioRenderer, &volume);
@@ -748,8 +748,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_002, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_003, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     float volumeSet = 0.5;
     result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
@@ -768,8 +768,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_003, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_004, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     float volumeSet = 0.5;
     result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
@@ -791,7 +791,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_004, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_001, TestSize.Level0)
 {
-    OH_AudioRenderer* audioRenderer = nullptr;
+    OH_AudioRenderer *audioRenderer = nullptr;
     float volumeSet = 0.5;
     OH_AudioStream_Result result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
@@ -804,8 +804,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_001, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     float volumeSet = 0.5;
     result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
@@ -820,8 +820,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_002, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_003, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     float volumeSet = MIN_AUDIO_VOLUME;
     result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
@@ -839,8 +839,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_003, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_004, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     float volumeSet = -0.5;
     result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
@@ -858,7 +858,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_004, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolumeWithRamp_001, TestSize.Level0)
 {
-    OH_AudioRenderer* audioRenderer = nullptr;
+    OH_AudioRenderer *audioRenderer = nullptr;
     float volumeSet = MIN_AUDIO_VOLUME;
     int32_t durationMs = DURATIONMS;
     OH_AudioStream_Result result = OH_AudioRenderer_SetVolumeWithRamp(audioRenderer, volumeSet, durationMs);
@@ -872,8 +872,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolumeWithRamp_001, TestSize.Le
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolumeWithRamp_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     float volumeSet = MIN_AUDIO_VOLUME;
     int32_t durationMs = DURATIONMS;
@@ -889,7 +889,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolumeWithRamp_002, TestSize.Le
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_001, TestSize.Level0)
 {
-    OH_AudioRenderer* audioRenderer = nullptr;
+    OH_AudioRenderer *audioRenderer = nullptr;
     uint32_t samplePos = 1;
     OH_AudioRenderer_OnMarkReachedCallback callback = AudioRendererOnMarkReachedCb;
     OH_AudioStream_Result result = OH_AudioRenderer_SetMarkPosition(audioRenderer, samplePos, callback, nullptr);
@@ -903,8 +903,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_001, TestSize.Leve
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     uint32_t samplePos = 1;
@@ -921,8 +921,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_002, TestSize.Leve
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_003, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     uint32_t samplePos = 0;
@@ -940,7 +940,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_003, TestSize.Leve
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_004, TestSize.Level0)
 {
     // 1. create
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
     // 2. set params and callbacks
     OH_AudioStreamBuilder_SetSamplingRate(builder, SAMPLING_RATE);
@@ -953,7 +953,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_004, TestSize.Leve
     // 3. set buffer size to FRAME_SIZE
     result = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder, FRAME_SIZE);
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     EXPECT_EQ(g_flag, 0);
     uint32_t samplePos = 1;
@@ -981,7 +981,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_004, TestSize.Leve
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_005, TestSize.Level0)
 {
     // 1. create
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
     // 2. set params and callbacks
     OH_AudioStreamBuilder_SetSamplingRate(builder, SAMPLING_RATE);
@@ -994,7 +994,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_005, TestSize.Leve
     // 3. set buffer size to FRAME_SIZE
     result = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder, FRAME_SIZE);
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     uint32_t samplePos = 1;
     OH_AudioRenderer_OnMarkReachedCallback callback = AudioRendererOnMarkReachedCb;
@@ -1022,7 +1022,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_005, TestSize.Leve
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_CancelMark_001, TestSize.Level0)
 {
-    OH_AudioRenderer* audioRenderer = nullptr;
+    OH_AudioRenderer *audioRenderer = nullptr;
     OH_AudioStream_Result result = OH_AudioRenderer_CancelMark(audioRenderer);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 }
@@ -1034,8 +1034,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_CancelMark_001, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_CancelMark_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     result = OH_AudioRenderer_CancelMark(audioRenderer);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
@@ -1050,7 +1050,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_CancelMark_002, TestSize.Level0)
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_CancelMark_003, TestSize.Level0)
 {
     // 1. create
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
     // 2. set params and callbacks
     OH_AudioStreamBuilder_SetSamplingRate(builder, SAMPLING_RATE);
@@ -1063,7 +1063,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_CancelMark_003, TestSize.Level0)
     // 3. set buffer size to FRAME_SIZE
     result = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder, FRAME_SIZE);
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     uint32_t samplePos = 2;
     OH_AudioRenderer_OnMarkReachedCallback callback = AudioRendererOnMarkReachedCb;
@@ -1094,7 +1094,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_CancelMark_003, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
     OH_AudioStreamBuilder_SetSamplingRate(builder, SAMPLE_RATE_48000);
     OH_AudioStreamBuilder_SetChannelCount(builder, CHANNEL_2);
@@ -1107,7 +1107,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_001, TestSize.L
     callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataMock;
     OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, &writeCallbackMock);
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -1115,7 +1115,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_001, TestSize.L
     std::condition_variable cv;
     int32_t count = 0;
     writeCallbackMock.Install([&count, &mutex, &cv](OH_AudioRenderer* renderer, void* userData,
-        void* buffer,
+        void *buffer,
         int32_t bufferLen) {
             std::lock_guard lock(mutex);
             cv.notify_one();
@@ -1155,7 +1155,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_001, TestSize.L
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
     OH_AudioStreamBuilder_SetSamplingRate(builder, SAMPLE_RATE_48000);
     OH_AudioStreamBuilder_SetChannelCount(builder, CHANNEL_2);
@@ -1168,7 +1168,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_002, TestSize.L
     callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataMock;
     OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, &writeCallbackMock);
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -1176,7 +1176,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_002, TestSize.L
     std::condition_variable cv;
     int32_t count = 0;
     writeCallbackMock.Install([&count, &mutex, &cv](OH_AudioRenderer* renderer, void* userData,
-        void* buffer,
+        void *buffer,
         int32_t bufferLen) {
             std::lock_guard lock(mutex);
             cv.notify_one();
@@ -1216,7 +1216,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_002, TestSize.L
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_003, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
     OH_AudioStreamBuilder_SetSamplingRate(builder, SAMPLE_RATE_48000);
     OH_AudioStreamBuilder_SetChannelCount(builder, CHANNEL_2);
@@ -1229,7 +1229,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_003, TestSize.L
     callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataMock;
     OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, &writeCallbackMock);
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -1256,7 +1256,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_004, TestSize.L
 {
     uint32_t lastUnderFlowCount = 0;
     for (auto sleepTimes : {200ms, 400ms, 600ms}) {
-        OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+        OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
         OH_AudioStreamBuilder_SetSamplingRate(builder, SAMPLE_RATE_48000);
         OH_AudioStreamBuilder_SetChannelCount(builder, CHANNEL_2);
@@ -1269,7 +1269,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_004, TestSize.L
         callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataMock;
         OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, &writeCallbackMock);
 
-        OH_AudioRenderer* audioRenderer;
+        OH_AudioRenderer *audioRenderer;
         OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
         EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -1277,7 +1277,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_004, TestSize.L
         std::condition_variable cv;
         int32_t count = 0;
         writeCallbackMock.Install([&count, &mutex, &cv, sleepTimes](OH_AudioRenderer* renderer, void* userData,
-            void* buffer,
+            void *buffer,
             int32_t bufferLen) {
                 std::lock_guard lock(mutex);
                 cv.notify_one();
@@ -1319,7 +1319,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_004, TestSize.L
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_005, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
 
     OH_AudioStreamBuilder_SetSamplingRate(builder, SAMPLE_RATE_48000);
     OH_AudioStreamBuilder_SetChannelCount(builder, CHANNEL_2);
@@ -1332,7 +1332,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_005, TestSize.L
     callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataMock;
     OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, &writeCallbackMock);
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -1360,12 +1360,12 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_005, TestSize.L
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = InitRenderBuilder();
+    OH_AudioStreamBuilder *builder = InitRenderBuilder();
 
     OH_AudioRenderer_OnWriteDataCallback callback = OnWriteDataCallbackWithValidData;
     OH_AudioStreamBuilder_SetRendererWriteDataCallback(builder, callback, nullptr);
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -1384,12 +1384,12 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_001, TestSize.Le
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = InitRenderBuilder();
+    OH_AudioStreamBuilder *builder = InitRenderBuilder();
 
     OH_AudioRenderer_OnWriteDataCallback callback = OnWriteDataCallbackWithInvalidData;
     OH_AudioStreamBuilder_SetRendererWriteDataCallback(builder, callback, nullptr);
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -1409,7 +1409,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_002, TestSize.Le
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_003, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = InitRenderBuilder();
+    OH_AudioStreamBuilder *builder = InitRenderBuilder();
 
     UserData userData;
     OH_AudioRenderer_Callbacks callbacks;
@@ -1419,7 +1419,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_003, TestSize.Le
     OH_AudioRenderer_OnWriteDataCallback callback = OnWriteDataCbWithValidDataMock;
     OH_AudioStreamBuilder_SetRendererWriteDataCallback(builder, callback, &userData);
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -1439,7 +1439,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_003, TestSize.Le
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_004, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = InitRenderBuilder();
+    OH_AudioStreamBuilder *builder = InitRenderBuilder();
 
     UserData userData;
     OH_AudioRenderer_Callbacks callbacks;
@@ -1449,7 +1449,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_004, TestSize.Le
     OH_AudioRenderer_OnWriteDataCallback callback = OnWriteDataCbWithInvalidDataMock;
     OH_AudioStreamBuilder_SetRendererWriteDataCallback(builder, callback, &userData);
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -1469,7 +1469,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_004, TestSize.Le
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_005, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = InitRenderBuilder();
+    OH_AudioStreamBuilder *builder = InitRenderBuilder();
 
     UserData userData;
     OH_AudioRenderer_OnWriteDataCallback callback = OnWriteDataCbWithValidDataMock;
@@ -1479,7 +1479,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_005, TestSize.Le
     callbacks.OH_AudioRenderer_OnWriteData = OnWriteDataCbMock;
     OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, &userData);
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -1499,7 +1499,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_005, TestSize.Le
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_006, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = InitRenderBuilder();
+    OH_AudioStreamBuilder *builder = InitRenderBuilder();
 
     UserData userData;
     OH_AudioRenderer_OnWriteDataCallback callback = OnWriteDataCbWithInvalidDataMock;
@@ -1508,7 +1508,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_006, TestSize.Le
     callbacks.OH_AudioRenderer_OnWriteData = OnWriteDataCbMock;
     OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, &userData);
 
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -1518,6 +1518,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_006, TestSize.Le
 
     CleanupAudioResources(builder, audioRenderer);
 }
+
 /**
  * @tc.name  : Test OH_AudioRenderer_GetChannelCount API via illegal state.
  * @tc.number: OH_Audio_Render_GetChannelCount_001
@@ -1536,8 +1537,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetChannelCount_001, TestSize.Leve
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetChannelCount_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     int32_t channelCount = 0;
@@ -1545,6 +1546,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetChannelCount_002, TestSize.Lev
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
     OH_AudioStreamBuilder_Destroy(builder);
 }
+
 /**
  * @tc.name  : Test OH_AudioRenderer_GetTimestamp API via legal state.
  * @tc.number: OH_AudioRenderer_GetTimestamp_002
@@ -1553,8 +1555,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetChannelCount_002, TestSize.Lev
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetTimestamp_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     clockid_t clockId = CLOCK_MONOTONIC;
@@ -1566,6 +1568,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetTimestamp_002, TestSize.Level0
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
     OH_AudioStreamBuilder_Destroy(builder);
 }
+
 /**
  * @tc.name  : Test OH_AudioRenderer_GetTimestamp API via legal state.
  * @tc.number: OH_AudioRenderer_GetTimestamp_003
@@ -1574,8 +1577,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetTimestamp_002, TestSize.Level0
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetTimestamp_003, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     clockid_t clockId = CLOCK_MONOTONIC;
@@ -1596,8 +1599,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetTimestamp_003, TestSize.Level0
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetTimestamp_004, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     clockid_t clockId = CLOCK_REALTIME;
@@ -1618,8 +1621,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetTimestamp_004, TestSize.Level0
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetFrameSizeInCallback_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     int32_t frameSize = 0;
@@ -1638,8 +1641,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetFrameSizeInCallback_001, TestS
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetFrameSizeInCallback_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     int32_t frameSize = 0;
@@ -1658,8 +1661,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetFrameSizeInCallback_002, TestS
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetSpeed_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     float speed = 1.0 ;
@@ -1678,8 +1681,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetSpeed_001, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetSpeed_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     float speed = 1.0 ;
@@ -1698,8 +1701,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetSpeed_002, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_SetSpeed_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     float speed = 1.0 ;
@@ -1718,8 +1721,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_SetSpeed_001, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_SetSpeed_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     float speed = 1.0;
@@ -1741,8 +1744,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_SetSpeed_002, TestSize.Level0)
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_SetSilentModeAndMixWithOthers_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     bool on = true;
@@ -1760,8 +1763,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_SetSilentModeAndMixWithOthers_001
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_SetSilentModeAndMixWithOthers_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     bool on = true;
@@ -1779,8 +1782,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_SetSilentModeAndMixWithOthers_002
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetSilentModeAndMixWithOthers_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     bool on = true;
@@ -1798,8 +1801,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetSilentModeAndMixWithOthers_001
  */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetSilentModeAndMixWithOthers_002, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     bool on = true;
