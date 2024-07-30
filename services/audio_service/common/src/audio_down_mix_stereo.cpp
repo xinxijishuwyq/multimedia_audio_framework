@@ -16,7 +16,7 @@
 #define LOG_TAG "AudioDownMixStereo"
 
 #include "audio_down_mix_stereo.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_errors.h"
 #include <dlfcn.h>
 #include <cinttypes>

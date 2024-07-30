@@ -17,7 +17,7 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_system_manager.h"
 

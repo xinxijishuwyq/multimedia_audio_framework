@@ -20,7 +20,7 @@
 #include <climits>
 #include <cstdlib>
 #include "audio_capturer.h"
-#include "audio_log.h"
+#include "audio_renderer_log.h"
 #include "audio_renderer.h"
 #include "pcm2wav.h"
 

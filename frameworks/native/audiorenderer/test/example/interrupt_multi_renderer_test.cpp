@@ -20,7 +20,7 @@
 #include <climits>
 #include <cstdlib>
 #include <unistd.h>
-#include "audio_log.h"
+#include "audio_renderer_log.h"
 #include "interrupt_multi_renderer_test.h"
 #include "pcm2wav.h"
 

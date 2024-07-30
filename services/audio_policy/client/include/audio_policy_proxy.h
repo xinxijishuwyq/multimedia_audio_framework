@@ -296,6 +296,9 @@ public:
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) override;
 
     int32_t ResetRingerModeMute() override;
+
+    int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

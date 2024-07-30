@@ -429,6 +429,11 @@ public:
     virtual void UpdateEffectBtOffloadSupported(const bool &isSupported) = 0;
 
     /**
+     * Set Sink Mute For Switch Device.
+     */
+    virtual int32_t SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute) = 0;
+    
+    /**
      * Update Session Connection State.
      */
     virtual void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) = 0;
@@ -498,6 +503,7 @@ private:
     int HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply);
     int HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply);
+    int HandleSetSinkMuteForSwitchDevice(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSessionConnectionState(MessageParcel &data, MessageParcel &reply);
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

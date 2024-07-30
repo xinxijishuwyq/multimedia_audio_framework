@@ -34,7 +34,7 @@
 #include "safe_block_queue.h"
 
 #include "ipc_stream.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_errors.h"
 
 #include "audio_manager_base.h"

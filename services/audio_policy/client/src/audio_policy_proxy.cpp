@@ -16,7 +16,7 @@
 #define LOG_TAG "AudioPolicyProxy"
 
 #include "audio_policy_manager.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_policy_proxy.h"
 #include "microphone_descriptor.h"
 
@@ -2317,5 +2317,25 @@ int32_t AudioPolicyProxy::ResetRingerModeMute()
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "activate concurrency failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
+
+int32_t AudioPolicyProxy::InjectInterruption(const std::string networkId, InterruptEvent &event)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteString(networkId);
+    data.WriteInt32(event.eventType);
+    data.WriteInt32(event.forceType);
+    data.WriteInt32(event.hintType);
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::INJECT_INTERRUPTION), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

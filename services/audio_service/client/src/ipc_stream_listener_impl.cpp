@@ -17,7 +17,7 @@
 
 #include "cinttypes"
 #include "ipc_stream_listener_impl.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_errors.h"
 
 namespace OHOS {

@@ -20,7 +20,7 @@
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_manager_log.h"
 #include "napi_audio_manager_callbacks.h"
 
 namespace OHOS {

@@ -35,7 +35,7 @@
 #include "audio_capturer_source.h"
 #include "fast_audio_capturer_source.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_asr.h"
 #include "audio_manager_listener_proxy.h"
 #include "audio_service.h"
@@ -2072,6 +2072,25 @@ int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t d
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
 
     return audioRendererSinkInstance->SetRenderEmpty(durationUs);
+}
+
+int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_PERMISSION_DENIED, "refused for %{public}d", callingUid);
+    if (devceClass == "primary") {
+        if (durationUs <= 0) {
+            return SUCCESS;
+        }
+        IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+        CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+        return audioRendererSinkInstance->SetRenderEmpty(durationUs);
+    } else if (devceClass == "offload") {
+        IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
+        CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+        return audioRendererSinkInstance->SetSinkMuteForSwitchDevice(mute);
+    }
+    return SUCCESS;
 }
 
 void AudioServer::LoadHdiEffectModel()

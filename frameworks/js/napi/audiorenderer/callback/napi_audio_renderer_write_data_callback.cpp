@@ -16,7 +16,7 @@
 #define LOG_TAG "NapiRendererWriteDataCallback"
 
 #include "napi_audio_renderer_write_data_callback.h"
-#include "audio_log.h"
+#include "audio_renderer_log.h"
 #include "napi_audio_enum.h"
 
 namespace OHOS {

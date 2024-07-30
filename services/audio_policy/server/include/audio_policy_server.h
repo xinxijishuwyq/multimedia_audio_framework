@@ -379,6 +379,8 @@ public:
 
     int32_t ResetRingerModeMute() override;
 
+    int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

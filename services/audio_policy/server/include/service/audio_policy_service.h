@@ -727,7 +727,7 @@ private:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
-    void SetVolumeForSwitchDevice(DeviceType deviceType);
+    void SetVolumeForSwitchDevice(DeviceType deviceType, const std::string &newSinkName = PORT_NONE);
 
     void UpdateVolumeForLowLatency();
 
@@ -835,7 +835,10 @@ private:
 
     void MuteSinkPort(DeviceType deviceType, int32_t duration, bool isSync = false);
 
-    void MuteSinkPort(DeviceType oldDevice, DeviceType newDevice, AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync);
+
+    void MuteSinkPort(const std::string &oldSinkname, const std::string &newSinkName,
+        AudioStreamDeviceChangeReasonExt reason);
 
     void RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::list<AudioModuleInfo> &moduleInfoList,
         SourceInfo &targetInfo);

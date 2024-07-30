@@ -22,7 +22,7 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_info.h"
 #include "iport_observer.h"
 #include "parser.h"

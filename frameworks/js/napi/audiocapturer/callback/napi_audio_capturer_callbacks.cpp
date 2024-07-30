@@ -18,7 +18,7 @@
 #include "napi_audio_capturer_callbacks.h"
 #include "napi_param_utils.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_capturer_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

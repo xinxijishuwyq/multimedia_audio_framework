@@ -48,6 +48,7 @@ enum StreamStatus : uint32_t {
     STREAM_STOPPING,
     STREAM_STOPPED,
     STREAM_RELEASED,
+    STREAM_STAND_BY,
     STREAM_INVALID
 };
 

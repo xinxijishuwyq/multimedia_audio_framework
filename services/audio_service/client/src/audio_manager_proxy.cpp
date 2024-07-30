@@ -20,7 +20,7 @@
 #include <cinttypes>
 
 #include "audio_system_manager.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_utils.h"
 #include "i_audio_process.h"
 
@@ -1162,6 +1162,24 @@ void AudioManagerProxy::UpdateEffectBtOffloadSupported(const bool &isSupported)
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed, error:%{public}d", error);
+}
+
+int32_t AudioManagerProxy::SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteString(devceClass);
+    data.WriteInt32(durationUs);
+    data.WriteInt32(mute);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINK_MUTE_FOR_SWITCH_DEVICE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "failed, error:%{public}d", error);
+    return reply.ReadInt32();
 }
 
 void AudioManagerProxy::UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state)

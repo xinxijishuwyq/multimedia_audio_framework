@@ -18,7 +18,7 @@
 #include <cstdio>
 #include <iostream>
 
-#include "audio_log.h"
+#include "audio_renderer_log.h"
 #include "audio_system_manager.h"
 #include "pcm2wav.h"
 #include "audio_renderer.h"

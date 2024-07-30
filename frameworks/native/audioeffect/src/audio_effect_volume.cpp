@@ -16,7 +16,7 @@
 #define LOG_TAG "AudioEffectVolume"
 
 #include "audio_effect_volume.h"
-#include "audio_log.h"
+#include "audio_effect_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

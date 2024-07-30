@@ -16,7 +16,7 @@
 #ifndef ST_AUDIO_EFFECT_MANAGER_H
 #define ST_AUDIO_EFFECT_MANAGER_H
 
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_effect.h"
 #include "audio_effect_config_parser.h"
 

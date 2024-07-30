@@ -26,7 +26,7 @@
 #include "mutex"
 #include "data_ability_observer_stub.h"
 
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_info.h"
 
 namespace OHOS {

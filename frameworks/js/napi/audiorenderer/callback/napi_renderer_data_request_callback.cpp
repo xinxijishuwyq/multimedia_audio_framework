@@ -18,7 +18,7 @@
 #include "napi_renderer_data_request_callback.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_renderer_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

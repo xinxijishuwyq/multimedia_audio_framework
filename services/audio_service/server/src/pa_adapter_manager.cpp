@@ -18,7 +18,7 @@
 #include "pa_adapter_manager.h"
 #include <sstream>
 #include <atomic>
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_schedule.h"
 #include "pa_adapter_tools.h"

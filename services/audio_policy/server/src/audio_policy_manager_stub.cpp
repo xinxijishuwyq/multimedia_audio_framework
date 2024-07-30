@@ -18,7 +18,7 @@
 #include "audio_policy_manager_stub.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_policy_ipc_interface_code.h"
 #include "audio_utils.h"
 
@@ -154,6 +154,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_RINGER_MODE_MUTE",
     "SET_MICROPHONE_MUTE_PERSISTENT",
     "GET_MICROPHONE_MUTE_PERSISTENT",
+    "INJECT_INTERRUPTION",
 };
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),
@@ -1369,6 +1370,18 @@ void AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal(MessageParcel &
 {
     bool result = GetPersistentMicMuteState();
     reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::InjectInterruptionInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string networkId = data.ReadString();
+    InterruptEvent event;
+    event.eventType = static_cast<InterruptType>(data.ReadInt32());
+    event.forceType = static_cast<InterruptForceType>(data.ReadInt32());
+    event.hintType = static_cast<InterruptHint>(data.ReadInt32());
+
+    int32_t result = InjectInterruption(networkId, event);
+    reply.WriteInt32(result);
 }
 } // namespace audio_policy
 } // namespace OHOS

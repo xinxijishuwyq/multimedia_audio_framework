@@ -16,7 +16,7 @@
 #define LOG_TAG "AudioRingCache"
 
 #include "audio_ring_cache.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 
 #include "securec.h"
 
