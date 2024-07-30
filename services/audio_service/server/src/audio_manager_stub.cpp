@@ -738,7 +738,7 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINK_MUTE_FOR_SWITCH_DEVICE):
             return HandleSetSinkMuteForSwitchDevice(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ROTATION_TO_EFFECT):
-+           return HandleSetRotationToEffect(data, reply);
+            return HandleSetRotationToEffect(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
