@@ -536,7 +536,7 @@ public:
 
     AudioScene GetLastAudioScene() const;
 
-    void FetchStreamForA2dpOffload(bool requireReset);
+    void FetchStreamForA2dpOffload(const bool &requireReset);
 
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
 private:

@@ -2482,7 +2482,7 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::unique_ptr<AudioRender
     }
 }
 
-void AudioPolicyService::FetchStreamForA2dpOffload(bool requireReset)
+void AudioPolicyService::FetchStreamForA2dpOffload(const bool &requireReset)
 {
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
