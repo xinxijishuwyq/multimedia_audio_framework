@@ -86,11 +86,8 @@ const char *g_audioServerCodeStrs[] = {
     "RESTORE_RENDERSINK",
     "LOAD_HDI_EFFECT_MODEL",
     "UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED",
-<<<<<<< HEAD
-    "UPDATE_SESSION_CONNECTION_STATE",
-=======
     "SET_SINK_MUTE_FOR_SWITCH_DEVICE",
->>>>>>> upstream/master
+    "UPDATE_SESSION_CONNECTION_STATE",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
