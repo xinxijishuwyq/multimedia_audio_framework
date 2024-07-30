@@ -21,6 +21,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static const int32_t WRITE_CALLBACK_TIMEOUT_IN_MS = 1000; // 1s
+
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
 vector<NapiAudioRenderer*> NapiRendererWriteDataCallback::activeRenderers_;
 #endif
@@ -42,6 +44,9 @@ NapiRendererWriteDataCallback::~NapiRendererWriteDataCallback()
         activeRenderers_.erase(iter);
     }
 #endif
+    if (napiRenderer_ != nullptr) {
+        napiRenderer_->writeCallbackCv_.notify_all();
+    }
 }
 
 void NapiRendererWriteDataCallback::AddCallbackReference(const std::string &callbackName, napi_value args)
@@ -141,6 +146,17 @@ void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_pt
     } else {
         jsCb.release();
     }
+
+    if (napiRenderer_ == nullptr) {
+        return;
+    }
+    std::unique_lock<std::mutex> writeCallbackLock(napiRenderer_->writeCallbackMutex_);
+    std::cv_status cvStatus = napiRenderer_->writeCallbackCv_.wait_for(writeCallbackLock,
+        std::chrono::milliseconds(WRITE_CALLBACK_TIMEOUT_IN_MS));
+    if (cvStatus == std::cv_status::timeout) {
+        AUDIO_ERR_LOG("Client OnWriteData operation timed out");
+    }
+    writeCallbackLock.unlock();
 }
 
 void NapiRendererWriteDataCallback::CheckWriteDataCallbackResult(napi_env env, BufferDesc &bufDesc, napi_value result)
@@ -167,7 +183,16 @@ void NapiRendererWriteDataCallback::WorkCallbackRendererWriteData(uv_work_t *wor
             delete ptr;
             delete work;
     });
+    WorkCallbackRendererWriteDataInner(work, status);
 
+    CHECK_AND_RETURN_LOG(work != nullptr, "renderer write data work is nullptr");
+    RendererWriteDataJsCallback *event = reinterpret_cast<RendererWriteDataJsCallback *>(work->data);
+    CHECK_AND_RETURN_LOG(event != nullptr, "renderer write data event is nullptr");
+    event->rendererNapiObj->writeCallbackCv_.notify_all();
+}
+
+void NapiRendererWriteDataCallback::WorkCallbackRendererWriteDataInner(uv_work_t *work, int status)
+{
     CHECK_AND_RETURN_LOG(work != nullptr, "renderer write data work is nullptr");
     RendererWriteDataJsCallback *event = reinterpret_cast<RendererWriteDataJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "renderer write data event is nullptr");
