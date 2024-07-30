@@ -2074,7 +2074,6 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
         outputDevices.front()->deviceType_, GetEncryptAddr(outputDevices.front()->macAddress_).c_str(),
         static_cast<int>(reason));
 
-    UpdateEffectDefaultSink(outputDevices.front()->deviceType_);
     DeviceType oldDevice = rendererChangeInfo->outputDeviceInfo.deviceType;
     DeviceType newDevice = outputDevices.front()->deviceType_;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
@@ -2091,6 +2090,7 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
         if (outputDevices.size() == 1) {MuteSinkPort(oldSinkname, newSinkName, reason);}
     }
 
+    UpdateEffectDefaultSink(outputDevices.front()->deviceType_);
     // MoveSinkInputByIndexOrName
     auto ret = (outputDevices.front()->networkId_ == LOCAL_NETWORK_ID)
                 ? MoveToLocalOutputDevice(targetSinkInputs, new AudioDeviceDescriptor(*outputDevices.front()))
