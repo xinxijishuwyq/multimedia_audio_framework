@@ -14,7 +14,7 @@
  */
 #include "audio_resample.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_utils.h"
 #include <cinttypes>
 #ifdef SPEEX_ENABLE

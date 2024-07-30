@@ -23,7 +23,7 @@
 #include "napi_audio_ringermode_callback.h"
 #include "napi_audio_micstatechange_callback.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_manager_log.h"
 #include "audio_utils.h"
 #ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)

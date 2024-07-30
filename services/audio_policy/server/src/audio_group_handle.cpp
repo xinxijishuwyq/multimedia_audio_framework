@@ -15,7 +15,7 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioGroupHandle"
 
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_group_handle.h"
 
 

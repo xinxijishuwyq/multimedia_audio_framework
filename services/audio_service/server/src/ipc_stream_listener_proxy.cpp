@@ -16,7 +16,7 @@
 #define LOG_TAG "IpcStreamListenerProxy"
 
 #include "ipc_stream_listener_proxy.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_errors.h"
 
 namespace OHOS {

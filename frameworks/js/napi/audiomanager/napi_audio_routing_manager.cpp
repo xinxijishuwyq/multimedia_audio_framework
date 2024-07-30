@@ -20,7 +20,7 @@
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_manager_log.h"
 #include "napi_audio_manager_callbacks.h"
 #include "napi_audio_rounting_available_devicechange_callback.h"
 #include "napi_audio_routing_manager_callbacks.h"

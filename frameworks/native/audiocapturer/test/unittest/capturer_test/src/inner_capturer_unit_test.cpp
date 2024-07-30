@@ -22,7 +22,7 @@
 #include "audio_capturer.h"
 #include "audio_errors.h"
 #include "audio_info.h"
-#include "audio_log.h"
+#include "audio_capturer_log.h"
 #include "audio_renderer.h"
 
 using namespace std;

@@ -21,7 +21,7 @@
 #include <map>
 
 #include "securec.h"
-#include "audio_log.h"
+#include "audio_effect_log.h"
 #include "audio_effect.h"
 #include "audio_errors.h"
 #include "audio_enhance_chain_manager.h"

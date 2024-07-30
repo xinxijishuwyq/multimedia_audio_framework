@@ -42,7 +42,7 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_policy_manager_listener_proxy.h"

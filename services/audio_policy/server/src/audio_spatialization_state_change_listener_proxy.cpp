@@ -17,7 +17,7 @@
 
 #include "audio_spatialization_state_change_listener_proxy.h"
 #include "audio_spatialization_manager.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 
 using namespace std;
 

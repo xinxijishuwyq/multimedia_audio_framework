@@ -18,7 +18,7 @@
 
 #include "gtest/gtest.h"
 #include "audio_capturer.h"
-#include "audio_log.h"
+#include "audio_capturer_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

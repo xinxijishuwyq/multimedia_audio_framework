@@ -17,7 +17,7 @@
 
 #include "audio_manager_listener_proxy.h"
 #include "audio_system_manager.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

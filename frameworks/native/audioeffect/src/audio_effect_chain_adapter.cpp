@@ -19,7 +19,7 @@
 #include "audio_effect_chain_manager.h"
 #include "audio_effect.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_effect_log.h"
 #include "securec.h"
 
 using namespace OHOS::AudioStandard;
