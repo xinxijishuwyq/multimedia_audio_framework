@@ -277,7 +277,7 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
     }
     // Calculate the average value
     for (size_t index = 0; index < channel; index++) {
-        volMaps.volStart[index] /=static_cast<int32_t>(frameSize);
+        volMaps.volStart[index] /= static_cast<int32_t>(frameSize);
     }
     return;
 }
