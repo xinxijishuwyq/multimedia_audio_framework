@@ -527,6 +527,8 @@ public:
 
     AudioScene GetLastAudioScene() const;
 
+    void SetRotationToEffect(const uint32_t rotate);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

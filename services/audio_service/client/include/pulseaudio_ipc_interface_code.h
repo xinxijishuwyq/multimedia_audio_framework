@@ -79,7 +79,8 @@ namespace AudioStandard {
         LOAD_HDI_EFFECT_MODEL,
         UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED,
         SET_SINK_MUTE_FOR_SWITCH_DEVICE,
-        AUDIO_SERVER_CODE_MAX = SET_SINK_MUTE_FOR_SWITCH_DEVICE,
+        SET_ROTATION_TO_EFFECT,
+        AUDIO_SERVER_CODE_MAX = SET_ROTATION_TO_EFFECT,,
     };
 } // namespace AudioStandard
 } // namespace OHOS

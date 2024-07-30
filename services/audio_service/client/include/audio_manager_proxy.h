@@ -96,6 +96,7 @@ public:
     void LoadHdiEffectModel() override;
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
     int32_t SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute) override;
+    void SetRotationToEffect(const uint32_t rotate) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };
