@@ -4940,15 +4940,19 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     }
 
     UpdateA2dpOffloadFlagForAllStream(currentActiveDevice_.deviceType_);
+    SendA2dpConnectedWhileRunning(rendererState, streamChangeInfo.audioRendererChangeInfo.sessionId);
+    return ret;
+}
 
+void AudioPolicyService::SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId)
+{
     if ((rendererState == RENDERER_RUNNING) && (audioA2dpOffloadManager_ != nullptr) &&
-        !audioA2dpOffloadManager_->IsA2dpOffloadConnecting(streamChangeInfo.audioRendererChangeInfo.sessionId)) {
+        !audioA2dpOffloadManager_->IsA2dpOffloadConnecting(sessionId)) {
         AUDIO_INFO_LOG("Notify client not to block.");
-        std::thread sendConnectedToClient(&AudioPolicyService::UpdateSessionConnectionState,
-            this, streamChangeInfo.audioRendererChangeInfo.sessionId, DATA_LINK_CONNECTED);
+        std::thread sendConnectedToClient(&AudioPolicyService::UpdateSessionConnectionState, this, sessionId,
+            DATA_LINK_CONNECTED);
         sendConnectedToClient.detach();
     }
-    return ret;
 }
 
 void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
@@ -7137,14 +7141,14 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload(BluetoothOffloadState a2dp
     GetA2dpOffloadCodecAndSendToDsp();
     std::vector<int32_t> allSessions;
     GetAllRunningStreamSession(allSessions);
-    int32_t ret = OffloadStartPlaying(allSessions);
+    OffloadStartPlaying(allSessions);
 
     DeviceType dev = GetActiveOutputDevice();
     UpdateEffectDefaultSink(dev);
     AUDIO_INFO_LOG("Handle A2dpDevice In Offload");
     UpdateEffectBtOffloadSupported(true);
 
-    if (ret == SUCCESS && IsA2dpOffloadConnected()) {
+    if (IsA2dpOffloadConnected()) {
         AUDIO_INFO_LOG("A2dpOffload has been connected, Fetch stream");
         FetchStreamForA2dpOffload(true);
     }

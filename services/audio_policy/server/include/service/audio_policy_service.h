@@ -981,6 +981,8 @@ private:
 
     bool IsA2dpOffloadConnected();
 
+    void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId);
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
