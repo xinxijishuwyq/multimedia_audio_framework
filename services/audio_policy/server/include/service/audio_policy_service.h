@@ -1149,10 +1149,11 @@ private:
 
     bool ringerModeMute_ = true;
     std::atomic<bool> isPolicyConfigParsered_ = false;
-    AudioA2dpOffloadManager *audioA2dpOffloadManager_ = nullptr;
+    std::share_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
 };
 
-class AudioA2dpOffloadManager : public Bluetooth::AudioA2dpPlayingStateChangedListener {
+class AudioA2dpOffloadManager final : public Bluetooth::AudioA2dpPlayingStateChangedListener,
+    public enable_shared_from_this<AudioA2dpOffloadManager> {
 private:
     A2dpOffloadConnectionState currentOffloadconnectionState_ = CONNECTION_STATUS_DISCONNECTED;
     std::vector<int32_t> connectionTriggerSessionIds_;
@@ -1162,12 +1163,9 @@ private:
     std::condition_variable connectionCV_;
     static const int32_t CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
 public:
-    AudioA2dpOffloadManager(AudioPolicyService *audioPolicyService) : audioPolicyService_(audioPolicyService)
-    {
-        Bluetooth::AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(this);
-        return;
-    };
-    A2dpOffloadConnectionState getA2dOffloadConnectionState() {return currentOffloadconnectionState_;};
+    AudioA2dpOffloadManager(AudioPolicyService *audioPolicyService) : audioPolicyService_(audioPolicyService) {};
+    void Init() {Bluetooth::AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(shard_from_this());};
+    A2dpOffloadConnectionState GetA2dOffloadConnectionState() {return currentOffloadconnectionState_;};
     std::vector<int32_t>& GetConnectTriggerSessionIds() {return connectionTriggerSessionIds_;};
     std::string GetBluetoothAddress() {return a2dpOffloadDeviceAddress_;};
 

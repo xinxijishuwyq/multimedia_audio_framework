@@ -350,7 +350,8 @@ bool AudioPolicyService::Init(void)
     audioEffectManager_.EffectManagerInit();
     audioDeviceManager_.ParseDeviceXml();
     audioPnpServer_.init();
-    audioA2dpOffloadManager_ = new AudioA2dpOffloadManager(this);
+    audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>(this);
+    if (audioA2dpOffloadManager_ != nullptr) {audioA2dpOffloadManager_->Init();}
 
     bool ret = audioPolicyConfigParser_.LoadConfiguration();
     if (!ret) {
@@ -4940,7 +4941,7 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
 
     UpdateA2dpOffloadFlagForAllStream(currentActiveDevice_.deviceType_);
 
-    if ((rendererState == RENDERER_RUNNING) &&
+    if ((rendererState == RENDERER_RUNNING) && (audioA2dpOffloadManager_ != nullptr) &&
         !audioA2dpOffloadManager_->IsA2dpOffloadConnecting(streamChangeInfo.audioRendererChangeInfo.sessionId)) {
         AUDIO_INFO_LOG("Notify client not to block.");
         std::thread sendConnectedToClient(&AudioPolicyService::UpdateSessionConnectionState,
@@ -6953,10 +6954,12 @@ int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sess
         return SUCCESS;
     }
     int32_t ret = Bluetooth::AudioA2dpManager::OffloadStartPlaying(sessionIds);
-    A2dpOffloadConnectionState state = audioA2dpOffloadManager_->getA2dOffloadConnectionState();
-    if (ret == SUCCESS && (state == CONNECTION_STATUS_DISCONNECTED || state == CONNECTION_STATUS_DISCONNECTING)) {
-        audioA2dpOffloadManager_->ConnectA2dpOffload(
-            Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), sessionIds);
+    if (audioA2dpOffloadManager_ != nullptr) {
+        A2dpOffloadConnectionState state = audioA2dpOffloadManager_->GetA2dOffloadConnectionState();
+        if (ret == SUCCESS && (state == CONNECTION_STATUS_DISCONNECTED || state == CONNECTION_STATUS_DISCONNECTING)) {
+            audioA2dpOffloadManager_->ConnectA2dpOffload(
+                Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), sessionIds);
+        }
     }
     return ret;
 #else
@@ -6973,7 +6976,9 @@ int32_t AudioPolicyService::OffloadStopPlaying(const std::vector<int32_t> &sessi
         return SUCCESS;
     }
     int32_t ret = Bluetooth::AudioA2dpManager::OffloadStopPlaying(sessionIds);
-    audioA2dpOffloadManager_->DisconnectA2dpOffload();
+    if (audioA2dpOffloadManager_ != nullptr) {
+        audioA2dpOffloadManager_->DisconnectA2dpOffload();
+    }
     return ret;
 #else
     return SUCCESS;
@@ -8379,7 +8384,8 @@ void AudioPolicyService::ResetOffloadModeOnSpatializationChanged(std::vector<int
 
 bool AudioPolicyService::IsA2dpOffloadConnected()
 {
-    return audioA2dpOffloadManager_->getA2dOffloadConnectionState() == CONNECTION_STATUS_CONNECTED;
+    return audioA2dpOffloadManager_ != nullptr &&
+        audioA2dpOffloadManager_->GetA2dOffloadConnectionState() == CONNECTION_STATUS_CONNECTED;
 }
 
 void AudioPolicyService::UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state)

@@ -38,7 +38,7 @@ AudioScene AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 AudioScene AudioHfpManager::sceneFromPolicy_ = AUDIO_SCENE_DEFAULT;
 OHOS::Bluetooth::ScoCategory AudioHfpManager::scoCategory = OHOS::Bluetooth::ScoCategory::SCO_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
-std::vector<AudioA2dpPlayingStateChangedListener *> AudioA2dpManager::stateChangedListeners_;
+std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpManager::stateChangedListeners_;
 std::mutex g_activehfpDeviceLock;
 std::mutex g_audioSceneLock;
 std::mutex g_hfpInstanceLock;
@@ -212,7 +212,8 @@ int32_t AudioA2dpManager::OffloadStopPlaying(const std::vector<int32_t> &session
     return a2dpInstance_->OffloadStopPlaying(activeA2dpDevice_, sessionsID);
 }
 
-int32_t AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(AudioA2dpPlayingStateChangedListener *listener)
+int32_t AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(
+    std::shared_ptr<AudioA2dpPlayingStateChangedListener> listener)
 {
     stateChangedListeners_.push_back(listener);
     return SUCCESS;
