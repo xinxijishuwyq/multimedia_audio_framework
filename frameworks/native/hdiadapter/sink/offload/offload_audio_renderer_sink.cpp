@@ -747,12 +747,12 @@ int32_t OffloadAudioRendererSinkInner::SetVolumeInner(float &left, float &right)
         return ERR_INVALID_HANDLE;
     }
 
-    if ((leftVolume_ == 0) && (rightVolume_ !=0)) {
-        thevolume = rightVolume_;
-    } else if ((leftVolume_ != 0) && (rightVolume_ ==0)) {
-        thevolume = leftVolume_;
+    if ((left == 0) && (right != 0)) {
+        thevolume = right;
+    } else if ((left != 0) && (right == 0)) {
+        thevolume = left;
     } else {
-        thevolume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
+        thevolume = (left + right) / HALF_FACTOR;
     }
 
     ret = audioRender_->SetVolume(audioRender_, thevolume);
