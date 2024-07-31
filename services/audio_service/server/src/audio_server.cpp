@@ -517,6 +517,7 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
             AUDIO_ERR_LOG("get value failed.");
             return ERR_INVALID_PARAM;
         }
+        return 0;
     }
 
     std::vector<std::string> resMode = splitString(asrAecModeSink, "=");
