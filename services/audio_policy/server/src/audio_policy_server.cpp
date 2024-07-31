@@ -1631,12 +1631,12 @@ int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo 
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
     }
+    int32_t ret = audioPolicyService_.UpdateTracker(mode, streamChangeInfo);
     if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_PAUSED ||
         streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_STOPPED ||
         streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
         OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, streamChangeInfo.audioRendererChangeInfo.sessionId);
     }
-    int32_t ret = audioPolicyService_.UpdateTracker(mode, streamChangeInfo);
     if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RUNNING) {
         OffloadStreamCheck(streamChangeInfo.audioRendererChangeInfo.sessionId, OFFLOAD_NO_SESSION_ID);
     }

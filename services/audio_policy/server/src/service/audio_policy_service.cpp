@@ -653,10 +653,15 @@ void AudioPolicyService::SetOffloadVolume(AudioStreamType streamType, int32_t vo
     const sptr <IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "gsp null");
     float volumeDb;
-    if (dev == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
-        volumeDb = 1;
-    } else {
-        volumeDb = GetSystemVolumeInDb(streamType, volume, currentActiveDevice_.deviceType_);
+    {
+        std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
+        auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
+        if (dev == DEVICE_TYPE_BLUETOOTH_A2DP && configInfoPos != connectedA2dpDeviceMap_.end() &&
+            configInfoPos->second.absVolumeSupport) {
+            volumeDb = 1;
+        } else {
+            volumeDb = GetSystemVolumeInDb(streamType, volume, currentActiveDevice_.deviceType_);
+        }
     }
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->OffloadSetVolume(volumeDb);
@@ -684,9 +689,7 @@ void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType, const s
     if (deviceType == DEVICE_TYPE_SPEAKER || deviceType == DEVICE_TYPE_USB_HEADSET) {
         SetOffloadVolume(OffloadStreamType(), GetSystemVolumeLevel(OffloadStreamType()));
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && newSinkName == OFFLOAD_PRIMARY_SPEAKER) {
-        int32_t vol = audioPolicyManager_.IsAbsVolumeScene() ?
-            audioPolicyManager_.GetMaxVolumeLevel(OffloadStreamType()) : GetSystemVolumeLevel(OffloadStreamType());
-        SetOffloadVolume(OffloadStreamType(), vol);
+        SetOffloadVolume(OffloadStreamType(), GetSystemVolumeLevel(OffloadStreamType()));
     }
 }
 
@@ -2111,6 +2114,8 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
     if (outputDevices.front()->networkId_ != LOCAL_NETWORK_ID
         || outputDevices.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
         RemoteOffloadStreamRelease(rendererChangeInfo->sessionId);
+    } else {
+        ResetOffloadMode(rendererChangeInfo->sessionId);
     }
 }
 
@@ -2510,6 +2515,7 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::unique_ptr<AudioRender
             audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
             IOHandles_.erase(currentActivePort);
         }
+        ResetOffloadMode(rendererChangeInfo->sessionId);
         MoveToNewOutputDevice(rendererChangeInfo, descs);
     }
 }
@@ -2537,7 +2543,6 @@ void AudioPolicyService::FetchStreamForA2dpOffload(vector<unique_ptr<AudioRender
                 IPCSkeleton::SetCallingIdentity(identity);
             }
             FetchStreamForA2dpMchStream(rendererChangeInfo, descs);
-            ResetOffloadMode(rendererChangeInfo->sessionId);
         }
     }
 }
