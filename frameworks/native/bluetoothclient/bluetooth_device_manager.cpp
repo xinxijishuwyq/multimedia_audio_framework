@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "BluetoothDeviceManager"
+#endif
 
 #include "bluetooth_device_manager.h"
 

@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "CockpitPhoneRouter"
+#endif
 
 #include "cockpit_phone_router.h"
 #include "audio_device_manager.h"

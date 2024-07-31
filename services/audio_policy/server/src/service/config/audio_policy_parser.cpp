@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioPolicyParser"
+#endif
 
 #include "audio_policy_parser.h"
 

@@ -15,8 +15,9 @@
 #ifndef FAST_AUDIO_STREAM_H
 #define FAST_AUDIO_STREAM_H
 
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "CapturerInClientInner"
+#endif
 
 #include "capturer_in_client.h"
 

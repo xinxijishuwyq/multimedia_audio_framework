@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioDumpTest"
+#endif
 
 #include <iostream>
 #include <set>

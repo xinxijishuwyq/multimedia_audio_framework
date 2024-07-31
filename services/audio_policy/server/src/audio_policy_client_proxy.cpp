@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioPolicyClientProxy"
+#endif
 
 #include "audio_policy_client_proxy.h"
 #include "audio_policy_log.h"
