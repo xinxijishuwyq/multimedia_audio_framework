@@ -1121,6 +1121,7 @@ private:
     std::condition_variable dialogSelectCondition_;
     std::unique_ptr<std::thread> safeVolumeDialogThrd_ = nullptr;
     std::atomic<bool> isSafeVolumeDialogShowing_ = false;
+    std::mutex safeVolumeMutex_;
 
     DeviceType priorityOutputDevice_ = DEVICE_TYPE_INVALID;
     DeviceType priorityInputDevice_ = DEVICE_TYPE_INVALID;
