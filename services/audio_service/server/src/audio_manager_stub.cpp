@@ -59,6 +59,7 @@ const char *g_audioServerCodeStrs[] = {
     "SET_WAKEUP_CLOSE_CALLBACK",
     "SET_CAPTURE_SILENT_STATE",
     "UPDATE_SPATIALIZATION_STATE",
+    "UPDATE_SPATIAL_DEVICE_TYPE",
     "OFFLOAD_SET_VOLUME",
     "OFFLOAD_DRAIN",
     "OFFLOAD_GET_PRESENTATION_POSITION",
@@ -564,6 +565,14 @@ int AudioManagerStub::HandleUpdateSpatializationState(MessageParcel &data, Messa
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleUpdateSpatialDeviceType(MessageParcel& data, MessageParcel& reply)
+{
+    AudioSpatialDeviceType spatialDeviceType = static_cast<AudioSpatialDeviceType>(data.ReadInt32());
+    int32_t ret = UpdateSpatialDeviceType(spatialDeviceType);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleGetCapturePresentationPosition(MessageParcel &data, MessageParcel &reply)
 {
     const std::string deviceClass = data.ReadString();
@@ -811,6 +820,8 @@ int AudioManagerStub::HandleSecondPartCode(uint32_t code, MessageParcel &data, M
             return HandleSetCaptureSilentState(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIALIZATION_STATE):
             return HandleUpdateSpatializationState(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIAL_DEVICE_TYPE):
+            return HandleUpdateSpatialDeviceType(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_VOLUME):
             return HandleOffloadSetVolume(data, reply);
         default:
