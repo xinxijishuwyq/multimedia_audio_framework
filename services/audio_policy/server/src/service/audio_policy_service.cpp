@@ -8358,5 +8358,15 @@ void AudioPolicyService::ResetOffloadModeOnSpatializationChanged(std::vector<int
         }
     }
 }
+
+void AudioPolicyService::SetRotationToEffect(const uint32_t rotate)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->SetRotationToEffect(rotate);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
 } // namespace AudioStandard
 } // namespace OHOS

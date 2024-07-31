@@ -691,14 +691,11 @@ int32_t AudioEffectChainManager::EffectRotationUpdate(const uint32_t rotationSta
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     std::shared_ptr<AudioEffectRotation> audioEffectRotation = AudioEffectRotation::GetInstance();
-    int32_t ret;
-    if (((deviceType_ == DEVICE_TYPE_SPEAKER) && (spkOffloadEnabled_)) ||
-        ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_))) {
-        ret = EffectDspRotationUpdate(audioEffectRotation, rotationState);
-    } else {
-        ret = EffectApRotationUpdate(audioEffectRotation, rotationState);
-    }
-    return ret;
+    AUDIO_INFO_LOG("rotation update to %{public}u", rotationState);
+    EffectDspRotationUpdate(audioEffectRotation, rotationState);
+    EffectApRotationUpdate(audioEffectRotation, rotationState);
+    
+    return SUCCESS;
 }
 #endif
 

@@ -2112,5 +2112,15 @@ void AudioServer::UpdateEffectBtOffloadSupported(const bool &isSupported)
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
     audioEffectChainManager->UpdateEffectBtOffloadSupported(isSupported);
 }
+
+void AudioServer::SetRotationToEffect(const uint32_t rotate)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(callingUid == audioUid_, "set rotation to effect refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+    audioEffectChainManager->EffectRotationUpdate(rotate);
+}
 } // namespace AudioStandard
 } // namespace OHOS
