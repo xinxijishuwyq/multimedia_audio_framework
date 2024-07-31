@@ -5525,6 +5525,7 @@ void AudioPolicyService::CreateCheckMusicActiveThread()
 
 void AudioPolicyService::CreateSafeVolumeDialogThread()
 {
+    std::lock_guard<std::mutex> safeVolumeLock(safeVolumeMutex_);
     AUDIO_INFO_LOG("enter");
     if (safeVolumeDialogThrd_ != nullptr && safeVolumeDialogThrd_->joinable()) {
         AUDIO_INFO_LOG("safeVolumeDialogThread exit begin");
