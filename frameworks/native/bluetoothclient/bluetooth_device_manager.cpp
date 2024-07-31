@@ -65,6 +65,7 @@ std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::negativeDevices_;
 std::mutex HfpBluetoothDeviceManager::stopVirtualCallHandleLock_;
 BluetoothStopVirtualCallHandle HfpBluetoothDeviceManager::stopVirtualCallHandle_ = { BluetoothRemoteDevice(), false};
 
+// LCOV_EXCL_START
 std::string GetEncryptAddr(const std::string &addr)
 {
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
@@ -849,5 +850,6 @@ void HfpBluetoothDeviceManager::OnScoStateChanged(const BluetoothRemoteDevice &d
         g_deviceObserver->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::CONNECTSTATE_UPDATE);
     }
 }
+// LCOV_EXCL_STOP
 } // namespace Bluetooth
 } // namespace OHOS

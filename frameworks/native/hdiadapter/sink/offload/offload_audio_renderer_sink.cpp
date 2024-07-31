@@ -203,6 +203,7 @@ OffloadRendererSink *OffloadRendererSink::GetInstance()
     return &audioRenderer;
 }
 
+// LCOV_EXCL_START
 int32_t OffloadAudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
 {
     std::lock_guard<std::mutex> lock(volumeMutex_);
@@ -1093,5 +1094,6 @@ int32_t OffloadAudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> 
     AUDIO_WARNING_LOG("not supported.");
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

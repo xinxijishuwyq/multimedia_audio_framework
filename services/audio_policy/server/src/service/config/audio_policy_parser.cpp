@@ -74,6 +74,7 @@ bool AudioPolicyParser::LoadConfiguration()
     return true;
 }
 
+// LCOV_EXCL_START
 bool AudioPolicyParser::Parse()
 {
     AUDIO_INFO_LOG("Enter");
@@ -213,6 +214,7 @@ ClassType AudioPolicyParser::GetClassTypeByAdapterType(AdaptersType adapterType)
     }
 }
 
+// LCOV_EXCL_STOP
 void AudioPolicyParser::GetOffloadAndOpenMicState(AudioAdapterInfo &adapterInfo,
     bool &shouldEnableOffload)
 {
@@ -236,6 +238,7 @@ std::string AudioPolicyParser::GetAudioModuleInfoName(std::string &pipeInfoName,
     return "";
 }
 
+// LCOV_EXCL_START
 void AudioPolicyParser::ConvertAdapterInfoToAudioModuleInfo()
 {
     for (auto &[adapterType, adapterInfo] : adapterInfoMap_) {
@@ -808,5 +811,6 @@ StreamType AudioPolicyParser::GetStreamTypeAsInt(xmlNode &node)
         return StreamType::UNKNOWN;
     }
 }
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

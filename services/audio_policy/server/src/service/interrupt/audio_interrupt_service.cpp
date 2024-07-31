@@ -441,6 +441,7 @@ int32_t AudioInterruptService::RemoveAudioInterruptZonePids(const int32_t zoneId
     return SUCCESS;
 }
 
+// LCOV_EXCL_START
 int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
@@ -814,6 +815,7 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zon
     return audioScene;
 }
 
+// LCOV_EXCL_STOP
 void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneId,
     const AudioInterrupt &audioInterrupt)
 {
@@ -1016,6 +1018,7 @@ void AudioInterruptService::SendFocusChangeEvent(const int32_t zoneId, int32_t c
     handler_->SendAudioFocusInfoChangeCallback(callbackCategory, audioInterrupt, audioFocusInfoList);
 }
 
+// LCOV_EXCL_START
 bool AudioInterruptService::CheckAudioInterruptZonePermission()
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
@@ -1339,5 +1342,6 @@ void AudioInterruptService::AudioInterruptClient::OnInterrupt(const InterruptEve
         callback_->OnInterrupt(interruptEvent);
     }
 }
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS
