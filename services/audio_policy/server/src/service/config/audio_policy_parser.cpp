@@ -18,10 +18,7 @@
 
 #include "audio_policy_parser.h"
 
-#include <regex>
 #include <sstream>
-#include <string>
-#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -18,7 +18,6 @@
 
 #include "audio_adapter_info.h"
 #include "audio_effect.h"
-#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -16,9 +16,6 @@
 #define LOG_TAG "AudioDeviceParser"
 
 #include "audio_device_parser.h"
-#include <string>
-#include <iostream>
-#include <vector>
 #include "media_monitor_manager.h"
 
 namespace OHOS {

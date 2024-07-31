@@ -16,7 +16,6 @@
 #define LOG_TAG "UserSelectRouter"
 
 #include "user_select_router.h"
-#include "audio_log.h"
 
 using namespace std;
 

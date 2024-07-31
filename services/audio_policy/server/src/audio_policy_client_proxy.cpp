@@ -17,9 +17,6 @@
 
 #include "audio_policy_client_proxy.h"
 #include "audio_policy_log.h"
-#include "audio_errors.h"
-#include "audio_utils.h"
-#include "audio_group_handle.h"
 
 namespace OHOS {
 namespace AudioStandard {

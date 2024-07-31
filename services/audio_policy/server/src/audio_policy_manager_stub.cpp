@@ -19,7 +19,6 @@
 
 #include "audio_errors.h"
 #include "audio_policy_log.h"
-#include "audio_policy_ipc_interface_code.h"
 #include "audio_utils.h"
 
 namespace OHOS {

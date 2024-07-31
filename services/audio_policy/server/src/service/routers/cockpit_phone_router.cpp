@@ -16,7 +16,6 @@
 #define LOG_TAG "CockpitPhoneRouter"
 
 #include "cockpit_phone_router.h"
-#include "audio_device_manager.h"
 
 using namespace std;
 

@@ -17,7 +17,6 @@
 
 #include "audio_policy_server_handler.h"
 #include "audio_policy_service.h"
-#include "audio_policy_manager_factory.h"
 #include "audio_utils.h"
 
 namespace OHOS {

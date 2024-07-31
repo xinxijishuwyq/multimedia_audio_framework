@@ -16,7 +16,6 @@
 #define LOG_TAG "PrivacyPriorityRouter"
 
 #include "privacy_priority_router.h"
-#include "audio_log.h"
 
 using namespace std;
 

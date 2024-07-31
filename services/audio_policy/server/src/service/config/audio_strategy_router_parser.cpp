@@ -16,12 +16,9 @@
 #define LOG_TAG "AudioStrategyRouterParser"
 
 #include "audio_strategy_router_parser.h"
-#include <vector>
-#include "router_base.h"
 #include "user_select_router.h"
 #include "privacy_priority_router.h"
 #include "public_priority_router.h"
-#include "package_filter_router.h"
 #include "stream_filter_router.h"
 #include "cockpit_phone_router.h"
 #include "pair_device_router.h"

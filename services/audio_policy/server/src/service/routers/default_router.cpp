@@ -16,7 +16,6 @@
 #define LOG_TAG "DefaultRouter"
 
 #include "default_router.h"
-#include "audio_log.h"
 
 using namespace std;
 
