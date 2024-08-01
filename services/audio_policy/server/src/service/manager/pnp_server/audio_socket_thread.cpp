@@ -16,11 +16,17 @@
 #define LOG_TAG "AudioSocketThread"
 
 #include "audio_socket_thread.h"
-#include <string.h>
+
+#include <cctype>
+#include <cstdlib>
 #include <dirent.h>
+#include <fcntl.h>
+#include <functional>
 #include <linux/netlink.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
+#include <string>
 
 #include "osal_time.h"
 #include "audio_errors.h"
