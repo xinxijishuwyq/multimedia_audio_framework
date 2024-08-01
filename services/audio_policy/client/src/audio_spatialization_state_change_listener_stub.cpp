@@ -16,9 +16,6 @@
 #define LOG_TAG "AudioSpatializationStateChangeListenerStub"
 
 #include "audio_spatialization_state_change_listener_stub.h"
-
-
-
 #include "audio_policy_log.h"
 
 using namespace std;

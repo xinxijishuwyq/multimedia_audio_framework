@@ -16,12 +16,7 @@
 #define LOG_TAG "VolumeDataMaintainer"
 
 #include "volume_data_maintainer.h"
-
-
-
 #include "system_ability_definition.h"
-
-
 #include "audio_policy_manager_factory.h"
 
 namespace OHOS {

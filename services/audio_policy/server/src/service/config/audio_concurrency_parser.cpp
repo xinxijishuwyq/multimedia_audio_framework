@@ -14,8 +14,6 @@
  */
 #include "audio_concurrency_parser.h"
 
-
-
 namespace OHOS {
 namespace AudioStandard {
 

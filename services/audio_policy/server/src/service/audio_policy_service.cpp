@@ -16,34 +16,22 @@
 #define LOG_TAG "AudioPolicyService"
 
 #include "audio_policy_service.h"
-
 #include <ability_manager_client.h>
-
-
 #include "iservice_registry.h"
 
-
 #include "parameters.h"
-
-
-
 #include "audio_utils.h"
 #include "audio_manager_listener_stub.h"
-
-
 
 #include "data_share_observer_callback.h"
 #include "device_init_callback.h"
 #include "audio_inner_call.h"
 #ifdef FEATURE_DEVICE_MANAGER
-
-
 #endif
 
 #include "audio_spatialization_service.h"
 #include "audio_converter_parser.h"
 #include "audio_dialog_ability_connection.h"
-
 #include "media_monitor_manager.h"
 
 namespace OHOS {
