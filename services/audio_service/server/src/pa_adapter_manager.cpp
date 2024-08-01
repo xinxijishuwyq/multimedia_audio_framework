@@ -285,8 +285,8 @@ int32_t PaAdapterManager::InitPaContext()
         AUDIO_ERR_LOG("Not supported managerType:%{public}d", managerType_);
     }
     if (api_ == nullptr) {
-        pa_threaded_mainloop_free(mainLoop_);
         AUDIO_ERR_LOG("Get api from mainLoop failed");
+        pa_threaded_mainloop_free(mainLoop_);
         return ERR_DEVICE_INIT;
     }
 
@@ -297,8 +297,8 @@ int32_t PaAdapterManager::InitPaContext()
 
     context_ = pa_context_new(api_, packageName.c_str());
     if (context_ == nullptr) {
-        pa_threaded_mainloop_free(mainLoop_);
         AUDIO_ERR_LOG("New context failed");
+        pa_threaded_mainloop_free(mainLoop_);
         return ERR_DEVICE_INIT;
     }
 
@@ -396,8 +396,8 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
         isRecording ? nullptr : &map, propList);
     if (!paStream) {
         int32_t error = pa_context_errno(context_);
-        pa_proplist_free(propList);
         AUDIO_ERR_LOG("pa_stream_new_with_proplist failed, error: %{public}d", error);
+        pa_proplist_free(propList);
         return nullptr;
     }
 
@@ -408,15 +408,15 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     std::string deviceName;
     int32_t errorCode = GetDeviceNameForConnect(processConfig, sessionId, deviceName);
     if (errorCode != SUCCESS) {
-        ReleasePaStream(paStream);
         AUDIO_ERR_LOG("getdevicename err: %{public}d", errorCode);
+        ReleasePaStream(paStream);
         return nullptr;
     }
 
     int32_t ret = ConnectStreamToPA(paStream, sampleSpec, processConfig.capturerInfo.sourceType, deviceName);
     if (ret < 0) {
-        ReleasePaStream(paStream);
         AUDIO_ERR_LOG("ConnectStreamToPA Failed");
+        ReleasePaStream(paStream);
         return nullptr;
     }
     return paStream;
