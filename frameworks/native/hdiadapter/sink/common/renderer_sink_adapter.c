@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "RendererSinkAdapter"
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -100,7 +101,6 @@ int32_t UnLoadSinkAdapter(struct RendererSinkAdapter *sinkAdapter)
     CHECK_AND_RETURN_RET_LOG(sinkAdapter != NULL, ERROR, "Invalid parameter");
 
     free(sinkAdapter);
-    sinkAdapter = NULL;
     return SUCCESS;
 }
 

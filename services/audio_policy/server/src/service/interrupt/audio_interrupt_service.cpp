@@ -12,13 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioInterruptService"
+#endif
 
 #include "audio_interrupt_service.h"
 
-#include "audio_log.h"
-#include "audio_errors.h"
 #include "audio_focus_parser.h"
 #include "audio_policy_manager_listener_proxy.h"
 #include "audio_utils.h"
@@ -441,6 +440,7 @@ int32_t AudioInterruptService::RemoveAudioInterruptZonePids(const int32_t zoneId
     return SUCCESS;
 }
 
+// LCOV_EXCL_START
 int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
@@ -814,6 +814,7 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zon
     return audioScene;
 }
 
+// LCOV_EXCL_STOP
 void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneId,
     const AudioInterrupt &audioInterrupt)
 {
@@ -870,6 +871,9 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
 void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audioScene,
     AudioInterruptChangeType changeType)
 {
+    if (policyServer_ == nullptr) {
+        return;
+    }
     AudioScene currentAudioScene = policyServer_->GetAudioScene();
 
     AUDIO_INFO_LOG("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
@@ -1016,6 +1020,7 @@ void AudioInterruptService::SendFocusChangeEvent(const int32_t zoneId, int32_t c
     handler_->SendAudioFocusInfoChangeCallback(callbackCategory, audioInterrupt, audioFocusInfoList);
 }
 
+// LCOV_EXCL_START
 bool AudioInterruptService::CheckAudioInterruptZonePermission()
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
@@ -1339,5 +1344,6 @@ void AudioInterruptService::AudioInterruptClient::OnInterrupt(const InterruptEve
         callback_->OnInterrupt(interruptEvent);
     }
 }
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

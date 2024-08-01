@@ -12,11 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "StreamFilterRouter"
+#endif
 
 #include "stream_filter_router.h"
-#include "audio_log.h"
+
 #include "audio_policy_service.h"
 
 using namespace std;

@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioManagerStub"
+#endif
 
 #include "audio_manager_base.h"
 #include "audio_system_manager.h"
@@ -87,6 +88,7 @@ const char *g_audioServerCodeStrs[] = {
     "LOAD_HDI_EFFECT_MODEL",
     "UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED",
     "SET_SINK_MUTE_FOR_SWITCH_DEVICE",
+    "SET_ROTATION_TO_EFFECT",
     "UPDATE_SESSION_CONNECTION_STATE",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
@@ -737,6 +739,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleUpdateEffectBtOffloadSupported(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINK_MUTE_FOR_SWITCH_DEVICE):
             return HandleSetSinkMuteForSwitchDevice(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ROTATION_TO_EFFECT):
+            return HandleSetRotationToEffect(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SESSION_CONNECTION_STATE):
             return HandleUpdateSessionConnectionState(data, reply);
         default:
@@ -883,6 +887,12 @@ int AudioManagerStub::HandleSetSinkMuteForSwitchDevice(MessageParcel &data, Mess
     int32_t mute = data.ReadBool();
     int32_t result = SetSinkMuteForSwitchDevice(deviceClass, duration, mute);
     reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetRotationToEffect(MessageParcel &data, MessageParcel &reply)
+{
+    SetRotationToEffect(data.ReadUint32());
     return AUDIO_OK;
 }
 

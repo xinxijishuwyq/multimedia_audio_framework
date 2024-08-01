@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "VolumeTools"
+#endif
 
 #include <cmath>
 
@@ -277,7 +278,7 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
     }
     // Calculate the average value
     for (size_t index = 0; index < channel; index++) {
-        volMaps.volStart[index] /= frameSize;
+        volMaps.volStart[index] /= static_cast<int32_t>(frameSize);
     }
     return;
 }
@@ -310,7 +311,7 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     }
     // Calculate the average value
     for (size_t index = 0; index < channel; index++) {
-        volMaps.volStart[index] /= frameSize;
+        volMaps.volStart[index] /= static_cast<int32_t>(frameSize);
     }
     return;
 }
@@ -344,7 +345,7 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     }
     // Calculate the average value
     for (size_t index = 0; index < channel; index++) {
-        volMaps.volStart[index] /= frameSize;
+        volMaps.volStart[index] /= static_cast<int32_t>(frameSize);
     }
     return;
 }
@@ -377,7 +378,7 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     }
     // Calculate the average value
     for (size_t index = 0; index < channel; index++) {
-        volSums[index] /= frameSize;
+        volSums[index] /= static_cast<int32_t>(frameSize);
         volMaps.volStart[index] = volSums[index];
     }
     return;

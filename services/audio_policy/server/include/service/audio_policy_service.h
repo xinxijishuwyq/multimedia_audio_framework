@@ -535,10 +535,10 @@ public:
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
 
     AudioScene GetLastAudioScene() const;
-
+    void SetRotationToEffect(const uint32_t rotate);
     void FetchStreamForA2dpOffload(const bool &requireReset);
-
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -1135,6 +1135,7 @@ private:
     std::condition_variable dialogSelectCondition_;
     std::unique_ptr<std::thread> safeVolumeDialogThrd_ = nullptr;
     std::atomic<bool> isSafeVolumeDialogShowing_ = false;
+    std::mutex safeVolumeMutex_;
 
     DeviceType priorityOutputDevice_ = DEVICE_TYPE_INVALID;
     DeviceType priorityInputDevice_ = DEVICE_TYPE_INVALID;

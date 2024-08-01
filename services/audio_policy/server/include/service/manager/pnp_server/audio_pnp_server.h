@@ -37,6 +37,7 @@ public:
         static AudioPnpServer audioPnpServer;
         return audioPnpServer;
     }
+    ~AudioPnpServer();
     bool init(void);
     int32_t RegisterPnpStatusListener(std::shared_ptr<AudioPnpDeviceChangeCallback> callback);
     int32_t UnRegisterPnpStatusListener();

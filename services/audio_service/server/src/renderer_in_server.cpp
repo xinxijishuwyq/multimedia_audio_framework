@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "RendererInServer"
+#endif
 
 #include "renderer_in_server.h"
 #include <cinttypes>
@@ -800,6 +801,7 @@ int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timesta
 
 int32_t RendererInServer::GetLatency(uint64_t &latency)
 {
+    std::unique_lock<std::mutex> lock(statusLock_);
     return stream_->GetLatency(latency);
 }
 

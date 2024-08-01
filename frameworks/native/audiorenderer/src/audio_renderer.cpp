@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioRenderer"
+#endif
 
 #include <sstream>
 #include "securec.h"
@@ -1743,7 +1744,9 @@ void AudioRendererPrivate::ActivateAudioConcurrency(const AudioStreamParams &aud
     const AudioStreamType &streamType, IAudioStream::StreamClass &streamClass)
 {
     rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
-    if (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+    if (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+        rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+        rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
         rendererInfo_.pipeType = PIPE_TYPE_CALL_OUT;
     } else if (streamClass == IAudioStream::FAST_STREAM) {
         rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;

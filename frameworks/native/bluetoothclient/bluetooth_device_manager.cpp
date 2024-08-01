@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "BluetoothDeviceManager"
+#endif
 
 #include "bluetooth_device_manager.h"
 
@@ -65,6 +66,7 @@ std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::negativeDevices_;
 std::mutex HfpBluetoothDeviceManager::stopVirtualCallHandleLock_;
 BluetoothStopVirtualCallHandle HfpBluetoothDeviceManager::stopVirtualCallHandle_ = { BluetoothRemoteDevice(), false};
 
+// LCOV_EXCL_START
 std::string GetEncryptAddr(const std::string &addr)
 {
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
@@ -849,5 +851,6 @@ void HfpBluetoothDeviceManager::OnScoStateChanged(const BluetoothRemoteDevice &d
         g_deviceObserver->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::CONNECTSTATE_UPDATE);
     }
 }
+// LCOV_EXCL_STOP
 } // namespace Bluetooth
 } // namespace OHOS

@@ -12,16 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioConverterParser"
+#endif
 
 #include "audio_converter_parser.h"
-#include <map>
-#include <string>
-#include <libxml/parser.h>
 #include <libxml/tree.h>
 #ifdef USE_CONFIG_POLICY
-#include "config_policy_utils.h"
 #endif
 
 #include "media_monitor_manager.h"

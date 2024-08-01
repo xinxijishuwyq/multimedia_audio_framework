@@ -583,5 +583,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerSetMicrophoneMuteTest(data, size);
     OHOS::AudioStandard::AudioServerSetAudioBalanceValueTest(data, size);
     OHOS::AudioStandard::AudioServerSetAudioSceneTest(data, size);
+    OHOS::AudioStandard::AudioServerUpdateLatencyTimestampTest(data, size);
     return 0;
 }

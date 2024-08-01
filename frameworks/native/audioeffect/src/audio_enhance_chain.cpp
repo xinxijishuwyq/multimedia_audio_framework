@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioEnhanceChain"
+#endif
 
 #include "audio_enhance_chain.h"
 

@@ -12,25 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioPnpServer"
+#endif
 
 #include "audio_pnp_server.h"
 
-#include <cctype>
-#include <cstdlib>
-#include <dirent.h>
-#include <fcntl.h>
-#include <linux/input.h>
-#include <linux/netlink.h>
 #include <poll.h>
-#include <pthread.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
 
-#include "hdf_base.h"
-#include "hdf_device_object.h"
 #include "osal_time.h"
 #include "securec.h"
 #include "audio_errors.h"
@@ -64,6 +53,21 @@ static std::string GetAudioEventInfo(const AudioEvent audioEvent)
     }
 
     return event;
+}
+
+AudioPnpServer::~AudioPnpServer()
+{
+    AUDIO_INFO_LOG("~AudioPnpServer");
+    g_socketRunThread = false;
+    g_inputRunThread = false;
+
+    if (socketThread_ && socketThread_->joinable()) {
+        socketThread_->detach();
+    }
+
+    if (inputThread_ && inputThread_->joinable()) {
+        inputThread_->detach();
+    }
 }
 
 bool AudioPnpServer::init(void)

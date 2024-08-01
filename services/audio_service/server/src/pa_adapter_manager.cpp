@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "PaAdapterManager"
+#endif
 
 #include "pa_adapter_manager.h"
 #include <sstream>
@@ -32,6 +33,8 @@ namespace OHOS {
 namespace AudioStandard {
 const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint64_t BUF_LENGTH_IN_MSEC = 20;
+static const uint32_t PA_RECORD_MAX_LENGTH_NORMAL = 4;
+static const uint32_t PA_RECORD_MAX_LENGTH_WAKEUP = 30;
 static const int32_t CONNECT_STREAM_TIMEOUT_IN_SEC = 8; // 8S
 static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
     {STREAM_VOICE_CALL, "voice_call"},
@@ -283,8 +286,8 @@ int32_t PaAdapterManager::InitPaContext()
         AUDIO_ERR_LOG("Not supported managerType:%{public}d", managerType_);
     }
     if (api_ == nullptr) {
-        pa_threaded_mainloop_free(mainLoop_);
         AUDIO_ERR_LOG("Get api from mainLoop failed");
+        pa_threaded_mainloop_free(mainLoop_);
         return ERR_DEVICE_INIT;
     }
 
@@ -295,8 +298,8 @@ int32_t PaAdapterManager::InitPaContext()
 
     context_ = pa_context_new(api_, packageName.c_str());
     if (context_ == nullptr) {
-        pa_threaded_mainloop_free(mainLoop_);
         AUDIO_ERR_LOG("New context failed");
+        pa_threaded_mainloop_free(mainLoop_);
         return ERR_DEVICE_INIT;
     }
 
@@ -394,8 +397,8 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
         isRecording ? nullptr : &map, propList);
     if (!paStream) {
         int32_t error = pa_context_errno(context_);
-        pa_proplist_free(propList);
         AUDIO_ERR_LOG("pa_stream_new_with_proplist failed, error: %{public}d", error);
+        pa_proplist_free(propList);
         return nullptr;
     }
 
@@ -406,15 +409,15 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     std::string deviceName;
     int32_t errorCode = GetDeviceNameForConnect(processConfig, sessionId, deviceName);
     if (errorCode != SUCCESS) {
-        ReleasePaStream(paStream);
         AUDIO_ERR_LOG("getdevicename err: %{public}d", errorCode);
+        ReleasePaStream(paStream);
         return nullptr;
     }
 
-    int32_t ret = ConnectStreamToPA(paStream, sampleSpec, deviceName);
+    int32_t ret = ConnectStreamToPA(paStream, sampleSpec, processConfig.capturerInfo.sourceType, deviceName);
     if (ret < 0) {
-        ReleasePaStream(paStream);
         AUDIO_ERR_LOG("ConnectStreamToPA Failed");
+        ReleasePaStream(paStream);
         return nullptr;
     }
     return paStream;
@@ -584,7 +587,7 @@ std::shared_ptr<ICapturerStream> PaAdapterManager::CreateCapturerStream(AudioPro
 }
 
 int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec,
-    const std::string &deviceName)
+    SourceType source, const std::string &deviceName)
 {
     AUDIO_DEBUG_LOG("Enter PaAdapterManager::ConnectStreamToPA");
     if (CheckReturnIfinvalid(mainLoop_ && context_ && paStream, ERROR) < 0) {
@@ -599,7 +602,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     }
     if (managerType_ == RECORDER) {
         XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
-        int32_t capturerRet = ConnectCapturerStreamToPA(paStream, sampleSpec, deviceName);
+        int32_t capturerRet = ConnectCapturerStreamToPA(paStream, sampleSpec, source, deviceName);
         CHECK_AND_RETURN_RET_LOG(capturerRet == SUCCESS, capturerRet, "ConnectCapturerStreamToPA failed");
     }
     while (waitConnect_) {
@@ -661,10 +664,10 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
 }
 
 int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec,
-    const std::string &deviceName)
+    SourceType source, const std::string &deviceName)
 {
     uint32_t fragsize = 1; // 1 is frag size of recorder
-    uint32_t maxlength = 4; // 4 is max buffer length of recorder
+    uint32_t maxlength = (source == SOURCE_TYPE_WAKEUP) ? PA_RECORD_MAX_LENGTH_WAKEUP : PA_RECORD_MAX_LENGTH_NORMAL;
     pa_buffer_attr bufferAttr;
     bufferAttr.maxlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * maxlength, &sampleSpec);
     bufferAttr.fragsize = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * fragsize, &sampleSpec);

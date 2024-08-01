@@ -12,13 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioUsageStrategyParser"
+#endif
 
 #include "audio_usage_strategy_parser.h"
-#include <string>
-#include <iostream>
-#include <vector>
 #include "media_monitor_manager.h"
 
 namespace OHOS {

@@ -12,19 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioInputThread"
+#endif
 
 #include "audio_input_thread.h"
 
 #include <fcntl.h>
 #include <poll.h>
-#include <string>
 #include <unistd.h>
 
-#include "hdf_base.h"
-#include "hdf_device_object.h"
-#include "securec.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 

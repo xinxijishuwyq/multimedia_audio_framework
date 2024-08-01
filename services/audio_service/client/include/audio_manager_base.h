@@ -432,11 +432,11 @@ public:
      * Set Sink Mute For Switch Device.
      */
     virtual int32_t SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute) = 0;
-    
+
     /**
-     * Update Session Connection State.
+     * Set Rotation To Effect.
      */
-    virtual void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) = 0;
+    virtual void SetRotationToEffect(const uint32_t rotate) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -504,6 +504,7 @@ private:
     int HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply);
     int HandleSetSinkMuteForSwitchDevice(MessageParcel &data, MessageParcel &reply);
+    int HandleSetRotationToEffect(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSessionConnectionState(MessageParcel &data, MessageParcel &reply);
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

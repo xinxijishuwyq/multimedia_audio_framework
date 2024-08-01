@@ -12,13 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioSpatializationStateChangeListenerStub"
+#endif
 
 #include "audio_spatialization_state_change_listener_stub.h"
-
-#include "audio_errors.h"
-#include "audio_spatialization_manager.h"
 #include "audio_policy_log.h"
 
 using namespace std;
