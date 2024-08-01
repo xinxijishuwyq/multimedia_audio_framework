@@ -507,8 +507,8 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
     if (it != AudioServer::audioParameters.end()) {
         asrAecModeSink = it->second;
     } else {
-        //if asr_aec_mode null, return ASR_AEC.
-        //if asr_aec_mode null and ASR_AEC null, return err.
+        // if asr_aec_mode null, return ASR_AEC.
+        // if asr_aec_mode null and ASR_AEC null, return err.
         auto itAec = AudioServer::audioParameters.find(keyAec);
         std::string asrAecSink = itAec->second;
         if (asrAecSink == "ASR_AEC=ON") {
