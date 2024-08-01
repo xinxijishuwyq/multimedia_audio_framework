@@ -66,6 +66,21 @@ static std::string GetAudioEventInfo(const AudioEvent audioEvent)
     return event;
 }
 
+AudioPnpServer::~AudioPnpServer()
+{
+    AUDIO_INFO_LOG("~AudioPnpServer");
+    g_socketRunThread = false;
+    g_inputRunThread = false;
+
+    if (socketThread_ && socketThread_->joinable()) {
+        socketThread_->detach();
+    }
+
+    if (inputThread_ && inputThread_->joinable()) {
+        inputThread_->detach();
+    }
+}
+
 bool AudioPnpServer::init(void)
 {
     AUDIO_INFO_LOG("Init");
