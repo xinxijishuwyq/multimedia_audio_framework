@@ -17,7 +17,7 @@
 
 #include "pro_renderer_stream_impl.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_utils.h"
 #include "securec.h"
 #include "policy_handler.h"
@@ -179,6 +179,7 @@ int32_t ProRendererStreamImpl::Start()
         return SUCCESS;
     }
     status_ = I_STATUS_STARTED;
+    isFirstFrame_ = true;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STARTED);
@@ -578,7 +579,7 @@ int32_t ProRendererStreamImpl::PopWriteBufferIndex()
 
 void ProRendererStreamImpl::PopSinkBuffer(std::vector<char> *audioBuffer, int32_t &index)
 {
-    if (readQueue_.empty()) {
+    if (readQueue_.empty() && isFirstFrame_) {
         std::unique_lock firstFrameLock(firstFrameMutex);
         firstFrameSync_.wait_for(firstFrameLock, std::chrono::milliseconds(FIRST_FRAME_TIMEOUT_TIME),
             [this] { return (!readQueue_.empty() || isBlock_); });

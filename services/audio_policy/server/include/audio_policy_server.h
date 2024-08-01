@@ -37,7 +37,7 @@
 
 #include "audio_info.h"
 #include "audio_policy_service.h"
-#include "audio_session_callback.h"
+#include "audio_stream_removed_callback.h"
 #include "audio_interrupt_callback.h"
 #include "audio_policy_manager_stub.h"
 #include "audio_policy_client_proxy.h"
@@ -61,7 +61,7 @@ class BluetoothEventSubscriber;
 
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyManagerStub,
-                          public AudioSessionCallback {
+                          public AudioStreamRemovedCallback {
     DECLARE_SYSTEM_ABILITY(AudioPolicyServer);
 
 public:
@@ -199,7 +199,7 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
 
-    void OnSessionRemoved(const uint64_t sessionID) override;
+    void OnAudioStreamRemoved(const uint64_t sessionID) override;
 
     void ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneId = 0);
 
@@ -378,6 +378,8 @@ public:
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) override;
 
     int32_t ResetRingerModeMute() override;
+
+    int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:

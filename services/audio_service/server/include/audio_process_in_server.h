@@ -107,7 +107,7 @@ private:
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     std::mutex statusLock_;
 
-    uint32_t clientTid_;
+    uint32_t clientTid_ = 0;
     std::string clientBundleName_;
     bool clientThreadPriorityRequested_ = false;
 

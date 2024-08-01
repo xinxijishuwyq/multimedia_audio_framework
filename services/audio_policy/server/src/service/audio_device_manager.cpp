@@ -33,6 +33,7 @@ const int32_t ADDRESS_STR_LEN = 17;
 const int32_t START_POS = 6;
 const int32_t END_POS = 13;
 
+// LCOV_EXCL_START
 std::string GetEncryptAddr(const std::string &addr)
 {
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
@@ -574,7 +575,7 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRecongnitionCap
     }
     return descs;
 }
-
+// LCOV_EXCL_STOP
 unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice(StreamUsage streamUsage)
 {
     if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
@@ -602,6 +603,7 @@ unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCaptureDefaultDevice()
     return devDesc;
 }
 
+// LCOV_EXCL_START
 void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage,
     const DevicePrivacyInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &dev,
     std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
@@ -1029,5 +1031,6 @@ bool AudioDeviceManager::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDev
         audioDeviceDescriptors->deviceType_, GetEncryptAddr(audioDeviceDescriptors->macAddress_).c_str());
     return false;
 }
+// LCOV_EXCL_STOP
 }
 }

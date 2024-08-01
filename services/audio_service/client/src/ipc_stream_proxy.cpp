@@ -16,7 +16,7 @@
 #define LOG_TAG "IpcStreamProxy"
 
 #include "ipc_stream_proxy.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_process_config.h"
 

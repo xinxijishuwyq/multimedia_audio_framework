@@ -26,7 +26,7 @@
 #include "securec.h"
 #include <map>
 
-#include "audio_log.h"
+#include "audio_capturer_log.h"
 #include "audio_capturer.h"
 
 using namespace std;

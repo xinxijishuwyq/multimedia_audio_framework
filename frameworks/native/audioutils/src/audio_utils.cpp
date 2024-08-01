@@ -191,6 +191,16 @@ void AudioXCollie::CancelXCollieTimer()
     }
 }
 
+bool PermissionUtil::VerifyIsShell()
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
+    if (tokenTypeFlag == Security::AccessToken::TOKEN_SHELL) {
+        return true;
+    }
+    return false;
+}
+
 bool PermissionUtil::VerifyIsSystemApp()
 {
     uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
@@ -224,9 +234,9 @@ bool PermissionUtil::VerifySystemPermission()
     auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
 
     CHECK_AND_RETURN_RET(tokenTypeFlag != Security::AccessToken::TOKEN_NATIVE, true);
-
+#ifdef AUDIO_BUILD_VARIANT_ROOT
     CHECK_AND_RETURN_RET(tokenTypeFlag != Security::AccessToken::TOKEN_SHELL, true);
-
+#endif
     bool tmp = VerifyIsSystemApp();
     CHECK_AND_RETURN_RET(!tmp, true);
 
@@ -330,23 +340,7 @@ void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len)
 
 void AdjustStereoToMonoForPCM24Bit(int8_t *data, uint64_t len)
 {
-    uint64_t count = len / 2 / 3;
-    // first number 2: stereo audio has 2 channels
-    // second number 3: the bit depth of PCM24Bit is 24 bits (3 bytes)
-
-    // int8_t is used for reading data of PCM24BIT here
-    // 24 / 8 = 3, so we need repeat the calculation three times in each loop
-    while (count > 0) {
-        // the number 2 is the count of stereo audio channels, 2 * 3 = 6
-        data[0] = data[0] / 2 + data[3] / 2;
-        data[3] = data[0];
-        data[1] = data[1] / 2 + data[4] / 2;
-        data[4] = data[1];
-        data[2] = data[2] / 2 + data[5] / 2;
-        data[5] = data[2];
-        data += 6;
-        count--;
-    }
+    // 24bit is not supported for audio balance.
 }
 
 void AdjustStereoToMonoForPCM32Bit(int32_t *data, uint64_t len)
@@ -395,23 +389,7 @@ void AdjustAudioBalanceForPCM16Bit(int16_t *data, uint64_t len, float left, floa
 
 void AdjustAudioBalanceForPCM24Bit(int8_t *data, uint64_t len, float left, float right)
 {
-    uint64_t count = len / 2 / 3;
-    // first number 2: stereo audio has 2 channels
-    // second number 3: the bit depth of PCM24Bit is 24 bits (3 bytes)
-
-    // int8_t is used for reading data of PCM24BIT here
-    // 24 / 8 = 3, so we need repeat the calculation three times in each loop
-    while (count > 0) {
-        // the number 2 is the count of stereo audio channels, 2 * 3 = 6
-        data[0] *= left;
-        data[1] *= left;
-        data[2] *= left;
-        data[3] *= right;
-        data[4] *= right;
-        data[5] *= right;
-        data += 6;
-        count--;
-    }
+    // 24bit is not supported for audio balance.
 }
 
 void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, float right)
@@ -633,7 +611,9 @@ FILE *DumpFileUtil::OpenDumpFileInner(std::string para, std::string fileName, Au
         CHECK_AND_RETURN_RET_LOG(dumpFile != nullptr, dumpFile,
             "Error opening pcm dump file:%{public}s", filePath.c_str());
     }
-    AUDIO_INFO_LOG("Dump file path: %{public}s", filePath.c_str());
+    if (dumpFile != nullptr) {
+        AUDIO_INFO_LOG("Dump file path: %{public}s", filePath.c_str());
+    }
     g_lastPara[para] = dumpPara;
     return dumpFile;
 }

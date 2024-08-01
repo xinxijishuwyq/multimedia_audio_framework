@@ -14,6 +14,7 @@
  */
 
 #include "audio_schedule.h"
+#include "audio_schedule_guard.h"
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -116,3 +117,43 @@ void UnscheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /*
 #ifdef __cplusplus
 }
 #endif
+
+namespace OHOS {
+namespace AudioStandard {
+AudioScheduleGuard::AudioScheduleGuard(uint32_t pid, uint32_t tid, const std::string &bundleName)
+    : pid_(pid), tid_(tid), bundleName_(bundleName)
+{
+    ScheduleReportData(pid, tid, bundleName.c_str());
+    isReported_ = true;
+}
+
+AudioScheduleGuard::AudioScheduleGuard(AudioScheduleGuard&& audioScheduleGuard)
+    : pid_(audioScheduleGuard.pid_), tid_(audioScheduleGuard.tid_),
+    bundleName_(std::move(audioScheduleGuard.bundleName_)), isReported_(audioScheduleGuard.isReported_)
+{
+    audioScheduleGuard.isReported_ = false;
+}
+
+AudioScheduleGuard& AudioScheduleGuard::operator=(AudioScheduleGuard&& audioScheduleGuard)
+{
+    if (*this == audioScheduleGuard) {
+        audioScheduleGuard.isReported_ = false;
+        return *this;
+    }
+    AudioScheduleGuard temp(std::move(*this));
+    this->bundleName_ = std::move(audioScheduleGuard.bundleName_);
+    this->isReported_ = audioScheduleGuard.isReported_;
+    this->pid_ = audioScheduleGuard.pid_;
+    this->tid_ = audioScheduleGuard.tid_;
+    audioScheduleGuard.isReported_ = false;
+    return *this;
+}
+
+AudioScheduleGuard::~AudioScheduleGuard()
+{
+    if (isReported_) {
+        UnscheduleReportData(pid_, tid_, bundleName_.c_str());
+    }
+}
+} // namespace AudioStandard
+} // namespace OHOS

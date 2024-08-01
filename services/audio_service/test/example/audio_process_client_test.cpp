@@ -27,7 +27,7 @@
 
 #include <sys/time.h>
 
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_process_in_client.h"

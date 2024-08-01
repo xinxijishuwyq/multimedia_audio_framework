@@ -154,9 +154,13 @@ public:
     // IAudioServerInnerCall
     int32_t SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs) final;
 
+    int32_t SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute) override;
+
     void LoadHdiEffectModel() override;
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
+
+    void SetRotationToEffect(const uint32_t rotate) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

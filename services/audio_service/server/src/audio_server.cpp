@@ -35,7 +35,7 @@
 #include "audio_capturer_source.h"
 #include "fast_audio_capturer_source.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_asr.h"
 #include "audio_manager_listener_proxy.h"
 #include "audio_service.h"
@@ -467,19 +467,28 @@ int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode)
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_aec_mode";
     std::string value = key + "=";
+    std::string keyAec = "ASR_AEC";
+    std::string valueAec = "";
 
     auto it = AEC_MODE_MAP_VERSE.find(asrAecMode);
     if (it != AEC_MODE_MAP_VERSE.end()) {
         value = key + "=" + it->second;
+        if (it->second == "STANDARD") {
+            valueAec = "ASR_AEC=ON";
+        } else {
+            valueAec = "ASR_AEC=OFF";
+        }
     } else {
         AUDIO_ERR_LOG("get value failed.");
         return ERR_INVALID_PARAM;
     }
     AudioServer::audioParameters[key] = value;
+    AudioServer::audioParameters[keyAec] = valueAec;
     AudioParamKey parmKey = AudioParamKey::NONE;
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
     audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
+    audioRendererSinkInstance->SetAudioParameter(parmKey, "", valueAec);
     return 0;
 }
 
@@ -489,6 +498,7 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
         "Check playback permission failed, no system permission");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_aec_mode";
+    std::string keyAec = "ASR_AEC";
     AudioParamKey parmKey = AudioParamKey::NONE;
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
@@ -497,8 +507,19 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
     if (it != AudioServer::audioParameters.end()) {
         asrAecModeSink = it->second;
     } else {
-        AUDIO_ERR_LOG("get value failed.");
-        return ERR_INVALID_PARAM;
+        // if asr_aec_mode null, return ASR_AEC.
+        // if asr_aec_mode null and ASR_AEC null, return err.
+        auto itAec = AudioServer::audioParameters.find(keyAec);
+        std::string asrAecSink = itAec->second;
+        if (asrAecSink == "ASR_AEC=ON") {
+            asrAecMode = AsrAecMode::STANDARD;
+        } else if (asrAecSink == "ASR_AEC=OFF") {
+            asrAecMode = AsrAecMode::BYPASS;
+        } else {
+            AUDIO_ERR_LOG("get value failed.");
+            return ERR_INVALID_PARAM;
+        }
+        return 0;
     }
 
     std::vector<std::string> resMode = splitString(asrAecModeSink, "=");
@@ -2074,6 +2095,25 @@ int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t d
     return audioRendererSinkInstance->SetRenderEmpty(durationUs);
 }
 
+int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_, ERR_PERMISSION_DENIED, "refused for %{public}d", callingUid);
+    if (devceClass == "primary") {
+        if (durationUs <= 0) {
+            return SUCCESS;
+        }
+        IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+        CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+        return audioRendererSinkInstance->SetRenderEmpty(durationUs);
+    } else if (devceClass == "offload") {
+        IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
+        CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+        return audioRendererSinkInstance->SetSinkMuteForSwitchDevice(mute);
+    }
+    return SUCCESS;
+}
+
 void AudioServer::LoadHdiEffectModel()
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -2092,6 +2132,16 @@ void AudioServer::UpdateEffectBtOffloadSupported(const bool &isSupported)
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
     audioEffectChainManager->UpdateEffectBtOffloadSupported(isSupported);
+}
+
+void AudioServer::SetRotationToEffect(const uint32_t rotate)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(callingUid == audioUid_, "set rotation to effect refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+    audioEffectChainManager->EffectRotationUpdate(rotate);
 }
 } // namespace AudioStandard
 } // namespace OHOS

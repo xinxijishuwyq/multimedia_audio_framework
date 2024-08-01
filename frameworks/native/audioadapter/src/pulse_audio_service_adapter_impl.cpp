@@ -30,6 +30,7 @@
 #include "audio_utils.h"
 #include "hisysevent.h"
 #include <set>
+#include <unordered_map>
 
 #include "media_monitor_manager.h"
 #include "event_bean.h"
@@ -39,8 +40,8 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 static unique_ptr<AudioServiceAdapterCallback> g_audioServiceAdapterCallback;
-std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sinkIndexSessionIDMap;
-std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndexSessionIDMap;
+SafeMap<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sinkIndexSessionIDMap;
+SafeMap<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndexSessionIDMap;
 
 static const int32_t PA_SERVICE_IMPL_TIMEOUT = 15; // 15s
 static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM_MAP = {
@@ -264,7 +265,7 @@ int32_t PulseAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, 
 
 bool PulseAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool isMute, bool isSync)
 {
-    AUDIO_INFO_LOG("MuteAudioDevice: [%{public}s] : [%{public}d]", sinkName.c_str(), isMute);
+    AUDIO_DEBUG_LOG("MuteAudioDevice: [%{public}s] : [%{public}d]", sinkName.c_str(), isMute);
 
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
@@ -390,7 +391,7 @@ std::vector<SinkInfo> PulseAudioServiceAdapterImpl::GetAllSinks()
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
     userData->sinkInfos = {};
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
+    int32_t XcollieFlag = 2; // flag 1 generate log file, flag 2 die when timeout, restart server
 
     CHECK_AND_RETURN_RET_LOG(mContext != nullptr, userData->sinkInfos, "mContext is nullptr");
 
@@ -832,7 +833,7 @@ void PulseAudioServiceAdapterImpl::HandleSinkInputInfoVolume(pa_context *c, cons
 
     uint32_t sessionID = 0;
     CastValue<uint32_t>(sessionID, sessionCStr);
-    sinkIndexSessionIDMap[i->index] = sessionID;
+    sinkIndexSessionIDMap.Insert(i->index, sessionID);
     int32_t streamUsage = 0;
     CastValue<int32_t>(streamUsage, pa_proplist_gets(i->proplist, "stream.usage"));
     float volumeFactor = atof(streamVolume);
@@ -900,7 +901,7 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
     sessionStr << streamSession;
     sessionStr >> sessionID;
     AUDIO_INFO_LOG("sessionID %{public}u", sessionID);
-    sourceIndexSessionIDMap[i->index] = sessionID;
+    sourceIndexSessionIDMap.Insert(i->index, sessionID);
 }
 
 void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_sink_input_info *i, int eol,
@@ -1022,9 +1023,9 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
         pa_operation_unref(operation);
         pa_threaded_mainloop_unlock(thiz->mMainLoop);
     } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-        uint32_t sessionID = sourceIndexSessionIDMap[idx];
+        uint32_t sessionID = sourceIndexSessionIDMap.ReadVal(idx);
         AUDIO_ERR_LOG("sessionID: %{public}d removed", sessionID);
-        g_audioServiceAdapterCallback->OnSessionRemoved(sessionID);
+        g_audioServiceAdapterCallback->OnAudioStreamRemoved(sessionID);
     }
 }
 
@@ -1057,7 +1058,7 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
                 pa_operation_unref(operation);
                 pa_threaded_mainloop_unlock(thiz->mMainLoop);
             } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-                const uint32_t sessionID = sinkIndexSessionIDMap[idx];
+                const uint32_t sessionID = sinkIndexSessionIDMap.ReadVal(idx);
                 AUDIO_INFO_LOG("sessionID: %{public}d  removed", sessionID);
             }
             break;

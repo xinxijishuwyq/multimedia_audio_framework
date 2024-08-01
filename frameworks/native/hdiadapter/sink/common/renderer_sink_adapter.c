@@ -100,7 +100,6 @@ int32_t UnLoadSinkAdapter(struct RendererSinkAdapter *sinkAdapter)
     CHECK_AND_RETURN_RET_LOG(sinkAdapter != NULL, ERROR, "Invalid parameter");
 
     free(sinkAdapter);
-
     return SUCCESS;
 }
 

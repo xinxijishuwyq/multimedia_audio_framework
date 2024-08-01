@@ -16,7 +16,7 @@
 #define LOG_TAG "IpcStreamListenerProxy"
 
 #include "ipc_stream_listener_proxy.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_errors.h"
 
 namespace OHOS {
@@ -35,7 +35,9 @@ int32_t IpcStreamListenerProxy::OnOperationHandled(Operation operation, int64_t 
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC); // server call client in async
+    int32_t flag = operation == SET_OFFLOAD_ENABLE ? (MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER)
+        : MessageOption::TF_ASYNC;
+    MessageOption option(flag); // server call client in async
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERR_OPERATION_FAILED,
         "Write descriptor failed!");

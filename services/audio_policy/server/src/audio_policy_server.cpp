@@ -42,7 +42,7 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_policy_manager_listener_proxy.h"
@@ -116,8 +116,8 @@ void AudioPolicyServer::OnStart()
 
     interruptService_->SetCallbackHandler(audioPolicyServerHandler_);
 
-    if (audioPolicyService_.SetAudioSessionCallback(this)) {
-        AUDIO_ERR_LOG("SetAudioSessionCallback failed");
+    if (audioPolicyService_.SetAudioStreamRemovedCallback(this)) {
+        AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
     }
     audioPolicyService_.Init();
 
@@ -209,6 +209,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case COMMON_EVENT_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility common event service start");
             SubscribeCommonEvent("usual.event.DATA_SHARE_READY");
+            SubscribeCommonEvent("custom.event.display_rotation_changed");
             break;
         default:
             AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
@@ -511,6 +512,10 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
     if (isInitMuteState_ == false && action == "usual.event.DATA_SHARE_READY") {
         AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
         InitMicrophoneMute();
+    } else if (action == "custom.event.display_rotation_changed") {
+        uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
+        AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
+        audioPolicyService_.SetRotationToEffect(rotate);
     }
 }
 
@@ -1329,7 +1334,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     return ERR_UNKNOWN;
 }
 
-void AudioPolicyServer::OnSessionRemoved(const uint64_t sessionID)
+void AudioPolicyServer::OnAudioStreamRemoved(const uint64_t sessionID)
 {
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionID, false);
@@ -1631,12 +1636,12 @@ int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo 
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
     }
+    int32_t ret = audioPolicyService_.UpdateTracker(mode, streamChangeInfo);
     if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_PAUSED ||
         streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_STOPPED ||
         streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
         OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, streamChangeInfo.audioRendererChangeInfo.sessionId);
     }
-    int32_t ret = audioPolicyService_.UpdateTracker(mode, streamChangeInfo);
     if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RUNNING) {
         OffloadStreamCheck(streamChangeInfo.audioRendererChangeInfo.sessionId, OFFLOAD_NO_SESSION_ID);
     }
@@ -2757,5 +2762,18 @@ void AudioPolicyServer::UnregisterCommonEventReceiver()
         AUDIO_INFO_LOG("unregister bluetooth device name commonevent");
     }
 }
+
+int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, InterruptEvent &event)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_CAST_ENGINE_SA) {
+        AUDIO_ERR_LOG("InjectInterruption callerUid is Error: not cast_engine");
+        return ERROR;
+    }
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
+    InterruptEventInternal interruptEvent { event.eventType, event.forceType, event.hintType, 0.2f};
+    return audioPolicyServerHandler_->SendInterruptEventInternalCallback(interruptEvent);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

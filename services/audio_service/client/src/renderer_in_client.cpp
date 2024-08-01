@@ -43,7 +43,7 @@
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
 #include "audio_manager_base.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_ring_cache.h"
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
@@ -124,6 +124,7 @@ RendererInClientInner::~RendererInClientInner()
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
+    Trace trace(traceTag_ + " OnOperationHandled:" + std::to_string(operation));
     AUDIO_INFO_LOG("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_, operation,
         result);
     if (operation == SET_OFFLOAD_ENABLE) {
@@ -529,7 +530,7 @@ int32_t RendererInClientInner::InitIpcStream()
 
     ret = ipcStream_->GetAudioSessionID(sessionId_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioSessionID failed:%{public}d", ret);
-    traceTag_ = "RendererInClient::sessionId:" + std::to_string(sessionId_);
+    traceTag_ = "[" + std::to_string(sessionId_) + "]RendererInClient"; // [100001]RendererInClient
     InitCallbackHandler();
     return SUCCESS;
 }
@@ -1664,6 +1665,12 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         "invalid size is %{public}zu", bufferSize);
     Trace::CountVolume(traceTag_, *buffer);
     CHECK_AND_RETURN_RET_LOG(gServerProxy_ != nullptr, ERROR, "server is died");
+    if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
+        Trace trace2(traceTag_+ " call start to exit stand-by");
+        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
+        int32_t ret = ipcStream_->Start();
+        AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
+    }
     std::lock_guard<std::mutex> lock(writeMutex_);
 
     size_t oriBufferSize = bufferSize;

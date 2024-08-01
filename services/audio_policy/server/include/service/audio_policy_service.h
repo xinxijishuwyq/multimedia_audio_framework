@@ -264,7 +264,7 @@ public:
 
     void LoadEffectLibrary();
 
-    int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
+    int32_t SetAudioStreamRemovedCallback(AudioStreamRemovedCallback *callback);
 
     void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
 
@@ -527,6 +527,8 @@ public:
 
     AudioScene GetLastAudioScene() const;
 
+    void SetRotationToEffect(const uint32_t rotate);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -664,8 +666,8 @@ private:
     void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
-    void BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> desc,
-        vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos, SourceType sourceType);
+    void BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> &desc,
+        vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType);
 
     void BluetoothScoDisconectForRecongnition();
 
@@ -717,7 +719,7 @@ private:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
-    void SetVolumeForSwitchDevice(DeviceType deviceType);
+    void SetVolumeForSwitchDevice(DeviceType deviceType, const std::string &newSinkName = PORT_NONE);
 
     void UpdateVolumeForLowLatency();
 
@@ -825,7 +827,10 @@ private:
 
     void MuteSinkPort(DeviceType deviceType, int32_t duration, bool isSync = false);
 
-    void MuteSinkPort(DeviceType oldDevice, DeviceType newDevice, AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync);
+
+    void MuteSinkPort(const std::string &oldSinkname, const std::string &newSinkName,
+        AudioStreamDeviceChangeReasonExt reason);
 
     void RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::list<AudioModuleInfo> &moduleInfoList,
         SourceInfo &targetInfo);
@@ -1073,7 +1078,6 @@ private:
 
     AudioModuleInfo primaryMicModuleInfo_ = {};
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
-    // sort by channels and samplerate
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 
@@ -1119,6 +1123,7 @@ private:
     std::condition_variable dialogSelectCondition_;
     std::unique_ptr<std::thread> safeVolumeDialogThrd_ = nullptr;
     std::atomic<bool> isSafeVolumeDialogShowing_ = false;
+    std::mutex safeVolumeMutex_;
 
     DeviceType priorityOutputDevice_ = DEVICE_TYPE_INVALID;
     DeviceType priorityInputDevice_ = DEVICE_TYPE_INVALID;

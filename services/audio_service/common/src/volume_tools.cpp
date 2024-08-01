@@ -15,18 +15,22 @@
 #undef LOG_TAG
 #define LOG_TAG "VolumeTools"
 
+#include <cmath>
+
 #include "volume_tools.h"
 #include "volume_tools_c.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 
 namespace {
 static const int32_t UINT8_SHIFT = 0x80;
 static const int32_t INT24_SHIFT = 8;
+static const int32_t INT24_MAX_VALUE = 8388607;
 static const uint32_t SHIFT_EIGHT = 8;
 static const uint32_t SHIFT_SIXTEEN = 16;
 static const uint32_t ARRAY_INDEX_TWO = 2;
 static const size_t MIN_FRAME_SIZE = 1;
+static const size_t MAX_FRAME_SIZE = 100000; // max to about 2s for 48khz
 }
 namespace OHOS {
 namespace AudioStandard {
@@ -218,6 +222,230 @@ int32_t VolumeTools::Process(const BufferDesc &buffer, AudioSampleFormat format,
     }
 
     return SUCCESS;
+}
+
+double VolumeTools::GetVolDb(AudioSampleFormat format, int32_t vol)
+{
+    double volume = static_cast<double>(vol);
+    switch (format) {
+        case SAMPLE_U8:
+            volume = volume / INT8_MAX;
+            break;
+        case SAMPLE_S16LE:
+            volume = volume / INT16_MAX;
+            break;
+        case SAMPLE_S24LE:
+            volume = volume / INT24_MAX_VALUE;
+            break;
+        case SAMPLE_S32LE:
+            volume = volume / INT32_MAX;
+            break;
+        case SAMPLE_F32LE:
+            volume = volume / INT32_MAX;
+            break;
+        default:
+            break;
+    }
+    return std::log10(volume);
+}
+
+static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps)
+{
+    size_t byteSizePerData = 1; // 1 for unsigned 8bit
+    size_t byteSizePerFrame = byteSizePerData * channel;
+    if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
+        AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
+        return;
+    }
+    size_t frameSize = buffer.bufLength / byteSizePerFrame;
+    if (frameSize <= MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
+        AUDIO_ERR_LOG("invalid frameSize, size is %{public}zu", frameSize);
+        return;
+    }
+
+    // reset maps
+    for (size_t index = 0; index < channel; index++) {
+        volMaps.volStart[index] = 0;
+        volMaps.volEnd[index] = 0;
+    }
+    uint8_t *raw8 = buffer.buffer;
+    for (size_t frameIndex = 0; frameIndex < frameSize; frameIndex++) {
+        for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
+            volMaps.volStart[channelIdx] += (*raw8 >= UINT8_SHIFT ? *raw8 - UINT8_SHIFT : UINT8_SHIFT - *raw8);
+            raw8++;
+        }
+    }
+    // Calculate the average value
+    for (size_t index = 0; index < channel; index++) {
+        volMaps.volStart[index] /= static_cast<int32_t>(frameSize);
+    }
+    return;
+}
+
+static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps)
+{
+    size_t byteSizePerData = 2; // 2 for signed 16bit
+    size_t byteSizePerFrame = byteSizePerData * channel;
+    if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
+        AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
+        return;
+    }
+    size_t frameSize = buffer.bufLength / byteSizePerFrame;
+    if (frameSize <= MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
+        AUDIO_ERR_LOG("invalid frameSize, size is %{public}zu", frameSize);
+        return;
+    }
+
+    // reset maps
+    for (size_t index = 0; index < channel; index++) {
+        volMaps.volStart[index] = 0;
+        volMaps.volEnd[index] = 0;
+    }
+    int16_t *raw16 = reinterpret_cast<int16_t *>(buffer.buffer);
+    for (size_t frameIndex = 0; frameIndex < frameSize; frameIndex++) {
+        for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
+            volMaps.volStart[channelIdx] += (*raw16 >= 0 ? *raw16: (-*raw16));
+            raw16++;
+        }
+    }
+    // Calculate the average value
+    for (size_t index = 0; index < channel; index++) {
+        volMaps.volStart[index] /= static_cast<int32_t>(frameSize);
+    }
+    return;
+}
+
+static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps)
+{
+    size_t byteSizePerData = 3; // 3 for 24bit
+    size_t byteSizePerFrame = byteSizePerData * channel;
+    if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
+        AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
+        return;
+    }
+    size_t frameSize = buffer.bufLength / byteSizePerFrame;
+    if (frameSize <= MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
+        AUDIO_ERR_LOG("invalid frameSize, size is %{public}zu", frameSize);
+        return;
+    }
+
+    // reset maps
+    for (size_t index = 0; index < channel; index++) {
+        volMaps.volStart[index] = 0;
+        volMaps.volEnd[index] = 0;
+    }
+    uint8_t *raw8 = buffer.buffer;
+    for (size_t frameIndex = 0; frameIndex < frameSize; frameIndex++) {
+        for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
+            int32_t sample = static_cast<int32_t>(ReadInt24LE(raw8));
+            volMaps.volStart[channelIdx] += (sample >= 0 ? sample: (-sample));
+            raw8 += byteSizePerData;
+        }
+    }
+    // Calculate the average value
+    for (size_t index = 0; index < channel; index++) {
+        volMaps.volStart[index] /= static_cast<int32_t>(frameSize);
+    }
+    return;
+}
+
+static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps)
+{
+    size_t byteSizePerData = 4; // 4 for signed 32bit
+    size_t byteSizePerFrame = byteSizePerData * channel;
+    if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
+        AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
+        return;
+    }
+    size_t frameSize = buffer.bufLength / byteSizePerFrame;
+    if (frameSize <= MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
+        AUDIO_ERR_LOG("invalid frameSize, size is %{public}zu", frameSize);
+        return;
+    }
+
+    // reset maps
+    int64_t volSums[CHANNEL_MAX] = {0};
+    for (size_t index = 0; index < CHANNEL_MAX; index++) {
+        volSums[index] = 0;
+    }
+    int32_t *raw32 = reinterpret_cast<int32_t *>(buffer.buffer);
+    for (size_t frameIndex = 0; frameIndex < frameSize; frameIndex++) {
+        for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
+            volSums[channelIdx] += (*raw32 >= 0 ? *raw32: (-*raw32));
+            raw32++;
+        }
+    }
+    // Calculate the average value
+    for (size_t index = 0; index < channel; index++) {
+        volSums[index] /= static_cast<int32_t>(frameSize);
+        volMaps.volStart[index] = volSums[index];
+    }
+    return;
+}
+
+static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, ChannelVolumes &volMaps)
+{
+    size_t byteSizePerData = 4; // 4 for 32bit
+    size_t byteSizePerFrame = byteSizePerData * channel;
+    if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
+        AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
+        return;
+    }
+    size_t frameSize = buffer.bufLength / byteSizePerFrame;
+    if (frameSize <= MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
+        AUDIO_ERR_LOG("invalid frameSize, size is %{public}zu", frameSize);
+        return;
+    }
+
+    // reset maps
+    double volSums[CHANNEL_MAX] = {0};
+    for (size_t index = 0; index < CHANNEL_MAX; index++) {
+        volSums[index] = 0.0;
+    }
+    float *raw32 = reinterpret_cast<float *>(buffer.buffer);
+    for (size_t frameIndex = 0; frameIndex < frameSize; frameIndex++) {
+        for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
+            volSums[channelIdx] += (*raw32 >= 0 ? *raw32: (-*raw32));
+            raw32++;
+        }
+    }
+    // Calculate the average value
+    for (size_t index = 0; index < channel; index++) {
+        volSums[index] /= frameSize;
+        volMaps.volStart[index] = static_cast<int32_t>(volSums[index]);
+    }
+    return;
+}
+
+ChannelVolumes VolumeTools::CountVolumeLevel(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel)
+{
+    ChannelVolumes channelVols;
+    channelVols.channel = channel;
+    if (format > SAMPLE_F32LE || channel > CHANNEL_16) {
+        AUDIO_ERR_LOG("failed with invalid params");
+        return channelVols;
+    }
+    switch (format) {
+        case SAMPLE_U8:
+            CountU8Volume(buffer, channel, channelVols);
+            break;
+        case SAMPLE_S16LE:
+            CountS16Volume(buffer, channel, channelVols);
+            break;
+        case SAMPLE_S24LE:
+            CountS24Volume(buffer, channel, channelVols);
+            break;
+        case SAMPLE_S32LE:
+            CountS32Volume(buffer, channel, channelVols);
+            break;
+        case SAMPLE_F32LE:
+            CountF32Volume(buffer, channel, channelVols);
+            break;
+        default:
+            break;
+    }
+
+    return channelVols;
 }
 } // namespace AudioStandard
 } // namespace OHOS

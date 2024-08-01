@@ -464,7 +464,6 @@ void AudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
 
     switch (attr_.format) {
         case SAMPLE_U8: {
-            // this function needs to be further tested for usability
             AdjustStereoToMonoForPCM8Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
@@ -473,7 +472,6 @@ void AudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
             break;
         }
         case SAMPLE_S24: {
-            // this function needs to be further tested for usability
             AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
@@ -787,12 +785,8 @@ int32_t AudioRendererSinkInner::Start(void)
     }
     audioXCollie.CancelXCollieTimer();
 #endif
-    dumpFileName_ = "primary_audiosink_" + std::to_string(attr_.sampleRate) + "_"
+    dumpFileName_ = halName_ + "_audiosink_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
-    if (halName_ == DIRECT_HAL_NAME) {
-        dumpFileName_ = "direct_audiosink_" + std::to_string(attr_.sampleRate) + "_"
-            + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
-    }
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     InitLatencyMeasurement();

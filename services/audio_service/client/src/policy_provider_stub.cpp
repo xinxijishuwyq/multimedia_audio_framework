@@ -16,7 +16,7 @@
 #define LOG_TAG "PolicyProviderStub"
 
 #include "policy_provider_stub.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_errors.h"
 
 namespace OHOS {

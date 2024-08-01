@@ -156,6 +156,7 @@ private:
     void SetRingerStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
     void GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
+    void InjectInterruptionInternal(MessageParcel &data, MessageParcel &reply);
 
     void OnMiddleEigRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleSevRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

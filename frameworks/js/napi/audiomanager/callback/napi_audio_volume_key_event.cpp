@@ -19,7 +19,7 @@
 #include "napi_audio_enum.h"
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
-#include "audio_log.h"
+#include "audio_manager_log.h"
 
 using namespace std;
 namespace OHOS {

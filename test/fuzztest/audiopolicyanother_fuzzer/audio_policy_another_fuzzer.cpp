@@ -198,7 +198,7 @@ void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->RegisterPolicyCallbackClient(object);
 
     uint32_t sessionID = *reinterpret_cast<const uint32_t *>(rawData);
-    GetServerPtr()->OnSessionRemoved(sessionID);
+    GetServerPtr()->OnAudioStreamRemoved(sessionID);
 
     AudioPolicyServer::DeathRecipientId id =
         *reinterpret_cast<const AudioPolicyServer::DeathRecipientId *>(rawData);
@@ -252,6 +252,13 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->IsHighResolutionExist();
     bool highResExist = *reinterpret_cast<const bool *>(rawData);
     GetServerPtr()->SetHighResolutionExist(highResExist);
+
+    std::string networkId(reinterpret_cast<const char*>(rawData), size - 1);
+    InterruptEvent event = {};
+    event.eventType = *reinterpret_cast<const InterruptType *>(rawData);
+    event.forceType = *reinterpret_cast<const InterruptForceType *>(rawData);
+    event.hintType = *reinterpret_cast<const InterruptHint *>(rawData);
+    GetServerPtr()->InjectInterruption(networkId, event);
 }
 
 void AudioConcurrencyFuzzTest(const uint8_t *rawData, size_t size)

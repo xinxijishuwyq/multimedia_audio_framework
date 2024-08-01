@@ -1371,6 +1371,7 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
 
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
                 AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
+                pa_sink_input_handle_ohos_underrun(sinkIn);
             } else if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
                 PrepareMultiChannelFading(sinkIn, infoIn, si);
                 CheckMultiChannelFadeinIsDone(si, sinkIn);
@@ -2790,45 +2791,6 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     }
 }
 
-void PaInputVolumeChangeCb(pa_sink_input *i)
-{
-    struct Userdata *u;
-
-    pa_sink_input_assert_ref(i);
-    if (!strcmp(i->sink->name, SINK_NAME_INNER_CAPTURER) ||
-        !strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER)) {
-        AUDIO_INFO_LOG("PaInputVolumeChangeCb inner_cap return");
-        return;
-    }
-    pa_assert_se(u = i->sink->userdata);
-
-    if (u->offload_enable && InputIsOffload(i) && u->offload.sinkAdapter) {
-        float left;
-        float right;
-        u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
-
-        pa_cvolume volume;
-        pa_sw_cvolume_multiply(&volume, &i->sink->thread_info.soft_volume, &i->volume);
-        float volumeResult;
-        if (i->sink->thread_info.soft_muted || pa_cvolume_is_muted(&volume)) {
-            volumeResult = 0;
-        } else {
-            volumeResult = (float)pa_sw_volume_to_linear(pa_cvolume_avg(&volume));
-        }
-
-        u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, volumeResult, volumeResult);
-
-        AUDIO_DEBUG_LOG("PaInputVolumeChangeCb, soft_muted:%{public}d, volume muted:%{public}d",
-            i->sink->thread_info.soft_muted, pa_cvolume_is_muted(&volume));
-
-        char str[SPRINTF_STR_LEN] = {0};
-        GetSinkInputName(i, str, SPRINTF_STR_LEN);
-        AUDIO_INFO_LOG("PaInputVolumeChangeCb, Sink[%{public}s]->SinkInput[%{public}s] "
-                       "offload hdi volume change:[%{public}f,%{public}f]-->[%{public}f]",
-            GetDeviceClass(u->primary.sinkAdapter->deviceClass), str, left, right, volumeResult);
-    }
-}
-
 static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t now, int64_t *sleepForUsec)
 {
     static uint32_t timeWait = 1; // 1ms init
@@ -3688,7 +3650,6 @@ static pa_hook_result_t SinkInputPutCb(pa_core *core, pa_sink_input *i, struct U
         return PA_HOOK_OK;
     }
     i->state_change = PaInputStateChangeCb;
-    i->volume_changed = PaInputVolumeChangeCb;
     return PA_HOOK_OK;
 }
 
@@ -4232,6 +4193,9 @@ static void UserdataFree(struct Userdata *u)
     u->bufferAttr->bufOut = NULL;
     u->bufferAttr->tempBufIn = NULL;
     u->bufferAttr->tempBufOut = NULL;
+
+    pa_xfree(u->bufferAttr);
+    u->bufferAttr = NULL;
 
     pa_xfree(u);
 

@@ -22,7 +22,7 @@
 #include <unistd.h>
 #include "audio_info.h"
 #include "audio_effect.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

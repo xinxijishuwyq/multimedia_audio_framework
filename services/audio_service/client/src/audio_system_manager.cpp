@@ -22,7 +22,7 @@
 #include "system_ability_definition.h"
 #include "bundle_mgr_interface.h"
 
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_manager_base.h"
 #include "audio_manager_proxy.h"
@@ -1534,6 +1534,11 @@ uint32_t AudioSystemManager::GetEffectLatency(const std::string &sessionId)
 int32_t AudioSystemManager::DisableSafeMediaVolume()
 {
     return AudioPolicyManager::GetInstance().DisableSafeMediaVolume();
+}
+
+int32_t AudioSystemManager::InjectInterruption(const std::string networkId, InterruptEvent &event)
+{
+    return AudioPolicyManager::GetInstance().InjectInterruption(networkId, event);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -98,6 +98,7 @@ public:
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
+    int32_t SetVolumeInner(float &left, float &right);
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetLatency(uint32_t *latency) override;
     int32_t GetTransactionId(uint64_t *transactionId) override;
@@ -121,6 +122,7 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
     OffloadAudioRendererSinkInner();
     ~OffloadAudioRendererSinkInner();
@@ -133,6 +135,9 @@ private:
     uint64_t renderPos_ = 0;
     float leftVolume_ = 0.0f;
     float rightVolume_ = 0.0f;
+    std::mutex volumeMutex_;
+    int32_t muteCount_ = 0;
+    bool switchDeviceMute_ = false;
     uint32_t renderId_ = 0;
     std::string adapterNameCase_ = "";
     struct IAudioManager *audioManager_ = nullptr;
@@ -196,6 +201,36 @@ OffloadRendererSink *OffloadRendererSink::GetInstance()
     static OffloadAudioRendererSinkInner audioRenderer;
 
     return &audioRenderer;
+}
+
+// LCOV_EXCL_START
+int32_t OffloadAudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
+{
+    std::lock_guard<std::mutex> lock(volumeMutex_);
+    AUDIO_INFO_LOG("set offload mute %{public}d", mute);
+
+    if (mute) {
+        muteCount_++;
+        if (switchDeviceMute_) {
+            AUDIO_INFO_LOG("offload already muted");
+            return SUCCESS;
+        }
+        switchDeviceMute_ = true;
+        float left = 0.0f;
+        float right = 0.0f;
+        SetVolumeInner(left, right);
+    } else {
+        muteCount_--;
+        if (muteCount_ > 0) {
+            AUDIO_WARNING_LOG("offload not all unmuted");
+            return SUCCESS;
+        }
+        switchDeviceMute_ = false;
+        muteCount_ = 0;
+        SetVolumeInner(leftVolume_, rightVolume_);
+    }
+
+    return SUCCESS;
 }
 
 void OffloadAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string& condition,
@@ -405,6 +440,8 @@ void OffloadAudioRendererSinkInner::DeInit()
     audioRender_ = nullptr;
     audioManager_ = nullptr;
     callbackServ = {};
+    muteCount_ = 0;
+    switchDeviceMute_ = false;
 
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
@@ -687,25 +724,36 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
 
 int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
 {
+    std::lock_guard<std::mutex> lock(volumeMutex_);
     Trace trace("OffloadSink::SetVolume");
-    int32_t ret;
-    float thevolume;
+
     leftVolume_ = left;
     rightVolume_ = right;
+    if (switchDeviceMute_) {
+        AUDIO_WARNING_LOG("switch device muted, volume in store left:%{public}f, right:%{public}f", left, right);
+        return SUCCESS;
+    }
 
-    AUDIO_INFO_LOG("SetVolume: left is %{public}f, right is %{public}f", left, right);
+    return SetVolumeInner(left, right);
+}
+
+int32_t OffloadAudioRendererSinkInner::SetVolumeInner(float &left, float &right)
+{
+    AUDIO_INFO_LOG("set offload vol left is %{public}f, right is %{public}f", left, right);
+    float thevolume;
+    int32_t ret;
     if (audioRender_ == nullptr) {
         AUDIO_WARNING_LOG("OffloadAudioRendererSinkInner::SetVolume failed, audioRender_ null, "
                           "this will happen when set volume on devices which offload not available");
         return ERR_INVALID_HANDLE;
     }
 
-    if ((leftVolume_ == 0) && (rightVolume_ !=0)) {
-        thevolume = rightVolume_;
-    } else if ((leftVolume_ != 0) && (rightVolume_ ==0)) {
-        thevolume = leftVolume_;
+    if ((left == 0) && (right != 0)) {
+        thevolume = right;
+    } else if ((left != 0) && (right == 0)) {
+        thevolume = left;
     } else {
-        thevolume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
+        thevolume = (left + right) / HALF_FACTOR;
     }
 
     ret = audioRender_->SetVolume(audioRender_, thevolume);
@@ -717,6 +765,7 @@ int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
 
 int32_t OffloadAudioRendererSinkInner::GetVolume(float &left, float &right)
 {
+    std::lock_guard<std::mutex> lock(volumeMutex_);
     left = leftVolume_;
     right = rightVolume_;
     return SUCCESS;
@@ -1045,5 +1094,6 @@ int32_t OffloadAudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> 
     AUDIO_WARNING_LOG("not supported.");
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

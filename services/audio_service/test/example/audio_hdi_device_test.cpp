@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_utils.h"
 #include "fast/fast_audio_renderer_sink.h"
 #include "pcm2wav.h"

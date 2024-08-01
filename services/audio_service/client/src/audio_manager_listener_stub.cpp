@@ -16,7 +16,7 @@
 #define LOG_TAG "AudioManagerListenerStub"
 
 #include "audio_manager_listener_stub.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 
 using namespace std;
 

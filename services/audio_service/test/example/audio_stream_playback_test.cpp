@@ -18,7 +18,7 @@
 #include "audio_capturer.h"
 #include "audio_errors.h"
 #include "audio_info.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_renderer.h"
 #include "audio_system_manager.h"
 #include "audio_utils.h"

@@ -24,7 +24,7 @@
 #include "distributed_kv_data_manager.h"
 #include "iaudio_policy_interface.h"
 #include "types.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_volume_config.h"
 #include "volume_data_maintainer.h"
 
@@ -104,7 +104,7 @@ public:
 
     AudioRingerMode GetRingerMode(void) const;
 
-    int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
+    int32_t SetAudioStreamRemovedCallback(AudioStreamRemovedCallback *callback);
 
     int32_t SuspendAudioDevice(std::string &name, bool isSuspend);
 
@@ -283,7 +283,7 @@ private:
     int32_t curActiveCount_ = 0;
 
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
-    AudioSessionCallback *sessionCallback_ = nullptr;
+    AudioStreamRemovedCallback *sessionCallback_ = nullptr;
     VolumeDataMaintainer &volumeDataMaintainer_;
     bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};
@@ -339,14 +339,14 @@ public:
         return {volumeDb, volumeLevel};
     }
 
-    void OnSessionRemoved(const uint64_t sessionID)
+    void OnAudioStreamRemoved(const uint64_t sessionID)
     {
-        AUDIO_DEBUG_LOG("PolicyCallbackImpl OnSessionRemoved: Session ID %{public}" PRIu64"", sessionID);
+        AUDIO_DEBUG_LOG("PolicyCallbackImpl OnAudioStreamRemoved: Session ID %{public}" PRIu64"", sessionID);
         if (audioAdapterManager_->sessionCallback_ == nullptr) {
             AUDIO_DEBUG_LOG("PolicyCallbackImpl audioAdapterManager_->sessionCallback_ == nullptr"
-                "not firing OnSessionRemoved");
+                "not firing OnAudioStreamRemoved");
         } else {
-            audioAdapterManager_->sessionCallback_->OnSessionRemoved(sessionID);
+            audioAdapterManager_->sessionCallback_->OnAudioStreamRemoved(sessionID);
         }
     }
 

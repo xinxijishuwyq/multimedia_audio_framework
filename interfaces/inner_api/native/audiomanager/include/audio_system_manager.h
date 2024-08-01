@@ -1253,6 +1253,19 @@ public:
     static void AudioServerDied(pid_t pid);
 
     std::string GetSelfBundleName(int32_t uid);
+
+    /**
+     * @brief inject interruption event.
+     *
+     * @param networkId networkId.
+     * @param event Indicates the InterruptEvent information needed by client.
+     * For details, refer InterruptEvent struct in audio_interrupt_info.h
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 12
+     */
+    int32_t InjectInterruption(const std::string networkId, InterruptEvent &event);
+
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:

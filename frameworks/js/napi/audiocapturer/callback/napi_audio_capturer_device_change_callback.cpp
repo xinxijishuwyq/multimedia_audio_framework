@@ -17,7 +17,7 @@
 
 #include "napi_audio_capturer_device_change_callback.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_capturer_log.h"
 #include "napi_param_utils.h"
 
 using namespace std;

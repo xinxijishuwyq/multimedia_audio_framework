@@ -18,7 +18,7 @@
 #include "napi_renderer_position_callback.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_renderer_log.h"
 #include "napi_audio_error.h"
 #include "napi_audio_renderer_callback.h"
 

@@ -92,6 +92,7 @@ static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioSt
     return true;
 }
 
+// LCOV_EXCL_START
 void AudioA2dpManager::RegisterBluetoothA2dpListener()
 {
     AUDIO_INFO_LOG("AudioA2dpManager::RegisterBluetoothA2dpListener");
@@ -517,5 +518,6 @@ void AudioHfpListener::OnHfpStackChanged(const BluetoothRemoteDevice &device, in
     AUDIO_INFO_LOG("OnHfpStackChanged, action: %{public}d", action);
     HfpBluetoothDeviceManager::SetHfpStack(device, action);
 }
+// LCOV_EXCL_STOP
 } // namespace Bluetooth
 } // namespace OHOS

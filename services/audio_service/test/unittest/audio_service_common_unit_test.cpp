@@ -14,7 +14,7 @@
  */
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_info.h"
 #include "audio_ring_cache.h"
 #include "audio_process_config.h"
