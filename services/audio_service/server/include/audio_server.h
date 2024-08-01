@@ -159,12 +159,10 @@ public:
     void LoadHdiEffectModel() override;
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
-
-<<<<<<< HEAD
-    void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) override;
-=======
+    
     void SetRotationToEffect(const uint32_t rotate) override;
->>>>>>> upstream/master
+
+    void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
