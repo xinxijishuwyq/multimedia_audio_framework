@@ -16,7 +16,6 @@
 #ifndef AUDIO_RENDERER_SINK_INTF_H
 #define AUDIO_RENDERER_SINK_INTF_H
 
-#include <stdbool.h>
 #include "audio_hdiadapter_info.h"
 
 #ifdef __cplusplus
