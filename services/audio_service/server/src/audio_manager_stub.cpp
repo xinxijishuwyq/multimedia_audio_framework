@@ -706,14 +706,16 @@ int AudioManagerStub::HandleUpdateLatencyTimestamp(MessageParcel &data, MessageP
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleSetRotationToEffect(MessageParcel &data, MessageParcel &reply)
+{
+    SetRotationToEffect(data.ReadUint32());
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply,
     MessageOption &option)
 {
     switch (code) {
-        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE):
-            return HandleGetAsrAecMode(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_NOISE_SUPPRESSION_MODE):
-            return HandleSetAsrNoiseSuppressionMode(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_NOISE_SUPPRESSION_MODE):
             return HandleGetAsrNoiseSuppressionMode(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_WHISPER_DETECTION_MODE):
@@ -776,6 +778,10 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
             return HandleUpdateLatencyTimestamp(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_AEC_MODE):
             return HandleSetAsrAecMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE):
+            return HandleGetAsrAecMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_NOISE_SUPPRESSION_MODE):
+            return HandleSetAsrNoiseSuppressionMode(data, reply);
         default:
             return HandleFourthPartCode(code, data, reply, option);
     }
@@ -886,12 +892,5 @@ int AudioManagerStub::HandleSetSinkMuteForSwitchDevice(MessageParcel &data, Mess
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
-
-int AudioManagerStub::HandleSetRotationToEffect(MessageParcel &data, MessageParcel &reply)
-{
-    SetRotationToEffect(data.ReadUint32());
-    return AUDIO_OK;
-}
-
 } // namespace AudioStandard
 } // namespace OHOS
