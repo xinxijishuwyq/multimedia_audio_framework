@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioDownMixStereo"
+#endif
 
 #include "audio_down_mix_stereo.h"
 #include "audio_service_log.h"

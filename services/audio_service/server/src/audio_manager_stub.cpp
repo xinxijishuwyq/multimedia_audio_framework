@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioManagerStub"
+#endif
 
 #include "audio_manager_base.h"
 #include "audio_system_manager.h"

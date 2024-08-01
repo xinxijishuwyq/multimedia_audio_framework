@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "NapiCapturerReadDataCallback"
+#endif
 
 #include "napi_audio_capturer_read_data_callback.h"
 #include "audio_capturer_log.h"
