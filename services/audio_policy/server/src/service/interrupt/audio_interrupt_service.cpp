@@ -872,6 +872,9 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
 void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audioScene,
     AudioInterruptChangeType changeType)
 {
+    if (policyServer_ == nullptr) {
+        return;
+    }
     AudioScene currentAudioScene = policyServer_->GetAudioScene();
 
     AUDIO_INFO_LOG("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",

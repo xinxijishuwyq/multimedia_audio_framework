@@ -267,7 +267,7 @@ void SetAudioInterruptCallbackFuzzTest(const uint8_t *rawData, size_t size)
     interruptService->SetAudioInterruptCallback(zoneId, sessionId, object);
 }
 
-void UnsetAudioInterruptCallback(const uint8_t *rawData, size_t size)
+void UnsetAudioInterruptCallbackFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -279,6 +279,43 @@ void UnsetAudioInterruptCallback(const uint8_t *rawData, size_t size)
     uint32_t sessionId = *reinterpret_cast<const uint32_t *>(rawData);
 
     interruptService->UnsetAudioInterruptCallback(zoneId, sessionId);
+}
+
+void AddAudioInterruptZonePidsFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    data.WriteBuffer(rawData, size);
+    data.RewindRead(0);
+    std::set<int32_t> pids;
+    pids.insert(data.ReadInt32());
+
+    interruptService->AddAudioInterruptZonePids(zoneId, pids);
+}
+
+void UpdateAudioSceneFromInterruptFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    data.WriteBuffer(rawData, size);
+    data.RewindRead(0);
+    AudioScene audioScene = *reinterpret_cast<const AudioScene *>(rawData);
+    AudioInterruptChangeType changeType = *reinterpret_cast<const AudioInterruptChangeType *>(rawData);
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+
+    interruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -302,6 +339,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::RequestAudioFocusFuzzTest(data, size);
     OHOS::AudioStandard::AbandonAudioFocusFuzzTest(data, size);
     OHOS::AudioStandard::SetAudioInterruptCallbackFuzzTest(data, size);
-    OHOS::AudioStandard::UnsetAudioInterruptCallback(data, size);
+    OHOS::AudioStandard::UnsetAudioInterruptCallbackFuzzTest(data, size);
+    OHOS::AudioStandard::AddAudioInterruptZonePidsFuzzTest(data, size);
+    OHOS::AudioStandard::UpdateAudioSceneFromInterruptFuzzTest(data, size);
     return 0;
 }
