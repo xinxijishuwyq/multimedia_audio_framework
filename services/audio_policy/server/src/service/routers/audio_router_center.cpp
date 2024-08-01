@@ -18,8 +18,6 @@
 #include "audio_router_center.h"
 #include "audio_policy_service.h"
 
-
-
 using namespace std;
 
 namespace OHOS {

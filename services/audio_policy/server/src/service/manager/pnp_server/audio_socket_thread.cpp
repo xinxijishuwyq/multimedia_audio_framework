@@ -16,7 +16,7 @@
 #define LOG_TAG "AudioSocketThread"
 
 #include "audio_socket_thread.h"
-
+#include <string.h>
 #include <dirent.h>
 #include <linux/netlink.h>
 #include <sys/socket.h>
