@@ -28,7 +28,10 @@
 #include <unistd.h>
 #include <string>
 
+#include "hdf_base.h"
+#include "hdf_device_object.h"
 #include "osal_time.h"
+#include "securec.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 
