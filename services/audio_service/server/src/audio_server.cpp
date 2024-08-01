@@ -467,19 +467,28 @@ int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode)
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_aec_mode";
     std::string value = key + "=";
+    std::string keyAec = "ASR_AEC";
+    std::string valueAec = "";
 
     auto it = AEC_MODE_MAP_VERSE.find(asrAecMode);
     if (it != AEC_MODE_MAP_VERSE.end()) {
         value = key + "=" + it->second;
+        if (it->second == "STANDARD") {
+            valueAec = "ASR_AEC=ON";
+        } else {
+            valueAec = "ASR_AEC=OFF";
+        }
     } else {
         AUDIO_ERR_LOG("get value failed.");
         return ERR_INVALID_PARAM;
     }
     AudioServer::audioParameters[key] = value;
+    AudioServer::audioParameters[keyAec] = valueAec;
     AudioParamKey parmKey = AudioParamKey::NONE;
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
     audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
+    audioRendererSinkInstance->SetAudioParameter(parmKey, "", valueAec);
     return 0;
 }
 
@@ -489,6 +498,7 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
         "Check playback permission failed, no system permission");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_aec_mode";
+    std::string keyAec = "ASR_AEC";
     AudioParamKey parmKey = AudioParamKey::NONE;
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
@@ -497,8 +507,19 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
     if (it != AudioServer::audioParameters.end()) {
         asrAecModeSink = it->second;
     } else {
-        AUDIO_ERR_LOG("get value failed.");
-        return ERR_INVALID_PARAM;
+        // if asr_aec_mode null, return ASR_AEC.
+        // if asr_aec_mode null and ASR_AEC null, return err.
+        auto itAec = AudioServer::audioParameters.find(keyAec);
+        std::string asrAecSink = itAec->second;
+        if (asrAecSink == "ASR_AEC=ON") {
+            asrAecMode = AsrAecMode::STANDARD;
+        } else if (asrAecSink == "ASR_AEC=OFF") {
+            asrAecMode = AsrAecMode::BYPASS;
+        } else {
+            AUDIO_ERR_LOG("get value failed.");
+            return ERR_INVALID_PARAM;
+        }
+        return 0;
     }
 
     std::vector<std::string> resMode = splitString(asrAecModeSink, "=");
