@@ -18,8 +18,6 @@
 
 #include "audio_router_center.h"
 #include "audio_policy_service.h"
-#include "audio_log.h"
-#include "audio_stream_collector.h"
 
 using namespace std;
 

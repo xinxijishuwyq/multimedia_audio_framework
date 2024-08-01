@@ -17,7 +17,6 @@
 #endif
 
 #include "audio_effect_manager.h"
-#include <unordered_set>
 
 namespace OHOS {
 namespace AudioStandard {

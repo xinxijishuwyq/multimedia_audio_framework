@@ -17,35 +17,22 @@
 #endif
 
 #include "audio_policy_service.h"
-
 #include <ability_manager_client.h>
-#include "ipc_skeleton.h"
-#include "hisysevent.h"
 #include "iservice_registry.h"
-#include "system_ability_definition.h"
-#include "parameter.h"
-#include "parameters.h"
 
-#include "audio_errors.h"
-#include "audio_log.h"
-#include "audio_info.h"
+#include "parameters.h"
 #include "audio_utils.h"
 #include "audio_manager_listener_stub.h"
-#include "datashare_helper.h"
-#include "datashare_predicates.h"
-#include "datashare_result_set.h"
+
 #include "data_share_observer_callback.h"
 #include "device_init_callback.h"
 #include "audio_inner_call.h"
 #ifdef FEATURE_DEVICE_MANAGER
-#include "device_manager.h"
-#include "device_manager_impl.h"
 #endif
-#include "uri.h"
+
 #include "audio_spatialization_service.h"
 #include "audio_converter_parser.h"
 #include "audio_dialog_ability_connection.h"
-
 #include "media_monitor_manager.h"
 
 namespace OHOS {

@@ -16,7 +16,6 @@
 #define LOG_TAG "VolumeGroupInfo"
 #endif
 
-#include "audio_policy_log.h"
 #include "audio_system_manager.h"
 
 namespace OHOS {

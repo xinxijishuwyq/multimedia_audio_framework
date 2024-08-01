@@ -18,20 +18,8 @@
 
 #include "audio_pnp_server.h"
 
-#include <cctype>
-#include <cstdlib>
-#include <dirent.h>
-#include <fcntl.h>
-#include <linux/input.h>
-#include <linux/netlink.h>
 #include <poll.h>
-#include <pthread.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
 
-#include "hdf_base.h"
-#include "hdf_device_object.h"
 #include "osal_time.h"
 #include "securec.h"
 #include "audio_errors.h"

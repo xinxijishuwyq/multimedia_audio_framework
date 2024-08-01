@@ -18,16 +18,10 @@
 
 #include "audio_adapter_manager.h"
 
-#include <memory>
-#include <unistd.h>
-#include <string>
 
 #include "parameter.h"
 #include "parameters.h"
-#include "setting_provider.h"
 
-#include "audio_errors.h"
-#include "audio_log.h"
 #include "audio_volume_parser.h"
 #include "audio_utils.h"
 #include "audio_adapter_manager_handler.h"

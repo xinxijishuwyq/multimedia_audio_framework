@@ -18,10 +18,6 @@
 
 #include "audio_device_manager.h"
 
-#include "parameter.h"
-
-#include "audio_errors.h"
-#include "audio_log.h"
 #include "audio_utils.h"
 #include "audio_device_parser.h"
 

@@ -17,7 +17,6 @@
 #endif
 
 #include "default_router.h"
-#include "audio_log.h"
 
 using namespace std;
 

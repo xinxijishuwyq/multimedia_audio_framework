@@ -17,8 +17,6 @@
 #endif
 
 #include "audio_routing_manager_listener_proxy.h"
-#include "audio_routing_manager.h"
-#include "audio_system_manager.h"
 #include "audio_policy_log.h"
 #include "audio_errors.h"
 

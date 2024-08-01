@@ -20,7 +20,6 @@
 #include <thread>
 #include "audio_policy_manager.h"
 #include "audio_errors.h"
-#include "audio_policy_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "audio_policy_log.h"
 #include "audio_utils.h"

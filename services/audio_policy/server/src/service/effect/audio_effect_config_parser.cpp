@@ -17,7 +17,6 @@
 #endif
 
 #include "audio_effect_config_parser.h"
-#include <libxml/parser.h>
 #include <libxml/tree.h>
 #ifdef USE_CONFIG_POLICY
 #include "config_policy_utils.h"

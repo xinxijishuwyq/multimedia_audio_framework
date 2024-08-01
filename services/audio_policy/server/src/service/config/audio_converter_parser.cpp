@@ -17,12 +17,8 @@
 #endif
 
 #include "audio_converter_parser.h"
-#include <map>
-#include <string>
-#include <libxml/parser.h>
 #include <libxml/tree.h>
 #ifdef USE_CONFIG_POLICY
-#include "config_policy_utils.h"
 #endif
 
 #include "media_monitor_manager.h"

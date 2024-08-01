@@ -17,7 +17,6 @@
 #endif
 
 #include "audio_policy_client_stub.h"
-#include <utility>
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 

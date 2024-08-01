@@ -17,7 +17,7 @@
 #endif
 
 #include "pair_device_router.h"
-#include "audio_device_manager.h"
+
 #include "audio_policy_service.h"
 
 using namespace std;

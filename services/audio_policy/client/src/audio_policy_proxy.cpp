@@ -16,10 +16,10 @@
 #define LOG_TAG "AudioPolicyProxy"
 #endif
 
-#include "audio_policy_manager.h"
+
 #include "audio_policy_log.h"
 #include "audio_policy_proxy.h"
-#include "microphone_descriptor.h"
+
 
 namespace {
 constexpr int MAX_PID_COUNT = 1000;

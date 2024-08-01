@@ -17,9 +17,6 @@
 #endif
 
 #include "audio_usage_strategy_parser.h"
-#include <string>
-#include <iostream>
-#include <vector>
 #include "media_monitor_manager.h"
 
 namespace OHOS {

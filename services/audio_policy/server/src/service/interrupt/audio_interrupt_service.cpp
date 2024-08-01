@@ -18,8 +18,6 @@
 
 #include "audio_interrupt_service.h"
 
-#include "audio_log.h"
-#include "audio_errors.h"
 #include "audio_focus_parser.h"
 #include "audio_policy_manager_listener_proxy.h"
 #include "audio_utils.h"
