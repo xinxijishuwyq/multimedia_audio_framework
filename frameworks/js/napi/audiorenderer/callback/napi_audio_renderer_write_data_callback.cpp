@@ -188,6 +188,7 @@ void NapiRendererWriteDataCallback::WorkCallbackRendererWriteData(uv_work_t *wor
     CHECK_AND_RETURN_LOG(work != nullptr, "renderer write data work is nullptr");
     RendererWriteDataJsCallback *event = reinterpret_cast<RendererWriteDataJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "renderer write data event is nullptr");
+    CHECK_AND_RETURN_LOG(event->rendererNapiObj != nullptr, "NapiAudioRenderer object is nullptr");
     event->rendererNapiObj->writeCallbackCv_.notify_all();
 }
 

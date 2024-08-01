@@ -158,6 +158,7 @@ void NapiCapturerReadDataCallback::WorkCallbackCapturerReadData(uv_work_t *work,
     CHECK_AND_RETURN_LOG(work != nullptr, "capturer read data work is nullptr");
     CapturerReadDataJsCallback *event = reinterpret_cast<CapturerReadDataJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "capturer read data event is nullptr");
+    CHECK_AND_RETURN_LOG(event->capturerNapiObj != nullptr, "NapiAudioCapturer object is nullptr");
     event->capturerNapiObj->readCallbackCv_.notify_all();
 }
 
