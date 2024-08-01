@@ -205,6 +205,8 @@ bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig)
 
 bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
 {
+    CHECK_AND_RETURN_RET_LOG(Util::IsRingerOrAlarmerStreamUsage(config.rendererInfo.streamUsage), false,
+        "Wrong usage ,should not be dualtone");
     DeviceInfo deviceInfo;
     bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
     if (!ret) {
