@@ -5752,7 +5752,10 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
     if (preferredDeviceList.size() == 0) {
         return AUDIO_FLAG_NORMAL;
     }
-    if (rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
+
+    int32_t flag = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
+        rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_);
+    if (flag == AUDIO_FLAG_MMAP || flag == AUDIO_FLAG_VOIP_FAST) {
         std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;
         if (g_adProxy == nullptr) {
             AUDIO_ERR_LOG("Invalid g_adProxy");
@@ -5764,8 +5767,7 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
             return AUDIO_FLAG_NORMAL;
         }
     }
-    return GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
-        rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_);
+    return flag;
 }
 
 void AudioPolicyService::SetNormalVoipFlag(const bool &normalVoipFlag)
