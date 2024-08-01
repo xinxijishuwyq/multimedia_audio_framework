@@ -63,7 +63,7 @@ vector<std::unique_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
     AudioRingerMode curRingerMode = audioPolicyManager_.GetRingerMode();
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
     vector<unique_ptr<AudioDeviceDescriptor>> curDescs;
-    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
     } else {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPrivacyDevices();
@@ -106,7 +106,7 @@ vector<std::unique_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
     } else if (latestConnDesc->getType() != DEVICE_TYPE_NONE) {
         descs.push_back(move(latestConnDesc));
     } else {
-        descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+        descs.push_back(make_unique<AudioDeviceDescriptor>());
     }
     return descs;
 }
