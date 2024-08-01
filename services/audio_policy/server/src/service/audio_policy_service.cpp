@@ -3356,8 +3356,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
         Bluetooth::AudioHfpManager::DisconnectSco();
 #endif
     }
-    if (audioScene_ == AUDIO_SCENE_DEFAULT || audioScene_ == AUDIO_SCENE_PHONE_CALL ||
-        audioScene_ == AUDIO_SCENE_PHONE_CHAT) {
+    if (audioScene_ == AUDIO_SCENE_DEFAULT) {
         ClearScoDeviceSuspendState();
     }
 
@@ -8357,6 +8356,16 @@ void AudioPolicyService::ResetOffloadModeOnSpatializationChanged(std::vector<int
             OffloadStreamReleaseCheck(*offloadSessionID_);
         }
     }
+}
+
+void AudioPolicyService::SetRotationToEffect(const uint32_t rotate)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->SetRotationToEffect(rotate);
+    IPCSkeleton::SetCallingIdentity(identity);
 }
 } // namespace AudioStandard
 } // namespace OHOS

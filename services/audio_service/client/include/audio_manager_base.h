@@ -432,6 +432,11 @@ public:
      * Set Sink Mute For Switch Device.
      */
     virtual int32_t SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute) = 0;
+
+    /**
+     * Set Rotation To Effect.
+     */
+    virtual void SetRotationToEffect(const uint32_t rotate) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -502,6 +507,7 @@ private:
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    int HandleSetRotationToEffect(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

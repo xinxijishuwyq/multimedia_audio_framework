@@ -23,6 +23,7 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <array>
 #include <unistd.h>
 #include <unordered_map>
 #include <parcel.h>
