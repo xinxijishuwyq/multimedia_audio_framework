@@ -4896,7 +4896,6 @@ int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
 int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
-    AUDIO_INFO_LOG("Entered AudioPolicyService UpdateTracker");
 
     if (mode == AUDIO_MODE_RECORD) {
         if (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED) {
@@ -6182,7 +6181,7 @@ bool AudioPolicyService::CheckStreamOffloadMode(int64_t activateSessionId, Audio
     }
 
     if (!streamCollector_.IsOffloadAllowed(activateSessionId)) {
-        AUDIO_INFO_LOG("Offload is not allowed, Skipped");
+        AUDIO_PRERELEASE_LOGI("Offload is not allowed, Skipped");
         return false;
     }
 
@@ -6951,7 +6950,7 @@ int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sess
 int32_t AudioPolicyService::OffloadStopPlaying(const std::vector<int32_t> &sessionIds)
 {
 #ifdef BLUETOOTH_ENABLE
-    AUDIO_INFO_LOG("OffloadStopPlaying, a2dpOffloadFlag_: %{public}d, sessionIds: %{public}zu",
+    AUDIO_PRERELEASE_LOGI("OffloadStopPlaying, a2dpOffloadFlag_: %{public}d, sessionIds: %{public}zu",
         a2dpOffloadFlag_, sessionIds.size());
     if (a2dpOffloadFlag_ != A2DP_OFFLOAD || sessionIds.size() == 0) {
         return SUCCESS;
@@ -7010,7 +7009,7 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
     DeviceType deviceType)
 {
     if (allActiveSessions.size() == 0) {
-        AUDIO_INFO_LOG("no active sessions");
+        AUDIO_PRERELEASE_LOGI("no active sessions");
         return;
     }
     auto receiveOffloadFlag = NO_A2DP_DEVICE;
@@ -7303,7 +7302,7 @@ void AudioPolicyService::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
 
 void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
 {
-    AUDIO_INFO_LOG("a2dpOffloadFlag_ change from %{public}d to %{public}d", a2dpOffloadFlag_, NO_A2DP_DEVICE);
+    AUDIO_PRERELEASE_LOGI("a2dpOffloadFlag_ change from %{public}d to %{public}d", a2dpOffloadFlag_, NO_A2DP_DEVICE);
     std::vector<int32_t> allSessions;
     GetAllRunningStreamSession(allSessions);
     OffloadStopPlaying(allSessions);
