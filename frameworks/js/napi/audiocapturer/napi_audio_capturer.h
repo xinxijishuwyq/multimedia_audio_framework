@@ -39,6 +39,8 @@ public:
     static napi_value Init(napi_env env, napi_value exports);
 
     std::unique_ptr<AudioCapturer> audioCapturer_;
+    std::mutex readCallbackMutex_;
+    std::condition_variable readCallbackCv_;
 
 private:
     struct AudioCapturerAsyncContext : public ContextBase {

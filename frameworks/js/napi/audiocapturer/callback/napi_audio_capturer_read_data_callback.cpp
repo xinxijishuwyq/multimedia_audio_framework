@@ -21,6 +21,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static const int32_t READ_CALLBACK_TIMEOUT_IN_MS = 1000; // 1s
+
 NapiCapturerReadDataCallback::NapiCapturerReadDataCallback(napi_env env, NapiAudioCapturer *napiCapturer)
     : env_(env), napiCapturer_(napiCapturer)
 {
@@ -30,6 +32,9 @@ NapiCapturerReadDataCallback::NapiCapturerReadDataCallback(napi_env env, NapiAud
 NapiCapturerReadDataCallback::~NapiCapturerReadDataCallback()
 {
     AUDIO_DEBUG_LOG("instance destroy");
+    if (napiCapturer_ != nullptr) {
+        napiCapturer_->readCallbackCv_.notify_all();
+    }
 }
 
 void NapiCapturerReadDataCallback::AddCallbackReference(const std::string &callbackName, napi_value args)
@@ -127,6 +132,17 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
     } else {
         jsCb.release();
     }
+
+    if (napiCapturer_ == nullptr) {
+        return;
+    }
+    std::unique_lock<std::mutex> readCallbackLock(napiCapturer_->readCallbackMutex_);
+    std::cv_status cvStatus = napiCapturer_->readCallbackCv_.wait_for(readCallbackLock,
+        std::chrono::milliseconds(READ_CALLBACK_TIMEOUT_IN_MS));
+    if (cvStatus == std::cv_status::timeout) {
+        AUDIO_ERR_LOG("Client OnReadData operation timed out");
+    }
+    readCallbackLock.unlock();
 }
 
 void NapiCapturerReadDataCallback::WorkCallbackCapturerReadData(uv_work_t *work, int status)
@@ -138,7 +154,17 @@ void NapiCapturerReadDataCallback::WorkCallbackCapturerReadData(uv_work_t *work,
             delete ptr;
             delete work;
     });
+    WorkCallbackCapturerReadDataInner(work, status);
 
+    CHECK_AND_RETURN_LOG(work != nullptr, "capturer read data work is nullptr");
+    CapturerReadDataJsCallback *event = reinterpret_cast<CapturerReadDataJsCallback *>(work->data);
+    CHECK_AND_RETURN_LOG(event != nullptr, "capturer read data event is nullptr");
+    CHECK_AND_RETURN_LOG(event->capturerNapiObj != nullptr, "NapiAudioCapturer object is nullptr");
+    event->capturerNapiObj->readCallbackCv_.notify_all();
+}
+
+void NapiCapturerReadDataCallback::WorkCallbackCapturerReadDataInner(uv_work_t *work, int status)
+{
     CHECK_AND_RETURN_LOG(work != nullptr, "capture read data work is nullptr");
     CapturerReadDataJsCallback *event = reinterpret_cast<CapturerReadDataJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "capture read data event is nullptr");

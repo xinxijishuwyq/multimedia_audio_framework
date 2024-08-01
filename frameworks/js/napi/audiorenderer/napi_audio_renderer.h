@@ -44,6 +44,8 @@ public:
     void DestroyNAPICallbacks();
 
     std::unique_ptr<AudioRenderer> audioRenderer_;
+    std::mutex writeCallbackMutex_;
+    std::condition_variable writeCallbackCv_;
 
 private:
     struct AudioRendererAsyncContext : public ContextBase {
