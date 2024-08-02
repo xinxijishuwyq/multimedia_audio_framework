@@ -777,10 +777,10 @@ int32_t AudioEffectChainManager::UpdateSpatialDeviceType(AudioSpatialDeviceType 
         auto audioEffectChain = sceneType2EffectChain.second;
         if (audioEffectChain != nullptr) {
             audioEffectChain->SetSpatialDeviceType(spatialDeviceType_);
-            ret = audioEffectChain->UpdateEffectParam();
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "UpdateEffectParam failed.");
+            ret += audioEffectChain->UpdateEffectParam();
         }
     }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "UpdateEffectParam failed.");
 
     return SUCCESS;
 }
