@@ -231,8 +231,8 @@ bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::str
 
 int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
 {
-    AUDIO_INFO_LOG("UpdateSpatialDeviceState Entered");
-    AUDIO_INFO_LOG("isSpatializationSupported = %{public}d, isHeadTrackingSupported = %{public}d",
+    AUDIO_INFO_LOG("UpdateSpatialDeviceState Entered, "
+        "isSpatializationSupported = %{public}d, isHeadTrackingSupported = %{public}d",
         audioSpatialDeviceState.isSpatializationSupported, audioSpatialDeviceState.isHeadTrackingSupported);
     {
         std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
