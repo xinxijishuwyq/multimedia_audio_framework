@@ -316,6 +316,7 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
 
 void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int &id)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("start DeactivateAudioInterrupt, current id:%{public}d", id);
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
     for (const auto&[zoneId, audioInterruptZone] : zonesMap_) {
