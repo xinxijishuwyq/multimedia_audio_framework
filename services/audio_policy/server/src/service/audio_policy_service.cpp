@@ -12,39 +12,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioPolicyService"
+#endif
 
 #include "audio_policy_service.h"
-
 #include <ability_manager_client.h>
-#include "ipc_skeleton.h"
-#include "hisysevent.h"
 #include "iservice_registry.h"
-#include "system_ability_definition.h"
-#include "parameter.h"
-#include "parameters.h"
 
-#include "audio_errors.h"
-#include "audio_log.h"
-#include "audio_info.h"
+#include "parameters.h"
 #include "audio_utils.h"
 #include "audio_manager_listener_stub.h"
-#include "datashare_helper.h"
-#include "datashare_predicates.h"
-#include "datashare_result_set.h"
+
 #include "data_share_observer_callback.h"
 #include "device_init_callback.h"
 #include "audio_inner_call.h"
 #ifdef FEATURE_DEVICE_MANAGER
-#include "device_manager.h"
-#include "device_manager_impl.h"
 #endif
-#include "uri.h"
+
 #include "audio_spatialization_service.h"
 #include "audio_converter_parser.h"
 #include "audio_dialog_ability_connection.h"
-
 #include "media_monitor_manager.h"
 
 namespace OHOS {
@@ -65,7 +53,6 @@ static const std::string PIPE_USB_ARM_INPUT = "usb_arm_input";
 static const std::string PIPE_DISTRIBUTED_OUTPUT = "distributed_output";
 static const std::string PIPE_FAST_DISTRIBUTED_OUTPUT = "fast_distributed_output";
 static const std::string PIPE_DISTRIBUTED_INPUT = "distributed_input";
-static const std::string PIPE_FAST_DISTRIBUTED_INPUT = "fast_distributed_input";
 static const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 std::string PIPE_WAKEUP_INPUT = "wakeup_input";
 static const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
@@ -654,10 +641,15 @@ void AudioPolicyService::SetOffloadVolume(AudioStreamType streamType, int32_t vo
     const sptr <IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "gsp null");
     float volumeDb;
-    if (dev == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
-        volumeDb = 1;
-    } else {
-        volumeDb = GetSystemVolumeInDb(streamType, volume, currentActiveDevice_.deviceType_);
+    {
+        std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
+        auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
+        if (dev == DEVICE_TYPE_BLUETOOTH_A2DP && configInfoPos != connectedA2dpDeviceMap_.end() &&
+            configInfoPos->second.absVolumeSupport) {
+            volumeDb = 1;
+        } else {
+            volumeDb = GetSystemVolumeInDb(streamType, volume, currentActiveDevice_.deviceType_);
+        }
     }
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->OffloadSetVolume(volumeDb);
@@ -685,9 +677,7 @@ void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType, const s
     if (deviceType == DEVICE_TYPE_SPEAKER || deviceType == DEVICE_TYPE_USB_HEADSET) {
         SetOffloadVolume(OffloadStreamType(), GetSystemVolumeLevel(OffloadStreamType()));
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && newSinkName == OFFLOAD_PRIMARY_SPEAKER) {
-        int32_t vol = audioPolicyManager_.IsAbsVolumeScene() ?
-            audioPolicyManager_.GetMaxVolumeLevel(OffloadStreamType()) : GetSystemVolumeLevel(OffloadStreamType());
-        SetOffloadVolume(OffloadStreamType(), vol);
+        SetOffloadVolume(OffloadStreamType(), GetSystemVolumeLevel(OffloadStreamType()));
     }
 }
 
@@ -2112,6 +2102,8 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
     if (outputDevices.front()->networkId_ != LOCAL_NETWORK_ID
         || outputDevices.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
         RemoteOffloadStreamRelease(rendererChangeInfo->sessionId);
+    } else {
+        ResetOffloadMode(rendererChangeInfo->sessionId);
     }
 }
 
@@ -2511,6 +2503,7 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::unique_ptr<AudioRender
             audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
             IOHandles_.erase(currentActivePort);
         }
+        ResetOffloadMode(rendererChangeInfo->sessionId);
         MoveToNewOutputDevice(rendererChangeInfo, descs);
     }
 }
@@ -2538,7 +2531,6 @@ void AudioPolicyService::FetchStreamForA2dpOffload(vector<unique_ptr<AudioRender
                 IPCSkeleton::SetCallingIdentity(identity);
             }
             FetchStreamForA2dpMchStream(rendererChangeInfo, descs);
-            ResetOffloadMode(rendererChangeInfo->sessionId);
         }
     }
 }
@@ -3352,8 +3344,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
         Bluetooth::AudioHfpManager::DisconnectSco();
 #endif
     }
-    if (audioScene_ == AUDIO_SCENE_DEFAULT || audioScene_ == AUDIO_SCENE_PHONE_CALL ||
-        audioScene_ == AUDIO_SCENE_PHONE_CHAT) {
+    if (audioScene_ == AUDIO_SCENE_DEFAULT) {
         ClearScoDeviceSuspendState();
     }
 
@@ -5525,6 +5516,7 @@ void AudioPolicyService::CreateCheckMusicActiveThread()
 
 void AudioPolicyService::CreateSafeVolumeDialogThread()
 {
+    std::lock_guard<std::mutex> safeVolumeLock(safeVolumeMutex_);
     AUDIO_INFO_LOG("enter");
     if (safeVolumeDialogThrd_ != nullptr && safeVolumeDialogThrd_->joinable()) {
         AUDIO_INFO_LOG("safeVolumeDialogThread exit begin");
@@ -5748,7 +5740,10 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
     if (preferredDeviceList.size() == 0) {
         return AUDIO_FLAG_NORMAL;
     }
-    if (rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
+
+    int32_t flag = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
+        rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_);
+    if (flag == AUDIO_FLAG_MMAP || flag == AUDIO_FLAG_VOIP_FAST) {
         std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;
         if (g_adProxy == nullptr) {
             AUDIO_ERR_LOG("Invalid g_adProxy");
@@ -5760,8 +5755,7 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
             return AUDIO_FLAG_NORMAL;
         }
     }
-    return GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
-        rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_);
+    return flag;
 }
 
 void AudioPolicyService::SetNormalVoipFlag(const bool &normalVoipFlag)
@@ -8352,6 +8346,16 @@ void AudioPolicyService::ResetOffloadModeOnSpatializationChanged(std::vector<int
             OffloadStreamReleaseCheck(*offloadSessionID_);
         }
     }
+}
+
+void AudioPolicyService::SetRotationToEffect(const uint32_t rotate)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->SetRotationToEffect(rotate);
+    IPCSkeleton::SetCallingIdentity(identity);
 }
 } // namespace AudioStandard
 } // namespace OHOS

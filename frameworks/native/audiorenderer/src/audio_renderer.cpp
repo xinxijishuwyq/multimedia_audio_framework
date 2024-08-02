@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioRenderer"
+#endif
 
 #include <sstream>
 #include "securec.h"
@@ -970,15 +971,16 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
                 (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
                 (void)audioStream_->SetDuckVolume(1.0f);
             } else {
-                AUDIO_WARNING_LOG("State of stream is not running.No need to pause");
+                AUDIO_WARNING_LOG("sessionId: %{public}u, state: %{public}d. State of stream is not running." \
+                    "No need to pause.", sessionID_, static_cast<int32_t>(audioStream_->GetState()));
                 return;
             }
             isForcePaused_ = true;
             break;
         case INTERRUPT_HINT_RESUME:
             if ((audioStream_->GetState() != PAUSED && audioStream_->GetState() != PREPARED) || !isForcePaused_) {
-                AUDIO_WARNING_LOG("sessionId: %{public}u, state: %{public}d.  State of stream is not paused or \
-                    pause is not forced.", sessionID_, static_cast<int32_t>(audioStream_->GetState()));
+                AUDIO_WARNING_LOG("sessionId: %{public}u, state: %{public}d. State of stream is not paused or " \
+                    "pause is not forced.", sessionID_, static_cast<int32_t>(audioStream_->GetState()));
                 return;
             }
             isForcePaused_ = false;
@@ -1743,7 +1745,9 @@ void AudioRendererPrivate::ActivateAudioConcurrency(const AudioStreamParams &aud
     const AudioStreamType &streamType, IAudioStream::StreamClass &streamClass)
 {
     rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
-    if (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+    if (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+        rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+        rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
         rendererInfo_.pipeType = PIPE_TYPE_CALL_OUT;
     } else if (streamClass == IAudioStream::FAST_STREAM) {
         rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;

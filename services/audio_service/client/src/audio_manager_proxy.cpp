@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioManagerProxy"
+#endif
 
 #include "audio_manager_proxy.h"
 
@@ -85,124 +86,6 @@ int32_t AudioManagerProxy::OffloadSetVolume(float volume)
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_VOLUME), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OffloadSetVolume failed, error: %d", error);
-
-    int32_t result = reply.ReadInt32();
-    return result;
-}
-
-int32_t AudioManagerProxy::OffloadDrain()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_DRAIN), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OffloadDrain failed, error: %d", error);
-
-    int32_t result = reply.ReadInt32();
-    return result;
-}
-
-int32_t AudioManagerProxy::GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames,
-    int64_t& timeSec, int64_t& timeNanoSec)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
-    }
-
-    data.WriteString(deviceClass);
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::GET_CAPTURE_PRESENTATION_POSITION), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("GetCapturePresentationPosition failed, error: %d", error);
-        return false;
-    }
-
-    int32_t result = reply.ReadInt32();
-    frames = reply.ReadUint64();
-    timeSec = reply.ReadInt64();
-    timeNanoSec = reply.ReadInt64();
-    AUDIO_DEBUG_LOG("ret %{public}d, frames %{public}" PRIu64 ", sec %{public}" PRId64 ", Nasec %{public}" PRId64,
-        result, frames, timeSec, timeNanoSec);
-    return result;
-}
-
-int32_t AudioManagerProxy::GetRenderPresentationPosition(const std::string& deviceClass, uint64_t& frames,
-    int64_t& timeSec, int64_t& timeNanoSec)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
-    }
-
-    data.WriteString(deviceClass);
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::GET_RENDER_PRESENTATION_POSITION), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("GetRenderPresentationPosition failed, error: %d", error);
-        return false;
-    }
-
-    int32_t result = reply.ReadInt32();
-    frames = reply.ReadUint64();
-    timeSec = reply.ReadInt64();
-    timeNanoSec = reply.ReadInt64();
-    AUDIO_DEBUG_LOG("ret %{public}d, frames %{public}" PRIu64 ", sec %{public}" PRId64 ", Nasec %{public}" PRId64,
-        result, frames, timeSec, timeNanoSec);
-    return result;
-}
-
-int32_t AudioManagerProxy::OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_GET_PRESENTATION_POSITION), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OffloadGetPresentationPosition failed, error: %d", error);
-
-    int32_t result = reply.ReadInt32();
-    frames = reply.ReadUint64();
-    timeSec = reply.ReadInt64();
-    timeNanoSec = reply.ReadInt64();
-    AUDIO_DEBUG_LOG("ret %{public}d, frames %{public}" PRIu64 ", sec %{public}" PRId64 ", Nasec %{public}" PRId64,
-        result, frames, timeSec, timeNanoSec);
-    return result;
-}
-
-int32_t AudioManagerProxy::OffloadSetBufferSize(uint32_t sizeMs)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-
-    data.WriteUint32(sizeMs);
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_BUFFER_SIZE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OffloadSetBufferSize failed, error: %d", error);
 
     int32_t result = reply.ReadInt32();
     return result;
@@ -1198,6 +1081,21 @@ int32_t AudioManagerProxy::SetSinkMuteForSwitchDevice(const std::string &devceCl
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINK_MUTE_FOR_SWITCH_DEVICE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "failed, error:%{public}d", error);
     return reply.ReadInt32();
+}
+
+void AudioManagerProxy::SetRotationToEffect(const uint32_t rotate)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    data.WriteUint32(rotate);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_ROTATION_TO_EFFECT), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed, error:%{public}d", error);
 }
 } // namespace AudioStandard
 } // namespace OHOS

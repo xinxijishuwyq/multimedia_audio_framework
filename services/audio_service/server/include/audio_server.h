@@ -47,7 +47,6 @@ public:
     void OnDump() override;
     void OnStart() override;
     void OnStop() override;
-    int32_t OffloadDrain() override;
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
@@ -121,16 +120,6 @@ public:
 
     int32_t SetCaptureSilentState(bool state) override;
 
-    int32_t GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
-        int64_t& timeNanoSec) override;
-
-    int32_t GetRenderPresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
-        int64_t& timeNanoSec) override;
-
-    int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
-
-    int32_t OffloadSetBufferSize(uint32_t sizeMs) override;
-
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
 
     int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) override;
@@ -161,6 +150,8 @@ public:
     void LoadHdiEffectModel() override;
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
+
+    void SetRotationToEffect(const uint32_t rotate) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

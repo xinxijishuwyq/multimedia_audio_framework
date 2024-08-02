@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioUtils"
+#endif
 
 #include "audio_utils.h"
 #include <cinttypes>
@@ -51,6 +52,7 @@ constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
+constexpr int32_t TIME_OUT_SECONDS = 10;
 
 constexpr size_t FIRST_CHAR = 1;
 constexpr size_t MIN_LEN = 8;
@@ -283,6 +285,7 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
 
 bool PermissionUtil::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
 {
+    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacy", TIME_OUT_SECONDS);
     if (state == AUDIO_PERMISSION_START) {
         Trace trace("PrivacyKit::StartUsingPermission");
         int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);

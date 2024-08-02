@@ -12,16 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioStreamCollector"
+#endif
 
 #include "audio_stream_collector.h"
 
-#include "audio_errors.h"
 #include "audio_client_tracker_callback_proxy.h"
-#include "ipc_skeleton.h"
-#include "i_standard_client_tracker.h"
-#include "hisysevent.h"
 #include "audio_spatialization_service.h"
 
 #include "media_monitor_manager.h"

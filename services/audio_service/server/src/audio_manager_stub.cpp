@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioManagerStub"
+#endif
 
 #include "audio_manager_base.h"
 #include "audio_system_manager.h"
@@ -61,12 +62,7 @@ const char *g_audioServerCodeStrs[] = {
     "UPDATE_SPATIALIZATION_STATE",
     "UPDATE_SPATIAL_DEVICE_TYPE",
     "OFFLOAD_SET_VOLUME",
-    "OFFLOAD_DRAIN",
-    "OFFLOAD_GET_PRESENTATION_POSITION",
-    "OFFLOAD_SET_BUFFER_SIZE",
     "NOTIFY_STREAM_VOLUME_CHANGED",
-    "GET_CAPTURE_PRESENTATION_POSITION",
-    "GET_RENDER_PRESENTATION_POSITION",
     "SET_SPATIALIZATION_SCENE_TYPE",
     "GET_MAX_AMPLITUDE",
     "RESET_AUDIO_ENDPOINT",
@@ -88,6 +84,7 @@ const char *g_audioServerCodeStrs[] = {
     "LOAD_HDI_EFFECT_MODEL",
     "UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED",
     "SET_SINK_MUTE_FOR_SWITCH_DEVICE",
+    "SET_ROTATION_TO_EFFECT",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -573,69 +570,10 @@ int AudioManagerStub::HandleUpdateSpatialDeviceType(MessageParcel& data, Message
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleGetCapturePresentationPosition(MessageParcel &data, MessageParcel &reply)
-{
-    const std::string deviceClass = data.ReadString();
-    uint64_t frames;
-    int64_t timeSec;
-    int64_t timeNanoSec;
-    int32_t result = GetCapturePresentationPosition(deviceClass, frames, timeSec, timeNanoSec);
-    reply.WriteInt32(result);
-    reply.WriteUint64(frames);
-    reply.WriteInt64(timeSec);
-    reply.WriteInt64(timeNanoSec);
-
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleGetRenderPresentationPosition(MessageParcel &data, MessageParcel &reply)
-{
-    const std::string deviceClass = data.ReadString();
-    uint64_t frames;
-    int64_t timeSec;
-    int64_t timeNanoSec;
-    int32_t result = GetRenderPresentationPosition(deviceClass, frames, timeSec, timeNanoSec);
-    reply.WriteInt32(result);
-    reply.WriteUint64(frames);
-    reply.WriteInt64(timeSec);
-    reply.WriteInt64(timeNanoSec);
-
-    return AUDIO_OK;
-}
-
 int AudioManagerStub::HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply)
 {
     const float volume = data.ReadFloat();
     int32_t result = OffloadSetVolume(volume);
-    reply.WriteInt32(result);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleOffloadDrain(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t result = OffloadDrain();
-    reply.WriteInt32(result);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleOffloadGetPresentationPosition(MessageParcel &data, MessageParcel &reply)
-{
-    uint64_t frames;
-    int64_t timeSec;
-    int64_t timeNanoSec;
-    int32_t result = OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
-    reply.WriteInt32(result);
-    reply.WriteUint64(frames);
-    reply.WriteInt64(timeSec);
-    reply.WriteInt64(timeNanoSec);
-
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleOffloadSetBufferSize(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t sizeMs = data.ReadUint32();
-    int32_t result = OffloadSetBufferSize(sizeMs);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
@@ -713,14 +651,16 @@ int AudioManagerStub::HandleUpdateLatencyTimestamp(MessageParcel &data, MessageP
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleSetRotationToEffect(MessageParcel &data, MessageParcel &reply)
+{
+    SetRotationToEffect(data.ReadUint32());
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply,
     MessageOption &option)
 {
     switch (code) {
-        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE):
-            return HandleGetAsrAecMode(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_NOISE_SUPPRESSION_MODE):
-            return HandleSetAsrNoiseSuppressionMode(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_NOISE_SUPPRESSION_MODE):
             return HandleGetAsrNoiseSuppressionMode(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_WHISPER_DETECTION_MODE):
@@ -745,6 +685,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleUpdateEffectBtOffloadSupported(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINK_MUTE_FOR_SWITCH_DEVICE):
             return HandleSetSinkMuteForSwitchDevice(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ROTATION_TO_EFFECT):
+            return HandleSetRotationToEffect(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -755,18 +697,8 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
     MessageOption &option)
 {
     switch (code) {
-        case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_DRAIN):
-            return HandleOffloadDrain(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_GET_PRESENTATION_POSITION):
-            return HandleOffloadGetPresentationPosition(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_BUFFER_SIZE):
-            return HandleOffloadSetBufferSize(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_STREAM_VOLUME_CHANGED):
             return HandleNotifyStreamVolumeChanged(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_CAPTURE_PRESENTATION_POSITION):
-            return HandleGetCapturePresentationPosition(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_RENDER_PRESENTATION_POSITION):
-            return HandleGetRenderPresentationPosition(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SPATIALIZATION_SCENE_TYPE):
             return HandleSetSpatializationSceneType(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_MAX_AMPLITUDE):
@@ -781,6 +713,10 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
             return HandleUpdateLatencyTimestamp(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_AEC_MODE):
             return HandleSetAsrAecMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE):
+            return HandleGetAsrAecMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_NOISE_SUPPRESSION_MODE):
+            return HandleSetAsrNoiseSuppressionMode(data, reply);
         default:
             return HandleFourthPartCode(code, data, reply, option);
     }
@@ -893,6 +829,5 @@ int AudioManagerStub::HandleSetSinkMuteForSwitchDevice(MessageParcel &data, Mess
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

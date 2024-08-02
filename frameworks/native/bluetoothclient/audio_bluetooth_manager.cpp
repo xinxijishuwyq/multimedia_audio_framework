@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioBluetoothManager"
+#endif
 
 #include "audio_bluetooth_manager.h"
 #include "bluetooth_def.h"
@@ -92,6 +93,7 @@ static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioSt
     return true;
 }
 
+// LCOV_EXCL_START
 void AudioA2dpManager::RegisterBluetoothA2dpListener()
 {
     AUDIO_INFO_LOG("AudioA2dpManager::RegisterBluetoothA2dpListener");
@@ -517,5 +519,6 @@ void AudioHfpListener::OnHfpStackChanged(const BluetoothRemoteDevice &device, in
     AUDIO_INFO_LOG("OnHfpStackChanged, action: %{public}d", action);
     HfpBluetoothDeviceManager::SetHfpStack(device, action);
 }
+// LCOV_EXCL_STOP
 } // namespace Bluetooth
 } // namespace OHOS

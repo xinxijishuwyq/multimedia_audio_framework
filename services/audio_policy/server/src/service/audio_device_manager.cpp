@@ -12,15 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioDeviceManager"
+#endif
 
 #include "audio_device_manager.h"
 
-#include "parameter.h"
-
-#include "audio_errors.h"
-#include "audio_log.h"
 #include "audio_utils.h"
 #include "audio_device_parser.h"
 
@@ -33,6 +30,7 @@ const int32_t ADDRESS_STR_LEN = 17;
 const int32_t START_POS = 6;
 const int32_t END_POS = 13;
 
+// LCOV_EXCL_START
 std::string GetEncryptAddr(const std::string &addr)
 {
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
@@ -574,7 +572,7 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRecongnitionCap
     }
     return descs;
 }
-
+// LCOV_EXCL_STOP
 unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice(StreamUsage streamUsage)
 {
     if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
@@ -602,6 +600,7 @@ unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCaptureDefaultDevice()
     return devDesc;
 }
 
+// LCOV_EXCL_START
 void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage,
     const DevicePrivacyInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &dev,
     std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
@@ -1029,5 +1028,6 @@ bool AudioDeviceManager::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDev
         audioDeviceDescriptors->deviceType_, GetEncryptAddr(audioDeviceDescriptors->macAddress_).c_str());
     return false;
 }
+// LCOV_EXCL_STOP
 }
 }

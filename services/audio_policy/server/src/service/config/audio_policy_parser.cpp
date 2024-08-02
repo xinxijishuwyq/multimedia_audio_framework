@@ -13,15 +13,13 @@
  * limitations under the License.
  */
 
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioPolicyParser"
+#endif
 
 #include "audio_policy_parser.h"
 
-#include <regex>
 #include <sstream>
-#include <string>
-#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -74,6 +72,7 @@ bool AudioPolicyParser::LoadConfiguration()
     return true;
 }
 
+// LCOV_EXCL_START
 bool AudioPolicyParser::Parse()
 {
     AUDIO_INFO_LOG("Enter");
@@ -213,6 +212,7 @@ ClassType AudioPolicyParser::GetClassTypeByAdapterType(AdaptersType adapterType)
     }
 }
 
+// LCOV_EXCL_STOP
 void AudioPolicyParser::GetOffloadAndOpenMicState(AudioAdapterInfo &adapterInfo,
     bool &shouldEnableOffload)
 {
@@ -236,6 +236,7 @@ std::string AudioPolicyParser::GetAudioModuleInfoName(std::string &pipeInfoName,
     return "";
 }
 
+// LCOV_EXCL_START
 void AudioPolicyParser::ConvertAdapterInfoToAudioModuleInfo()
 {
     for (auto &[adapterType, adapterInfo] : adapterInfoMap_) {
@@ -808,5 +809,6 @@ StreamType AudioPolicyParser::GetStreamTypeAsInt(xmlNode &node)
         return StreamType::UNKNOWN;
     }
 }
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

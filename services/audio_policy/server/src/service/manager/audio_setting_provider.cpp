@@ -12,19 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioSettingProvider"
+#endif
 
 #include "audio_setting_provider.h"
 
-#include <map>
-
-#include "datashare_helper.h"
-#include "datashare_predicates.h"
-#include "datashare_result_set.h"
 #include "iservice_registry.h"
-#include "system_ability_definition.h"
-
 #include "audio_errors.h"
 
 namespace OHOS {

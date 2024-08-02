@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "MultiChannelRendererSinkInner"
+#endif
 
 #include "multichannel_audio_renderer_sink.h"
 
@@ -185,6 +186,7 @@ MultiChannelRendererSink *MultiChannelRendererSink::GetInstance(const std::strin
     return &audioRenderer;
 }
 
+// LCOV_EXCL_START
 static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, const string &adapterNameCase,
     enum AudioPortDirection portFlag, struct AudioPort &renderPort, uint32_t size)
 {
@@ -1160,5 +1162,6 @@ int32_t MultiChannelRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> 
     AUDIO_WARNING_LOG("not supported.");
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

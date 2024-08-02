@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioService"
+#endif
 
 #include "audio_service.h"
 
@@ -205,6 +206,8 @@ bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig)
 
 bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
 {
+    CHECK_AND_RETURN_RET_LOG(Util::IsRingerOrAlarmerStreamUsage(config.rendererInfo.streamUsage), false,
+        "Wrong usage ,should not be dualtone");
     DeviceInfo deviceInfo;
     bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
     if (!ret) {

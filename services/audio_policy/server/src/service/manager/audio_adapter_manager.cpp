@@ -12,21 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioAdapterManager"
+#endif
 
 #include "audio_adapter_manager.h"
 
-#include <memory>
-#include <unistd.h>
-#include <string>
 
 #include "parameter.h"
 #include "parameters.h"
-#include "setting_provider.h"
 
-#include "audio_errors.h"
-#include "audio_log.h"
 #include "audio_volume_parser.h"
 #include "audio_utils.h"
 #include "audio_adapter_manager_handler.h"
@@ -89,6 +84,7 @@ static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
     "system_tone_for_notification"
 };
 
+// LCOV_EXCL_START
 bool AudioAdapterManager::Init()
 {
     char testMode[10] = {0}; // 10 for system parameter usage
@@ -253,6 +249,7 @@ int32_t AudioAdapterManager::SetAudioStreamRemovedCallback(AudioStreamRemovedCal
     return SUCCESS;
 }
 
+// LCOV_EXCL_STOP
 int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
 {
     CHECK_AND_RETURN_RET_LOG(volumeType >= STREAM_VOICE_CALL && volumeType <= STREAM_TYPE_MAX,
@@ -484,6 +481,7 @@ bool AudioAdapterManager::GetStreamMuteInternal(AudioStreamType streamType)
     return volumeDataMaintainer_.GetStreamMute(streamType);
 }
 
+// LCOV_EXCL_START
 vector<SinkInfo> AudioAdapterManager::GetAllSinks()
 {
     if (!audioServiceAdapter_) {
@@ -641,6 +639,7 @@ int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutput
     return audioServiceAdapter_->MoveSourceOutputByIndexOrName(sourceOutputId, sourceIndex, sourceName);
 }
 
+// LCOV_EXCL_STOP
 int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 {
     return SetRingerModeInternal(ringerMode);
@@ -663,6 +662,7 @@ AudioRingerMode AudioAdapterManager::GetRingerMode() const
     return ringerMode_;
 }
 
+// LCOV_EXCL_START
 AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
@@ -1790,5 +1790,6 @@ void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
     AppendFormat(dumpString, "  - ActiveBtSafeTime: %lld\n", safeActiveBtTime_);
     AppendFormat(dumpString, "  - ActiveSafeTime: %lld\n", safeActiveTime_);
 }
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

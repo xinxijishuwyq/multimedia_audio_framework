@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioSystemManager"
+#endif
 
 #include "audio_system_manager.h"
 
@@ -1172,51 +1173,6 @@ std::string AudioSystemManager::GetSelfBundleName()
         AUDIO_DEBUG_LOG("Get bundle info failed");
     }
     return bundleName;
-}
-
-int32_t AudioSystemManager::OffloadDrain()
-{
-    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM,
-        "OffloadDrain Audio service unavailable.");
-    return gasp->OffloadDrain();
-}
-
-int32_t AudioSystemManager::GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames,
-    int64_t& timeSec, int64_t& timeNanoSec)
-{
-    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
-    return gasp->GetCapturePresentationPosition(deviceClass, frames, timeSec, timeNanoSec);
-}
-
-int32_t AudioSystemManager::GetRenderPresentationPosition(const std::string& deviceClass, uint64_t& frames,
-    int64_t& timeSec, int64_t& timeNanoSec)
-{
-    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
-    return gasp->GetRenderPresentationPosition(deviceClass, frames, timeSec, timeNanoSec);
-}
-
-int32_t AudioSystemManager::OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
-{
-    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
-    return gasp->OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
-}
-
-int32_t AudioSystemManager::OffloadSetBufferSize(uint32_t sizeMs)
-{
-    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
-    return gasp->OffloadSetBufferSize(sizeMs);
-}
-
-int32_t AudioSystemManager::OffloadSetVolume(float volume)
-{
-    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
-    return gasp->OffloadSetVolume(volume);
 }
 
 void AudioSystemManager::RequestThreadPriority(uint32_t tid)

@@ -35,7 +35,7 @@ const int32_t SHIFT_LEFT_8 = 8;
 const int32_t SHIFT_LEFT_16 = 16;
 const int32_t SHIFT_LEFT_24 = 24;
 const uint32_t LIMIT_MIN = 0;
-const uint32_t LIMIT_MAX = 30;
+const uint32_t LIMIT_MAX = static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX);
 
 uint32_t Convert2Uint32(const uint8_t *ptr)
 {
@@ -126,56 +126,6 @@ void AudioServerOffloadSetVolumeFuzzTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerOffloadDrainFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    MessageParcel reply;
-    MessageOption option;
-
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_DRAIN),
-        data, reply, option);
-}
-
-void AudioServerOffloadGetPresentationPositionFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    MessageParcel reply;
-    MessageOption option;
-
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_GET_PRESENTATION_POSITION),
-        data, reply, option);
-}
-
-void AudioServerOffloadSetBufferSizeFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    uint32_t sizeMs = *reinterpret_cast<const uint32_t*>(rawData);
-    data.WriteUint32(sizeMs);
-    MessageParcel reply;
-    MessageOption option;
-
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_BUFFER_SIZE),
-        data, reply, option);
-}
-
 void AudioServerNotifyStreamVolumeChangedFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -191,42 +141,6 @@ void AudioServerNotifyStreamVolumeChangedFuzzTest(const uint8_t *rawData, size_t
 
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_STREAM_VOLUME_CHANGED),
-        data, reply, option);
-}
-
-void AudioServerGetCapturePresentationPositionFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    MessageParcel reply;
-    MessageOption option;
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    std::string deviceClass(reinterpret_cast<const char*>(rawData), size);
-    data.WriteString(deviceClass);
-
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_CAPTURE_PRESENTATION_POSITION),
-        data, reply, option);
-}
-
-void AudioServerGetRenderPresentationPositionFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    MessageParcel reply;
-    MessageOption option;
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    std::string deviceClass(reinterpret_cast<const char*>(rawData), size);
-    data.WriteString(deviceClass);
-
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_RENDER_PRESENTATION_POSITION),
         data, reply, option);
 }
 
@@ -561,12 +475,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerCaptureSilentlyFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerOffloadSetVolumeFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerOffloadDrainFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerOffloadGetPresentationPositionFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerOffloadSetBufferSizeFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerNotifyStreamVolumeChangedFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerGetCapturePresentationPositionFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerGetRenderPresentationPositionFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerResetRouteForDisconnectFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerGetEffectLatencyTest(data, size);
     OHOS::AudioStandard::AudioServerGetMaxAmplitudeTest(data, size);
@@ -583,5 +492,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerSetMicrophoneMuteTest(data, size);
     OHOS::AudioStandard::AudioServerSetAudioBalanceValueTest(data, size);
     OHOS::AudioStandard::AudioServerSetAudioSceneTest(data, size);
+    OHOS::AudioStandard::AudioServerUpdateLatencyTimestampTest(data, size);
     return 0;
 }

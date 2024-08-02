@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioSpeed"
+#endif
 
 #include "audio_speed.h"
 #include "audio_log.h"

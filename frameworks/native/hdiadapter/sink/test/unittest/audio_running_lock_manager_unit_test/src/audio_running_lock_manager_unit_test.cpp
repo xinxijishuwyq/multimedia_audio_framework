@@ -65,6 +65,7 @@ HWTEST(AudioRunningLockManagerUnitTest, AudioRunningLockManagerUnitTest_001, Tes
 
     EXPECT_CALL((*sharedPtrMockRunningLock), Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING))
         .Times(1).WillOnce(Return(SUCCESS));
+    EXPECT_CALL((*sharedPtrMockRunningLock), UpdateWorkSource(IsEmpty())).Times(1);
     EXPECT_CALL((*sharedPtrMockRunningLock), UnLock()).Times(1).WillOnce(Return(SUCCESS));
 
     lockManagerMock.Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING);
@@ -113,6 +114,7 @@ HWTEST(AudioRunningLockManagerUnitTest, AudioRunningLockManagerUnitTest_002, Tes
     lockManagerMock.UpdateAppsUid(appsUid4.begin(), appsUid4.end());
     lockManagerMock.UpdateAppsUidToPowerMgr();
 
+    EXPECT_CALL((*sharedPtrMockRunningLock), UpdateWorkSource(IsEmpty())).Times(1);
     EXPECT_CALL((*sharedPtrMockRunningLock), UnLock()).Times(1).WillOnce(Return(SUCCESS));
     lockManagerMock.UnLock();
     EXPECT_EQ(lockManagerMock.isLocked_, false);

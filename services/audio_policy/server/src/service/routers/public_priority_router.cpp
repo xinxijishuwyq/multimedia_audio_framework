@@ -12,12 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "PublicPriorityRouter"
+#endif
 
 #include "public_priority_router.h"
-#include "audio_log.h"
-
 using namespace std;
 
 namespace OHOS {
@@ -59,7 +58,7 @@ vector<std::unique_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
     AudioRingerMode curRingerMode = audioPolicyManager_.GetRingerMode();
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
     vector<unique_ptr<AudioDeviceDescriptor>> curDescs;
-    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
     } else {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
@@ -99,7 +98,7 @@ vector<std::unique_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
     } else if (latestConnDesc->getType() != DEVICE_TYPE_NONE) {
         descs.push_back(move(latestConnDesc));
     } else {
-        descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+        descs.push_back(make_unique<AudioDeviceDescriptor>());
     }
     return descs;
 }

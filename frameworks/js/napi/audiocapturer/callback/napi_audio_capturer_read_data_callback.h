@@ -42,6 +42,7 @@ private:
     };
 
     static void WorkCallbackCapturerReadData(uv_work_t *work, int status);
+    static void WorkCallbackCapturerReadDataInner(uv_work_t *work, int status);
     void OnJsCapturerReadDataCallback(std::unique_ptr<CapturerReadDataJsCallback> &jsCb);
 
     std::mutex mutex_;

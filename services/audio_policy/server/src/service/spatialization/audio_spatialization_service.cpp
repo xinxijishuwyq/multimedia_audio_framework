@@ -12,25 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioSpatializationService"
+#endif
 
 #include "audio_spatialization_service.h"
 
-#include <thread>
-#include "ipc_skeleton.h"
-#include "hisysevent.h"
 #include "iservice_registry.h"
-#include "setting_provider.h"
 #include "system_ability_definition.h"
-#include "parameter.h"
-
-#include "audio_errors.h"
-#include "audio_log.h"
-#include "audio_utils.h"
 
 #include "audio_spatialization_state_change_listener_proxy.h"
-#include "i_standard_spatialization_state_change_listener.h"
 
 #include "audio_policy_service.h"
 

@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-#undef LOG_TAG
+#ifndef LOG_TAG
 #define LOG_TAG "AudioEffectChainManagerUnitTest"
+#endif
 
 #include "audio_effect_chain_manager_unit_test.h"
 

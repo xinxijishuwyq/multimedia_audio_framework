@@ -37,6 +37,9 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
   sources = [ "audio_interrupt_service_fuzzer.cpp" ]
 
   deps = [ "../../../services/audio_policy:audio_policy_service" ]

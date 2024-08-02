@@ -32,7 +32,7 @@ public:
     void SetDspVolume(uint32_t volume);
     uint32_t GetDspVolume();
 private:
-    uint32_t dspVolume_;
+    uint32_t dspVolume_ = 0;
     std::map<std::string, uint32_t>SceneTypeToVolumeMap_;
 };
 }  // namespace AudioStandard
