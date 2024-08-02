@@ -30,14 +30,7 @@ public:
 
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
-    int32_t GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
-        int64_t& timeNanoSec) override;
-    int32_t GetRenderPresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
-        int64_t& timeNanoSec) override;
     int32_t OffloadSetVolume(float volume) override;
-    int32_t OffloadDrain() override;
-    int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
-    int32_t OffloadSetBufferSize(uint32_t sizeMs) override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
         DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag) override;
     const std::string GetAudioParameter(const std::string &key) override;

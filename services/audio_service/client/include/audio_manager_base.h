@@ -45,16 +45,7 @@ public:
      */
     virtual int32_t SetVoiceVolume(float volume) = 0;
 
-    virtual int32_t GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
-        int64_t& timeNanoSec) = 0;
-
-    virtual int32_t GetRenderPresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
-        int64_t& timeNanoSec) = 0;
-
     virtual int32_t OffloadSetVolume(float volume) = 0;
-    virtual int32_t OffloadDrain() = 0;
-    virtual int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) = 0;
-    virtual int32_t OffloadSetBufferSize(uint32_t sizeMs) = 0;
     virtual int32_t SuspendRenderSink(const std::string &sinkName) = 0;
     virtual int32_t RestoreRenderSink(const std::string &sinkName) = 0;
 
@@ -476,12 +467,7 @@ private:
     int HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply);
     int HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
-    int HandleGetCapturePresentationPosition(MessageParcel &data, MessageParcel &reply);
-    int HandleGetRenderPresentationPosition(MessageParcel &data, MessageParcel &reply);
     int HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply);
-    int HandleOffloadDrain(MessageParcel &data, MessageParcel &reply);
-    int HandleOffloadGetPresentationPosition(MessageParcel &data, MessageParcel &reply);
-    int HandleOffloadSetBufferSize(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyStreamVolumeChanged(MessageParcel &data, MessageParcel &reply);
     int HandleSetSpatializationSceneType(MessageParcel &data, MessageParcel &reply);
     int HandleGetMaxAmplitude(MessageParcel &data, MessageParcel &reply);
