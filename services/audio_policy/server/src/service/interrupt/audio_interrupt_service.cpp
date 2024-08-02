@@ -316,14 +316,16 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
 
 void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int &id)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("start DeactivateAudioInterrupt, current id:%{public}d", id);
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
     for (const auto&[zoneId, audioInterruptZone] : zonesMap_) {
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator it =
             audioInterruptZone->audioFocusInfoList.begin();
         while (it != audioInterruptZone->audioFocusInfoList.end()) {
-            if ((*it).first.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
-                AUDIO_INFO_LOG("usage is voice modem communication, skip");
+            if ((*it).first.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+                (*it).first.streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+                AUDIO_INFO_LOG("usage is voice modem communication or voice ring, skip");
                 it++;
             } else {
                 handler_->SendInterruptEventWithSessionIdCallback(interruptEvent, (*it).first.sessionId);
