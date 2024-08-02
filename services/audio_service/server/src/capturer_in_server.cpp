@@ -220,7 +220,6 @@ void CapturerInServer::ReadData(size_t length)
     ringCache_->Enqueue({srcBuffer.buffer, srcBuffer.bufLength});
     result = ringCache_->GetReadableSize();
     if (result.ret != OPERATION_SUCCESS || result.size < spanSizeInBytes_) {
-        AUDIO_INFO_LOG("RingCache size not full, return");
         stream_->EnqueueBuffer(srcBuffer);
         return;
     }
