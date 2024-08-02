@@ -417,7 +417,6 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
-    void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     // for hidump
     void AudioDevicesDump(std::string &dumpString);
     void AudioModeDump(std::string &dumpString);
@@ -518,8 +517,6 @@ private:
     void UnRegisterPowerStateListener();
     void RegisterSyncHibernateListener();
     void UnRegisterSyncHibernateListener();
-    void RegisterCommonEventReceiver();
-    void UnregisterCommonEventReceiver();
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
 
     void InitPolicyDumpMap();
@@ -555,7 +552,6 @@ private:
 
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
-    std::shared_ptr<BluetoothEventSubscriber> bluetoothEventSubscriberOb_ = nullptr;
     bool isAvSessionSetVoipStart = false;
     bool volumeApplyToAll_ = false;
 
@@ -594,19 +590,6 @@ public:
     }
 private:
     AudioPolicyServer *audioPolicyServer_;
-};
-
-class BluetoothEventSubscriber : public EventFwk::CommonEventSubscriber,
-                                 public std::enable_shared_from_this<BluetoothEventSubscriber> {
-public:
-    explicit BluetoothEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,
-        sptr<AudioPolicyServer> audioPolicyServer) : EventFwk::CommonEventSubscriber(subscribeInfo),
-        audioPolicyServer_(audioPolicyServer) {}
-    ~BluetoothEventSubscriber() {}
-    void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
-private:
-    BluetoothEventSubscriber() = default;
-    sptr<AudioPolicyServer> audioPolicyServer_;
 };
 
 class AudioCommonEventSubscriber : public EventFwk::CommonEventSubscriber {
