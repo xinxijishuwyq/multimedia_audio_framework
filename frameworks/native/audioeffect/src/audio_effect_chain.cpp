@@ -159,29 +159,29 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     data[0] = EFFECT_SET_PARAM;
     data[1] = static_cast<int32_t>(currSceneType_);
     AUDIO_DEBUG_LOG("set ap integration scene type: %{public}d", data[1]);
-    data[2] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode_); // 2:index
+    data[2] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode_); // 2:effect mode index
 #ifdef WINDOW_MANAGER_ENABLE
     std::shared_ptr<AudioEffectRotation> audioEffectRotation = AudioEffectRotation::GetInstance();
     if (audioEffectRotation == nullptr) {
-        data[3] = 0; // 3:index
+        data[3] = 0; // 3:rotation index
     } else {
-        data[3] = audioEffectRotation->GetRotation(); // 3:index
+        data[3] = audioEffectRotation->GetRotation(); // 3:rotation index
     }
 #else
-    data[3] = 0; // 3:index
+    data[3] = 0; // 3:rotation index
 #endif
-    AUDIO_DEBUG_LOG("set ap integration rotation: %{public}d", data[3]); // 3:index
+    AUDIO_DEBUG_LOG("set ap integration rotation: %{public}d", data[3]); // 3:rotation index
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     if (audioEffectVolume == nullptr) {
-        data[4] = 0; // 4:index
+        data[4] = 0; // 4:volume index
     } else {
-        data[4] = audioEffectVolume->GetApVolume(sceneType_); // 4:index
+        data[4] = audioEffectVolume->GetApVolume(sceneType_); // 4:volume index
     }
-    AUDIO_DEBUG_LOG("set ap integration volume: %{public}d", data[4]); // 4:index
-    data[5] = extraEffectChainType_; // 5:index
+    AUDIO_DEBUG_LOG("set ap integration volume: %{public}d", data[4]); // 4:volume index
+    data[5] = extraEffectChainType_; // 5:extra effect chain type index
     AUDIO_DEBUG_LOG("set extra effect chain type: %{public}d", extraEffectChainType_);
-    data[6] = spatialDeviceType_; // 6:index
-    AUDIO_DEBUG_LOG("set ap integration spatial device type: %{public}d", data[6]); // 6:index
+    data[6] = spatialDeviceType_; // 6:spatial device type index
+    AUDIO_DEBUG_LOG("set ap integration spatial device type: %{public}d", data[6]); // 6:spatial device type index
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     return ret;
