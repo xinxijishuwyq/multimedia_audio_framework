@@ -494,7 +494,7 @@ int32_t AudioInterruptService::GetStreamTypePriority(AudioStreamType streamType)
     return STREAM_DEFAULT_PRIORITY;
 }
 
-unordered_map<AudioStreamType, int>& AudioInterruptService::GetStreamPriorityMap()
+unordered_map<AudioStreamType, int> AudioInterruptService::GetStreamPriorityMap() const
 {
     return DefaultStreamPriority;
 }
@@ -509,20 +509,20 @@ AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
         audioFocusInfoList = itZone->second->audioFocusInfoList;
     }
 
-    int32_t FoucusPriority = STREAM_DEFAULT_PRIORITY;
+    int32_t FocusPriority = STREAM_DEFAULT_PRIORITY;
     for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
         if ((iter->second != ACTIVE && iter->second != DUCK)||
             (iter->first).audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
             // if the steam is not active or the active stream is an audio capturer stream, skip it.
             continue;
         }
-        int32_t curPriority = GetStreamTypePriority((iter->frist).audioFocusType.streamType);
+        int32_t curPriority = GetStreamTypePriority((iter->first).audioFocusType.streamType);
         if (curPriority < FocusPriority) {
             FocusPriority = curPriority;
-            streamInFocus = (iter->frist).audioFocusType.streamType;
+            streamInFocus = (iter->first).audioFocusType.streamType;
         }
     }
-    return streamInFocus == STREAM_DEFAULT ? STREAM_MUSIC : streamInfocus;
+    return streamInFocus == STREAM_DEFAULT ? STREAM_MUSIC : streamInFocus;
 }
 
 int32_t AudioInterruptService::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId)
