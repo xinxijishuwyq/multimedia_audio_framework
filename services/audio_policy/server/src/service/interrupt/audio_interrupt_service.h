@@ -77,7 +77,7 @@ public:
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     int32_t SetAudioFocusInfoCallback(const int32_t zoneId, const sptr<IRemoteObject> &object);
     int32_t GetStreamTypePriority(AudioStreamType streamType);
-    unordered_map<AudioStreamType, int>& GetStreamPriorityMap();
+    unordered_map<AudioStreamType, int> GetStreamPriorityMap() const;
     AudioStreamType GetStreamInFocus(const int32_t zoneId);
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
     void ClearAudioFocusInfoListOnAccountsChanged(const int &id);
