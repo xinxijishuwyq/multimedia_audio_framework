@@ -629,7 +629,7 @@ int AudioManagerStub::HandleSuspendRenderSink(MessageParcel &data, MessageParcel
 int AudioManagerStub::HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply)
 {
     std::string sinkName = data.ReadString();
-    int32_t ret = SuspendRenderSink(sinkName);
+    int32_t ret = RestoreRenderSink(sinkName);
     reply.WriteInt32(ret);
     return AUDIO_OK;
 }
