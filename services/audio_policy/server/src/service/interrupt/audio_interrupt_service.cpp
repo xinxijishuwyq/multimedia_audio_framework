@@ -489,7 +489,7 @@ int32_t AudioInterruptService::GetStreamTypePriority(AudioStreamType streamType)
 {
     const std::unordered_map<AudioStreamType, int> &priorityMap = GetStreamPriorityMap();
     if (priorityMap.find(streamType) != priorityMap.end()) {
-        return priorityMap[streamType];
+        return priorityMap.at(streamType);
     }
     return STREAM_DEFAULT_PRIORITY;
 }
