@@ -322,8 +322,9 @@ void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int &
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator it =
             audioInterruptZone->audioFocusInfoList.begin();
         while (it != audioInterruptZone->audioFocusInfoList.end()) {
-            if ((*it).first.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
-                AUDIO_INFO_LOG("usage is voice modem communication, skip");
+            if ((*it).first.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+                (*it).first.streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+                AUDIO_INFO_LOG("usage is voice modem communication or voice ring, skip");
                 it++;
             } else {
                 handler_->SendInterruptEventWithSessionIdCallback(interruptEvent, (*it).first.sessionId);
