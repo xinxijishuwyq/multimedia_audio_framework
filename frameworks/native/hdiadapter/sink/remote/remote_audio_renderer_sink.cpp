@@ -366,6 +366,12 @@ int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint
 
     int64_t cost = (ClockTime::GetCurNano() - start) / AUDIO_US_PER_SECOND;
     AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, cost);
+
+    int64_t stampThreshold = 50; // 50ms
+    if (cost >= stampThreshold) {
+        AUDIO_WARNING_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, cost);
+    }
+
     return SUCCESS;
 }
 
