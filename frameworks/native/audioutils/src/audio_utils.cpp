@@ -45,6 +45,7 @@ using OHOS::Security::AccessToken::AccessTokenKit;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+constexpr int32_t UID_AUDIO = 1041;
 constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
 constexpr int32_t UID_CAAS_SA = 5527;
@@ -200,6 +201,21 @@ bool PermissionUtil::VerifyIsShell()
     if (tokenTypeFlag == Security::AccessToken::TOKEN_SHELL) {
         return true;
     }
+    return false;
+}
+
+bool PermissionUtil::VerifyIsAudio()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (UID_AUDIO == callingUid) {
+        return true;
+    }
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    if (callingUid == 0) {
+        AUDIO_WARNING_LOG("Root calling!");
+        return true;
+    }
+#endif
     return false;
 }
 
