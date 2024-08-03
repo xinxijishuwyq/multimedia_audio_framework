@@ -57,7 +57,7 @@ static const std::unordered_map<const AudioScene, const int> SCENE_PRIORITY = {
     {AUDIO_SCENE_DEFAULT, 1}
 };
 
-static const unordered_map<AudioStreamType, int> DefaultStreamPriority = {
+static const unordered_map<AudioStreamType, int> DEFAULTSTREAMPRIORITY = {
     {STREAM_VOICE_CALL, 0},
     {STREAM_VOICE_CALL_ASSISTANT, 0},
     {STREAM_VOICE_COMMUNICATION, 0},
@@ -493,7 +493,7 @@ int32_t AudioInterruptService::GetStreamTypePriority(AudioStreamType streamType)
 
 unordered_map<AudioStreamType, int> AudioInterruptService::GetStreamPriorityMap() const
 {
-    return DefaultStreamPriority;
+    return DEFAULTSTREAMPRIORITY;
 }
 
 AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
@@ -506,7 +506,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
         audioFocusInfoList = itZone->second->audioFocusInfoList;
     }
 
-    int32_t FocusPriority = STREAM_DEFAULT_PRIORITY;
+    int32_t focusPriority = STREAM_DEFAULT_PRIORITY;
     for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
         if ((iter->second != ACTIVE && iter->second != DUCK)||
             (iter->first).audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
@@ -514,8 +514,8 @@ AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
             continue;
         }
         int32_t curPriority = GetStreamTypePriority((iter->first).audioFocusType.streamType);
-        if (curPriority < FocusPriority) {
-            FocusPriority = curPriority;
+        if (curPriority < focusPriority) {
+            focusPriority = curPriority;
             streamInFocus = (iter->first).audioFocusType.streamType;
         }
     }
