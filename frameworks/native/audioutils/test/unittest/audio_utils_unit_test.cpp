@@ -190,11 +190,11 @@ HWTEST(AudioUtilsUnitTest, AdjustAudioBalanceForPCM_001, TestSize.Level1)
     int8_t *data3 = &arr3[0];
     AdjustAudioBalanceForPCM24Bit(data3, len, left, right);
     EXPECT_EQ(Bit8RET1, data3[0]);
-    EXPECT_EQ(Bit8RET1*2, data3[1]);
-    EXPECT_EQ(Bit8RET1*3, data3[2]);
-    EXPECT_EQ(Bit8RET1*4, data3[3]);
-    EXPECT_EQ(Bit8RET1*5, data3[4]);
-    EXPECT_EQ(Bit8RET1*6, data3[5]);
+    EXPECT_EQ(Bit8RET1 * 2, data3[1]);
+    EXPECT_EQ(Bit8RET1 * 3, data3[2]);
+    EXPECT_EQ(Bit8RET1 * 4, data3[3]);
+    EXPECT_EQ(Bit8RET1 * 5, data3[4]);
+    EXPECT_EQ(Bit8RET1 * 6, data3[5]);
 
     len = 8;
     const int32_t Bit32RET = 2;
@@ -202,7 +202,7 @@ HWTEST(AudioUtilsUnitTest, AdjustAudioBalanceForPCM_001, TestSize.Level1)
     int32_t *data4 = &arr4[0];
     AdjustAudioBalanceForPCM32Bit(data4, len, left, right);
     EXPECT_EQ(Bit32RET, data4[0]);
-    EXPECT_EQ(Bit32RET*2, data4[1]);
+    EXPECT_EQ(Bit32RET * 2, data4[1]);
 }
 
 /**
