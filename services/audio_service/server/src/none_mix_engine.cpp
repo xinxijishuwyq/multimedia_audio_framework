@@ -210,8 +210,10 @@ void NoneMixEngine::DoFadeinOut(bool isFadeOut, char *pBuffer, size_t bufferSize
     CHECK_AND_RETURN_LOG(pBuffer != nullptr && bufferSize > 0 && uChannel_ > 0, "buffer is null.");
     size_t dataLength = bufferSize / (static_cast<uint32_t>(uFormat_) * uChannel_);
     if (uFormat_ == sizeof(int16_t)) {
+        AUDIO_INFO_LOG("int16 fading frame length:%{public}zu", dataLength);
         DoFadeInOut(reinterpret_cast<int16_t *>(pBuffer), dataLength, isFadeOut, uChannel_);
     } else if (uFormat_ == sizeof(int32_t)) {
+        AUDIO_INFO_LOG("int32 fading frame length:%{public}zu", dataLength);
         DoFadeInOut(reinterpret_cast<int32_t *>(pBuffer), dataLength, isFadeOut, uChannel_);
     }
     if (isFadeOut) {
