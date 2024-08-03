@@ -821,6 +821,7 @@ void AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
         MoveToNewPipe(sessionId, normalPipe);
         streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
         offloadSessionID_.reset();
+        DynamicUnloadModule(PIPE_TYPE_OFFLOAD);
         AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
     } else {
         if (offloadSessionID_.has_value()) {
@@ -843,6 +844,7 @@ void AudioPolicyService::RemoteOffloadStreamRelease(uint32_t sessionId)
         MoveToNewPipe(sessionId, normalPipe);
         streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
         offloadSessionID_.reset();
+        DynamicUnloadModule(PIPE_TYPE_OFFLOAD);
         AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
     }
 }
@@ -4903,10 +4905,6 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
 
     if (rendererState == RENDERER_RELEASED && !streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
         DynamicUnloadModule(PIPE_TYPE_MULTICHANNEL);
-    }
-
-    if (rendererState == RENDERER_RELEASED && !streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {
-        DynamicUnloadModule(PIPE_TYPE_OFFLOAD);
     }
 
     if (mode == AUDIO_MODE_PLAYBACK && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_PAUSED)) {
