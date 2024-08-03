@@ -38,7 +38,7 @@ const int32_t SHIFT_LEFT_24 = 24;
 const uint32_t LIMIT_ONE = 0;
 const uint32_t LIMIT_TWO = 30;
 const uint32_t LIMIT_THREE = 60;
-const uint32_t LIMIT_FOUR = 80;
+const uint32_t LIMIT_FOUR = static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX);
 
 uint32_t Convert2Uint32(const uint8_t *ptr)
 {

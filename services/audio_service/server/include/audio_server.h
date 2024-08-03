@@ -195,7 +195,6 @@ private:
     static std::map<std::string, std::string> audioParameters;
     static std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> audioParameterKeys;
 
-    int32_t audioUid_ = 1041;
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
 

@@ -113,6 +113,7 @@ public:
 
 class PermissionUtil {
 public:
+    static bool VerifyIsAudio();
     static bool VerifyIsShell();
     static bool VerifyIsSystemApp();
     static bool VerifySelfPermission();
