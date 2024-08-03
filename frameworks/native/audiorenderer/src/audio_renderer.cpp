@@ -1504,12 +1504,10 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
 {
     AUDIO_INFO_LOG("OnRendererStateChange");
     std::vector<std::shared_ptr<AudioRendererOutputDeviceChangeCallback>> callbacks;
-    std::shared_ptr<AudioRendererDeviceChangeCallback> oldCb;
 
     {
         std::lock_guard<std::mutex> lock(callbackMutex_);
         callbacks = callbacks_;
-        oldCb = oldCallback_;
     }
 
     for (auto &cb : callbacks) {
@@ -1520,12 +1518,6 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
 
     AUDIO_INFO_LOG("sessionId: %{public}u, deviceType: %{public}d reason: %{public}d size: %{public}zu",
         sessionId, static_cast<int>(deviceInfo.deviceType), static_cast<int>(reason), callbacks.size());
-
-    if (oldCb != nullptr) {
-        AUDIO_INFO_LOG("sessionId: %{public}u, deviceType: %{public}d",
-            sessionId, static_cast<int>(deviceInfo.deviceType));
-        oldCb->OnStateChange(deviceInfo);
-    }
 }
 
 void OutputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
