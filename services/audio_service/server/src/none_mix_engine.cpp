@@ -188,6 +188,9 @@ int32_t NoneMixEngine::Flush()
 template <typename T, typename = std::enable_if_t<std::is_integral<T>::value>>
 static void DoFadeInOut(T *dest, size_t count, bool isFadeOut, uint32_t channel)
 {
+    if (count <= 0) {
+        return;
+    }
     float fadeStep = 1.0f / count;
     for (size_t i = 0; i < count; i++) {
         float fadeFactor;
