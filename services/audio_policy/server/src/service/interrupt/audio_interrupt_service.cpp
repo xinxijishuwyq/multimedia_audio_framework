@@ -57,7 +57,7 @@ static const std::unordered_map<const AudioScene, const int> SCENE_PRIORITY = {
     {AUDIO_SCENE_DEFAULT, 1}
 };
 
-static const unordered_map<AudioStreamType, int> DEFAULTSTREAMPRIORITY = {
+static const unordered_map<AudioStreamType, int> DEFAULT_STREAM_PRIORITY = {
     {STREAM_VOICE_CALL, 0},
     {STREAM_VOICE_CALL_ASSISTANT, 0},
     {STREAM_VOICE_COMMUNICATION, 0},
@@ -493,7 +493,7 @@ int32_t AudioInterruptService::GetStreamTypePriority(AudioStreamType streamType)
 
 unordered_map<AudioStreamType, int> AudioInterruptService::GetStreamPriorityMap() const
 {
-    return DEFAULTSTREAMPRIORITY;
+    return DEFAULT_STREAM_PRIORITY;
 }
 
 AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
