@@ -213,6 +213,15 @@ int32_t AudioA2dpManager::OffloadStopPlaying(const std::vector<int32_t> &session
     return a2dpInstance_->OffloadStopPlaying(activeA2dpDevice_, sessionsID);
 }
 
+int32_t AudioA2dpManager::GetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp)
+{
+    if (activeA2dpDevice_.GetDeviceAddr() == "00:00:00:00:00:00") {
+        AUDIO_DEBUG_LOG("Invalid mac address, return error.");
+        return ERROR;
+    }
+    return a2dpInstance_->GetRenderPosition(activeA2dpDevice_, delayValue, sendDataSize, timeStamp);
+}
+
 void AudioA2dpManager::CheckA2dpDeviceReconnect()
 {
     if (a2dpInstance_ == nullptr) {

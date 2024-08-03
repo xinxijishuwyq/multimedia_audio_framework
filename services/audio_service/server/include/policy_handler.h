@@ -60,6 +60,8 @@ public:
 
     bool IsAbsVolumeSupported();
 
+    int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
+
     bool GetHighResolutionExist();
 
     void SetHighResolutionExist(bool isHighResExist);

@@ -38,6 +38,8 @@ public:
 
     bool IsAbsVolumeSupported() override;
 
+    int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) override;
+
 private:
     static inline BrokerDelegator<PolicyProviderProxy> delegator_;
 };
