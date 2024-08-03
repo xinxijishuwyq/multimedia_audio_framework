@@ -1399,7 +1399,7 @@ void CapturerPolicyServiceDiedCallback::OnAudioPolicyServiceDied()
     if (restoreThread_ != nullptr) {
         restoreThread_->detach();
     }
-    restoreThread_ = std::make_unique<std::thread>(&CapturerPolicyServiceDiedCallback::RestoreTheadLoop, this);
+    restoreThread_ = std::make_unique<std::thread>([this] { this->RestoreTheadLoop(); });
     pthread_setname_np(restoreThread_->native_handle(), "OS_ACPSRestore");
 }
 

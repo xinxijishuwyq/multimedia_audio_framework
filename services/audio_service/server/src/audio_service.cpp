@@ -84,7 +84,10 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
         releasingEndpointSet_.insert(endpointName);
         int32_t delayTime = (*paired).second->GetDeviceInfo().deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ?
             A2DP_ENDPOINT_RELEASE_DELAY_TIME : NORMAL_ENDPOINT_RELEASE_DELAY_TIME;
-        std::thread releaseEndpointThread(&AudioService::DelayCallReleaseEndpoint, this, endpointName, delayTime);
+        auto releaseMidpointThread = [this, endpointName, delayTime] () {
+            this->DelayCallReleaseEndpoint(endpointName, delayTime);
+        };
+        std::thread releaseEndpointThread(releaseMidpointThread);
         releaseEndpointThread.detach();
     }
 

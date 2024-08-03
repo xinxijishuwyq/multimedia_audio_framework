@@ -1750,12 +1750,10 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
     sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(uid);
     if (deathRecipient_ != nullptr) {
         if (id == TRACKER_CLIENT) {
-            deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredTrackerClientDied,
-                this, std::placeholders::_1));
+            deathRecipient_->SetNotifyCb([this] (int uid) { this->RegisteredTrackerClientDied(uid); });
         } else {
             AUDIO_INFO_LOG("RegisteredStreamListenerClientDied register!!");
-            deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredStreamListenerClientDied,
-                this, std::placeholders::_1));
+            deathRecipient_->SetNotifyCb([this] (pid_t pid) { this->RegisteredStreamListenerClientDied(pid); });
         }
         bool result = object->AddDeathRecipient(deathRecipient_);
         if (result && id == TRACKER_CLIENT) {

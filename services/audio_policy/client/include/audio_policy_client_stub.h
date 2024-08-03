@@ -48,29 +48,7 @@ private:
     void HandleSpatializationEnabledChange(MessageParcel &data, MessageParcel &reply);
     void HandleHeadTrackingEnabledChange(MessageParcel &data, MessageParcel &reply);
 
-    using HandlerFunc = void (AudioPolicyClientStub::*)(MessageParcel &data, MessageParcel &reply);
-    static inline HandlerFunc handlers[]  = {
-        &AudioPolicyClientStub::HandleVolumeKeyEvent,
-        &AudioPolicyClientStub::HandleAudioFocusInfoChange,
-        &AudioPolicyClientStub::HandleAudioFocusRequested,
-        &AudioPolicyClientStub::HandleAudioFocusAbandoned,
-        &AudioPolicyClientStub::HandleDeviceChange,
-        &AudioPolicyClientStub::HandleRingerModeUpdated,
-        &AudioPolicyClientStub::HandleMicStateChange,
-        &AudioPolicyClientStub::HandlePreferredOutputDeviceUpdated,
-        &AudioPolicyClientStub::HandlePreferredInputDeviceUpdated,
-        &AudioPolicyClientStub::HandleRendererStateChange,
-        &AudioPolicyClientStub::HandleCapturerStateChange,
-        &AudioPolicyClientStub::HandleRendererDeviceChange,
-        &AudioPolicyClientStub::HandleRecreateRendererStreamEvent,
-        &AudioPolicyClientStub::HandleRecreateCapturerStreamEvent,
-        &AudioPolicyClientStub::HandleHeadTrackingDeviceChange,
-        &AudioPolicyClientStub::HandleSpatializationEnabledChange,
-        &AudioPolicyClientStub::HandleHeadTrackingEnabledChange,
-    };
-    static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
-    static_assert(handlersNums == (static_cast<size_t> (AudioPolicyClientCode::AUDIO_POLICY_CLIENT_CODE_MAX) + 1),
-        "please check audio_policy_client.h");
+    void OnMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

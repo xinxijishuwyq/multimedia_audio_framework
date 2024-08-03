@@ -173,8 +173,7 @@ inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
         // register death recipent to restore proxy
         sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb(std::bind(&AudioSystemManager::AudioServerDied,
-                std::placeholders::_1));
+            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioSystemManager::AudioServerDied(pid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_ERR_LOG("failed to add deathRecipient");
