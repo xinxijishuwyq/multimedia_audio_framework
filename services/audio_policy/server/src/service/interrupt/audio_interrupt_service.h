@@ -83,7 +83,7 @@ public:
     void ClearAudioFocusInfoListOnAccountsChanged(const int &id);
     void AudioInterruptZoneDump(std::string &dumpString);
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
-    
+
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
     static constexpr float DUCK_FACTOR = 0.2f;
