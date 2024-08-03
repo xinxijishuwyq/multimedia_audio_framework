@@ -508,7 +508,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
 
     int32_t focusPriority = STREAM_DEFAULT_PRIORITY;
     for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
-        if ((iter->second != ACTIVE && iter->second != DUCK)||
+        if ((iter->second != ACTIVE && iter->second != DUCK) ||
             (iter->first).audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
             // if the steam is not active or the active stream is an audio capturer stream, skip it.
             continue;
