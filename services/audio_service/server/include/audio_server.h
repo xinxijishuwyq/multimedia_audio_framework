@@ -148,7 +148,7 @@ public:
     void LoadHdiEffectModel() override;
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
-    
+
     void SetRotationToEffect(const uint32_t rotate) override;
 
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) override;

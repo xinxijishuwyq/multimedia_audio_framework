@@ -27,7 +27,7 @@ namespace OHOS {
 namespace Bluetooth {
 class AudioA2dpPlayingStateChangedListener {
 public:
-    virtual void OnA2dpPlayingStateChanged(std::string deviceAddress, int playingState, int error) = 0;
+    virtual void OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState) = 0;
 };
 
 // Audio bluetooth a2dp feature support
@@ -49,9 +49,6 @@ class AudioA2dpManager {
 public:
     AudioA2dpManager() = default;
     virtual ~AudioA2dpManager() = default;
-    
-    static std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> stateChangedListeners_;
-    
     static void RegisterBluetoothA2dpListener();
     static void UnregisterBluetoothA2dpListener();
     static void DisconnectBluetoothA2dpSink();
@@ -67,6 +64,7 @@ public:
     static int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionsID);
     static int32_t RegisterA2dpPlayingStateChangedListener(
         std::shared_ptr<AudioA2dpPlayingStateChangedListener> listener);
+    staitc void OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState);
 
     static void SetConnectionState(int state)
     {
@@ -86,6 +84,7 @@ private:
     static std::shared_ptr<AudioA2dpListener> a2dpListener_;
     static int connectionState_;
     static BluetoothRemoteDevice activeA2dpDevice_;
+    static std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> a2dpPlayingStateChangedListeners_;
 };
 
 // Audio bluetooth sco feature support

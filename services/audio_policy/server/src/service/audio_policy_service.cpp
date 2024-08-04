@@ -4910,10 +4910,9 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
         return ret; // only update tracker in new and prepared
     }
     
-    if (rendererState == RENDERER_RELEASED) {
-        if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
-            DynamicUnloadModule(PIPE_TYPE_MULTICHANNEL);
-        }
+    if (rendererState == RENDERER_RELEASED && !streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
+        DynamicUnloadModule(PIPE_TYPE_MULTICHANNEL);
+    }
 
     if (mode == AUDIO_MODE_PLAYBACK && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_PAUSED)) {
         FetchDevice(true);
@@ -8414,7 +8413,7 @@ void AudioPolicyService::UpdateSessionConnectionState(const int32_t &sessionID, 
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(std::string deviceAddress, int playingState, int error)
+void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState)
 {
     if (deviceAddress == a2dpOffloadDeviceAddress_) {
         if (playingState == A2DP_PLAYING && currentOffloadconnectionState_ == CONNECTION_STATUS_CONNECTING) {

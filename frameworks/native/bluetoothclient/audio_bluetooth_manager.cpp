@@ -39,7 +39,7 @@ AudioScene AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 AudioScene AudioHfpManager::sceneFromPolicy_ = AUDIO_SCENE_DEFAULT;
 OHOS::Bluetooth::ScoCategory AudioHfpManager::scoCategory = OHOS::Bluetooth::ScoCategory::SCO_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
-std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpManager::stateChangedListeners_;
+std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpManager::a2dpPlayingStateChangedListeners_;
 std::mutex g_activehfpDeviceLock;
 std::mutex g_audioSceneLock;
 std::mutex g_hfpInstanceLock;
@@ -217,8 +217,15 @@ int32_t AudioA2dpManager::OffloadStopPlaying(const std::vector<int32_t> &session
 int32_t AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(
     std::shared_ptr<AudioA2dpPlayingStateChangedListener> listener)
 {
-    stateChangedListeners_.push_back(listener);
+    a2dpPlayingStateChangedListeners_.push_back(listener);
     return SUCCESS;
+}
+
+void AudioA2dpManager::OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState)
+{
+    for (auto listener : a2dpPlayingStateChangedListeners_) {
+        listener->OnA2dpPlayingStateChanged(deviceAddress, playingState);
+    }
 }
 
 void AudioA2dpManager::CheckA2dpDeviceReconnect()
@@ -272,8 +279,8 @@ void AudioA2dpListener::OnConfigurationChanged(const BluetoothRemoteDevice &devi
 void AudioA2dpListener::OnPlayingStatusChanged(const BluetoothRemoteDevice &device, int playingState, int error)
 {
     AUDIO_INFO_LOG("OnPlayingStatusChanged, state: %{public}d, error: %{public}d", playingState, error);
-    for (auto listener : AudioA2dpManager::stateChangedListeners_) {
-        listener->OnA2dpPlayingStateChanged(device.GetDeviceAddr(), playingState, error);
+    if (error == SUCCESS) {
+        AudioA2dpManager::OnA2dpPlayingStateChanged(device.GetDeviceAddr(), playingState);
     }
 }
 

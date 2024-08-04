@@ -1175,7 +1175,7 @@ public:
 
     void ConnectA2dpOffload(const std::string &deviceAddress, const vector<int32_t> &sessionIds);
     void DisconnectA2dpOffload();
-    void OnA2dpPlayingStateChanged(std::string deviceAddress, int playingState, int error) override;
+    void OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState) override;
 
     void WaitForConnectionCompleted();
     bool IsA2dpOffloadConnecting(int32_t sessionId);

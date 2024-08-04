@@ -2100,7 +2100,8 @@ void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const i
 {
     AUDIO_INFO_LOG("Server get sessionID: %{public}d, state: %{public}d", sessionId, state);
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID, "refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(),
+        "Update session connection state refused for %{public}d", callingUid);
     std::shared_ptr<RendererInServer> renderer =
         AudioService::GetInstance()->GetRendererBySessionID(static_cast<uint32_t>(sessionId));
 
