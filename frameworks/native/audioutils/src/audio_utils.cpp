@@ -987,9 +987,7 @@ const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
             name = "VOICE_ASSISTANT";
             break;
         case STREAM_VOICE_CALL:
-        case STREAM_VOICE_COMMUNICATION:
             name = "VOICE_CALL";
-
             break;
         case STREAM_SYSTEM:
             name = "SYSTEM";
@@ -1023,6 +1021,50 @@ const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
             break;
         case STREAM_WAKEUP:
             name = "WAKEUP";
+            break;
+        default:
+            name = GetStreamNameExt(streamType);
+    }
+
+    const std::string streamName = name;
+    return streamName;
+}
+
+const std::string AudioInfoDumpUtils::GetStreamNameExt(AudioStreamType streamType)
+{
+    std::string name;
+    switch (streamType) {
+        case STREAM_ENFORCED_AUDIBLE:
+            name = "ENFORCED_AUDIBLE";
+        case STREAM_MOVIE:
+            name = "MOVIE";
+            break;
+        case STREAM_GAME:
+            name = "GAME";
+            break;
+        case STREAM_SPEECH:
+            name = "SPEECH";
+            break;
+        case STREAM_SYSTEM_ENFORCED:
+            name = "SYSTEM_ENFORCED";
+            break;
+        case STREAM_VOICE_MESSAGE:
+            name = "VOICE_MESSAGE";
+            break;
+        case STREAM_NAVIGATION:
+            name = "NAVIGATION";
+            break;
+        case STREAM_INTERNAL_FORCE_STOP:
+            name = "INTERNAL_FORCE_STOP";
+        case STREAM_SOURCE_VOICE_CALL:
+            name = "SOURCE_VOICE_CALL";
+        case STREAM_VOICE_COMMUNICATION:
+            name = "VOICE_COMMUNICATION";
+        case STREAM_VOICE_RING:
+            name = "VOICE_RING";
+            break;
+        case STREAM_VOICE_CALL_ASSISTANT:
+            name = "VOICE_CALL_ASSISTANT";
             break;
         default:
             name = "UNKNOWN";
