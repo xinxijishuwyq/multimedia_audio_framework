@@ -76,9 +76,9 @@ bool AudioPnpServer::init(void)
     g_socketRunThread = true;
     g_inputRunThread = true;
 
-    socketThread_ = std::make_unique<std::thread>(&AudioPnpServer::OpenAndReadWithSocket, this);
+    socketThread_ = std::make_unique<std::thread>([this] { this->OpenAndReadWithSocket(); });
     pthread_setname_np(socketThread_->native_handle(), "OS_SocketEvent");
-    inputThread_ = std::make_unique<std::thread>(&AudioPnpServer::OpenAndReadInput, this);
+    inputThread_ = std::make_unique<std::thread>([this] { this->OpenAndReadInput(); });
     pthread_setname_np(inputThread_->native_handle(), "OS_InputEvent");
     return true;
 }
@@ -221,7 +221,7 @@ void AudioPnpServer::DetectAudioDevice()
     if ((ret == SUCCESS) && (g_usbHeadset.eventType == AUDIO_DEVICE_ADD)) {
         AUDIO_INFO_LOG("audio detect usb headset");
         std::unique_ptr<std::thread> bootupThread_ = nullptr;
-        bootupThread_ = std::make_unique<std::thread>(&AudioPnpServer::UpdateUsbHeadset, this);
+        bootupThread_ = std::make_unique<std::thread>([this] { this->UpdateUsbHeadset(); });
         pthread_setname_np(bootupThread_->native_handle(), "OS_BootupEvent");
         OsalMSleep(AUDIO_DEVICE_WAIT_USB_EVENT_UPDATE);
         if (AudioSocketThread::audioSocketEvent_.eventType != AUDIO_EVENT_UNKNOWN &&

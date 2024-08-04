@@ -971,15 +971,16 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
                 (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
                 (void)audioStream_->SetDuckVolume(1.0f);
             } else {
-                AUDIO_WARNING_LOG("State of stream is not running.No need to pause");
+                AUDIO_WARNING_LOG("sessionId: %{public}u, state: %{public}d. State of stream is not running." \
+                    "No need to pause.", sessionID_, static_cast<int32_t>(audioStream_->GetState()));
                 return;
             }
             isForcePaused_ = true;
             break;
         case INTERRUPT_HINT_RESUME:
             if ((audioStream_->GetState() != PAUSED && audioStream_->GetState() != PREPARED) || !isForcePaused_) {
-                AUDIO_WARNING_LOG("sessionId: %{public}u, state: %{public}d.  State of stream is not paused or \
-                    pause is not forced.", sessionID_, static_cast<int32_t>(audioStream_->GetState()));
+                AUDIO_WARNING_LOG("sessionId: %{public}u, state: %{public}d. State of stream is not paused or " \
+                    "pause is not forced.", sessionID_, static_cast<int32_t>(audioStream_->GetState()));
                 return;
             }
             isForcePaused_ = false;
@@ -1655,7 +1656,7 @@ void RendererPolicyServiceDiedCallback::OnAudioPolicyServiceDied()
     if (restoreThread_ != nullptr) {
         restoreThread_->detach();
     }
-    restoreThread_ = std::make_unique<std::thread>(&RendererPolicyServiceDiedCallback::RestoreTheadLoop, this);
+    restoreThread_ = std::make_unique<std::thread>([this] { this->RestoreTheadLoop(); });
     pthread_setname_np(restoreThread_->native_handle(), "OS_ARPSRestore");
 }
 

@@ -273,8 +273,7 @@ const sptr<IStandardAudioService> AudioProcessInClientInner::GetAudioServerProxy
         // register death recipent to restore proxy
         sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb(std::bind(&AudioProcessInClientInner::AudioServerDied,
-                std::placeholders::_1));
+            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioServerDied(pid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_WARNING_LOG("failed to add deathRecipient");
@@ -600,13 +599,13 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
     AudioBufferHolder bufferHolder = audioBuffer_->GetBufferHolder();
     bool isIndependent = bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT;
     if (config.audioMode == AUDIO_MODE_RECORD) {
-        callbackLoop_ = std::thread(&AudioProcessInClientInner::RecordProcessCallbackFuc, this);
+        callbackLoop_ = std::thread([this] { this->RecordProcessCallbackFuc(); });
         pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioRecCb");
     } else if (isIndependent) {
-        callbackLoop_ = std::thread(&AudioProcessInClientInner::ProcessCallbackFucIndependent, this);
+        callbackLoop_ = std::thread([this] { this->ProcessCallbackFucIndependent(); });
         pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
     } else {
-        callbackLoop_ = std::thread(&AudioProcessInClientInner::ProcessCallbackFuc, this);
+        callbackLoop_ = std::thread([this] { this->ProcessCallbackFuc(); });
         pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
     }
 

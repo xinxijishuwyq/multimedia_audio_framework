@@ -1052,6 +1052,10 @@ bool RendererInServer::IsHighResolution() const noexcept
         AUDIO_INFO_LOG("normal stream because stream info");
         return false;
     }
+    if (processConfig_.streamInfo.samplingRate > SAMPLE_RATE_192000) {
+        AUDIO_INFO_LOG("sample rate over 192k");
+        return false;
+    }
     if (IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetStreamCount() > 0) {
         AUDIO_INFO_LOG("high resolution exist.");
         return false;

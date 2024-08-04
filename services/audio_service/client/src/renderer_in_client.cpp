@@ -33,7 +33,6 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "securec.h"
-#include "safe_block_queue.h"
 #include "hisysevent.h"
 
 #ifdef RESSCHE_ENABLE
@@ -78,7 +77,7 @@ const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const uint64_t MAX_CBBUF_IN_USEC = 100000;
 const uint64_t MIN_CBBUF_IN_USEC = 20000;
-const uint64_t AUDIO_FIRST_FRAME_LATENCY = 230; //ms
+const uint64_t AUDIO_FIRST_FRAME_LATENCY = 120; //ms
 static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 8; // 8S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
@@ -340,8 +339,7 @@ const sptr<IStandardAudioService> RendererInClientInner::GetAudioServerProxy()
         // register death recipent to restore proxy
         sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb(std::bind(&RendererInClientInner::AudioServerDied,
-                std::placeholders::_1));
+            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioServerDied(pid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_ERR_LOG("GetAudioServerProxy: failed to add deathRecipient");
@@ -909,7 +907,7 @@ int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
     renderMode_ = renderMode;
 
     // init callbackLoop_
-    callbackLoop_ = std::thread(&RendererInClientInner::WriteCallbackFunc, this);
+    callbackLoop_ = std::thread([this] { this->WriteCallbackFunc(); });
     pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioWriteCB");
 
     std::unique_lock<std::mutex> threadStartlock(statusMutex_);
@@ -1017,12 +1015,7 @@ void RendererInClientInner::WriteCallbackFunc()
 
         Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
         std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
-        cbBufferCV_.wait_for(lockBuffer, std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS), [this] {
-            return cbBufferQueue_.IsEmpty() == false; // will be false when got notified.
-        });
-        if (cbBufferQueue_.IsEmpty()) {
-            AUDIO_DEBUG_LOG("cbBufferQueue_ is empty");
-        }
+        cbBufferQueue_.WaitNotEmptyFor(std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS));
     }
     AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
 }
@@ -1442,8 +1435,7 @@ bool RendererInClientInner::FlushAudioStream()
 
     // clear cbBufferQueue
     if (renderMode_ == RENDER_MODE_CALLBACK) {
-        BufferDesc tmpBuffer;
-        while (cbBufferQueue_.PopNotWait(tmpBuffer));
+        cbBufferQueue_.Clear();
     }
 
     CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush cache failed");

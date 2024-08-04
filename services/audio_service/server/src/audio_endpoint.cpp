@@ -634,10 +634,10 @@ bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
 
     endpointStatus_ = UNLINKED;
     isInited_.store(true);
-    endpointWorkThread_ = std::thread(&AudioEndpointInner::RecordEndpointWorkLoopFuc, this);
+    endpointWorkThread_ = std::thread([this] { this->RecordEndpointWorkLoopFuc(); });
     pthread_setname_np(endpointWorkThread_.native_handle(), "OS_AudioEpLoop");
 
-    updatePosTimeThread_ = std::thread(&AudioEndpointInner::AsyncGetPosTime, this);
+    updatePosTimeThread_ = std::thread([this] { this->AsyncGetPosTime(); });
     pthread_setname_np(updatePosTimeThread_.native_handle(), "OS_AudioEpUpdate");
 
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
@@ -718,10 +718,10 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
 
     endpointStatus_ = UNLINKED;
     isInited_.store(true);
-    endpointWorkThread_ = std::thread(&AudioEndpointInner::EndpointWorkLoopFuc, this);
+    endpointWorkThread_ = std::thread([this] { this->EndpointWorkLoopFuc(); });
     pthread_setname_np(endpointWorkThread_.native_handle(), "OS_AudioEpLoop");
 
-    updatePosTimeThread_ = std::thread(&AudioEndpointInner::AsyncGetPosTime, this);
+    updatePosTimeThread_ = std::thread([this] { this->AsyncGetPosTime(); });
     pthread_setname_np(updatePosTimeThread_.native_handle(), "OS_AudioEpUpdate");
 
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
@@ -1604,23 +1604,26 @@ bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTi
         "SetCurWriteFrame or SetCurReadFrame failed, ret1:%{public}d ret2:%{public}d", ret1, ret2);
     // handl each process buffer info
     int64_t curReadDoneTime = ClockTime::GetCurNano();
-    for (size_t i = 0; i < processBufferList_.size(); i++) {
-        uint64_t eachCurReadPos = processBufferList_[i]->GetCurReadFrame();
-        SpanInfo *tempSpan = processBufferList_[i]->GetSpanInfo(eachCurReadPos);
-        CHECK_AND_RETURN_RET_LOG(tempSpan != nullptr, false,
-            "GetSpanInfo failed, can not get process read span");
-        SpanStatus targetStatus = SpanStatus::SPAN_READING;
-        if (tempSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_READ_DONE)) {
-            tempSpan->readDoneTime = curReadDoneTime;
-            BufferDesc bufferReadDone = { nullptr, 0, 0};
-            processBufferList_[i]->GetReadbuffer(eachCurReadPos, bufferReadDone);
-            if (bufferReadDone.buffer != nullptr && bufferReadDone.bufLength != 0) {
-                memset_s(bufferReadDone.buffer, bufferReadDone.bufLength, 0, bufferReadDone.bufLength);
+    {
+        std::lock_guard<std::mutex> lock(listLock_);
+        for (size_t i = 0; i < processBufferList_.size(); i++) {
+            uint64_t eachCurReadPos = processBufferList_[i]->GetCurReadFrame();
+            SpanInfo *tempSpan = processBufferList_[i]->GetSpanInfo(eachCurReadPos);
+            CHECK_AND_RETURN_RET_LOG(tempSpan != nullptr, false,
+                "GetSpanInfo failed, can not get process read span");
+            SpanStatus targetStatus = SpanStatus::SPAN_READING;
+            if (tempSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_READ_DONE)) {
+                tempSpan->readDoneTime = curReadDoneTime;
+                BufferDesc bufferReadDone = { nullptr, 0, 0};
+                processBufferList_[i]->GetReadbuffer(eachCurReadPos, bufferReadDone);
+                if (bufferReadDone.buffer != nullptr && bufferReadDone.bufLength != 0) {
+                    memset_s(bufferReadDone.buffer, bufferReadDone.bufLength, 0, bufferReadDone.bufLength);
+                }
+                processBufferList_[i]->SetCurReadFrame(eachCurReadPos + dstSpanSizeInframe_); // use client span size
+            } else if (processBufferList_[i]->GetStreamStatus() &&
+                processBufferList_[i]->GetStreamStatus()->load() == StreamStatus::STREAM_RUNNING) {
+                AUDIO_DEBUG_LOG("Current %{public}" PRIu64" span not ready:%{public}d", eachCurReadPos, targetStatus);
             }
-            processBufferList_[i]->SetCurReadFrame(eachCurReadPos + dstSpanSizeInframe_); // use client span size
-        } else if (processBufferList_[i]->GetStreamStatus() &&
-            processBufferList_[i]->GetStreamStatus()->load() == StreamStatus::STREAM_RUNNING) {
-            AUDIO_DEBUG_LOG("Current %{public}" PRIu64" span not ready:%{public}d", eachCurReadPos, targetStatus);
         }
     }
     return true;

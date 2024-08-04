@@ -56,28 +56,38 @@ int32_t AudioSpeed::LoadChangeSpeedFunc()
     switch (format_) {
         case SAMPLE_U8:
             formatSize_ = 1; // size is 1
-            ChangeSpeedFunc = std::bind(&AudioSpeed::ChangeSpeedFor8Bit, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+            ChangeSpeedFunc = [this] (uint8_t *buffer, int32_t bufferSize,
+                std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)-> int32_t {
+                    return this->ChangeSpeedFor8Bit(buffer, bufferSize, outBuffer, outBufferSize);
+                };
             break;
         case SAMPLE_S16LE:
             formatSize_ = 2; // size is 2
-            ChangeSpeedFunc = std::bind(&AudioSpeed::ChangeSpeedFor16Bit, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+            ChangeSpeedFunc = [this] (uint8_t *buffer, int32_t bufferSize,
+                std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)-> int32_t {
+                    return this->ChangeSpeedFor16Bit(buffer, bufferSize, outBuffer, outBufferSize);
+                };
             break;
         case SAMPLE_S24LE:
             formatSize_ = 3; // size is 3
-            ChangeSpeedFunc = std::bind(&AudioSpeed::ChangeSpeedFor24Bit, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+            ChangeSpeedFunc = [this] (uint8_t *buffer, int32_t bufferSize,
+                std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)-> int32_t {
+                    return this->ChangeSpeedFor24Bit(buffer, bufferSize, outBuffer, outBufferSize);
+                };
             break;
         case SAMPLE_S32LE:
             formatSize_ = 4; // size is 4
-            ChangeSpeedFunc = std::bind(&AudioSpeed::ChangeSpeedFor32Bit, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+            ChangeSpeedFunc = [this] (uint8_t *buffer, int32_t bufferSize,
+                std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)-> int32_t {
+                    return this->ChangeSpeedFor32Bit(buffer, bufferSize, outBuffer, outBufferSize);
+                };
             break;
         default:
             formatSize_ = 2; // size is 2
-            ChangeSpeedFunc = std::bind(&AudioSpeed::ChangeSpeedFor16Bit, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+            ChangeSpeedFunc = [this] (uint8_t *buffer, int32_t bufferSize,
+                std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)-> int32_t {
+                    return this->ChangeSpeedFor16Bit(buffer, bufferSize, outBuffer, outBufferSize);
+                };
     }
     AUDIO_INFO_LOG("load change speed func for format %{public}zu", format_);
     return SUCCESS;

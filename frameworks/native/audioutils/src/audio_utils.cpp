@@ -45,6 +45,7 @@ using OHOS::Security::AccessToken::AccessTokenKit;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+constexpr int32_t UID_AUDIO = 1041;
 constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
 constexpr int32_t UID_CAAS_SA = 5527;
@@ -52,6 +53,7 @@ constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
+constexpr int32_t TIME_OUT_SECONDS = 10;
 
 constexpr size_t FIRST_CHAR = 1;
 constexpr size_t MIN_LEN = 8;
@@ -202,6 +204,21 @@ bool PermissionUtil::VerifyIsShell()
     return false;
 }
 
+bool PermissionUtil::VerifyIsAudio()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (UID_AUDIO == callingUid) {
+        return true;
+    }
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    if (callingUid == 0) {
+        AUDIO_WARNING_LOG("Root calling!");
+        return true;
+    }
+#endif
+    return false;
+}
+
 bool PermissionUtil::VerifyIsSystemApp()
 {
     uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
@@ -284,6 +301,7 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
 
 bool PermissionUtil::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
 {
+    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacy", TIME_OUT_SECONDS);
     if (state == AUDIO_PERMISSION_START) {
         Trace trace("PrivacyKit::StartUsingPermission");
         int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
@@ -969,9 +987,7 @@ const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
             name = "VOICE_ASSISTANT";
             break;
         case STREAM_VOICE_CALL:
-        case STREAM_VOICE_COMMUNICATION:
             name = "VOICE_CALL";
-
             break;
         case STREAM_SYSTEM:
             name = "SYSTEM";
@@ -1005,6 +1021,50 @@ const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
             break;
         case STREAM_WAKEUP:
             name = "WAKEUP";
+            break;
+        default:
+            name = GetStreamNameExt(streamType);
+    }
+
+    const std::string streamName = name;
+    return streamName;
+}
+
+const std::string AudioInfoDumpUtils::GetStreamNameExt(AudioStreamType streamType)
+{
+    std::string name;
+    switch (streamType) {
+        case STREAM_ENFORCED_AUDIBLE:
+            name = "ENFORCED_AUDIBLE";
+        case STREAM_MOVIE:
+            name = "MOVIE";
+            break;
+        case STREAM_GAME:
+            name = "GAME";
+            break;
+        case STREAM_SPEECH:
+            name = "SPEECH";
+            break;
+        case STREAM_SYSTEM_ENFORCED:
+            name = "SYSTEM_ENFORCED";
+            break;
+        case STREAM_VOICE_MESSAGE:
+            name = "VOICE_MESSAGE";
+            break;
+        case STREAM_NAVIGATION:
+            name = "NAVIGATION";
+            break;
+        case STREAM_INTERNAL_FORCE_STOP:
+            name = "INTERNAL_FORCE_STOP";
+        case STREAM_SOURCE_VOICE_CALL:
+            name = "SOURCE_VOICE_CALL";
+        case STREAM_VOICE_COMMUNICATION:
+            name = "VOICE_COMMUNICATION";
+        case STREAM_VOICE_RING:
+            name = "VOICE_RING";
+            break;
+        case STREAM_VOICE_CALL_ASSISTANT:
+            name = "VOICE_CALL_ASSISTANT";
             break;
         default:
             name = "UNKNOWN";

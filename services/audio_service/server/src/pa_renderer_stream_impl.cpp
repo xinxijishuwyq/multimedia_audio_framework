@@ -70,9 +70,9 @@ PaRendererStreamImpl::PaRendererStreamImpl(pa_stream *paStream, AudioProcessConf
 PaRendererStreamImpl::~PaRendererStreamImpl()
 {
     AUDIO_DEBUG_LOG("~PaRendererStreamImpl");
-    rendererStreamInstanceMap_.Erase(this);
 
     PaLockGuard lock(mainloop_);
+    rendererStreamInstanceMap_.Erase(this);
     if (paStream_) {
         pa_stream_set_state_callback(paStream_, nullptr, nullptr);
         pa_stream_set_write_callback(paStream_, nullptr, nullptr);
@@ -89,8 +89,8 @@ PaRendererStreamImpl::~PaRendererStreamImpl()
 
 int32_t PaRendererStreamImpl::InitParams()
 {
-    rendererStreamInstanceMap_.Insert(this, weak_from_this());
     PaLockGuard lock(mainloop_);
+    rendererStreamInstanceMap_.Insert(this, weak_from_this());
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }

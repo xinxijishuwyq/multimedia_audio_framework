@@ -487,7 +487,7 @@ private:
 
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
-
+    bool VerifyBluetoothPermission();
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene);
 
@@ -547,11 +547,10 @@ private:
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
 
-    SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
-        this, std::placeholders::_1, std::placeholders::_2),
-        std::bind(&AudioPolicyServer::ProcessSessionAdded,
-            this, std::placeholders::_1),
-        std::bind(&AudioPolicyServer::ProcessorCloseWakeupSource, this, std::placeholders::_1)};
+    SessionProcessor sessionProcessor_{
+        [this] (const uint64_t sessionID, const int32_t zoneID) { this->ProcessSessionRemoved(sessionID, zoneID); },
+        [this] (SessionEvent sessionEvent) { this->ProcessSessionAdded(sessionEvent); },
+        [this] (const uint64_t sessionID) {this->ProcessorCloseWakeupSource(sessionID); }};
 
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;

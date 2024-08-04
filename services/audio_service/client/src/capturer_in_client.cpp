@@ -32,7 +32,6 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "securec.h"
-#include "safe_block_queue.h"
 
 #include "ipc_stream.h"
 #include "audio_service_log.h"
@@ -286,7 +285,7 @@ private:
     std::mutex cbBufferMutex_;
     std::unique_ptr<uint8_t[]> cbBuffer_ {nullptr};
     size_t cbBufferSize_ = 0;
-    SafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
+    AudioSafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
 
     AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
     bool isInnerCapturer_ = false;
@@ -546,8 +545,7 @@ const sptr<IStandardAudioService> CapturerInClientInner::GetAudioServerProxy()
         // register death recipent to restore proxy
         sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb(std::bind(&CapturerInClientInner::AudioServerDied,
-                std::placeholders::_1));
+            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioServerDied(pid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_ERR_LOG("GetAudioServerProxy: failed to add deathRecipient");
@@ -1051,7 +1049,7 @@ int32_t CapturerInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
     capturerMode_ = captureMode;
 
     // init callbackLoop_
-    callbackLoop_ = std::thread(&CapturerInClientInner::ReadCallbackFunc, this);
+    callbackLoop_ = std::thread([this] { this->ReadCallbackFunc(); });
     pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioReadCB");
 
     std::unique_lock<std::mutex> threadStartlock(statusMutex_);

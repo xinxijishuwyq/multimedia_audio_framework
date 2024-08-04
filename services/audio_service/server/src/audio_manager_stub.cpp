@@ -61,12 +61,7 @@ const char *g_audioServerCodeStrs[] = {
     "SET_CAPTURE_SILENT_STATE",
     "UPDATE_SPATIALIZATION_STATE",
     "OFFLOAD_SET_VOLUME",
-    "OFFLOAD_DRAIN",
-    "OFFLOAD_GET_PRESENTATION_POSITION",
-    "OFFLOAD_SET_BUFFER_SIZE",
     "NOTIFY_STREAM_VOLUME_CHANGED",
-    "GET_CAPTURE_PRESENTATION_POSITION",
-    "GET_RENDER_PRESENTATION_POSITION",
     "SET_SPATIALIZATION_SCENE_TYPE",
     "GET_MAX_AMPLITUDE",
     "RESET_AUDIO_ENDPOINT",
@@ -567,69 +562,10 @@ int AudioManagerStub::HandleUpdateSpatializationState(MessageParcel &data, Messa
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleGetCapturePresentationPosition(MessageParcel &data, MessageParcel &reply)
-{
-    const std::string deviceClass = data.ReadString();
-    uint64_t frames;
-    int64_t timeSec;
-    int64_t timeNanoSec;
-    int32_t result = GetCapturePresentationPosition(deviceClass, frames, timeSec, timeNanoSec);
-    reply.WriteInt32(result);
-    reply.WriteUint64(frames);
-    reply.WriteInt64(timeSec);
-    reply.WriteInt64(timeNanoSec);
-
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleGetRenderPresentationPosition(MessageParcel &data, MessageParcel &reply)
-{
-    const std::string deviceClass = data.ReadString();
-    uint64_t frames;
-    int64_t timeSec;
-    int64_t timeNanoSec;
-    int32_t result = GetRenderPresentationPosition(deviceClass, frames, timeSec, timeNanoSec);
-    reply.WriteInt32(result);
-    reply.WriteUint64(frames);
-    reply.WriteInt64(timeSec);
-    reply.WriteInt64(timeNanoSec);
-
-    return AUDIO_OK;
-}
-
 int AudioManagerStub::HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply)
 {
     const float volume = data.ReadFloat();
     int32_t result = OffloadSetVolume(volume);
-    reply.WriteInt32(result);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleOffloadDrain(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t result = OffloadDrain();
-    reply.WriteInt32(result);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleOffloadGetPresentationPosition(MessageParcel &data, MessageParcel &reply)
-{
-    uint64_t frames;
-    int64_t timeSec;
-    int64_t timeNanoSec;
-    int32_t result = OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
-    reply.WriteInt32(result);
-    reply.WriteUint64(frames);
-    reply.WriteInt64(timeSec);
-    reply.WriteInt64(timeNanoSec);
-
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleOffloadSetBufferSize(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t sizeMs = data.ReadUint32();
-    int32_t result = OffloadSetBufferSize(sizeMs);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
@@ -694,7 +630,7 @@ int AudioManagerStub::HandleSuspendRenderSink(MessageParcel &data, MessageParcel
 int AudioManagerStub::HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply)
 {
     std::string sinkName = data.ReadString();
-    int32_t ret = SuspendRenderSink(sinkName);
+    int32_t ret = RestoreRenderSink(sinkName);
     reply.WriteInt32(ret);
     return AUDIO_OK;
 }
@@ -707,14 +643,16 @@ int AudioManagerStub::HandleUpdateLatencyTimestamp(MessageParcel &data, MessageP
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleSetRotationToEffect(MessageParcel &data, MessageParcel &reply)
+{
+    SetRotationToEffect(data.ReadUint32());
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply,
     MessageOption &option)
 {
     switch (code) {
-        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE):
-            return HandleGetAsrAecMode(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_NOISE_SUPPRESSION_MODE):
-            return HandleSetAsrNoiseSuppressionMode(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_NOISE_SUPPRESSION_MODE):
             return HandleGetAsrNoiseSuppressionMode(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_WHISPER_DETECTION_MODE):
@@ -753,18 +691,8 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
     MessageOption &option)
 {
     switch (code) {
-        case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_DRAIN):
-            return HandleOffloadDrain(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_GET_PRESENTATION_POSITION):
-            return HandleOffloadGetPresentationPosition(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_BUFFER_SIZE):
-            return HandleOffloadSetBufferSize(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_STREAM_VOLUME_CHANGED):
             return HandleNotifyStreamVolumeChanged(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_CAPTURE_PRESENTATION_POSITION):
-            return HandleGetCapturePresentationPosition(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_RENDER_PRESENTATION_POSITION):
-            return HandleGetRenderPresentationPosition(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SPATIALIZATION_SCENE_TYPE):
             return HandleSetSpatializationSceneType(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_MAX_AMPLITUDE):
@@ -779,6 +707,10 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
             return HandleUpdateLatencyTimestamp(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_AEC_MODE):
             return HandleSetAsrAecMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE):
+            return HandleGetAsrAecMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_NOISE_SUPPRESSION_MODE):
+            return HandleSetAsrNoiseSuppressionMode(data, reply);
         default:
             return HandleFourthPartCode(code, data, reply, option);
     }
@@ -887,12 +819,6 @@ int AudioManagerStub::HandleSetSinkMuteForSwitchDevice(MessageParcel &data, Mess
     int32_t mute = data.ReadBool();
     int32_t result = SetSinkMuteForSwitchDevice(deviceClass, duration, mute);
     reply.WriteInt32(result);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleSetRotationToEffect(MessageParcel &data, MessageParcel &reply)
-{
-    SetRotationToEffect(data.ReadUint32());
     return AUDIO_OK;
 }
 

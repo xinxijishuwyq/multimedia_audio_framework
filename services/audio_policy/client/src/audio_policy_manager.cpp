@@ -61,8 +61,7 @@ inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
         pid_t pid = 0;
         sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
         if (deathRecipient_ != nullptr) {
-            deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyManager::AudioPolicyServerDied,
-                std::placeholders::_1));
+            deathRecipient_->SetNotifyCb([] (pid_t pid) { AudioPolicyManager::AudioPolicyServerDied(pid); });
             AUDIO_DEBUG_LOG("Register audio policy server death recipient");
             bool result = object->AddDeathRecipient(deathRecipient_);
             if (!result) {
