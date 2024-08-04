@@ -542,7 +542,10 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
             continue;
         }
-        AUDIO_DEBUG_LOG("SetA2dpDeviceVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
+        AUDIO_PRERELEASE_LOGI("Trigger volumeChangeCb clientPid : %{public}d, volumeType : %{public}d," \
+            " volume : %{public}d, updateUi : %{public}d ", it->first,
+            static_cast<int32_t>(eventContextObj->volumeEvent.volumeType), eventContextObj->volumeEvent.volume,
+            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi));
         volumeChangeCb->OnVolumeKeyEvent(eventContextObj->volumeEvent);
     }
 }
