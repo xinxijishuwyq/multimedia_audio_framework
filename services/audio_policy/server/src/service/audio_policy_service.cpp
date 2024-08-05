@@ -8441,10 +8441,10 @@ void AudioPolicyService::UpdateSessionConnectionState(const int32_t &sessionID, 
 void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState)
 {
     if (deviceAddress == a2dpOffloadDeviceAddress_) {
-        if (playingState == A2DP_PLAYING && currentOffloadconnectionState_ == CONNECTION_STATUS_CONNECTING) {
-            AUDIO_INFO_LOG("currentOffloadconnectionState_ change from %{public}d to %{public}d",
-                currentOffloadconnectionState_, CONNECTION_STATUS_CONNECTED);
-            currentOffloadconnectionState_ = CONNECTION_STATUS_CONNECTED;
+        if (playingState == A2DP_PLAYING && currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTING) {
+            AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+                currentOffloadConnectionState_, CONNECTION_STATUS_CONNECTED);
+            currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
             for (int32_t sessionId : connectionTriggerSessionIds_) {
                 audioPolicyService_->UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTED);
             }
@@ -8452,9 +8452,9 @@ void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &devic
             connectionCV_.notify_all();
         }
     } else {
-        AUDIO_INFO_LOG("currentOffloadconnectionState_ change from %{public}d to %{public}d",
-            currentOffloadconnectionState_, CONNECTION_STATUS_DISCONNECTED);
-        currentOffloadconnectionState_ = CONNECTION_STATUS_DISCONNECTED;
+        AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+            currentOffloadConnectionState_, CONNECTION_STATUS_DISCONNECTED);
+        currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
     }
 }
 
@@ -8464,10 +8464,10 @@ void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddres
     a2dpOffloadDeviceAddress_ = deviceAddress;
     connectionTriggerSessionIds_.assign(sessionIds.begin(), sessionIds.end());
 
-    if (currentOffloadconnectionState_ == CONNECTION_STATUS_DISCONNECTING) {
-        AUDIO_INFO_LOG("currentOffloadconnectionState_ change from %{public}d to %{public}d",
-            currentOffloadconnectionState_, CONNECTION_STATUS_CONNECTED);
-        currentOffloadconnectionState_ = CONNECTION_STATUS_CONNECTED;
+    if (currentOffloadConnectionState_ == CONNECTION_STATUS_DISCONNECTING) {
+        AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+            currentOffloadConnectionState_, CONNECTION_STATUS_CONNECTED);
+        currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
         return;
     }
 
@@ -8477,17 +8477,17 @@ void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddres
 
     std::thread switchThread(&AudioA2dpOffloadManager::WaitForConnectionCompleted, this);
     switchThread.detach();
-    AUDIO_INFO_LOG("currentOffloadconnectionState_ change from %{public}d to %{public}d",
-        currentOffloadconnectionState_, CONNECTION_STATUS_CONNECTING);
-    currentOffloadconnectionState_ = CONNECTION_STATUS_CONNECTING;
+    AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+        currentOffloadConnectionState_, CONNECTION_STATUS_CONNECTING);
+    currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
 }
 
 void AudioA2dpOffloadManager::DisconnectA2dpOffload()
 {
     a2dpOffloadDeviceAddress_ = "";
-    AUDIO_INFO_LOG("currentOffloadconnectionState_ change from %{public}d to %{public}d",
-        currentOffloadconnectionState_, CONNECTION_STATUS_DISCONNECTING);
-    currentOffloadconnectionState_ = CONNECTION_STATUS_DISCONNECTING;
+    AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+        currentOffloadConnectionState_, CONNECTION_STATUS_DISCONNECTING);
+    currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTING;
 }
 
 void AudioA2dpOffloadManager::WaitForConnectionCompleted()
@@ -8495,13 +8495,13 @@ void AudioA2dpOffloadManager::WaitForConnectionCompleted()
     std::unique_lock<std::mutex> waitLock(connectionMutex_);
     bool connectionCompleted = connectionCV_.wait_for(waitLock,
         std::chrono::milliseconds(AudioA2dpOffloadManager::CONNECTION_TIMEOUT_IN_MS), [this] {
-            return currentOffloadconnectionState_ == CONNECTION_STATUS_CONNECTED;
+            return currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTED;
         });
     // a2dp connection timeout, anyway we should notify client dataLink OK in order to allow the data flow begin
     if (!connectionCompleted) {
-        AUDIO_INFO_LOG("currentOffloadconnectionState_ change from %{public}d to %{public}d",
-            currentOffloadconnectionState_, CONNECTION_STATUS_TIMEOUT);
-        currentOffloadconnectionState_ = CONNECTION_STATUS_CONNECTED;
+        AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+            currentOffloadConnectionState_, CONNECTION_STATUS_TIMEOUT);
+        currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
         for (int32_t sessionId : connectionTriggerSessionIds_) {
             audioPolicyService_->UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTED);
         }
@@ -8514,7 +8514,7 @@ void AudioA2dpOffloadManager::WaitForConnectionCompleted()
 
 bool AudioA2dpOffloadManager::IsA2dpOffloadConnecting(int32_t sessionId)
 {
-    if (currentOffloadconnectionState_ == CONNECTION_STATUS_CONNECTING) {
+    if (currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTING) {
         if (std::find(connectionTriggerSessionIds_.begin(), connectionTriggerSessionIds_.end(), sessionId) !=
             connectionTriggerSessionIds_.end()) {
             return true;

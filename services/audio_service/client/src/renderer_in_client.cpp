@@ -1253,7 +1253,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
             dataConnectionWaitLock, std::chrono::milliseconds(DATA_CONNECTION_TIMEOUT_IN_MS), [this] {
                 return isDataLinkConnected_;
             });
-        AUDIO_DEBUG_LOG("data-connection blocking ends.");
+        AUDIO_INFO_LOG("data-connection blocking ends.");
     }
     dataConnectionWaitLock.unlock();
 

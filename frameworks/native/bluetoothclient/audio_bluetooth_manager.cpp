@@ -43,6 +43,7 @@ std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpMana
 std::mutex g_activehfpDeviceLock;
 std::mutex g_audioSceneLock;
 std::mutex g_hfpInstanceLock;
+std::mutex g_a2dpPlayingStateChangedLock;
 
 static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioStreamInfo)
 {
@@ -226,12 +227,14 @@ int32_t AudioA2dpManager::GetRenderPosition(uint32_t &delayValue, uint64_t &send
 int32_t AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(
     std::shared_ptr<AudioA2dpPlayingStateChangedListener> listener)
 {
+    std::lock_guard<std::mutex> lock(g_a2dpPlayingStateChangedLock);
     a2dpPlayingStateChangedListeners_.push_back(listener);
     return SUCCESS;
 }
 
 void AudioA2dpManager::OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState)
 {
+    std::lock_guard<std::mutex> lock(g_a2dpPlayingStateChangedLock);
     for (auto listener : a2dpPlayingStateChangedListeners_) {
         listener->OnA2dpPlayingStateChanged(deviceAddress, playingState);
     }

@@ -1161,7 +1161,7 @@ private:
 class AudioA2dpOffloadManager final : public Bluetooth::AudioA2dpPlayingStateChangedListener,
     public enable_shared_from_this<AudioA2dpOffloadManager> {
 private:
-    A2dpOffloadConnectionState currentOffloadconnectionState_ = CONNECTION_STATUS_DISCONNECTED;
+    A2dpOffloadConnectionState currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
     std::vector<int32_t> connectionTriggerSessionIds_;
     std::string a2dpOffloadDeviceAddress_ = "";
     AudioPolicyService *audioPolicyService_ = nullptr;
@@ -1171,7 +1171,7 @@ private:
 public:
     AudioA2dpOffloadManager(AudioPolicyService *audioPolicyService) : audioPolicyService_(audioPolicyService) {};
     void Init() {Bluetooth::AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(shared_from_this());};
-    A2dpOffloadConnectionState GetA2dOffloadConnectionState() {return currentOffloadconnectionState_;};
+    A2dpOffloadConnectionState GetA2dOffloadConnectionState() {return currentOffloadConnectionState_;};
     std::vector<int32_t>& GetConnectTriggerSessionIds() {return connectionTriggerSessionIds_;};
     std::string GetBluetoothAddress() {return a2dpOffloadDeviceAddress_;};
 
