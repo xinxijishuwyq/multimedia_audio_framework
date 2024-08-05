@@ -52,6 +52,8 @@ int PolicyProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Mess
             return HandleWakeupCapturerRemoved(data, reply);
         case IS_ABS_VOLUME_SUPPORTED:
             return HandleIsAbsVolumeSupported(data, reply);
+        case OFFLOAD_GET_RENDER_POSITION:
+            return HandleOffloadGetRenderPosition(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -121,6 +123,19 @@ int32_t PolicyProviderStub::HandleIsAbsVolumeSupported(MessageParcel &data, Mess
     return AUDIO_OK;
 }
 
+int32_t PolicyProviderStub::HandleOffloadGetRenderPosition(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t delayValue = 0;
+    uint64_t sendDataSize = 0;
+    uint32_t timeStamp = 0;
+    int32_t ret = OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+    reply.WriteInt32(ret);
+    reply.WriteUint32(delayValue);
+    reply.WriteUint64(sendDataSize);
+    reply.WriteUint32(timeStamp);
+    return AUDIO_OK;
+}
+
 PolicyProviderWrapper::~PolicyProviderWrapper()
 {
     policyWorker_ = nullptr;
@@ -165,6 +180,13 @@ bool PolicyProviderWrapper::IsAbsVolumeSupported()
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->IsAbsVolumeSupported();
+}
+
+int32_t PolicyProviderWrapper::OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
+    uint32_t &timeStamp)
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
 }
 } // namespace AudioStandard
 } // namespace OHOS

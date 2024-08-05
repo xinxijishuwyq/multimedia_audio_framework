@@ -121,5 +121,22 @@ bool PolicyProviderProxy::IsAbsVolumeSupported()
 
     return reply.ReadBool();
 }
+
+int32_t PolicyProviderProxy::OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    int ret = Remote()->SendRequest(IPolicyProviderMsg::OFFLOAD_GET_RENDER_POSITION, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    delayValue = reply.ReadUint32();
+    sendDataSize = reply.ReadUint64();
+    timeStamp = reply.ReadUint32();
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

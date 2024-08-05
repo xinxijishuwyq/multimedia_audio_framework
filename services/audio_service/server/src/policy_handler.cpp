@@ -211,6 +211,12 @@ bool PolicyHandler::IsAbsVolumeSupported()
     return iPolicyProvider_->IsAbsVolumeSupported();
 }
 
+int32_t PolicyHandler::OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp)
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+}
+
 bool PolicyHandler::GetHighResolutionExist()
 {
     return isHighResolutionExist_;
