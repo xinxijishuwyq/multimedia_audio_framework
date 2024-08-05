@@ -64,7 +64,7 @@ public:
     static int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionsID);
     static int32_t RegisterA2dpPlayingStateChangedListener(
         std::shared_ptr<AudioA2dpPlayingStateChangedListener> listener);
-    staitc void OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState);
+    static void OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState);
 
     static void SetConnectionState(int state)
     {

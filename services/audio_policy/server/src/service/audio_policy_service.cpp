@@ -8387,6 +8387,7 @@ void AudioPolicyService::ResetOffloadModeOnSpatializationChanged(std::vector<int
     }
 }
 
+
 void AudioPolicyService::SetRotationToEffect(const uint32_t rotate)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -8399,8 +8400,12 @@ void AudioPolicyService::SetRotationToEffect(const uint32_t rotate)
 
 bool AudioPolicyService::IsA2dpOffloadConnected()
 {
-    return audioA2dpOffloadManager_ != nullptr &&
-        audioA2dpOffloadManager_->GetA2dOffloadConnectionState() == CONNECTION_STATUS_CONNECTED;
+    if (audioA2dpOffloadManager_ == nullptr) {
+        AUDIO_WARNING_LOG("Null audioA2dpOffloadManager");
+        return true;
+    }
+    A2dpOffloadConnectionState state = audioA2dpOffloadManager_->GetA2dOffloadConnectionState();
+    return state == CONNECTION_STATUS_CONNECTED || state == CONNECTION_STATUS_DISCONNECTING;
 }
 
 void AudioPolicyService::UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state)
@@ -8438,6 +8443,13 @@ void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddres
     AUDIO_INFO_LOG("start connecting a2dpOffload.");
     a2dpOffloadDeviceAddress_ = deviceAddress;
     connectionTriggerSessionIds_.assign(sessionIds.begin(), sessionIds.end());
+
+    if (currentOffloadconnectionState_ == CONNECTION_STATUS_DISCONNECTING) {
+        AUDIO_INFO_LOG("currentOffloadconnectionState_ change from %{public}d to %{public}d",
+            currentOffloadconnectionState_, CONNECTION_STATUS_CONNECTED);
+        currentOffloadconnectionState_ = CONNECTION_STATUS_CONNECTED;
+        return;
+    }
 
     for (int32_t sessionId : connectionTriggerSessionIds_) {
         audioPolicyService_->UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTING);
