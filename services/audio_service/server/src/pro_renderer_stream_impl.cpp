@@ -26,7 +26,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint64_t AUDIO_US_PER_S = 1000000;
 constexpr uint64_t AUDIO_NS_PER_S = 1000000000;
+constexpr uint32_t AUDIO_NS_TO_US_RADIO = 1000;
 constexpr int32_t SECOND_TO_MILLISECOND = 1000;
 constexpr int32_t DEFAULT_BUFFER_MILLISECOND = 20;
 constexpr int32_t DEFAULT_BUFFER_MICROSECOND = 20000000;
@@ -303,7 +305,7 @@ int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint6
     int64_t timeNsec = 0;
     int32_t ret = GetAudioTime(framePosition, timeSec, timeNsec);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "GetBufferSize error.");
-    timestamp = static_cast<uint64_t>(timeSec * AUDIO_NS_PER_S + timeNsec);
+    timestamp = static_cast<uint64_t>(timeSec * AUDIO_NS_PER_S + timeNsec) / AUDIO_NS_TO_US_RADIO;
     return SUCCESS;
 }
 
@@ -311,7 +313,7 @@ int32_t ProRendererStreamImpl::GetLatency(uint64_t &latency)
 {
     uint64_t framePos;
     GetStreamFramesWritten(framePos);
-    latency = ((framePos / byteSizePerFrame_) * AUDIO_NS_PER_S) / processConfig_.streamInfo.samplingRate;
+    latency = ((framePos / byteSizePerFrame_) * AUDIO_US_PER_S) / processConfig_.streamInfo.samplingRate;
     return SUCCESS;
 }
 
