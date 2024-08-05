@@ -31,6 +31,7 @@
 #include "audio_service_log.h"
 #include "audio_utils.h"
 #include "i_audio_renderer_sink.h"
+#include "policy_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -351,18 +352,23 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     }
 
     // Processing data for algorithmic time delays
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    uint32_t algorithmLatency = audioEffectChainManager->GetLatency(std::to_string(streamIndex_));
-    uint64_t algorithmLatencyToFrames = algorithmLatency * sampleSpec->rate / AUDIO_MS_PER_S;
-    framePosition = framePosition > algorithmLatencyToFrames ? framePosition - algorithmLatencyToFrames : 0;
+    uint32_t algorithmLatency = GetEffectChainLatency();
+    if (!offloadEnable_) {
+        uint64_t algorithmLatencyToFrames = algorithmLatency * sampleSpec->rate / AUDIO_MS_PER_S;
+        framePosition = framePosition > algorithmLatencyToFrames ? framePosition - algorithmLatencyToFrames : 0;
+    }
+    // Processing data for a2dpoffload time delays
+    uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
+    uint64_t a2dpOffloadLatencyToFrames = a2dpOffloadLatency * sampleSpec->rate / AUDIO_MS_PER_S;
+    framePosition = framePosition > a2dpOffloadLatencyToFrames ? framePosition - a2dpOffloadLatencyToFrames : 0;
 
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
     timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_S + static_cast<uint64_t>(tm.tv_nsec);
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ",readIndex %{public}" PRIu64
-        ",timestamp %{public}" PRIu64 ", effect latency: %{public}u ms",
-        framePosition, readIndex, timestamp, algorithmLatency);
+        ",timestamp %{public}" PRIu64 ", effect latency: %{public}u ms, a2dp offload latency: %{public}u ms",
+        framePosition, readIndex, timestamp, algorithmLatency, a2dpOffloadLatency);
     return SUCCESS;
 }
 
@@ -412,21 +418,43 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
         }
     }
 
-    // In plan: Total latency will be sum of audio write cache latency plus PA latency
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    uint32_t algorithmLatency = 0;
-    if (audioEffectChainManager != nullptr) {
-        algorithmLatency = audioEffectChainManager->GetLatency(std::to_string(streamIndex_));
-    }
-    uint64_t fwLatency = paLatency + cacheLatency + static_cast<uint64_t>(algorithmLatency);
-    latency = fwLatency;
+    latency = paLatency + cacheLatency;
+    uint32_t algorithmLatency = GetEffectChainLatency();
+    latency += offloadEnable_ ? 0 : algorithmLatency * AUDIO_US_PER_MS;
+    uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
+    latency += a2dpOffloadLatency * AUDIO_US_PER_MS;
     AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", cache latency: %{public}"
-        PRIu64 ", algo latency: %{public}u", latency, paLatency, cacheLatency, algorithmLatency);
+        PRIu64 ", algo latency: %{public}u ms, a2dp offload latency: %{public}u ms",
+        latency, paLatency, cacheLatency, algorithmLatency, a2dpOffloadLatency);
 
     preLatency_ = latency;
     preTimeGetLatency_ = curTimeGetLatency;
     firstGetLatency_ = false;
     return SUCCESS;
+}
+
+uint32_t PaRendererStreamImpl::GetEffectChainLatency()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    uint32_t algorithmLatency = 0;
+    if (audioEffectChainManager != nullptr) {
+        algorithmLatency = audioEffectChainManager->GetLatency(std::to_string(streamIndex_));
+    }
+    return algorithmLatency;
+}
+
+uint32_t PaRendererStreamImpl::GetA2dpOffloadLatency()
+{
+    Trace trace("PaRendererStreamImpl::GetA2dpOffloadLatency");
+    uint32_t a2dpOffloadLatency = 0;
+    uint64_t a2dpOffloadSendDataSize = 0;
+    uint32_t a2dpOffloadTimestamp = 0;
+    auto& handle = PolicyHandler::GetInstance();
+    int32_t ret = handle.OffloadGetRenderPosition(a2dpOffloadLatency, a2dpOffloadSendDataSize, a2dpOffloadTimestamp);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("OffloadGetRenderPosition failed");
+    }
+    return a2dpOffloadLatency;
 }
 
 int32_t PaRendererStreamImpl::SetRate(int32_t rate)

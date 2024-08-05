@@ -6986,6 +6986,27 @@ int32_t AudioPolicyService::OffloadStopPlaying(const std::vector<int32_t> &sessi
 #endif
 }
 
+int32_t AudioPolicyService::OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp)
+{
+    Trace trace("AudioPolicyService::OffloadGetRenderPosition");
+#ifdef BLUETOOTH_ENABLE
+    AUDIO_DEBUG_LOG("GetRenderPosition, deviceType: %{public}d, a2dpOffloadFlag_: %{public}d",
+        a2dpOffloadFlag_, currentActiveDevice_.deviceType_);
+    int32_t ret = SUCCESS;
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+        currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID && a2dpOffloadFlag_ == A2DP_OFFLOAD) {
+        ret = Bluetooth::AudioA2dpManager::GetRenderPosition(delayValue, sendDataSize, timeStamp);
+    } else {
+        delayValue = 0;
+        sendDataSize = 0;
+        timeStamp = 0;
+    }
+    return ret;
+#else
+    return SUCCESS;
+#endif
+}
+
 void AudioPolicyService::GetA2dpOffloadCodecAndSendToDsp()
 {
 #ifdef BLUETOOTH_ENABLE

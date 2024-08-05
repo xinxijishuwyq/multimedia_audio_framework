@@ -62,6 +62,7 @@ public:
     static int32_t A2dpOffloadSessionRequest(const std::vector<A2dpStreamInfo> &info);
     static int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionsID);
     static int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionsID);
+    static int32_t GetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
     static int32_t RegisterA2dpPlayingStateChangedListener(
         std::shared_ptr<AudioA2dpPlayingStateChangedListener> listener);
     static void OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState);

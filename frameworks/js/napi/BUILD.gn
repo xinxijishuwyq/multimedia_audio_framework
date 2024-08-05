@@ -95,13 +95,19 @@ ohos_shared_library("audio") {
   }
 
   external_deps = [
+    "ability_base:session_info",
     "ability_base:want",
     "ability_runtime:abilitykit_native",
     "ability_runtime:extensionkit_native",
+    "ability_runtime:mission_info",
     "ability_runtime:napi_base_context",
+    "ability_runtime:wantagent_innerkits",
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
+    "ets_runtime:libark_jsruntime",
+    "eventhandler:libeventhandler",
     "hilog:libhilog",
+    "ipc:ipc_single",
     "libuv:uv",
     "napi:ace_napi",
   ]

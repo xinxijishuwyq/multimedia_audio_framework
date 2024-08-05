@@ -93,6 +93,8 @@ private:
     void ResetOffload();
     int32_t OffloadUpdatePolicyInWrite();
     // offload end
+    uint32_t GetEffectChainLatency();
+    uint32_t GetA2dpOffloadLatency();
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
 

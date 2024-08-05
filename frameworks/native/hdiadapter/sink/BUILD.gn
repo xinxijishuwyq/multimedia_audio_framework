@@ -46,6 +46,7 @@ ohos_shared_library("audio_renderer_sink") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
+    "samgr:samgr_proxy",
   ]
   defines = []
   if (audio_framework_feature_power_manager) {
@@ -131,6 +132,7 @@ ohos_shared_library("bluetooth_renderer_sink") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
+    "samgr:samgr_proxy",
   ]
   defines = []
   if (audio_framework_feature_power_manager) {
@@ -295,6 +297,7 @@ ohos_shared_library("offload_audio_renderer_sink") {
     "hilog:libhilog",
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
+    "samgr:samgr_proxy",
   ]
 
   defines = []

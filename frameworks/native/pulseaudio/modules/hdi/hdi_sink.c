@@ -27,11 +27,11 @@
 #include <pulsecore/sink.h>
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
-#include <pulsecore/memblock.c>
+#include <pulsecore/memblock.h>
 #include <pulsecore/mix.h>
 #include <pulse/volume.h>
-#include <pulsecore/protocol-native.c>
-#include <pulsecore/memblockq.c>
+#include <pulsecore/protocol-native.h>
+#include <pulsecore/memblockq.h>
 
 #include <stddef.h>
 #include <stdint.h>

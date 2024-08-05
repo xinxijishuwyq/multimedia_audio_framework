@@ -180,6 +180,7 @@ ohos_shared_library("audio_client") {
   include_dirs = [ "server/include" ]
 
   external_deps = [
+    "ability_base:want",
     "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
@@ -397,6 +398,7 @@ ohos_shared_library("audio_service") {
   ]
 
   external_deps = [
+    "ability_base:want",
     "access_token:libaccesstoken_sdk",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",

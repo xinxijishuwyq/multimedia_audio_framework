@@ -436,6 +436,8 @@ public:
     int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionIds);
 
     int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
+
+    int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
 #ifdef BLUETOOTH_ENABLE
     void UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
         DeviceType deviceType = DEVICE_TYPE_NONE);
