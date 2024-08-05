@@ -428,6 +428,11 @@ public:
      * Set Rotation To Effect.
      */
     virtual void SetRotationToEffect(const uint32_t rotate) = 0;
+
+    /**
+     * Update Session Connection State
+     */
+    virtual void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
