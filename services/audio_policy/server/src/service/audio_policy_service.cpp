@@ -8387,7 +8387,6 @@ void AudioPolicyService::ResetOffloadModeOnSpatializationChanged(std::vector<int
     }
 }
 
-
 void AudioPolicyService::SetRotationToEffect(const uint32_t rotate)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
