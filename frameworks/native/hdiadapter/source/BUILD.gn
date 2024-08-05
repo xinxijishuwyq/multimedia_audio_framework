@@ -44,6 +44,7 @@ ohos_shared_library("audio_capturer_source") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
+    "samgr:samgr_proxy",
   ]
   defines = []
   if (audio_framework_feature_power_manager) {

@@ -79,6 +79,7 @@ ohos_shared_library("audio_effect") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "pulseaudio:pulse",
+    "samgr:samgr_proxy",
   ]
 
   if (sensor_enable == true) {
