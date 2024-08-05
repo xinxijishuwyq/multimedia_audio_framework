@@ -776,7 +776,7 @@ int32_t AudioEffectChainManager::UpdateSpatialDeviceType(AudioSpatialDeviceType 
         if (audioEffectChain != nullptr) {
             audioEffectChain->SetSpatialDeviceType(spatialDeviceType_);
             ret = audioEffectChain->UpdateEffectParam();
-            CHECK_AND_CONTINUE_LOG(ret == SUCCESS, ERROR, "UpdateEffectParam failed.");
+            CHECK_AND_CONTINUE_LOG(ret == SUCCESS, "UpdateEffectParam failed.");
         }
     }
 
