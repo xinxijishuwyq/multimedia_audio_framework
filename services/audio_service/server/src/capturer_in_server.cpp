@@ -132,7 +132,7 @@ int32_t CapturerInServer::Init()
 
     // eg: /data/data/.pulse_dir/10000_100009_capturer_server_out_48000_2_1.pcm
     AudioStreamInfo tempInfo = processConfig_.streamInfo;
-    dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + std::to_string(streamIndex_)
+    dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_)
         + "_capturer_server_out_" + std::to_string(tempInfo.samplingRate) + "_"
         + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpS2C_);
