@@ -47,6 +47,7 @@ public:
 
     auto UnLock()
     {
+        AUDIO_INFO_LOG("AudioRunningLockManager::UnLock in");
         Trace traceUnlock("AudioRunningLockManager:UnLock");
         std::lock_guard<std::mutex> lock(mutex_);
         isLocked_ = false;
