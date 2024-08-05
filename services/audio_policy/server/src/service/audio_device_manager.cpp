@@ -379,12 +379,15 @@ std::string AudioDeviceManager::GetConnDevicesStr()
 std::string AudioDeviceManager::GetConnDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     std::string devices;
-    devices.append("device {type:id:category:constate} ");
+    devices.append("device type:id:(category:constate) ");
     for (auto iter : descs) {
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
         devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
-        devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceCategory_)));
-        devices.append(":" + std::to_string(static_cast<uint32_t>(iter->connectState_)));
+        if (iter->getType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
+            iter->getType() == DEVICE_TYPE_BLUETOOTH_SCO)
+            devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceCategory_)));
+            devices.append(":" + std::to_string(static_cast<uint32_t>(iter->connectState_)));
+        }
         devices.append(" ");
     }
     return devices;
