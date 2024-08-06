@@ -645,6 +645,7 @@ SpanInfo *OHAudioBuffer::GetSpanInfo(uint64_t posInFrame)
         deltaToBase -= totalSizeInFrame_;
     }
     CHECK_AND_RETURN_RET_LOG(deltaToBase < UINT32_MAX && deltaToBase < totalSizeInFrame_, nullptr, "invalid "
+    
         "deltaToBase, posInFrame %{public}" PRIu64" basePos %{public}" PRIu64".", posInFrame, basePos);  
          
     if (spanSizeInFrame_ > 0) {
