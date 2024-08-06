@@ -84,6 +84,7 @@ private:
     int32_t UpdateSpatializationStateReal(bool outputDeviceChange, std::string preDeviceAddress = "");
     int32_t UpdateSpatializationState();
     int32_t UpdateSpatializationSceneType();
+    void UpdateSpatialDeviceType(AudioSpatialDeviceType audioSpatialDeviceType);
     void HandleSpatializationStateChange(bool outputDeviceChange);
     void WriteSpatializationStateToDb(WriteToDbOperation operation);
     bool IsHeadTrackingDataRequestedForCurrentDevice();
@@ -99,6 +100,7 @@ private:
     bool isLoadedfromDb_ = false;
     AudioSpatializationState spatializationStateFlag_ = {false};
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    AudioSpatialDeviceType currSpatialDeviceType_{ EARPHONE_TYPE_OTHERS };
     std::vector<AudioRendererInfoForSpatialization> spatializationRendererInfoList_;
     std::mutex spatializationServiceMutex_;
     std::mutex spatializationSupportedMutex_;

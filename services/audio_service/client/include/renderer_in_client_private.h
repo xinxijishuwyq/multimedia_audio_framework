@@ -232,6 +232,7 @@ private:
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
+    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
     int32_t RegisterSpatializationStateEventListener();
 
@@ -295,6 +296,8 @@ private:
     std::string cachePath_ = "";
     std::string dumpOutFile_ = "";
     FILE *dumpOutFd_ = nullptr;
+    mutable int64_t volumeDataCount_ = 0;
+    std::string logUtilsTag_ = "";
 
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> firstFrameWritingCb_ = nullptr;
     bool hasFirstFrameWrited_ = false;

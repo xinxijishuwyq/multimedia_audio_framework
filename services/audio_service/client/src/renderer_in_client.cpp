@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -60,6 +60,7 @@
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
 #include "policy_handler.h"
+#include "audio_log_utils.h"
 
 #include "media_monitor_manager.h"
 
@@ -86,6 +87,7 @@ static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 3000; // 3000ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 300; // ms
+static const int32_t HALF_FACTOR = 2;
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
@@ -121,6 +123,7 @@ RendererInClientInner::~RendererInClientInner()
         runnerReleased_ = true;
         callbackHandler_ = nullptr;
     }
+    AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
@@ -300,6 +303,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
+    logUtilsTag_ = "IpcClientPlay::" + std::to_string(sessionId_);
     if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT || IsHighResolution()) {
         int32_t type = ipcStream_->GetStreamManagerType();
         if (type == AUDIO_DIRECT_MANAGER_TYPE) {
@@ -1784,13 +1788,10 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain)
     while (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_ && tryCount > 0) {
         tryCount--;
         int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
-        futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) *
-            AUDIO_US_PER_SECOND);
+        futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND);
         CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
-        if (futexRes == FUTEX_TIMEOUT) {
-            AUDIO_WARNING_LOG("write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(futexRes != FUTEX_TIMEOUT, ERROR,
+            "write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
         sizeInFrame = clientBuffer_->GetAvailableDataFrames();
         if (futexRes == FUTEX_SUCCESS) { break; }
     }
@@ -1817,12 +1818,24 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain)
     }
 
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
+    DfxOperation(desc, clientConfig_.streamInfo.format, clientConfig_.streamInfo.channels);
     clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "WriteCacheData failed, null ipcStream_.");
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(desc.bufLength);
     return SUCCESS;
+}
+
+void RendererInClientInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
+{
+    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
+    if (channel == MONO) {
+        Trace::Count(logUtilsTag_, vols.volStart[0]);
+    } else {
+        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+    }
+    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)

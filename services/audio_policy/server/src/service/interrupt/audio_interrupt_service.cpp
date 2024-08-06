@@ -348,7 +348,9 @@ void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int &
                 AUDIO_INFO_LOG("usage is voice modem communication or voice ring, skip");
                 it++;
             } else {
+                CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is nullptr");
                 handler_->SendInterruptEventWithSessionIdCallback(interruptEvent, (*it).first.sessionId);
+                CHECK_AND_RETURN_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
                 audioInterruptZone->audioFocusInfoList.erase(it);
             }
         }
