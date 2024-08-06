@@ -363,9 +363,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
         streamChangeInfo.audioRendererChangeInfo.sessionId);
     bool stateChanged = CheckRendererStateInfoChanged(streamChangeInfo);
     bool infoChanged = CheckRendererInfoChanged(streamChangeInfo);
-    if (!stateChanged && !infoChanged) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(stateChanged || infoChanged, SUCCESS);
 
     // Update the renderer info in audioRendererChangeInfos_
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
@@ -374,9 +372,9 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             audioRendererChangeInfo.sessionId == streamChangeInfo.audioRendererChangeInfo.sessionId) {
             rendererStatequeue_[make_pair(audioRendererChangeInfo.clientUID, audioRendererChangeInfo.sessionId)] =
                 streamChangeInfo.audioRendererChangeInfo.rendererState;
+            streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = (*it)->rendererInfo.pipeType;
             AUDIO_DEBUG_LOG("update client %{public}d session %{public}d", audioRendererChangeInfo.clientUID,
                 audioRendererChangeInfo.sessionId);
-
             unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
             CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED,
                 "Memory Allocation Failed");
