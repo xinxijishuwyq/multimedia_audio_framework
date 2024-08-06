@@ -20,6 +20,7 @@
 
 #include "audio_focus_parser.h"
 #include "audio_policy_manager_listener_proxy.h"
+#include "audio_session_service.h"
 #include "audio_utils.h"
 #include "media_monitor_manager.h"
 

@@ -40,6 +40,8 @@ typedef struct {
 
 class AudioPolicyServerHandler;
 
+class AudioSessionService;
+
 class AudioInterruptService : public std::enable_shared_from_this<AudioInterruptService>,
                               public IAudioInterruptEventDispatcher {
 public:

@@ -72,6 +72,7 @@ public:
         HEAD_TRACKING_ENABLED_CHANGE,
         PIPE_STREAM_CLEAN_EVENT,
         CONCURRENCY_EVENT_WITH_SESSIONID,
+        AUDIO_SESSION_DEACTIVE_EVENT,
     };
     /* event data */
     class EventContextObj {
@@ -94,6 +95,7 @@ public:
         int32_t streamFlag;
         std::unordered_map<std::string, bool> headTrackingDeviceChangeInfo;
         AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+        std::pair<int32_t, AudioSessionDeactiveEvent> sessionDeactivePair;
     };
 
     struct RendererDeviceChangeEvent {
@@ -171,6 +173,7 @@ public:
     bool SendPipeStreamCleanEvent(AudioPipeType pipeType);
     bool SendConcurrencyEventWithSessionIDCallback(const uint32_t sessionID);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
+    bool SendAudioSessionDeactiveCallback(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -205,6 +208,7 @@ private:
     void HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleConcurrencyEventWithSessionID(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleAudioSessionDeactiveCallback(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 

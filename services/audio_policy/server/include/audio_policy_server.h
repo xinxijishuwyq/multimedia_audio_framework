@@ -46,6 +46,7 @@
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
 #include "audio_interrupt_service.h"
+#include "audio_session_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,6 +58,7 @@ constexpr int32_t LOCAL_USER_ID = 100;
 class AudioPolicyService;
 class AudioInterruptService;
 class AudioPolicyServerHandler;
+class AudioSessionService;
 class BluetoothEventSubscriber;
 
 class AudioPolicyServer : public SystemAbility,
@@ -177,6 +179,12 @@ public:
     bool IsMicrophoneMute() override;
 
     AudioScene GetAudioScene() override;
+
+    int32_t ActivateAudioSession(const AudioSessionStrategy &strategy) override;
+
+    int32_t DeactivateAudioSession() override;
+
+    bool IsAudioSessionActive() override;
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
         const sptr<IRemoteObject> &object, const int32_t zoneId = 0) override;
@@ -528,6 +536,7 @@ private:
 
     AudioPolicyService& audioPolicyService_;
     std::shared_ptr<AudioInterruptService> interruptService_;
+    std::shared_ptr<AudioSessionService> sessionService_;
 
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;

@@ -117,6 +117,9 @@ void AudioPolicyServer::OnStart()
 
     interruptService_->SetCallbackHandler(audioPolicyServerHandler_);
 
+    sessionService_ = std::make_shared<AudioSessionService>();
+    sessionService_->Init(this);
+
     if (audioPolicyService_.SetAudioStreamRemovedCallback(this)) {
         AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
     }
@@ -2760,5 +2763,31 @@ int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, Inter
     return audioPolicyServerHandler_->SendInterruptEventInternalCallback(interruptEvent);
 }
 
+int32_t AudioPolicyServer::ActivateAudioSession(const AudioSessionStrategy &strategy)
+{
+    if (sessionService_ != nullptr) {
+        int32_t callerPid = IPCSkeleton::GetCallingPid();
+        return sessionService_->ActivateAudioSession(callerPid, strategy);
+    }
+    return ERR_UNKNOWN;
+}
+
+int32_t AudioPolicyServer::DeactivateAudioSession()
+{
+    if (sessionService_ != nullptr) {
+        int32_t callerPid = IPCSkeleton::GetCallingPid();
+        return sessionService_->DeactivateAudioSession(callerPid);
+    }
+    return ERR_UNKNOWN;
+}
+
+bool AudioPolicyServer::IsAudioSessionActive()
+{
+    if (sessionService_ != nullptr) {
+        int32_t callerPid = IPCSkeleton::GetCallingPid();
+        return sessionService_->IsAudioSessionActive(callerPid);
+    }
+    return ERR_UNKNOWN;
+}
 } // namespace AudioStandard
 } // namespace OHOS
