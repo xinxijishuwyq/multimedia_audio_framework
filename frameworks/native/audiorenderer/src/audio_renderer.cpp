@@ -929,6 +929,12 @@ void AudioRendererInterruptCallbackImpl::SaveCallback(const std::weak_ptr<AudioR
     callback_ = callback;
 }
 
+void AudioRendererInterruptCallbackImpl::UpdateAudioStream(const std::shared_ptr<IAudioStream> &audioStream)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    audioStream_ = audioStream;
+}
+
 void AudioRendererInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
 {
     if (cb_ != nullptr) {
@@ -960,27 +966,24 @@ void AudioRendererInterruptCallbackImpl::NotifyForcePausedToResume(const Interru
 
 void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent)
 {
-    // ForceType: INTERRUPT_FORCE. Handle the event forcely and notify the app.
-    AUDIO_DEBUG_LOG("AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent");
-    InterruptHint hintType = interruptEvent.hintType;
-    switch (hintType) {
+    State currentState = audioStream_->GetState();
+    audioStream_->GetAudioSessionID(sessionID_);
+    switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_PAUSE:
-            if (audioStream_->GetState() == PREPARED) {
-                AUDIO_DEBUG_LOG("To pause incoming, no need to pause");
-            } else if (audioStream_->GetState() == RUNNING) {
+            if (currentState == RUNNING || currentState == PREPARED) {
                 (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
                 (void)audioStream_->SetDuckVolume(1.0f);
+                isForcePaused_ = true;
             } else {
-                AUDIO_WARNING_LOG("sessionId: %{public}u, state: %{public}d. State of stream is not running." \
-                    "No need to pause.", sessionID_, static_cast<int32_t>(audioStream_->GetState()));
+                AUDIO_WARNING_LOG("sessionId: %{public}u, state: %{public}d. No need to pause",
+                    sessionID_, static_cast<int32_t>(currentState));
                 return;
             }
-            isForcePaused_ = true;
             break;
         case INTERRUPT_HINT_RESUME:
-            if ((audioStream_->GetState() != PAUSED && audioStream_->GetState() != PREPARED) || !isForcePaused_) {
-                AUDIO_WARNING_LOG("sessionId: %{public}u, state: %{public}d. State of stream is not paused or " \
-                    "pause is not forced.", sessionID_, static_cast<int32_t>(audioStream_->GetState()));
+            if ((currentState != PAUSED && currentState != PREPARED) || !isForcePaused_) {
+                AUDIO_WARNING_LOG("sessionId: %{public}u, State: %{public}d or not force pause before",
+                    sessionID_, static_cast<int32_t>(currentState));
                 return;
             }
             isForcePaused_ = false;
@@ -1013,6 +1016,8 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
 
 void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
+
     cb_ = callback_.lock();
     InterruptForceType forceType = interruptEvent.forceType;
 
@@ -1392,6 +1397,15 @@ void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
 }
 
+void AudioRendererPrivate::UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &audioStream)
+{
+    if (audioInterruptCallback_ != nullptr) {
+        std::shared_ptr<AudioRendererInterruptCallbackImpl> interruptCbImpl =
+            std::static_pointer_cast<AudioRendererInterruptCallbackImpl>(audioInterruptCallback_);
+        interruptCbImpl->UpdateAudioStream(audioStream_);
+    }
+}
+
 bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId,
     const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -1439,9 +1453,10 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
             CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
         }
         audioStream_ = newAudioStream;
+        UpdateRendererAudioStream(audioStream_);
         isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
-        switchResult= true;
+        switchResult = true;
     }
     WriteSwitchStreamLogMsg();
     return switchResult;
