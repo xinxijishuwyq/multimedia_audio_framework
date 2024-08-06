@@ -26,6 +26,7 @@
 #include <string>
 #include "osal_time.h"
 #include "audio_errors.h"
+#include "securec.h"
 #include "audio_log.h"
 
 namespace OHOS {
