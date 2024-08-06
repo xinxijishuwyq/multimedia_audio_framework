@@ -608,7 +608,6 @@ int32_t OHAudioBuffer::GetBufferByFrame(uint64_t posInFrame, BufferDesc &bufferD
     deltaToBase = (deltaToBase / spanSizeInFrame_) * spanSizeInFrame_;
     size_t offset = deltaToBase * byteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(offset < totalSizeInByte_, ERR_INVALID_PARAM, "invalid deltaToBase:%{public}zu", offset);
-
     bufferDesc.buffer = dataBase_ + offset;
     bufferDesc.bufLength = spanSizeInByte_;
     bufferDesc.dataLength = spanSizeInByte_;
@@ -646,10 +645,8 @@ SpanInfo *OHAudioBuffer::GetSpanInfo(uint64_t posInFrame)
         deltaToBase -= totalSizeInFrame_;
     }
     CHECK_AND_RETURN_RET_LOG(deltaToBase < UINT32_MAX && deltaToBase < totalSizeInFrame_, nullptr, "invalid "
-        "deltaToBase, posInFrame %{public}" PRIu64" basePos %{public}" PRIu64".", posInFrame, basePos);
-    
+        "deltaToBase, posInFrame %{public}" PRIu64" basePos %{public}" PRIu64".", posInFrame, basePos);   
     if (spanSizeInFrame_ > 0) {
-
         uint32_t spanIndex = deltaToBase / spanSizeInFrame_;
         CHECK_AND_RETURN_RET_LOG(spanIndex < spanConut_, nullptr, "invalid spanIndex:%{public}d", spanIndex);
         return &spanInfoList_[spanIndex];
