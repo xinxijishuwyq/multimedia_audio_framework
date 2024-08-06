@@ -34,9 +34,13 @@ ohos_shared_library("audio_renderer_sink") {
     "../common/include",
     "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../services/audio_service/common/include/",
   ]
 
-  deps = [ "../../audioutils:audio_utils" ]
+  deps = [
+    "../../../../services/audio_service:audio_common",
+    "../../audioutils:audio_utils",
+  ]
 
   external_deps = [
     "c_utils:utils",
@@ -117,9 +121,13 @@ ohos_shared_library("bluetooth_renderer_sink") {
     "../common/include",
     "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../services/audio_service/common/include/",
   ]
 
-  deps = [ "../../audioutils:audio_utils" ]
+  deps = [
+    "../../../../services/audio_service:audio_common",
+    "../../audioutils:audio_utils",
+  ]
 
   external_deps = [
     "bounds_checking_function:libsec_shared",
