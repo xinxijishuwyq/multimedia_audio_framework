@@ -1160,6 +1160,17 @@ private:
 
 class AudioA2dpOffloadManager final : public Bluetooth::AudioA2dpPlayingStateChangedListener,
     public enable_shared_from_this<AudioA2dpOffloadManager> {
+public:
+    AudioA2dpOffloadManager(AudioPolicyService *audioPolicyService) : audioPolicyService_(audioPolicyService) {};
+    void Init() {Bluetooth::AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(shared_from_this());};
+    A2dpOffloadConnectionState GetA2dOffloadConnectionState() {return currentOffloadConnectionState_;};
+
+    void ConnectA2dpOffload(const std::string &deviceAddress, const vector<int32_t> &sessionIds);
+    void DisconnectA2dpOffload();
+    void OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState) override;
+
+    void WaitForConnectionCompleted();
+    bool IsA2dpOffloadConnecting(int32_t sessionId);
 private:
     A2dpOffloadConnectionState currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
     std::vector<int32_t> connectionTriggerSessionIds_;
@@ -1168,19 +1179,6 @@ private:
     std::mutex connectionMutex_;
     std::condition_variable connectionCV_;
     static const int32_t CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
-public:
-    AudioA2dpOffloadManager(AudioPolicyService *audioPolicyService) : audioPolicyService_(audioPolicyService) {};
-    void Init() {Bluetooth::AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(shared_from_this());};
-    A2dpOffloadConnectionState GetA2dOffloadConnectionState() {return currentOffloadConnectionState_;};
-    std::vector<int32_t>& GetConnectTriggerSessionIds() {return connectionTriggerSessionIds_;};
-    std::string GetBluetoothAddress() {return a2dpOffloadDeviceAddress_;};
-
-    void ConnectA2dpOffload(const std::string &deviceAddress, const vector<int32_t> &sessionIds);
-    void DisconnectA2dpOffload();
-    void OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState) override;
-
-    void WaitForConnectionCompleted();
-    bool IsA2dpOffloadConnecting(int32_t sessionId);
 };
 } // namespace AudioStandard
 } // namespace OHOS
