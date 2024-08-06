@@ -20,7 +20,6 @@
 #include <ability_manager_client.h>
 #include "iservice_registry.h"
 
-#include "parameters.h"
 #include "audio_utils.h"
 #include "audio_manager_listener_stub.h"
 
