@@ -717,6 +717,10 @@ std::string GetTime()
     struct tm *t;
     gettimeofday(&tv, &tz);
     t = localtime(&tv.tv_sec);
+    if (t == nullptr) {
+        return "";
+    }
+
     curTime += std::to_string(YEAR_BASE + t->tm_year);
     curTime += (1 + t->tm_mon < DECIMAL_EXPONENT ? "0" + std::to_string(1 + t->tm_mon) :
         std::to_string(1 + t->tm_mon));
