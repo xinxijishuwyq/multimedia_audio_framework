@@ -139,13 +139,11 @@ int32_t NoneMixEngine::Stop()
     int32_t XcollieFlag = (1 | 2); // flag 1 generate log file,flag 2 die when timeout, restart server
     AudioXCollie audioXCollie(
         "NoneMixEngine::Stop", CONNECT_STREAM_TIMEOUT_IN_SEC,
-        [this, &ret](void *) {
-            AUDIO_ERR_LOG("%{public}d renderSink_ stop timeout, trigger signal", isVoip_);
-            if (renderSink_ && renderSink_->IsInited()) {
-                ret = renderSink_->Stop();
-            }
-        },
+        [this, &ret](void *) { AUDIO_ERR_LOG("%{public}d renderSink_ stop timeout, trigger signal", isVoip_); },
         nullptr, XcollieFlag);
+    if (renderSink_ && renderSink_->IsInited()) {
+        ret = renderSink_->Stop();
+    }
     isStart_ = false;
     return ret;
 }
