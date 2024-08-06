@@ -1266,12 +1266,11 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
 
             if (mixlength == 0 || infoIn->chunk.length < mixlength) {mixlength = infoIn->chunk.length;}
 
-            if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
+            if (pa_memblock_is_silence(infoIn->chunk.memblock) && sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING) {
                 AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
                 pa_sink_input_handle_ohos_underrun(sinkIn);
             } else {
                 AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
-                pa_atomic_store(&sinkIn->isFirstReaded, 1);
             }
 
             infoIn->userdata = pa_sink_input_ref(sinkIn);
@@ -1369,10 +1368,12 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
 
             if (mixlength == 0 || infoIn->chunk.length < mixlength) {mixlength = infoIn->chunk.length;}
 
-            if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
+            if (pa_memblock_is_silence(infoIn->chunk.memblock) && sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING) {
                 AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
                 pa_sink_input_handle_ohos_underrun(sinkIn);
             } else if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
+                AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_not_silence");
+                pa_atomic_store(&sinkIn->isFirstReaded, 1);
                 PrepareMultiChannelFading(sinkIn, infoIn, si);
                 CheckMultiChannelFadeinIsDone(si, sinkIn);
             }
@@ -2346,6 +2347,8 @@ static int32_t ProcessRenderUseTimingOffload(struct Userdata *u, bool *wait, int
     size_t length = GetOffloadRenderLength(u, i, wait);
     if (*wait && length == 0) {
         InputsDropFromInputs2(infoInputs, nInputs);
+        AUTO_CTRACE("hdi_sink::ProcessRenderUseTimingOffload::underrun");
+        pa_sink_input_handle_ohos_underrun(i);
         pa_sink_unref(s);
         return 0;
     }
@@ -2758,14 +2761,12 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
         return;
     }
 
-    {
-        pa_proplist *propList = pa_proplist_new();
-        if (propList != NULL) {
-            pa_proplist_sets(propList, "old_state", GetInputStateInfo(i->thread_info.state));
-            pa_proplist_sets(propList, "new_state", GetInputStateInfo(state));
-            pa_sink_input_send_event(i, "state_changed", propList);
-            pa_proplist_free(propList);
-        }
+    pa_proplist *propList = pa_proplist_new();
+    if (propList != NULL) {
+        pa_proplist_sets(propList, "old_state", GetInputStateInfo(i->thread_info.state));
+        pa_proplist_sets(propList, "new_state", GetInputStateInfo(state));
+        pa_sink_input_send_event(i, "state_changed", propList);
+        pa_proplist_free(propList);
     }
 
     const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
@@ -2774,6 +2775,10 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
 
     if (corking) {
         pa_atomic_store(&i->isFirstReaded, 0);
+    }
+
+    if (starting) {
+        pa_atomic_store(&i->isFirstReaded, 1);
     }
 
     if (!corking && !starting && !stopping) {
