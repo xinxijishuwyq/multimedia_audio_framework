@@ -58,4 +58,3 @@ void RendererInClientPolicyServiceDiedCallbackImpl::RemoveRendererOrCapturerPoli
 }
 } // namespace AudioStandard
 } // namespace OHOS
-#endif
