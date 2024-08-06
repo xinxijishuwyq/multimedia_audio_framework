@@ -2337,42 +2337,6 @@ void RendererInClientInner::ResetRingerModeMute()
         AudioPolicyManager::GetInstance().ResetRingerModeMute();
     }
 }
-
-RendererInClientPolicyServiceDiedCallbackImpl::RendererInClientPolicyServiceDiedCallbackImpl()
-{
-    AUDIO_DEBUG_LOG("instance create");
-}
-
-RendererInClientPolicyServiceDiedCallbackImpl::~RendererInClientPolicyServiceDiedCallbackImpl()
-{
-    AUDIO_DEBUG_LOG("instance destory");
-}
-
-void RendererInClientPolicyServiceDiedCallbackImpl::OnAudioPolicyServiceDied()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("OnAudioPolicyServiceDied");
-    if (policyServiceDiedCallback_ != nullptr) {
-        policyServiceDiedCallback_->OnAudioPolicyServiceDied();
-    }
-}
-
-void RendererInClientPolicyServiceDiedCallbackImpl::SaveRendererOrCapturerPolicyServiceDiedCB(
-    const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (callback != nullptr) {
-        policyServiceDiedCallback_ = callback;
-    }
-}
-
-void RendererInClientPolicyServiceDiedCallbackImpl::RemoveRendererOrCapturerPolicyServiceDiedCB()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (policyServiceDiedCallback_ != nullptr) {
-        policyServiceDiedCallback_ = nullptr;
-    }
-}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // FAST_AUDIO_STREAM_H

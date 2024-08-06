@@ -39,20 +39,6 @@ namespace OHOS {
 namespace AudioStandard {
 class SpatializationStateChangeCallbackImpl;
 
-class RendererInClientPolicyServiceDiedCallbackImpl : public AudioStreamPolicyServiceDiedCallback {
-public:
-    RendererInClientPolicyServiceDiedCallbackImpl();
-    virtual ~RendererInClientPolicyServiceDiedCallbackImpl();
-    void OnAudioPolicyServiceDied() override;
-    void SaveRendererOrCapturerPolicyServiceDiedCB(
-        const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback);
-    void RemoveRendererOrCapturerPolicyServiceDiedCB();
-
-private:
-    std::mutex mutex_;
-    std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> policyServiceDiedCallback_;
-};
-
 class RendererInClientInner : public RendererInClient, public IStreamListener, public IHandler,
     public std::enable_shared_from_this<RendererInClientInner> {
 public:
