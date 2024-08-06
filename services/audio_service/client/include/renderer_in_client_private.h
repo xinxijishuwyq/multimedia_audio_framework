@@ -34,6 +34,7 @@
 #include "audio_spatial_channel_converter.h"
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
+#include "renderer_in_client_service_died_cb.h"
 
 namespace OHOS {
 namespace AudioStandard {
