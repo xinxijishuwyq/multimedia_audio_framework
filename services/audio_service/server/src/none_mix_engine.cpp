@@ -31,6 +31,7 @@ constexpr int32_t MAX_ERROR_COUNT = 50;
 constexpr int16_t STEREO_CHANNEL_COUNT = 2;
 constexpr int16_t HDI_STEREO_CHANNEL_LAYOUT = 3;
 constexpr int16_t HDI_MONO_CHANNEL_LAYOUT = 4;
+constexpr int32_t CONNECT_STREAM_TIMEOUT_IN_SEC = 8; // 8S
 const std::string THREAD_NAME = "noneMixThread";
 const std::string VOIP_SINK_NAME = "voip";
 const std::string DIRECT_SINK_NAME = "direct";
@@ -135,9 +136,16 @@ int32_t NoneMixEngine::Stop()
         playbackThread_->Stop();
         playbackThread_ = nullptr;
     }
-    if (renderSink_ && renderSink_->IsInited()) {
-        ret = renderSink_->Stop();
-    }
+    int32_t XcollieFlag = 1; // flag 1 generate log file
+    AudioXCollie audioXCollie(
+        "NoneMixEngine::Stop", CONNECT_STREAM_TIMEOUT_IN_SEC,
+        [this, &ret](void *) {
+            AUDIO_ERR_LOG("%{public}d renderSink_ stop timeout, trigger signal", isVoip_);
+            if (renderSink_ && renderSink_->IsInited()) {
+                ret = renderSink_->Stop();
+            }
+        },
+        nullptr, XcollieFlag);
     isStart_ = false;
     return ret;
 }
