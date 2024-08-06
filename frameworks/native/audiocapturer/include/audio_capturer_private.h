@@ -165,6 +165,7 @@ public:
 
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback);
+    void UpdateAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
     void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
@@ -173,6 +174,7 @@ private:
     std::weak_ptr<AudioCapturerCallback> callback_;
     bool isForcePaused_ = false;
     std::shared_ptr<AudioCapturerCallback> cb_;
+    std::mutex mutex_;
 };
 
 class AudioStreamCallbackCapturer : public AudioStreamCallback {

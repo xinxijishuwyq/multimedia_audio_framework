@@ -161,6 +161,7 @@ private:
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
     int32_t InitAudioConcurrencyCallback();
     void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
+    void UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId,
         const AudioStreamDeviceChangeReasonExt reason);
     void WriteSwitchStreamLogMsg();
@@ -209,6 +210,7 @@ public:
 
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback);
+    void UpdateAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
     void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
@@ -221,6 +223,7 @@ private:
     bool isForcePaused_ = false;
     bool isForceDucked_ = false;
     uint32_t sessionID_ = INVALID_SESSION_ID;
+    std::mutex mutex_;
 };
 
 class AudioStreamCallbackRenderer : public AudioStreamCallback {
