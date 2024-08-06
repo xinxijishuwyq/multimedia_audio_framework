@@ -35,7 +35,7 @@ static sptr<IAudioPolicy> g_apProxy = nullptr;
 mutex g_apProxyMutex;
 constexpr int64_t SLEEP_TIME = 1;
 constexpr int32_t RETRY_TIMES = 10;
-const unsigned int TIME_OUT_SECONDS = 1;
+const unsigned int TIME_OUT_SECONDS = 10;
 constexpr auto SLEEP_TIMES_RETYT_FAILED = 1min;
 std::mutex g_cBMapMutex;
 std::mutex g_cBDiedMapMutex;
