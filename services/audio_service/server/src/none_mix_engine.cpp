@@ -136,7 +136,7 @@ int32_t NoneMixEngine::Stop()
         playbackThread_->Stop();
         playbackThread_ = nullptr;
     }
-    int32_t XcollieFlag = 1; // flag 1 generate log file
+    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file,flag 2 die when timeout, restart server
     AudioXCollie audioXCollie(
         "NoneMixEngine::Stop", CONNECT_STREAM_TIMEOUT_IN_SEC,
         [this, &ret](void *) {
