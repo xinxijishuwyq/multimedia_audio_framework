@@ -21,7 +21,7 @@
 #include <linux/netlink.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
+#include <string>
 #include "osal_time.h"
 #include "audio_errors.h"
 #include "audio_log.h"
