@@ -19,8 +19,11 @@
 #include "device_status_listener.h"
 #include "hdf_device_class.h"
 #include "v4_0/audio_types.h"
+
 #ifdef BLUETOOTH_ENABLE
+
 #include "audio_bluetooth_manager.h"
+#include "audio_info.h"
 
 #endif
 
