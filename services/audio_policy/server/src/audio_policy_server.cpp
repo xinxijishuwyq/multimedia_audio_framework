@@ -1631,6 +1631,8 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
                 streamChangeInfo.audioRendererChangeInfo.clientUID);
         } else {
             streamChangeInfo.audioCapturerChangeInfo.clientUID = callerUid;
+            streamChangeInfo.audioCapturerChangeInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
+
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
@@ -1961,12 +1963,24 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
     } else {
         int32_t streamSet = server_->audioPolicyService_.SetSourceOutputStreamMute(appUid, targetMuteState);
         if (streamSet > 0) {
+            UpdateMicPrivacyByCapturerState(targetMuteState, result.tokenID, appUid);
+        }
+    }
+}
+
+void AudioPolicyServer::PerStateChangeCbCustomizeCallback::UpdateMicPrivacyByCapturerState(
+    bool targetMuteState, uint32_t targetTokenId, int32_t appUid)
+{
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+    server_->audioPolicyService_.GetCurrentCapturerChangeInfos(capturerChangeInfos, true, true);
+    for (auto &info : capturerChangeInfos) {
+        if (info->appTokenId == targetTokenId && info->capturerState == CAPTURER_RUNNING) {
             AUDIO_INFO_LOG("update using mic %{public}d for uid: %{public}d because permission changed",
                 targetMuteState, appUid);
             if (targetMuteState) {
-                PrivacyKit::StopUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
+                PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
             } else {
-                PrivacyKit::StartUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
+                PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
             }
         }
     }

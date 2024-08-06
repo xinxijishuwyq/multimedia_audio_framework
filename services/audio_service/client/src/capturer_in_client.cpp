@@ -469,6 +469,7 @@ void CapturerInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
         registerTrackerInfo.state = state_;
         registerTrackerInfo.rendererInfo = rendererInfo_;
         registerTrackerInfo.capturerInfo = capturerInfo_;
+        registerTrackerInfo.appTokenId = appTokenId_;
 
         audioStreamTracker_->RegisterTracker(registerTrackerInfo, proxyObj);
         streamTrackerRegistered_ = true;
