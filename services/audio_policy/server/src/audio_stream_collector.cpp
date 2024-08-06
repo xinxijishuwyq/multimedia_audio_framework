@@ -221,6 +221,7 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
     capturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
     capturerChangeInfo->callerPid = streamChangeInfo.audioCapturerChangeInfo.callerPid;
     capturerChangeInfo->muted = streamChangeInfo.audioCapturerChangeInfo.muted;
+    capturerChangeInfo->appTokenId = streamChangeInfo.audioCapturerChangeInfo.appTokenId;
 
     capturerChangeInfo->capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
     capturerChangeInfo->capturerInfo = streamChangeInfo.audioCapturerChangeInfo.capturerInfo;
@@ -461,6 +462,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
                 streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo = (*it)->inputDeviceInfo;
                 capturerChangeInfo->inputDeviceInfo = (*it)->inputDeviceInfo;
             }
+            capturerChangeInfo->appTokenId = (*it)->appTokenId;
             *it = move(capturerChangeInfo);
             if (audioPolicyServerHandler_ != nullptr) {
                 audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);

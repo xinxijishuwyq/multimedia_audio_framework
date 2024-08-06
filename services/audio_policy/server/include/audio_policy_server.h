@@ -405,6 +405,7 @@ public:
 
         void PermStateChangeCallback(Security::AccessToken::PermStateChangeInfo& result);
         int32_t getUidByBundleName(std::string bundle_name, int user_id);
+        void UpdateMicPrivacyByCapturerState(bool targetMuteState, uint32_t targetTokenId, int32_t appUid);
 
         bool ready_;
     private:
