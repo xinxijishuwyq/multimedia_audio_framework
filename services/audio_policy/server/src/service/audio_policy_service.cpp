@@ -825,8 +825,8 @@ void AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
         AudioPipeType normalPipe = PIPE_TYPE_NORMAL_OUT;
         MoveToNewPipe(sessionId, normalPipe);
         streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
-        offloadSessionID_.reset();
         DynamicUnloadModule(PIPE_TYPE_OFFLOAD);
+        offloadSessionID_.reset();
         AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
     } else {
         if (offloadSessionID_.has_value()) {
@@ -848,8 +848,8 @@ void AudioPolicyService::RemoteOffloadStreamRelease(uint32_t sessionId)
         AudioPipeType normalPipe = PIPE_TYPE_UNKNOWN;
         MoveToNewPipe(sessionId, normalPipe);
         streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
-        offloadSessionID_.reset();
         DynamicUnloadModule(PIPE_TYPE_OFFLOAD);
+        offloadSessionID_.reset();
         AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
     }
 }
@@ -6259,15 +6259,17 @@ int32_t AudioPolicyService::LoadOffloadModule()
     std::unique_lock<std::mutex> lock(offloadCloseMutex_);
     isOffloadOpened_.store(true);
     offloadCloseCondition_.notify_all();
+    {
+        std::lock_guard<std::mutex> lock(offloadOpenMutex_);
+        if (IOHandles_.find(OFFLOAD_PRIMARY_SPEAKER) != IOHandles_.end()) {
+            AUDIO_ERR_LOG("offload is open");
+            return ERROR;
+        }
 
-    if (IOHandles_.find(OFFLOAD_PRIMARY_SPEAKER) != IOHandles_.end()) {
-        AUDIO_ERR_LOG("offload is open");
-        return ERROR;
+        DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+        AudioModuleInfo moduleInfo = ConstructOffloadAudioModuleInfo(deviceType);
+        OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
     }
-
-    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    AudioModuleInfo moduleInfo = ConstructOffloadAudioModuleInfo(deviceType);
-    OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
     return SUCCESS;
 }
 
@@ -6275,16 +6277,19 @@ int32_t AudioPolicyService::UnloadOffloadModule()
 {
     AUDIO_INFO_LOG("unload offload module");
     std::unique_lock<std::mutex> lock(offloadCloseMutex_);
-    isOffloadOpened_.store(false);
     // Try to wait 3 seconds before unloading the module, because the audio driver takes some time to process
     // the shutdown process..
-    auto status = offloadCloseCondition_.wait_for(lock, std::chrono::seconds(WAIT_OFFLOAD_CLOSE_TIME_S),
+    offloadCloseCondition_.wait_for(lock, std::chrono::seconds(WAIT_OFFLOAD_CLOSE_TIME_S),
         [this] () { return isOffloadOpened_.load(); });
-    if (status) {
-        AUDIO_INFO_LOG("offload restart");
-        return ERROR;
+    {
+        std::lock_guard<std::mutex> lock(offloadOpenMutex_);
+        if (isOffloadOpened_.load()) {
+            AUDIO_INFO_LOG("offload restart");
+            return ERROR;
+        }
+        ClosePortAndEraseIOHandle(OFFLOAD_PRIMARY_SPEAKER);
     }
-    return ClosePortAndEraseIOHandle(OFFLOAD_PRIMARY_SPEAKER);
+    return SUCCESS;
 }
 
 bool AudioPolicyService::CheckStreamMultichannelMode(const int64_t activateSessionId)
@@ -6372,6 +6377,7 @@ int32_t AudioPolicyService::DynamicUnloadModule(const AudioPipeType pipeType)
     switch (pipeType) {
         case PIPE_TYPE_OFFLOAD:
             if (isOffloadOpened_.load()) {
+                isOffloadOpened_.store(false);
                 auto unloadFirOffloadThrd = [this] { this->UnloadOffloadModule(); };
                 std::thread unloadOffloadThrd(unloadFirOffloadThrd);
                 unloadOffloadThrd.detach();
