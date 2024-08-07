@@ -85,6 +85,7 @@ const char *g_audioServerCodeStrs[] = {
     "UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED",
     "SET_SINK_MUTE_FOR_SWITCH_DEVICE",
     "SET_ROTATION_TO_EFFECT",
+    "UPDATE_SESSION_CONNECTION_STATE",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -687,6 +688,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleSetSinkMuteForSwitchDevice(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ROTATION_TO_EFFECT):
             return HandleSetRotationToEffect(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SESSION_CONNECTION_STATE):
+            return HandleUpdateSessionConnectionState(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -827,6 +830,14 @@ int AudioManagerStub::HandleSetSinkMuteForSwitchDevice(MessageParcel &data, Mess
     int32_t mute = data.ReadBool();
     int32_t result = SetSinkMuteForSwitchDevice(deviceClass, duration, mute);
     reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleUpdateSessionConnectionState(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t sessionID = data.ReadInt32();
+    int32_t state = data.ReadInt32();
+    UpdateSessionConnectionState(sessionID, state);
     return AUDIO_OK;
 }
 } // namespace AudioStandard

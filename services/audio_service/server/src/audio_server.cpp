@@ -2106,5 +2106,21 @@ void AudioServer::SetRotationToEffect(const uint32_t rotate)
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
     audioEffectChainManager->EffectRotationUpdate(rotate);
 }
+
+void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const int32_t &state)
+{
+    AUDIO_INFO_LOG("Server get sessionID: %{public}d, state: %{public}d", sessionId, state);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(),
+        "Update session connection state refused for %{public}d", callingUid);
+    std::shared_ptr<RendererInServer> renderer =
+        AudioService::GetInstance()->GetRendererBySessionID(static_cast<uint32_t>(sessionId));
+
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("No render in server has sessionID");
+        return;
+    }
+    renderer->OnDataLinkConnectionUpdate(static_cast<IOperation>(state));
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -63,6 +63,15 @@
 
 namespace OHOS {
 namespace AudioStandard {
+enum A2dpOffloadConnectionState : int32_t {
+    CONNECTION_STATUS_DISCONNECTED = 0,
+    CONNECTION_STATUS_CONNECTING = 1,
+    CONNECTION_STATUS_CONNECTED = 2,
+    CONNECTION_STATUS_DISCONNECTING = 3,
+    CONNECTION_STATUS_TIMEOUT = 4,
+};
+
+class AudioA2dpOffloadManager;
 
 class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver,
     public IAudioAccessibilityConfigObserver, public IPolicyProvider {
@@ -528,8 +537,9 @@ public:
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
 
     AudioScene GetLastAudioScene() const;
-
     void SetRotationToEffect(const uint32_t rotate);
+    void FetchStreamForA2dpOffload(const bool &requireReset);
+    void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
 
 private:
     AudioPolicyService()
@@ -659,8 +669,6 @@ private:
 
     void FetchStreamForA2dpMchStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &descs);
-
-    void FetchStreamForA2dpOffload(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
 
     int32_t HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
@@ -974,6 +982,10 @@ private:
     
     void ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions);
 
+    bool IsA2dpOffloadConnected();
+
+    void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId);
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
@@ -1142,8 +1154,31 @@ private:
     std::condition_variable offloadCloseCondition_;
 
     bool ringerModeMute_ = true;
-
     std::atomic<bool> isPolicyConfigParsered_ = false;
+    std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
+};
+
+class AudioA2dpOffloadManager final : public Bluetooth::AudioA2dpPlayingStateChangedListener,
+    public enable_shared_from_this<AudioA2dpOffloadManager> {
+public:
+    AudioA2dpOffloadManager(AudioPolicyService *audioPolicyService) : audioPolicyService_(audioPolicyService) {};
+    void Init() {Bluetooth::AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(shared_from_this());};
+    A2dpOffloadConnectionState GetA2dOffloadConnectionState() {return currentOffloadConnectionState_;};
+
+    void ConnectA2dpOffload(const std::string &deviceAddress, const vector<int32_t> &sessionIds);
+    void DisconnectA2dpOffload();
+    void OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState) override;
+
+    void WaitForConnectionCompleted();
+    bool IsA2dpOffloadConnecting(int32_t sessionId);
+private:
+    A2dpOffloadConnectionState currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
+    std::vector<int32_t> connectionTriggerSessionIds_;
+    std::string a2dpOffloadDeviceAddress_ = "";
+    AudioPolicyService *audioPolicyService_ = nullptr;
+    std::mutex connectionMutex_;
+    std::condition_variable connectionCV_;
+    static const int32_t CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
 };
 } // namespace AudioStandard
 } // namespace OHOS

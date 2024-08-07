@@ -168,6 +168,7 @@ ohos_shared_library("audio_client") {
     "client/src/microphone_descriptor.cpp",
     "client/src/policy_provider_stub.cpp",
     "client/src/renderer_in_client.cpp",
+    "client/src/renderer_in_client_service_died_cb.cpp",
   ]
 
   public_configs = [ ":audio_client_public_config" ]

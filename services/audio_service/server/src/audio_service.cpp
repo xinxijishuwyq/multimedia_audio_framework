@@ -688,5 +688,14 @@ float AudioService::GetMaxAmplitude(bool isOutputDevice)
     }
     return fastAudioMaxAmplitude;
 }
+
+std::shared_ptr<RendererInServer> AudioService::GetRendererBySessionID(const uint32_t &sessionID)
+{
+    if (allRendererMap_.count(sessionID)) {
+        return allRendererMap_[sessionID].lock();
+    } else {
+        return std::shared_ptr<RendererInServer>();
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

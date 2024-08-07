@@ -34,24 +34,11 @@
 #include "audio_spatial_channel_converter.h"
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
+#include "renderer_in_client_service_died_cb.h"
 
 namespace OHOS {
 namespace AudioStandard {
 class SpatializationStateChangeCallbackImpl;
-
-class RendererInClientPolicyServiceDiedCallbackImpl : public AudioStreamPolicyServiceDiedCallback {
-public:
-    RendererInClientPolicyServiceDiedCallbackImpl();
-    virtual ~RendererInClientPolicyServiceDiedCallbackImpl();
-    void OnAudioPolicyServiceDied() override;
-    void SaveRendererOrCapturerPolicyServiceDiedCB(
-        const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback);
-    void RemoveRendererOrCapturerPolicyServiceDiedCB();
-
-private:
-    std::mutex mutex_;
-    std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> policyServiceDiedCallback_;
-};
 
 class RendererInClientInner : public RendererInClient, public IStreamListener, public IHandler,
     public std::enable_shared_from_this<RendererInClientInner> {
@@ -321,6 +308,8 @@ private:
     // for status operation wait and notify
     std::mutex callServerMutex_;
     std::condition_variable callServerCV_;
+    std::mutex dataConnectionMutex_;
+    std::condition_variable dataConnectionCV_;
 
     Operation notifiedOperation_ = MAX_OPERATION_CODE;
     int64_t notifiedResult_ = 0;
@@ -389,6 +378,7 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
 
     uint64_t lastFlushPosition_ = 0;
+    bool isDataLinkConnected_ = false;
 
     enum {
         STATE_CHANGE_EVENT = 0,

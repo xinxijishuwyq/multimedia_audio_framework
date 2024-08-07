@@ -39,9 +39,11 @@ AudioScene AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 AudioScene AudioHfpManager::sceneFromPolicy_ = AUDIO_SCENE_DEFAULT;
 OHOS::Bluetooth::ScoCategory AudioHfpManager::scoCategory = OHOS::Bluetooth::ScoCategory::SCO_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
+std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpManager::a2dpPlayingStateChangedListeners_;
 std::mutex g_activehfpDeviceLock;
 std::mutex g_audioSceneLock;
 std::mutex g_hfpInstanceLock;
+std::mutex g_a2dpPlayingStateChangedLock;
 
 static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioStreamInfo)
 {
@@ -222,6 +224,22 @@ int32_t AudioA2dpManager::GetRenderPosition(uint32_t &delayValue, uint64_t &send
     return a2dpInstance_->GetRenderPosition(activeA2dpDevice_, delayValue, sendDataSize, timeStamp);
 }
 
+int32_t AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(
+    std::shared_ptr<AudioA2dpPlayingStateChangedListener> listener)
+{
+    std::lock_guard<std::mutex> lock(g_a2dpPlayingStateChangedLock);
+    a2dpPlayingStateChangedListeners_.push_back(listener);
+    return SUCCESS;
+}
+
+void AudioA2dpManager::OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState)
+{
+    std::lock_guard<std::mutex> lock(g_a2dpPlayingStateChangedLock);
+    for (auto listener : a2dpPlayingStateChangedListeners_) {
+        listener->OnA2dpPlayingStateChanged(deviceAddress, playingState);
+    }
+}
+
 void AudioA2dpManager::CheckA2dpDeviceReconnect()
 {
     if (a2dpInstance_ == nullptr) {
@@ -273,6 +291,9 @@ void AudioA2dpListener::OnConfigurationChanged(const BluetoothRemoteDevice &devi
 void AudioA2dpListener::OnPlayingStatusChanged(const BluetoothRemoteDevice &device, int playingState, int error)
 {
     AUDIO_INFO_LOG("OnPlayingStatusChanged, state: %{public}d, error: %{public}d", playingState, error);
+    if (error == SUCCESS) {
+        AudioA2dpManager::OnA2dpPlayingStateChanged(device.GetDeviceAddr(), playingState);
+    }
 }
 
 void AudioA2dpListener::OnMediaStackChanged(const BluetoothRemoteDevice &device, int action)

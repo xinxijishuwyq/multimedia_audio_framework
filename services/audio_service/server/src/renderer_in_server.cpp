@@ -1090,5 +1090,23 @@ int32_t RendererInServer::SetClientVolume()
     int32_t ret = stream_->SetClientVolume(clientVolume);
     return ret;
 }
+
+void RendererInServer::OnDataLinkConnectionUpdate(IOperation operation)
+{
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
+    switch (operation) {
+        case OPERATION_DATA_LINK_CONNECTING:
+            AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTING received");
+            stateListener->OnOperationHandled(DATA_LINK_CONNECTING, 0);
+            break;
+        case OPERATION_DATA_LINK_CONNECTED:
+            AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTED received");
+            stateListener->OnOperationHandled(DATA_LINK_CONNECTED, 0);
+            break;
+        default:
+            return;
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
