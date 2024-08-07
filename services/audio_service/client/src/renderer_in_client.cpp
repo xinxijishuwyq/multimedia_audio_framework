@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -60,6 +60,7 @@
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
 #include "policy_handler.h"
+#include "audio_log_utils.h"
 
 #include "media_monitor_manager.h"
 
@@ -82,9 +83,11 @@ static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 8; // 8S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
-static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 3000; // 3000ms
+static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
+static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 300; // ms
+static const int32_t HALF_FACTOR = 2;
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
@@ -120,6 +123,7 @@ RendererInClientInner::~RendererInClientInner()
         runnerReleased_ = true;
         callbackHandler_ = nullptr;
     }
+    AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
@@ -134,6 +138,16 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         }
         offloadEnable_ = static_cast<bool>(result);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
+        return SUCCESS;
+    }
+
+    if (operation == DATA_LINK_CONNECTING || operation == DATA_LINK_CONNECTED) {
+        if (operation == DATA_LINK_CONNECTING) {
+            isDataLinkConnected_ = false;
+        } else {
+            isDataLinkConnected_ = true;
+            dataConnectionCV_.notify_all();
+        }
         return SUCCESS;
     }
 
@@ -289,6 +303,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
+    logUtilsTag_ = "IpcClientPlay::" + std::to_string(sessionId_);
     if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT || IsHighResolution()) {
         int32_t type = ipcStream_->GetStreamManagerType();
         if (type == AUDIO_DIRECT_MANAGER_TYPE) {
@@ -1232,6 +1247,20 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
 
     waitLock.unlock();
 
+    AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    UpdateTracker("RUNNING");
+
+    std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
+    if (!isDataLinkConnected_) {
+        AUDIO_INFO_LOG("data-connection blocking starts.");
+        stopWaiting = dataConnectionCV_.wait_for(
+            dataConnectionWaitLock, std::chrono::milliseconds(DATA_CONNECTION_TIMEOUT_IN_MS), [this] {
+                return isDataLinkConnected_;
+            });
+        AUDIO_INFO_LOG("data-connection blocking ends.");
+    }
+    dataConnectionWaitLock.unlock();
+
     offloadStartReadPos_ = 0;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         // start the callback-write thread
@@ -1242,9 +1271,6 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     int64_t param = -1;
     StateCmdTypeToParams(param, state_, cmdType);
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
-
-    AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
-    UpdateTracker("RUNNING");
     return true;
 }
 
@@ -1757,18 +1783,15 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain)
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
 
-    int32_t tryCount = 3; // try futex wait for 3 times.
+    int32_t tryCount = 2; // try futex wait for 2 times.
     FutexCode futexRes = FUTEX_OPERATION_FAILED;
     while (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_ && tryCount > 0) {
         tryCount--;
         int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
-        futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) *
-            AUDIO_US_PER_SECOND);
+        futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND);
         CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
-        if (futexRes == FUTEX_TIMEOUT) {
-            AUDIO_WARNING_LOG("write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(futexRes != FUTEX_TIMEOUT, ERROR,
+            "write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
         sizeInFrame = clientBuffer_->GetAvailableDataFrames();
         if (futexRes == FUTEX_SUCCESS) { break; }
     }
@@ -1795,12 +1818,24 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain)
     }
 
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
+    DfxOperation(desc, clientConfig_.streamInfo.format, clientConfig_.streamInfo.channels);
     clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "WriteCacheData failed, null ipcStream_.");
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(desc.bufLength);
     return SUCCESS;
+}
+
+void RendererInClientInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
+{
+    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
+    if (channel == MONO) {
+        Trace::Count(logUtilsTag_, vols.volStart[0]);
+    } else {
+        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+    }
+    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
@@ -2300,42 +2335,6 @@ void RendererInClientInner::ResetRingerModeMute()
     if (Util::IsDualToneStreamType(eStreamType_)) {
         AUDIO_INFO_LOG("reset ringer tone mode, stream type %{public}d", eStreamType_);
         AudioPolicyManager::GetInstance().ResetRingerModeMute();
-    }
-}
-
-RendererInClientPolicyServiceDiedCallbackImpl::RendererInClientPolicyServiceDiedCallbackImpl()
-{
-    AUDIO_DEBUG_LOG("instance create");
-}
-
-RendererInClientPolicyServiceDiedCallbackImpl::~RendererInClientPolicyServiceDiedCallbackImpl()
-{
-    AUDIO_DEBUG_LOG("instance destory");
-}
-
-void RendererInClientPolicyServiceDiedCallbackImpl::OnAudioPolicyServiceDied()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("OnAudioPolicyServiceDied");
-    if (policyServiceDiedCallback_ != nullptr) {
-        policyServiceDiedCallback_->OnAudioPolicyServiceDied();
-    }
-}
-
-void RendererInClientPolicyServiceDiedCallbackImpl::SaveRendererOrCapturerPolicyServiceDiedCB(
-    const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (callback != nullptr) {
-        policyServiceDiedCallback_ = callback;
-    }
-}
-
-void RendererInClientPolicyServiceDiedCallbackImpl::RemoveRendererOrCapturerPolicyServiceDiedCB()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (policyServiceDiedCallback_ != nullptr) {
-        policyServiceDiedCallback_ = nullptr;
     }
 }
 } // namespace AudioStandard

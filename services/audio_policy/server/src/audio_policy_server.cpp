@@ -165,7 +165,6 @@ void AudioPolicyServer::OnStop()
     audioPolicyService_.Deinit();
     UnRegisterPowerStateListener();
     UnRegisterSyncHibernateListener();
-    UnregisterCommonEventReceiver();
     return;
 }
 
@@ -211,6 +210,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_INFO_LOG("OnAddSystemAbility common event service start");
             SubscribeCommonEvent("usual.event.DATA_SHARE_READY");
             SubscribeCommonEvent("custom.event.display_rotation_changed");
+            SubscribeCommonEvent("usual.event.bluetooth.remotedevice.NAME_UPDATE");
             break;
         default:
             AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
@@ -520,6 +520,10 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
         audioPolicyService_.SetRotationToEffect(rotate);
+    } else if (action == "usual.event.bluetooth.remotedevice.NAME_UPDATE") {
+        std::string deviceName  = want.GetStringParam("remoteName");
+        std::string macAddress = want.GetStringParam("deviceAddr");
+        audioPolicyService_.OnReceiveBluetoothEvent(macAddress, deviceName);
     }
 }
 
@@ -1627,6 +1631,8 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
                 streamChangeInfo.audioRendererChangeInfo.clientUID);
         } else {
             streamChangeInfo.audioCapturerChangeInfo.clientUID = callerUid;
+            streamChangeInfo.audioCapturerChangeInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
+
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
@@ -1957,12 +1963,24 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
     } else {
         int32_t streamSet = server_->audioPolicyService_.SetSourceOutputStreamMute(appUid, targetMuteState);
         if (streamSet > 0) {
+            UpdateMicPrivacyByCapturerState(targetMuteState, result.tokenID, appUid);
+        }
+    }
+}
+
+void AudioPolicyServer::PerStateChangeCbCustomizeCallback::UpdateMicPrivacyByCapturerState(
+    bool targetMuteState, uint32_t targetTokenId, int32_t appUid)
+{
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+    server_->audioPolicyService_.GetCurrentCapturerChangeInfos(capturerChangeInfos, true, true);
+    for (auto &info : capturerChangeInfos) {
+        if (info->appTokenId == targetTokenId && info->capturerState == CAPTURER_RUNNING) {
             AUDIO_INFO_LOG("update using mic %{public}d for uid: %{public}d because permission changed",
                 targetMuteState, appUid);
             if (targetMuteState) {
-                PrivacyKit::StopUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
+                PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
             } else {
-                PrivacyKit::StartUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
+                PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
             }
         }
     }
@@ -2004,7 +2022,6 @@ void AudioPolicyServer::RegisterBluetoothListener()
 {
     AUDIO_INFO_LOG("RegisterBluetoothListener");
     audioPolicyService_.RegisterBluetoothListener();
-    RegisterCommonEventReceiver();
 }
 
 void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
@@ -2743,46 +2760,6 @@ int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeTyp
 int32_t AudioPolicyServer::ResetRingerModeMute()
 {
     return audioPolicyService_.ResetRingerModeMute();
-}
-
-void AudioPolicyServer::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
-{
-    audioPolicyService_.OnReceiveBluetoothEvent(macAddress, deviceName);
-}
-
-void BluetoothEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
-{
-    const AAFwk::Want& want = eventData.GetWant();
-    std::string action = want.GetAction();
-    std::string deviceName  = want.GetStringParam("remoteName");
-    std::string macAddress = want.GetStringParam("deviceAddr");
-    AUDIO_INFO_LOG("receive action %{public}s", deviceName.c_str());
-    if (action == EventFwk::CommonEventSupport::COMMON_EVENT_BLUETOOTH_REMOTEDEVICE_NAME_UPDATE) {
-        audioPolicyServer_->OnReceiveBluetoothEvent(macAddress, deviceName);
-    }
-}
-
-void AudioPolicyServer::RegisterCommonEventReceiver()
-{
-    if (bluetoothEventSubscriberOb_ != nullptr) {
-        AUDIO_WARNING_LOG("bluetoothEvent is already registed");
-        return;
-    }
-    AUDIO_INFO_LOG("register bluetooth remote device name receiver");
-    EventFwk::MatchingSkills matchingSkills;
-    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_BLUETOOTH_REMOTEDEVICE_NAME_UPDATE);
-    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
-    bluetoothEventSubscriberOb_ =
-        std::make_shared<BluetoothEventSubscriber>(subscribeInfo, this);
-    EventFwk::CommonEventManager::NewSubscribeCommonEvent(bluetoothEventSubscriberOb_);
-}
-
-void AudioPolicyServer::UnregisterCommonEventReceiver()
-{
-    if (bluetoothEventSubscriberOb_ != nullptr) {
-        EventFwk::CommonEventManager::NewUnSubscribeCommonEvent(bluetoothEventSubscriberOb_);
-        AUDIO_INFO_LOG("unregister bluetooth device name commonevent");
-    }
 }
 
 int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, InterruptEvent &event)

@@ -1921,6 +1921,17 @@ int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatiali
     return audioEffectChainManager->UpdateSpatializationState(spatializationState);
 }
 
+int32_t AudioServer::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+
+    return audioEffectChainManager->UpdateSpatialDeviceType(spatialDeviceType);
+}
+
 int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -2094,6 +2105,22 @@ void AudioServer::SetRotationToEffect(const uint32_t rotate)
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
     audioEffectChainManager->EffectRotationUpdate(rotate);
+}
+
+void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const int32_t &state)
+{
+    AUDIO_INFO_LOG("Server get sessionID: %{public}d, state: %{public}d", sessionId, state);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(),
+        "Update session connection state refused for %{public}d", callingUid);
+    std::shared_ptr<RendererInServer> renderer =
+        AudioService::GetInstance()->GetRendererBySessionID(static_cast<uint32_t>(sessionId));
+
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("No render in server has sessionID");
+        return;
+    }
+    renderer->OnDataLinkConnectionUpdate(static_cast<IOperation>(state));
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -40,6 +40,7 @@
 #include "audio_utils.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
+#include "audio_log_utils.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
@@ -143,6 +144,7 @@ private:
     float rightBalanceCoef_ = 1.0f;
     int32_t initCount_ = 0;
     int32_t logMode_ = 0;
+    AudioSampleFormat audioSampleFormat_ = SAMPLE_S16LE;
 
     // Low latency
     int32_t PrepareMmapBuffer();
@@ -170,6 +172,7 @@ private:
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
     void UnlockRunningLock();
+    void UpdateAppsUid();
 #endif
 
     int32_t CreateRender(struct HDI::Audio_Bluetooth::AudioPort &renderPort);
@@ -183,8 +186,11 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
+    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
+    mutable int64_t volumeDataCount_ = 0;
+    std::string logUtilsTag_ = "";
 };
 
 BluetoothRendererSinkInner::BluetoothRendererSinkInner(bool isBluetoothLowLatency)
@@ -198,6 +204,7 @@ BluetoothRendererSinkInner::BluetoothRendererSinkInner(bool isBluetoothLowLatenc
 BluetoothRendererSinkInner::~BluetoothRendererSinkInner()
 {
     BluetoothRendererSinkInner::DeInit();
+    AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
 BluetoothRendererSink *BluetoothRendererSink::GetInstance()
@@ -437,6 +444,7 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
         initCount_++;
         return true;
     }
+    audioSampleFormat_ = static_cast<AudioSampleFormat>(attr.format);
 
     attr_.format = ConvertToHdiFormat(attr.format);
     attr_.sampleRate = attr.sampleRate;
@@ -477,6 +485,7 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
     }
 
     logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
+    logUtilsTag_ = "A2dpSink";
 
     rendererInited_ = true;
     initCount_++;
@@ -498,6 +507,8 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+    BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
+    DfxOperation(buffer, audioSampleFormat_, static_cast<AudioChannel>(attr_.channel));
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void *>(&data), len);
@@ -532,14 +543,32 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     }
 
 #ifdef FEATURE_POWER_MANAGER
+    UpdateAppsUid();
+#endif
+
+    return ret;
+}
+
+#ifdef FEATURE_POWER_MANAGER
+void BluetoothRendererSinkInner::UpdateAppsUid()
+{
     if (runningLockManager_) {
         runningLockManager_->UpdateAppsUidToPowerMgr();
     } else {
         AUDIO_ERR_LOG("runningLockManager_ is nullptr");
     }
+}
 #endif
 
-    return ret;
+void BluetoothRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
+{
+    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
+    if (channel == MONO) {
+        Trace::Count(logUtilsTag_, vols.volStart[0]);
+    } else {
+        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+    }
+    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 ConvertHdiFormat BluetoothRendererSinkInner::ConvertToHdiAdapterFormat(AudioFormat format)

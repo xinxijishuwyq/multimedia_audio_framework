@@ -360,6 +360,15 @@ public:
     virtual int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) = 0;
 
     /**
+     * Update spatial device type.
+     *
+     * @param spatialDeviceType identify the spatial device type.
+     *
+     * @return result of setting. 0 if success, error number else.
+    */
+    virtual int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) = 0;
+
+    /**
      * Notify Stream volume changed.
      *
      * @param streamType specified streamType whose volume to be notified
@@ -428,6 +437,11 @@ public:
      * Set Rotation To Effect.
      */
     virtual void SetRotationToEffect(const uint32_t rotate) = 0;
+
+    /**
+     * Update Session Connection State
+     */
+    virtual void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -467,6 +481,7 @@ private:
     int HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply);
     int HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
+    int HandleUpdateSpatialDeviceType(MessageParcel& data, MessageParcel& reply);
     int HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyStreamVolumeChanged(MessageParcel &data, MessageParcel &reply);
     int HandleSetSpatializationSceneType(MessageParcel &data, MessageParcel &reply);
@@ -490,10 +505,11 @@ private:
     int HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply);
     int HandleSetSinkMuteForSwitchDevice(MessageParcel &data, MessageParcel &reply);
+    int HandleSetRotationToEffect(MessageParcel &data, MessageParcel &reply);
+    int HandleUpdateSessionConnectionState(MessageParcel &data, MessageParcel &reply);
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
-    int HandleSetRotationToEffect(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

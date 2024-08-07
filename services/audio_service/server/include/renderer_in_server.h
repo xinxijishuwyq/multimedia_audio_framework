@@ -93,6 +93,8 @@ public:
     int32_t GetStreamManagerType() const noexcept;
     int32_t SetSilentModeAndMixWithOthers(bool on);
     int32_t SetClientVolume();
+    
+    void OnDataLinkConnectionUpdate(IOperation operation);
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -142,6 +144,7 @@ private:
     bool isNeedFade_ = false;
     float oldAppliedVolume_ = MAX_FLOAT_VOLUME;
     std::mutex updateIndexLock_;
+    int64_t startedTime_ = 0;
     uint32_t underrunCount_ = 0;
     uint32_t standByCounter_ = 0;
     int64_t lastWriteTime_ = 0;

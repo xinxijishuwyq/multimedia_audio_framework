@@ -221,6 +221,7 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
     capturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
     capturerChangeInfo->callerPid = streamChangeInfo.audioCapturerChangeInfo.callerPid;
     capturerChangeInfo->muted = streamChangeInfo.audioCapturerChangeInfo.muted;
+    capturerChangeInfo->appTokenId = streamChangeInfo.audioCapturerChangeInfo.appTokenId;
 
     capturerChangeInfo->capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
     capturerChangeInfo->capturerInfo = streamChangeInfo.audioCapturerChangeInfo.capturerInfo;
@@ -363,9 +364,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
         streamChangeInfo.audioRendererChangeInfo.sessionId);
     bool stateChanged = CheckRendererStateInfoChanged(streamChangeInfo);
     bool infoChanged = CheckRendererInfoChanged(streamChangeInfo);
-    if (!stateChanged && !infoChanged) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(stateChanged || infoChanged, SUCCESS);
 
     // Update the renderer info in audioRendererChangeInfos_
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
@@ -374,9 +373,9 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             audioRendererChangeInfo.sessionId == streamChangeInfo.audioRendererChangeInfo.sessionId) {
             rendererStatequeue_[make_pair(audioRendererChangeInfo.clientUID, audioRendererChangeInfo.sessionId)] =
                 streamChangeInfo.audioRendererChangeInfo.rendererState;
+            streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = (*it)->rendererInfo.pipeType;
             AUDIO_DEBUG_LOG("update client %{public}d session %{public}d", audioRendererChangeInfo.clientUID,
                 audioRendererChangeInfo.sessionId);
-
             unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
             CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED,
                 "Memory Allocation Failed");
@@ -463,6 +462,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
                 streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo = (*it)->inputDeviceInfo;
                 capturerChangeInfo->inputDeviceInfo = (*it)->inputDeviceInfo;
             }
+            capturerChangeInfo->appTokenId = (*it)->appTokenId;
             *it = move(capturerChangeInfo);
             if (audioPolicyServerHandler_ != nullptr) {
                 audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
@@ -1222,7 +1222,7 @@ StreamUsage AudioStreamCollector::GetLastestRunningCallStreamUsage()
         StreamUsage usage = changeInfo->rendererInfo.streamUsage;
         RendererState state = changeInfo->rendererState;
         if ((IsCallStreamUsage(usage) && state == RENDERER_RUNNING) ||
-            usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+            (usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && state == RENDERER_PREPARED)) {
             return usage;
         }
     }

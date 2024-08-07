@@ -44,6 +44,7 @@ ohos_shared_library("audio_common") {
   sources = [
     "common/src/audio_common_converter.cpp",
     "common/src/audio_down_mix_stereo.cpp",
+    "common/src/audio_log_utils.cpp",
     "common/src/audio_process_config.cpp",
     "common/src/audio_resample.cpp",
     "common/src/audio_ring_cache.cpp",
@@ -167,6 +168,7 @@ ohos_shared_library("audio_client") {
     "client/src/microphone_descriptor.cpp",
     "client/src/policy_provider_stub.cpp",
     "client/src/renderer_in_client.cpp",
+    "client/src/renderer_in_client_service_died_cb.cpp",
   ]
 
   public_configs = [ ":audio_client_public_config" ]

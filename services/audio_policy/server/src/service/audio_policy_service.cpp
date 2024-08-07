@@ -149,6 +149,9 @@ const int RECORD_CAPTURE_ID = 3;
 const int32_t ONE_MINUTE = 60;
 constexpr int32_t MS_PER_S = 1000;
 constexpr int32_t NS_PER_MS = 1000000;
+const int32_t DATA_LINK_CONNECTING = 10;
+const int32_t DATA_LINK_CONNECTED = 11;
+const int32_t A2DP_PLAYING = 2;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 #ifdef BLUETOOTH_ENABLE
@@ -334,6 +337,8 @@ bool AudioPolicyService::Init(void)
     audioEffectManager_.EffectManagerInit();
     audioDeviceManager_.ParseDeviceXml();
     audioPnpServer_.init();
+    audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>(this);
+    if (audioA2dpOffloadManager_ != nullptr) {audioA2dpOffloadManager_->Init();}
 
     bool ret = audioPolicyConfigParser_.LoadConfiguration();
     if (!ret) {
@@ -1579,7 +1584,7 @@ std::string AudioPolicyService::GetSinkPortName(InternalDeviceType deviceType, A
     }
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-            if (a2dpOffloadFlag_ == A2DP_OFFLOAD) {
+            if (a2dpOffloadFlag_ == A2DP_OFFLOAD && IsA2dpOffloadConnected()) {
                 if (pipeType == PIPE_TYPE_OFFLOAD) {
                     portName = OFFLOAD_PRIMARY_SPEAKER;
                 } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
@@ -2510,8 +2515,10 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::unique_ptr<AudioRender
     }
 }
 
-void AudioPolicyService::FetchStreamForA2dpOffload(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
+void AudioPolicyService::FetchStreamForA2dpOffload(const bool &requireReset)
 {
+    vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
     AUDIO_INFO_LOG("start for %{public}zu stream", rendererChangeInfos.size());
     for (auto &rendererChangeInfo : rendererChangeInfos) {
         if (!IsRendererStreamRunning(rendererChangeInfo)) {
@@ -2522,9 +2529,11 @@ void AudioPolicyService::FetchStreamForA2dpOffload(vector<unique_ptr<AudioRender
             rendererChangeInfo->clientUID);
 
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            int32_t ret = ActivateA2dpDevice(descs.front(), rendererChangeInfos);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed",
-                GetEncryptAddr(descs.front()->macAddress_).c_str());
+            if (requireReset) {
+                int32_t ret = ActivateA2dpDevice(descs.front(), rendererChangeInfos);
+                CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed",
+                    GetEncryptAddr(descs.front()->macAddress_).c_str());
+            }
             if (rendererChangeInfo->rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
                 const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
                 CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
@@ -4890,10 +4899,8 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
-    if (mode == AUDIO_MODE_RECORD) {
-        if (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED) {
-            audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
-        }
+    if (mode == AUDIO_MODE_RECORD && streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED) {
+        audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
     }
 
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
@@ -4922,7 +4929,19 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     }
 
     UpdateA2dpOffloadFlagForAllStream(currentActiveDevice_.deviceType_);
+    SendA2dpConnectedWhileRunning(rendererState, streamChangeInfo.audioRendererChangeInfo.sessionId);
     return ret;
+}
+
+void AudioPolicyService::SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId)
+{
+    if ((rendererState == RENDERER_RUNNING) && (audioA2dpOffloadManager_ != nullptr) &&
+        !audioA2dpOffloadManager_->IsA2dpOffloadConnecting(sessionId)) {
+        AUDIO_INFO_LOG("Notify client not to block.");
+        std::thread sendConnectedToClient(&AudioPolicyService::UpdateSessionConnectionState, this, sessionId,
+            DATA_LINK_CONNECTED);
+        sendConnectedToClient.detach();
+    }
 }
 
 void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
@@ -6935,7 +6954,15 @@ int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sess
     if (a2dpOffloadFlag_ != A2DP_OFFLOAD || sessionIds.size() == 0) {
         return SUCCESS;
     }
-    return Bluetooth::AudioA2dpManager::OffloadStartPlaying(sessionIds);
+    int32_t ret = Bluetooth::AudioA2dpManager::OffloadStartPlaying(sessionIds);
+    if (audioA2dpOffloadManager_ != nullptr) {
+        A2dpOffloadConnectionState state = audioA2dpOffloadManager_->GetA2dOffloadConnectionState();
+        if (ret == SUCCESS && (state == CONNECTION_STATUS_DISCONNECTED || state == CONNECTION_STATUS_DISCONNECTING)) {
+            audioA2dpOffloadManager_->ConnectA2dpOffload(
+                Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), sessionIds);
+        }
+    }
+    return ret;
 #else
     return SUCCESS;
 #endif
@@ -6949,7 +6976,11 @@ int32_t AudioPolicyService::OffloadStopPlaying(const std::vector<int32_t> &sessi
     if (a2dpOffloadFlag_ != A2DP_OFFLOAD || sessionIds.size() == 0) {
         return SUCCESS;
     }
-    return Bluetooth::AudioA2dpManager::OffloadStopPlaying(sessionIds);
+    int32_t ret = Bluetooth::AudioA2dpManager::OffloadStopPlaying(sessionIds);
+    if (audioA2dpOffloadManager_ != nullptr) {
+        audioA2dpOffloadManager_->DisconnectA2dpOffload();
+    }
+    return ret;
 #else
     return SUCCESS;
 #endif
@@ -7108,9 +7139,7 @@ int32_t AudioPolicyService::HandleA2dpDeviceOutOffload(BluetoothOffloadState a2d
     UpdateEffectDefaultSink(dev);
     AUDIO_INFO_LOG("Handle A2dpDevice Out Offload");
 
-    vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-    streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
-    FetchStreamForA2dpOffload(rendererChangeInfos);
+    FetchStreamForA2dpOffload(true);
 
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         return HandleActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
@@ -7137,9 +7166,10 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload(BluetoothOffloadState a2dp
     AUDIO_INFO_LOG("Handle A2dpDevice In Offload");
     UpdateEffectBtOffloadSupported(true);
 
-    vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-    streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
-    FetchStreamForA2dpOffload(rendererChangeInfos);
+    if (IsA2dpOffloadConnected()) {
+        AUDIO_INFO_LOG("A2dpOffload has been connected, Fetch stream");
+        FetchStreamForA2dpOffload(true);
+    }
 
     std::string activePort = BLUETOOTH_SPEAKER;
     audioPolicyManager_.SuspendAudioDevice(activePort, true);
@@ -8386,6 +8416,115 @@ void AudioPolicyService::SetRotationToEffect(const uint32_t rotate)
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->SetRotationToEffect(rotate);
     IPCSkeleton::SetCallingIdentity(identity);
+}
+
+bool AudioPolicyService::IsA2dpOffloadConnected()
+{
+    if (audioA2dpOffloadManager_ == nullptr) {
+        AUDIO_WARNING_LOG("Null audioA2dpOffloadManager");
+        return true;
+    }
+    A2dpOffloadConnectionState state = audioA2dpOffloadManager_->GetA2dOffloadConnectionState();
+    return state == CONNECTION_STATUS_CONNECTED || state == CONNECTION_STATUS_DISCONNECTING;
+}
+
+void AudioPolicyService::UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->UpdateSessionConnectionState(sessionID, state);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
+void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState)
+{
+    if (deviceAddress == a2dpOffloadDeviceAddress_) {
+        if (playingState == A2DP_PLAYING && currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTING) {
+            AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+                currentOffloadConnectionState_, CONNECTION_STATUS_CONNECTED);
+            currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
+            for (int32_t sessionId : connectionTriggerSessionIds_) {
+                audioPolicyService_->UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTED);
+            }
+            std::vector<int32_t>().swap(connectionTriggerSessionIds_);
+            connectionCV_.notify_all();
+        }
+    } else {
+        AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+            currentOffloadConnectionState_, CONNECTION_STATUS_DISCONNECTED);
+        currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
+    }
+}
+
+void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddress, const vector<int32_t> &sessionIds)
+{
+    AUDIO_INFO_LOG("start connecting a2dpOffload.");
+    a2dpOffloadDeviceAddress_ = deviceAddress;
+    connectionTriggerSessionIds_.assign(sessionIds.begin(), sessionIds.end());
+
+    if (currentOffloadConnectionState_ == CONNECTION_STATUS_DISCONNECTING) {
+        AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+            currentOffloadConnectionState_, CONNECTION_STATUS_CONNECTED);
+        currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
+        return;
+    }
+
+    for (int32_t sessionId : connectionTriggerSessionIds_) {
+        audioPolicyService_->UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTING);
+    }
+
+    std::thread switchThread(&AudioA2dpOffloadManager::WaitForConnectionCompleted, this);
+    switchThread.detach();
+    AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+        currentOffloadConnectionState_, CONNECTION_STATUS_CONNECTING);
+    currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
+}
+
+void AudioA2dpOffloadManager::DisconnectA2dpOffload()
+{
+    if (currentOffloadConnectionState_ == CONNECTION_STATUS_DISCONNECTED ||
+        currentOffloadConnectionState_ == CONNECTION_STATUS_DISCONNECTING) {
+        return;
+    }
+    a2dpOffloadDeviceAddress_ = "";
+    AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+        currentOffloadConnectionState_, CONNECTION_STATUS_DISCONNECTING);
+    currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTING;
+}
+
+void AudioA2dpOffloadManager::WaitForConnectionCompleted()
+{
+    std::unique_lock<std::mutex> waitLock(connectionMutex_);
+    bool connectionCompleted = connectionCV_.wait_for(waitLock,
+        std::chrono::milliseconds(AudioA2dpOffloadManager::CONNECTION_TIMEOUT_IN_MS), [this] {
+            return currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTED;
+        });
+    // a2dp connection timeout, anyway we should notify client dataLink OK in order to allow the data flow begin
+    if (!connectionCompleted) {
+        AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
+            currentOffloadConnectionState_, CONNECTION_STATUS_TIMEOUT);
+        currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
+        for (int32_t sessionId : connectionTriggerSessionIds_) {
+            audioPolicyService_->UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTED);
+        }
+        std::vector<int32_t>().swap(connectionTriggerSessionIds_);
+    }
+    waitLock.unlock();
+    audioPolicyService_->FetchStreamForA2dpOffload(false);
+    return;
+}
+
+bool AudioA2dpOffloadManager::IsA2dpOffloadConnecting(int32_t sessionId)
+{
+    if (currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTING) {
+        if (std::find(connectionTriggerSessionIds_.begin(), connectionTriggerSessionIds_.end(), sessionId) !=
+            connectionTriggerSessionIds_.end()) {
+            return true;
+        }
+    }
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

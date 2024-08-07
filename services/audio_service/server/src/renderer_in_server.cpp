@@ -38,6 +38,7 @@ namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const int64_t MOCK_LATENCY = 45000000; // 45000000 -> 45ms
+    static const int64_t START_MIN_COST = 80000000; // 80000000 -> 80ms
     static const int32_t NO_FADING = 0;
     static const int32_t DO_FADINGOUT = 1;
     static const int32_t FADING_OUT_DONE = 2;
@@ -193,6 +194,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
                 return;
             }
             status_ = I_STATUS_STARTED;
+            startedTime_ = ClockTime::GetCurNano();
             stateListener->OnOperationHandled(START_STREAM, 0);
             break;
         case OPERATION_PAUSED:
@@ -222,10 +224,6 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             }
             afterDrain = true;
             break;
-        case OPERATION_RELEASED:
-            stateListener->OnOperationHandled(RELEASE_STREAM, 0);
-            status_ = I_STATUS_RELEASED;
-            break;
         default:
             OnStatusUpdateSub(operation);
     }
@@ -235,6 +233,10 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 {
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     switch (operation) {
+        case OPERATION_RELEASED:
+            stateListener->OnOperationHandled(RELEASE_STREAM, 0);
+            status_ = I_STATUS_RELEASED;
+            break;
         case OPERATION_UNDERRUN:
             AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",
                 audioServerBuffer_->GetAvailableDataFrames());
@@ -248,8 +250,10 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             }
             break;
         case OPERATION_UNDERFLOW:
-            underrunCount_++;
-            audioServerBuffer_->SetUnderrunCount(underrunCount_);
+            if (ClockTime::GetCurNano() - startedTime_ > START_MIN_COST) {
+                underrunCount_++;
+                audioServerBuffer_->SetUnderrunCount(underrunCount_);
+            }
             StandByCheck(); // if stand by is enbaled here, stream will be paused and not recv UNDERFLOW any more.
             break;
         case OPERATION_SET_OFFLOAD_ENABLE:
@@ -279,7 +283,13 @@ void RendererInServer::StandByCheck()
     // call enable stand by
     std::unique_lock<std::mutex> lock(statusLock_);
     standByEnable_ = true;
-    IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_);
+    lock.unlock();
+    // PaAdapterManager::PauseRender will hold mutex, may cause dead lock with pa_lock
+    if (managerType_ == PLAYBACK) {
+        stream_->Pause();
+    } else if (managerType_ == DIRECT_PLAYBACK) {
+        IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_);
+    }
 }
 
 bool RendererInServer::ShouldEnableStandBy()
@@ -574,6 +584,7 @@ int32_t RendererInServer::Start()
     int ret = IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
 
+    startedTime_ = ClockTime::GetCurNano();
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     int64_t tempTime = ClockTime::GetCurNano() + MOCK_LATENCY;
     audioServerBuffer_->SetHandleInfo(currentReadFrame, tempTime);
@@ -1078,6 +1089,24 @@ int32_t RendererInServer::SetClientVolume()
     float clientVolume = audioServerBuffer_->GetStreamVolume();
     int32_t ret = stream_->SetClientVolume(clientVolume);
     return ret;
+}
+
+void RendererInServer::OnDataLinkConnectionUpdate(IOperation operation)
+{
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
+    switch (operation) {
+        case OPERATION_DATA_LINK_CONNECTING:
+            AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTING received");
+            stateListener->OnOperationHandled(DATA_LINK_CONNECTING, 0);
+            break;
+        case OPERATION_DATA_LINK_CONNECTED:
+            AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTED received");
+            stateListener->OnOperationHandled(DATA_LINK_CONNECTED, 0);
+            break;
+        default:
+            return;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -40,6 +40,7 @@
 #include "audio_server_death_recipient.h"
 #include "i_audio_process.h"
 #include "linear_pos_time_model.h"
+#include "audio_log_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -47,6 +48,7 @@ namespace AudioStandard {
 namespace {
 static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
+static const int32_t HALF_FACTOR = 2;
 }
 
 class ProcessCbImpl;
@@ -152,6 +154,7 @@ private:
     int32_t ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
     void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime);
     void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime, int64_t clientWriteCost);
+    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
     void DoFadeInOut(uint64_t &curWritePos);
 
@@ -216,6 +219,8 @@ private:
 
     std::string cachePath_;
     FILE *dumpFile_ = nullptr;
+    mutable int64_t volumeDataCount_ = 0;
+    std::string logUtilsTag_ = "";
 
     std::atomic<bool> startFadein_ = false; // true-fade  in  when start or resume stream
     std::atomic<bool> startFadeout_ = false; // true-fade out when pause or stop stream
@@ -340,6 +345,7 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
         AudioProcessInClientInner::Release();
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
+    AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
 int32_t AudioProcessInClientInner::GetSessionID(uint32_t &sessionID)
@@ -599,12 +605,15 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
     AudioBufferHolder bufferHolder = audioBuffer_->GetBufferHolder();
     bool isIndependent = bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT;
     if (config.audioMode == AUDIO_MODE_RECORD) {
+        logUtilsTag_ = "ProcessRec::" + std::to_string(sessionId_);
         callbackLoop_ = std::thread([this] { this->RecordProcessCallbackFuc(); });
         pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioRecCb");
     } else if (isIndependent) {
+        logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
         callbackLoop_ = std::thread([this] { this->ProcessCallbackFucIndependent(); });
         pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
     } else {
+        logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
         callbackLoop_ = std::thread([this] { this->ProcessCallbackFuc(); });
         pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
     }
@@ -658,6 +667,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "%{public}s memcpy fail, ret %{public}d,"
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(readbufDesc.buffer), spanSizeInByte_);
+    DfxOperation(readbufDesc, processConfig_.streamInfo.format, processConfig_.streamInfo.channels);
 
     ret = memset_s(readbufDesc.buffer, readbufDesc.bufLength, 0, readbufDesc.bufLength);
     if (ret != EOK) {
@@ -880,6 +890,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
             writeProcessDataTrace.End();
 
             DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(curCallbackBuffer.buffer), offSet);
+            DfxOperation(curCallbackBuffer, processConfig_.streamInfo.format, processConfig_.streamInfo.channels);
         }
     }
 
@@ -888,6 +899,17 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
     }
 
     return SUCCESS;
+}
+
+void AudioProcessInClientInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
+{
+    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
+    if (channel == MONO) {
+        Trace::Count(logUtilsTag_, vols.volStart[0]);
+    } else {
+        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+    }
+    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 int32_t AudioProcessInClientInner::SetVolume(int32_t vol)

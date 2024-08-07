@@ -653,6 +653,12 @@ void AudioCapturerInterruptCallbackImpl::SaveCallback(const std::weak_ptr<AudioC
     callback_ = callback;
 }
 
+void AudioCapturerInterruptCallbackImpl::UpdateAudioStream(const std::shared_ptr<IAudioStream> &audioStream)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    audioStream_ = audioStream;
+}
+
 void AudioCapturerInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
 {
     AUDIO_INFO_LOG("NotifyEvent: Hint: %{public}d, eventType: %{public}d",
@@ -676,21 +682,20 @@ void AudioCapturerInterruptCallbackImpl::NotifyForcePausedToResume(const Interru
 
 void AudioCapturerInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent)
 {
-    InterruptHint hintType = interruptEvent.hintType;
-    AUDIO_DEBUG_LOG("Force handle the event and notify the app,\
-        Hint: %{public}d eventType: %{public}d", interruptEvent.hintType, interruptEvent.eventType);
-
-    switch (hintType) {
+    State currentState = audioStream_->GetState();
+    switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_RESUME:
-            CHECK_AND_RETURN_LOG(audioStream_->GetState() == PAUSED && isForcePaused_ == true,
-                "OnInterrupt state is not paused or not forced paused");
+            CHECK_AND_RETURN_LOG((currentState == PAUSED || currentState == PREPARED) && isForcePaused_ == true,
+                "OnInterrupt state %{public}d or not forced pause %{public}d before", currentState, isForcePaused_);
+            AUDIO_INFO_LOG("set force pause false");
             isForcePaused_ = false;
             NotifyForcePausedToResume(interruptEvent);
             return;
         case INTERRUPT_HINT_PAUSE:
-            CHECK_AND_RETURN_LOG(audioStream_->GetState() == RUNNING,
-                "OnInterrupt state is not running no need to pause");
+            CHECK_AND_RETURN_LOG(currentState == RUNNING || currentState == PREPARED,
+                "OnInterrupt state %{public}d, no need to pause", currentState);
             (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
+            AUDIO_INFO_LOG("set force pause true");
             isForcePaused_ = true;
             break;
         case INTERRUPT_HINT_STOP:
@@ -706,9 +711,11 @@ void AudioCapturerInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
 
 void AudioCapturerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
+
     cb_ = callback_.lock();
     InterruptForceType forceType = interruptEvent.forceType;
-    AUDIO_DEBUG_LOG("InterruptForceType: %{public}d", forceType);
+    AUDIO_INFO_LOG("InterruptForceType: %{public}d", forceType);
 
     if (forceType != INTERRUPT_FORCE) { // INTERRUPT_SHARE
         AUDIO_DEBUG_LOG("AudioCapturerPrivate ForceType: INTERRUPT_SHARE. Let app handle the event");
@@ -1119,9 +1126,14 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
             CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
         }
         audioStream_ = newAudioStream;
+        if (audioInterruptCallback_ != nullptr) {
+            std::shared_ptr<AudioCapturerInterruptCallbackImpl> interruptCbImpl =
+                std::static_pointer_cast<AudioCapturerInterruptCallbackImpl>(audioInterruptCallback_);
+            interruptCbImpl->UpdateAudioStream(audioStream_);
+        }
         isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
-        switchResult= true;
+        switchResult = true;
     }
     return switchResult;
 }

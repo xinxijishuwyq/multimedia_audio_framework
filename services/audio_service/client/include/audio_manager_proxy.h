@@ -69,6 +69,7 @@ public:
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
     int32_t SetCaptureSilentState(bool state) override;
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
+    int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) override;
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) override;
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
     int32_t ResetRouteForDisconnect(DeviceType type) override;
@@ -90,6 +91,7 @@ public:
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
     int32_t SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute) override;
     void SetRotationToEffect(const uint32_t rotate) override;
+    void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };
