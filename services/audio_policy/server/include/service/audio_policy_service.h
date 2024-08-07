@@ -978,10 +978,6 @@ private:
     int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
         ConnectState connectState);
 
-    bool GetAudioEffectOffloadFlag();
-    
-    void ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions);
-
     bool IsA2dpOffloadConnected();
 
     void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId);
