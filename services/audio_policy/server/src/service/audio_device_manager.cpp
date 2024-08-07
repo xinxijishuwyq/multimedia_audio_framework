@@ -381,6 +381,7 @@ std::string AudioDeviceManager::GetConnDevicesStr(const vector<shared_ptr<AudioD
     std::string devices;
     devices.append("device type:id:(category:constate) ");
     for (auto iter : descs) {
+        CHECK_AND_CONTINUE_LOG(iter != nullptr, "iter is nullptr");
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
         devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
         if (iter->getType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
