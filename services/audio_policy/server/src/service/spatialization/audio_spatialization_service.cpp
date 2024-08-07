@@ -455,7 +455,7 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
 
     if (!outputDeviceChange) {
         AUDIO_INFO_LOG("notify offload entered");
-        std::thread notifyOffloadThread = std::thread([&] () {
+        std::thread notifyOffloadThread = std::thread([=] () mutable {
             AudioPolicyService::GetAudioPolicyService().UpdateA2dpOffloadFlagBySpatialService(currentDeviceAddress_,
                 sessionIDToSpatializationEnabledMap);
         });
