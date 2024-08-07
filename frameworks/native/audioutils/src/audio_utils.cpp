@@ -225,7 +225,7 @@ bool PermissionUtil::VerifyIsSystemApp()
     bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     CHECK_AND_RETURN_RET(!tmp, true);
 
-    AUDIO_ERR_LOG("Check system app permission reject");
+    AUDIO_PRERELEASE_LOGE("Check system app permission reject");
     return false;
 }
 
@@ -258,7 +258,7 @@ bool PermissionUtil::VerifySystemPermission()
     bool tmp = VerifyIsSystemApp();
     CHECK_AND_RETURN_RET(!tmp, true);
 
-    AUDIO_ERR_LOG("Check system permission reject");
+    AUDIO_PRERELEASE_LOGE("Check system permission reject");
     return false;
 }
 

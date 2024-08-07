@@ -1230,7 +1230,7 @@ bool AudioRendererPrivate::GetSilentModeAndMixWithOthers()
 
 int32_t AudioRendererPrivate::SetParallelPlayFlag(bool parallelPlayFlag)
 {
-    AUDIO_INFO_LOG("parallelPlayFlag %{public}d", parallelPlayFlag);
+    AUDIO_PRERELEASE_LOGI("parallelPlayFlag %{public}d", parallelPlayFlag);
     audioInterrupt_.parallelPlayFlag = parallelPlayFlag;
     return SUCCESS;
 }
@@ -1247,7 +1247,7 @@ float AudioRendererPrivate::GetLowPowerVolume() const
 
 int32_t AudioRendererPrivate::SetOffloadAllowed(bool isAllowed)
 {
-    AUDIO_INFO_LOG("offload allowed: %{public}d", isAllowed);
+    AUDIO_PRERELEASE_LOGI("offload allowed: %{public}d", isAllowed);
     rendererInfo_.isOffloadAllowed = isAllowed;
     audioStream_->SetRendererInfo(rendererInfo_);
     return SUCCESS;

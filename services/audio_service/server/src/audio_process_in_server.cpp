@@ -130,7 +130,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
         listenerList_[i]->OnPause(this);
     }
 
-    AUDIO_INFO_LOG("Pause in server success!");
+    AUDIO_PRERELEASE_LOGI("Pause in server success!");
     return SUCCESS;
 }
 
@@ -158,7 +158,7 @@ int32_t AudioProcessInServer::Resume()
         listenerList_[i]->OnStart(this);
     }
 
-    AUDIO_INFO_LOG("Resume in server success!");
+    AUDIO_PRERELEASE_LOGI("Resume in server success!");
     return SUCCESS;
 }
 

@@ -1110,7 +1110,7 @@ void AudioProcessInClientInner::CallClientHandleCurrent()
     cb->OnHandleData(clientSpanSizeInByte_);
     stamp = ClockTime::GetCurNano() - stamp;
     if (stamp > MAX_WRITE_COST_DURATION_NANO) {
-        AUDIO_WARNING_LOG("Client write cost too long...");
+        AUDIO_PRERELEASE_LOGW("Client write cost too long...");
         if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
             underflowCount_++;
         } else {
@@ -1457,7 +1457,7 @@ bool AudioProcessInClientInner::PrepareCurrent(uint64_t curWritePos)
     SpanStatus targetStatus = SpanStatus::SPAN_READ_DONE;
     while (!tempSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_WRITTING) && tryCount > 0) {
         tryCount--;
-        AUDIO_WARNING_LOG("span %{public}" PRIu64" not ready, status: %{public}d, wait 2ms.", curWritePos,
+        AUDIO_PRERELEASE_LOGW("span %{public}" PRIu64" not ready, status: %{public}d, wait 2ms.", curWritePos,
             targetStatus);
         targetStatus = SpanStatus::SPAN_READ_DONE;
         ClockTime::RelativeSleep(ONE_MILLISECOND_DURATION + ONE_MILLISECOND_DURATION);
@@ -1706,7 +1706,7 @@ void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &
     if (wakeUpTime - curTime > clientBufferDurationInMs + clientWriteCost) {
         Trace trace("BigWakeUpTime curTime[" + std::to_string(curTime) + "] target[" + std::to_string(wakeUpTime) +
             "] delay " + std::to_string(wakeUpTime - curTime) + "ns");
-        AUDIO_WARNING_LOG("wakeUpTime is too late...");
+        AUDIO_PRERELEASE_LOGW("wakeUpTime is too late...");
     }
 }
 } // namespace AudioStandard

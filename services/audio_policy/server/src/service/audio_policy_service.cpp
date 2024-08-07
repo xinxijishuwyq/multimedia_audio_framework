@@ -1942,7 +1942,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredOutputD
             audioRouterCenter_.FetchOutputDevices(rendererInfo.streamUsage, -1);
         for (size_t i = 0; i < descs.size(); i++) {
             sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*descs[i]);
-            AUDIO_INFO_LOG("streamUsage %{public}d fetch desc[%{public}zu]-device:%{public}d",
+            AUDIO_PRERELEASE_LOGI("streamUsage %{public}d fetch desc[%{public}zu]-device:%{public}d",
                 rendererInfo.streamUsage, i, descs[i]->deviceType_);
             deviceList.push_back(devDesc);
         }
@@ -2140,7 +2140,7 @@ void AudioPolicyService::MoveToNewInputDevice(unique_ptr<AudioCapturerChangeInfo
 
 void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
 {
-    AUDIO_INFO_LOG("In");
+    AUDIO_PRERELEASE_LOGI("In");
     vector<std::unique_ptr<AudioDeviceDescriptor>> descs =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1);
     CHECK_AND_RETURN_LOG(!descs.empty(), "descs is empty");
@@ -2159,7 +2159,7 @@ void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
 
 void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
 {
-    AUDIO_INFO_LOG("In");
+    AUDIO_PRERELEASE_LOGI("In");
     unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
     if (desc->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(desc, currentActiveInputDevice_)) {
         AUDIO_DEBUG_LOG("input device is not change");
@@ -2333,7 +2333,7 @@ bool AudioPolicyService::UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc,
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     const AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_INFO_LOG("Start for %{public}zu stream, connected %{public}s",
+    AUDIO_PRERELEASE_LOGI("Start for %{public}zu stream, connected %{public}s",
         rendererChangeInfos.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
@@ -6184,7 +6184,7 @@ bool AudioPolicyService::CheckStreamOffloadMode(int64_t activateSessionId, Audio
     }
 
     if (!CheckActiveOutputDeviceSupportOffload()) {
-        AUDIO_INFO_LOG("Offload not available on current output device, skipped");
+        AUDIO_PRERELEASE_LOGI("Offload not available on current output device, skipped");
         return false;
     }
 
@@ -7069,7 +7069,7 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
     }
 
     std::lock_guard<std::mutex> lock(switchA2dpOffloadMutex_);
-    AUDIO_INFO_LOG("deviceType: %{public}d, currentActiveDevice_: %{public}d, allActiveSessions: %{public}zu, "
+    AUDIO_PRERELEASE_LOGI("deviceType: %{public}d, currentActiveDevice_: %{public}d, allActiveSessions: %{public}zu, "
         "a2dpOffloadFlag_: %{public}d, receiveOffloadFlag: %{public}d",
         deviceType, currentActiveDevice_.deviceType_, allActiveSessions.size(), a2dpOffloadFlag_,
         receiveOffloadFlag);

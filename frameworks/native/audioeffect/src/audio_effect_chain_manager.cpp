@@ -879,7 +879,7 @@ int32_t AudioEffectChainManager::SetHdiParam(const std::string &sceneType, const
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
     effectHdiInput_[0] = HDI_BYPASS;
     effectHdiInput_[1] = enabled == true ? 0 : 1;
-    AUDIO_INFO_LOG("set hdi bypass: %{public}d", effectHdiInput_[1]);
+    AUDIO_PRERELEASE_LOGI("set hdi bypass: %{public}d", effectHdiInput_[1]);
     int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi bypass failed");
