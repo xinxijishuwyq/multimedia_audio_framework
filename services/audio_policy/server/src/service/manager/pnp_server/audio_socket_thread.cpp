@@ -32,8 +32,8 @@
 #include "hdf_base.h"
 #include "hdf_device_object.h"
 #include "osal_time.h"
-#include "securec.h"
 #include "audio_errors.h"
+#include "securec.h"
 #include "audio_policy_log.h"
 
 namespace OHOS {
