@@ -20,13 +20,17 @@
 #include <securec.h>
 #include "hdf_device_class.h"
 #include "v4_0/audio_types.h"
+
 #ifdef BLUETOOTH_ENABLE
+
 #include "audio_bluetooth_manager.h"
 #include "bluetooth_def.h"
+
 #endif
+
+#include "audio_info.h"
 #include "audio_errors.h"
 #include "audio_log.h"
-#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

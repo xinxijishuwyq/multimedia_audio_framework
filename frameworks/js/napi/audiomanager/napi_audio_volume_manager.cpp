@@ -84,7 +84,7 @@ void NapiAudioVolumeManager::Destructor(napi_env env, void *nativeObject, void *
 
 napi_value NapiAudioVolumeManager::Construct(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("Construct");
+    AUDIO_PRERELEASE_LOGI("Construct");
     napi_status status;
     napi_value result = nullptr;
     napi_get_undefined(env, &result);

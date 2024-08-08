@@ -176,7 +176,7 @@ Fail:
 
 uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string moduleArgs)
 {
-    AUDIO_INFO_LOG("OpenAudioPort enter.");
+    AUDIO_PRERELEASE_LOGI("OpenAudioPort enter.");
     AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::OpenAudioPort", PA_SERVICE_IMPL_TIMEOUT,
         [this](void *) {
             AUDIO_ERR_LOG("OpenAudioPort timeout, trigger signal");
@@ -370,7 +370,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinksCb(pa_context *c, const pa_sink_inf
 
 std::vector<SinkInfo> PulseAudioServiceAdapterImpl::GetAllSinks()
 {
-    AUDIO_INFO_LOG("GetAllSinks enter.");
+    AUDIO_PRERELEASE_LOGI("GetAllSinks enter.");
     AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSinks", PA_SERVICE_IMPL_TIMEOUT,
         [this](void *) {
             AUDIO_ERR_LOG("GetAllSinks timeout, trigger signal");
@@ -569,7 +569,7 @@ int32_t PulseAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setM
 
 vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
 {
-    AUDIO_INFO_LOG("GetAllSinkInputs enter");
+    AUDIO_PRERELEASE_LOGI("GetAllSinkInputs enter");
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
     userData->sinkInfos = GetAllSinks();

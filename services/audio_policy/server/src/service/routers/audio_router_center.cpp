@@ -99,7 +99,7 @@ bool AudioRouterCenter::HasScoDevice()
 std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    AUDIO_INFO_LOG("streamUsage %{public}d clientUID %{public}d start fetch device", streamUsage, clientUID);
+    AUDIO_PRERELEASE_LOGI("streamUsage %{public}d clientUID %{public}d start fetch device", streamUsage, clientUID);
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
     RouterType routerType = ROUTER_TYPE_NONE;
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
@@ -142,7 +142,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     }
     int32_t audioId_ = descs[0]->deviceId_;
     DeviceType type = descs[0]->deviceType_;
-    AUDIO_INFO_LOG("usage:%{public}d uid:%{public}d size:[%{public}zu], 1st type:[%{public}d], id:[%{public}d],"
+    AUDIO_PRERELEASE_LOGI("usage:%{public}d uid:%{public}d size:[%{public}zu], 1st type:[%{public}d], id:[%{public}d],"
         " router:%{public}d ", streamUsage, clientUID, descs.size(), type, audioId_, routerType);
     return descs;
 }
@@ -166,9 +166,11 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::unique_ptr<AudioD
             routerType = (*itr)->GetRouterType();
         }
         if (desc->deviceType_ == DEVICE_TYPE_NONE) {
-            streamUsage = audioScene == AUDIO_SCENE_PHONE_CALL ? STREAM_USAGE_VOICE_MODEM_COMMUNICATION
-                                                           : STREAM_USAGE_VOICE_COMMUNICATION;
-            desc = FetchCallRenderDevice(streamUsage, clientUID, routerType);
+            StreamUsage callStreamUsage =
+                AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
+            AUDIO_INFO_LOG("Ring follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
+                callStreamUsage);
+            desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType);
         }
         descs.push_back(move(desc));
     } else {
@@ -178,7 +180,7 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::unique_ptr<AudioD
 
 unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType sourceType, int32_t clientUID)
 {
-    AUDIO_INFO_LOG("sourceType %{public}d clientUID %{public}d start fetch input device", sourceType, clientUID);
+    AUDIO_PRERELEASE_LOGI("sourceType %{public}d clientUID %{public}d start fetch input device", sourceType, clientUID);
     unique_ptr<AudioDeviceDescriptor> desc = make_unique<AudioDeviceDescriptor>();
     RouterType routerType = ROUTER_TYPE_NONE;
     if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
@@ -216,7 +218,7 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
     }
     int32_t audioId_ = descs[0]->deviceId_;
     DeviceType type = descs[0]->deviceType_;
-    AUDIO_INFO_LOG("source:%{public}d uid:%{public}d fetch type:%{public}d id:%{public}d router:%{public}d",
+    AUDIO_PRERELEASE_LOGI("source:%{public}d uid:%{public}d fetch type:%{public}d id:%{public}d router:%{public}d",
         sourceType, clientUID, type, audioId_, routerType);
     return move(descs[0]);
 }

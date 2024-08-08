@@ -744,7 +744,7 @@ int32_t OffloadAudioRendererSinkInner::SetVolumeInner(float &left, float &right)
     float thevolume;
     int32_t ret;
     if (audioRender_ == nullptr) {
-        AUDIO_WARNING_LOG("OffloadAudioRendererSinkInner::SetVolume failed, audioRender_ null, "
+        AUDIO_PRERELEASE_LOGW("OffloadAudioRendererSinkInner::SetVolume failed, audioRender_ null, "
                           "this will happen when set volume on devices which offload not available");
         return ERR_INVALID_HANDLE;
     }

@@ -636,7 +636,7 @@ int32_t RendererInServer::Pause()
 
 int32_t RendererInServer::Flush()
 {
-    AUDIO_INFO_LOG("Flush.");
+    AUDIO_PRERELEASE_LOGI("Flush.");
     Trace trace(traceTag_ + " Flush");
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_STARTED) {
@@ -803,7 +803,7 @@ int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp)
 {
     if (status_ == I_STATUS_STOPPED) {
-        AUDIO_WARNING_LOG("Current status is stopped");
+        AUDIO_PRERELEASE_LOGW("Current status is stopped");
         return ERR_ILLEGAL_STATE;
     }
     stream_->GetCurrentPosition(framePos, timestamp);

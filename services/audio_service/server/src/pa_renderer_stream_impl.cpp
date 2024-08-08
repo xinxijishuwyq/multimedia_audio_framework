@@ -208,7 +208,7 @@ int32_t PaRendererStreamImpl::Pause()
 
 int32_t PaRendererStreamImpl::Flush()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Flush");
+    AUDIO_PRERELEASE_LOGI("Enter PaRendererStreamImpl::Flush");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -725,7 +725,7 @@ void PaRendererStreamImpl::PAStreamUnderFlowCountAddCb(pa_stream *stream, void *
 void PaRendererStreamImpl::PAStreamSetStartedCb(pa_stream *stream, void *userdata)
 {
     CHECK_AND_RETURN_LOG(userdata, "PAStreamSetStartedCb: userdata is null");
-    AUDIO_WARNING_LOG("PAStreamSetStartedCb");
+    AUDIO_PRERELEASE_LOGI("PAStreamSetStartedCb");
     Trace trace("PaRendererStreamImpl::PAStreamSetStartedCb");
 }
 
@@ -1191,7 +1191,7 @@ int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
         nullptr, nullptr);
     pa_proplist_free(propList);
     pa_operation_unref(updatePropOperation);
-    AUDIO_INFO_LOG("set client volume success");
+    AUDIO_PRERELEASE_LOGI("set client volume success");
 
     return SUCCESS;
 }
