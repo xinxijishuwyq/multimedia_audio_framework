@@ -19,7 +19,7 @@
 #include "audio_log_utils.h"
 
 #include <cinttypes>
-#include "audio_log.h"
+#include "audio_service_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

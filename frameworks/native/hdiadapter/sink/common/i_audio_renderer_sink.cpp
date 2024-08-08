@@ -20,7 +20,7 @@
 #include "i_audio_renderer_sink_intf.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 
 #include "audio_renderer_sink.h"
 #include "audio_renderer_file_sink.h"

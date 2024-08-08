@@ -19,7 +19,7 @@
 #include "iremote_object.h"
 
 #include "audio_info.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_concurrency_callback.h"
 #include "i_audio_concurrency_event_dispatcher.h"
 #include "audio_concurrency_parser.h"

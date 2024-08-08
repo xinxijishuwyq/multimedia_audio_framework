@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include "renderer_sink_adapter.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 
 #ifdef __cplusplus
 extern "C" {

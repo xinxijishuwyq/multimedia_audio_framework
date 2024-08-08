@@ -23,7 +23,7 @@
 #include <cmath>
 #include <cfloat>
 #include "securec.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_policy_manager.h"
 #include "tone_player_impl.h"
 #include "audio_utils.h"
