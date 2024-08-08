@@ -177,6 +177,7 @@ Fail:
 uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string moduleArgs)
 {
     AUDIO_PRERELEASE_LOGI("OpenAudioPort enter.");
+    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::OpenAudioPort", PA_SERVICE_IMPL_TIMEOUT,
         [this](void *) {
             AUDIO_ERR_LOG("OpenAudioPort timeout, trigger signal");
@@ -186,7 +187,6 @@ uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, strin
 
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
-    int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
 
     PaLockGuard palock(mMainLoop);
     if (mContext == nullptr) {
@@ -371,6 +371,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinksCb(pa_context *c, const pa_sink_inf
 std::vector<SinkInfo> PulseAudioServiceAdapterImpl::GetAllSinks()
 {
     AUDIO_PRERELEASE_LOGI("GetAllSinks enter.");
+    int32_t XcollieFlag = 2; // flag 1 generate log file, flag 2 die when timeout, restart server
     AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSinks", PA_SERVICE_IMPL_TIMEOUT,
         [this](void *) {
             AUDIO_ERR_LOG("GetAllSinks timeout, trigger signal");
@@ -380,7 +381,6 @@ std::vector<SinkInfo> PulseAudioServiceAdapterImpl::GetAllSinks()
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
     userData->sinkInfos = {};
-    int32_t XcollieFlag = 2; // flag 1 generate log file, flag 2 die when timeout, restart server
 
     CHECK_AND_RETURN_RET_LOG(mContext != nullptr, userData->sinkInfos, "mContext is nullptr");
 
