@@ -19,9 +19,8 @@
 #include "audio_pnp_server.h"
 
 #include <poll.h>
-
-#include "osal_time.h"
 #include "securec.h"
+#include "osal_time.h"
 #include "audio_errors.h"
 #include "audio_input_thread.h"
 #include "audio_log.h"
