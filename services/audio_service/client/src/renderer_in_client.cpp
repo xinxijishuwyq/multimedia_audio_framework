@@ -1382,6 +1382,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
     Trace trace("RendererInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     if (ipcStream_ != nullptr) {
         ipcStream_->Release();
+        ipcStream_ = nullptr;
     } else {
         AUDIO_WARNING_LOG("release while ipcStream is null");
     }
