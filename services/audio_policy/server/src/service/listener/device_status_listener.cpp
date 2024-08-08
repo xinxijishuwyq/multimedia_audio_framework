@@ -25,10 +25,10 @@
 
 #include "audio_bluetooth_manager.h"
 #include "bluetooth_def.h"
-#include "audio_info.h"
 
 #endif
 
+#include "audio_info.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 
