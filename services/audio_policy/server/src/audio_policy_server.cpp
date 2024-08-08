@@ -117,9 +117,6 @@ void AudioPolicyServer::OnStart()
 
     interruptService_->SetCallbackHandler(audioPolicyServerHandler_);
 
-    sessionService_ = std::make_shared<AudioSessionService>();
-    sessionService_->Init(this);
-
     if (audioPolicyService_.SetAudioStreamRemovedCallback(this)) {
         AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
     }
@@ -2765,29 +2762,37 @@ int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, Inter
 
 int32_t AudioPolicyServer::ActivateAudioSession(const AudioSessionStrategy &strategy)
 {
-    if (sessionService_ != nullptr) {
-        int32_t callerPid = IPCSkeleton::GetCallingPid();
-        return sessionService_->ActivateAudioSession(callerPid, strategy);
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        return ERR_UNKNOWN;
     }
-    return ERR_UNKNOWN;
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d",
+        static_cast<int32_t>(strategy.concurrencyMode), callerPid);
+    return interruptService_->ActivateAudioSession(callerPid, strategy);
 }
 
 int32_t AudioPolicyServer::DeactivateAudioSession()
 {
-    if (sessionService_ != nullptr) {
-        int32_t callerPid = IPCSkeleton::GetCallingPid();
-        return sessionService_->DeactivateAudioSession(callerPid);
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        return ERR_UNKNOWN;
     }
-    return ERR_UNKNOWN;
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    AUDIO_INFO_LOG("deactivate audio session for pid %{public}d", callerPid);
+    return interruptService_->DeactivateAudioSession(callerPid);
 }
 
 bool AudioPolicyServer::IsAudioSessionActive()
 {
-    if (sessionService_ != nullptr) {
-        int32_t callerPid = IPCSkeleton::GetCallingPid();
-        return sessionService_->IsAudioSessionActive(callerPid);
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        return ERR_UNKNOWN;
     }
-    return ERR_UNKNOWN;
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    bool isActive = interruptService_->IsAudioSessionActive(callerPid);
+    AUDIO_INFO_LOG("callerPid %{public}d, isSessionActive: %{public}d.", callerPid, isActive);
+    return isActive;
 }
 } // namespace AudioStandard
 } // namespace OHOS

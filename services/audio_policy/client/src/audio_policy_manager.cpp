@@ -1630,7 +1630,7 @@ int32_t AudioPolicyManager::ActivateAudioSession(const AudioSessionStrategy &str
 {
     AUDIO_INFO_LOG("ActivateAudioSession");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->ActivateAudioSession(strategy);
 }
 
@@ -1638,7 +1638,7 @@ int32_t AudioPolicyManager::DeactivateAudioSession()
 {
     AUDIO_INFO_LOG("DeactivateAudioSession");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->DeactivateAudioSession();
 }
 
@@ -1646,7 +1646,7 @@ bool AudioPolicyManager::IsAudioSessionActive()
 {
     AUDIO_INFO_LOG("IsAudioSessionActive");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     return gsp->IsAudioSessionActive();
 }
 
@@ -1654,7 +1654,7 @@ int32_t AudioPolicyManager::SetAudioSessionCallback(const std::shared_ptr<AudioS
 {
     AUDIO_INFO_LOG("SetAudioSessionCallback");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(audioSessionCallback != nullptr, ERR_INVALID_PARAM, "audioSessionCallback is nullptr");
 
     if (!isAudioPolicyClientRegisted_) {

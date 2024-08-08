@@ -36,6 +36,18 @@ enum class AudioSessionDeactiveReason {
 struct AudioSessionDeactiveEvent {
     AudioSessionDeactiveReason deactiveReason;
 };
+
+enum class AudioSessionType {
+    DEFAULT = 0,
+    MEDIA = 1,
+    SONIFICATION = 2,
+    CALL = 3,
+    VOIP = 4,
+    SYSTEM = 5,
+    NOTIFICATION = 6,
+    DTMF = 7,
+    VOICE_ASSISTANT = 8,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_SESSION_INFO_H

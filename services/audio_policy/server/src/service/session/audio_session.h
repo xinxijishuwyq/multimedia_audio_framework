@@ -24,7 +24,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-enum class SessionState {
+enum class AudioSessionState {
     SESSION_INVALID = -1,
     SESSION_NEW = 0,
     SESSION_ACTIVE = 1,
@@ -34,23 +34,28 @@ enum class SessionState {
 
 class AudioSession {
 public:
-    AudioSession(const int32_t &callerPid, const AudioSessionStrategy &strategy);
+    AudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
+        const std::shared_ptr<AudioSessionTimer> sessionTimer);
     ~AudioSession();
 
     int32_t Activate();
     int32_t Deactivate();
-    SessionState GetSessionState();
-    int32_t AddAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> &interruptPair);
-    int32_t RemoveAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> &interruptPair);
+    AudioSessionState GetSessionState();
+    AudioSessionStrategy GetSessionStrategy();
+    int32_t AddAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> interruptPair);
+    int32_t RemoveAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> interruptPair);
+    int32_t RemoveAudioInterrptByStreamId(const uint32_t &streamId);
+    bool IsAudioSessionEmpty();
 
 private:
     std::mutex sessionMutex_;
 
     int32_t callerPid_;
     AudioSessionStrategy strategy_;
+    std::shared_ptr<AudioSessionTimer> sessionTimer_;
 
-    SessionState state_ = SessionState::SESSION_INVALID;
-    std::unordered_map<int32_t, std::pair<AudioInterrupt, AudioFocuState>> interruptMap_;
+    AudioSessionState state_ = AudioSessionState::SESSION_INVALID;
+    std::unordered_map<uint32_t, std::pair<AudioInterrupt, AudioFocuState>> interruptMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

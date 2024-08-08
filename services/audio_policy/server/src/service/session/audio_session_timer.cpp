@@ -34,7 +34,7 @@ AudioSessionTimer::~AudioSessionTimer()
 
 }
 
-void AudioSessionTimer::StartTimer(const int32_t &callerPid)
+void AudioSessionTimer::StartTimer(const int32_t callerPid)
 {
     AUDIO_INFO_LOG("StartTimer: callerPid %{public}d", callerPid);
     std::lock_guard<std::mutex> lock(sessionTimerMutex_);
@@ -60,7 +60,7 @@ void AudioSessionTimer::StartTimer(const int32_t &callerPid)
     }
 }
 
-void AudioSessionTimer::StopTimer(const int32_t &callerPid)
+void AudioSessionTimer::StopTimer(const int32_t callerPid)
 {
     AUDIO_INFO_LOG("StopTimer: callerPid %{public}d", callerPid);
     std::lock_guard<std::mutex> lock(sessionTimerMutex_);
@@ -77,13 +77,13 @@ void AudioSessionTimer::StopTimer(const int32_t &callerPid)
     }
 }
 
-bool AudioSessionTimer::IsSessionTimerRunning(const int32_t &callerPid)
+bool AudioSessionTimer::IsSessionTimerRunning(const int32_t callerPid)
 {
     AUDIO_INFO_LOG("IsSessionTimerRunning: callerPid %{public}d", callerPid);
     std::lock_guard<std::mutex> lock(sessionTimerMutex_);
-    bool result = (timerMap_.count(callerPid) > 0);
-    AUDIO_INFO_LOG("IsSessionTimerRunning: callerPid %{public}d, result %{public}d", callerPid, result);
-    return result;
+    bool isRunning = (timerMap_.count(callerPid) > 0);
+    AUDIO_INFO_LOG("IsSessionTimerRunning: callerPid %{public}d, result %{public}d", callerPid, isRunning);
+    return isRunning;
 }
 
 void AudioSessionTimer::TimerLoopFunc()
@@ -124,7 +124,7 @@ void AudioSessionTimer::TimerLoopFunc()
     }
 }
 
-void AudioSessionTimer::SendSessionTimeOutCallback(const int32_t &callerPid)
+void AudioSessionTimer::SendSessionTimeOutCallback(const int32_t callerPid)
 {
     std::shared_ptr<AudioSessionTimerCallback> cb = timerCallback_.lock();
     if (cb == nullptr) {
@@ -134,7 +134,8 @@ void AudioSessionTimer::SendSessionTimeOutCallback(const int32_t &callerPid)
     cb->OnAudioSessionTimeOut(callerPid);
 }
 
-int32_t AudioSessionTimer::SetAudioSessionTimerCallback(const std::shared_ptr<AudioSessionTimerCallback> sessionTimerCallback)
+int32_t AudioSessionTimer::SetAudioSessionTimerCallback(
+    const std::shared_ptr<AudioSessionTimerCallback> sessionTimerCallback)
 {
     AUDIO_INFO_LOG("SetAudioSessionTimerCallback in");
     if (sessionTimerCallback == nullptr) {

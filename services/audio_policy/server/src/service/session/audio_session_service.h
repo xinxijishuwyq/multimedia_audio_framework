@@ -18,14 +18,17 @@
 
 #include <mutex>
 
-#include "audio_interrupt_service.h"
-#include "audio_policy_server_handler.h"
-#include "audio_policy_server.h"
 #include "audio_session.h"
 #include "audio_session_timer.h"
 
 namespace OHOS {
 namespace AudioStandard {
+class SessionTimeOutCallback {
+public:
+    virtual ~SessionTimeOutCallback() = default;
+
+    virtual void OnSessionTimeout(const int32_t pid) = 0; // 超时释放
+};
 
 class AudioSessionService : public AudioSessionTimerCallback, public std::enable_shared_from_this<AudioSessionService> {
 public:
@@ -33,27 +36,29 @@ public:
     virtual ~AudioSessionService();
 
     // Audio session manager interfaces
-    int32_t ActivateAudioSession(const int32_t &callerPid, const AudioSessionStrategy &strategy);
-    int32_t DeactivateAudioSession(const int32_t &callerPid);
-    bool IsAudioSessionActive(const int32_t &callerPid);
+    int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy);
+    int32_t DeactivateAudioSession(const int32_t callerPid);
+    bool IsAudioSessionActive(const int32_t callerPid);
 
     // Audio session timer callback
-    void OnAudioSessionTimeOut(const int32_t &callerPid) override;
+    void OnAudioSessionTimeOut(const int32_t callerPid) override;
 
     // other public interfaces
-    void Init(sptr<AudioPolicyServer> server);
+    int32_t SetSessionTimeOutCallback(const std::shared_ptr<SessionTimeOutCallback> &timeOutCallback);
+    std::shared_ptr<AudioSession> GetAudioSessionByPid(const int32_t callerPid);
+    int32_t DeactivateSessionByInterruptService(const int32_t callerPid);
+
+    static bool IsSameTypeForAudioSession(const AudioStreamType &newType, const AudioStreamType &oldType);
 
 private:
-    int32_t DeactivateAudioSessionInternal(const int32_t &callerPid);
-    void SendAudioSessionDeactiveEvent(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
+    void Init();
+    int32_t DeactivateAudioSessionInternal(const int32_t callerPid);
+    // void SendAudioSessionDeactiveEvent(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
 
     std::mutex sessionServiceMutex_;
-
-    sptr<AudioPolicyServer> policyServer_;
-    std::shared_ptr<AudioPolicyServerHandler> policyServerHandler_;
     std::shared_ptr<AudioSessionTimer> sessionTimer_;
-
     std::unordered_map<int32_t, std::shared_ptr<AudioSession>> sessionMap_;
+    std::weak_ptr<SessionTimeOutCallback> timeOutCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

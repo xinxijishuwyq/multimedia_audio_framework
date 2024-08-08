@@ -29,7 +29,7 @@ class AudioSessionTimerCallback {
 public:
     virtual ~AudioSessionTimerCallback() = default;
 
-    virtual void OnAudioSessionTimeOut(const int32_t &callerPid) = 0;
+    virtual void OnAudioSessionTimeOut(const int32_t callerPid) = 0;
 };
 
 enum class TimerState {
@@ -44,13 +44,13 @@ public:
     AudioSessionTimer();
     virtual ~AudioSessionTimer();
 
-    void StartTimer(const int32_t &callerPid);
-    void StopTimer(const int32_t &callerPid);
-    bool IsSessionTimerRunning(const int32_t &callerPid);
+    void StartTimer(const int32_t callerPid);
+    void StopTimer(const int32_t callerPid);
+    bool IsSessionTimerRunning(const int32_t callerPid);
     int32_t SetAudioSessionTimerCallback(const std::shared_ptr<AudioSessionTimerCallback> sessionTimerCallback);
 
 private:
-    void SendSessionTimeOutCallback(const int32_t &callerPid);
+    void SendSessionTimeOutCallback(const int32_t callerPid);
     void TimerLoopFunc();
 
     std::mutex sessionTimerMutex_;

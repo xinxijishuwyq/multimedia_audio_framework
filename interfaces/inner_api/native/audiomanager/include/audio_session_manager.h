@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,7 @@ class AudioSessionCallback {
 public:
     virtual ~AudioSessionCallback() = default;
     /**
-     * @brief OnAudioSessionDeactive will be executed when the audio session is deactivated be others.z
+     * @brief OnAudioSessionDeactive will be executed when the audio session is deactivated be others.
      *
      * @param deactiveEvent the audio session deactive event info.
      * @since 12
@@ -94,9 +94,6 @@ public:
      * @since 12
      */
     int32_t UnsetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback);
-
-private:
-
 };
 } // namespace AudioStandard
 } // namespace OHOS
