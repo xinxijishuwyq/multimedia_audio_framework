@@ -16,8 +16,6 @@
 #define LOG_TAG "AudioPolicyManager"
 #endif
 
-#include <chrono>
-#include <thread>
 #include "audio_policy_manager.h"
 #include "audio_errors.h"
 #include "audio_server_death_recipient.h"
