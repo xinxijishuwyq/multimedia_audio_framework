@@ -139,6 +139,7 @@ void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b);
 void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b);
 
 std::string GetEncryptStr(const std::string &str);
+std::string ConvertNetworkId(const std::string &networkId);
 
 enum ConvertHdiFormat {
     SAMPLE_U8_C = 0,

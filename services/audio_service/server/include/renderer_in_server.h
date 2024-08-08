@@ -69,6 +69,7 @@ public:
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
     int32_t OffloadSetVolume(float volume);
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled);
+    void WriterRenderStreamStandbySysEvent();
 
     int32_t Init();
     int32_t ConfigServerBuffer();
