@@ -26,7 +26,7 @@
 #include "privacy_kit.h"
 #include "tokenid_kit.h"
 #include "common_event_manager.h"
-
+#include "audio_policy_log.h"
 #include "audio_utils.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"

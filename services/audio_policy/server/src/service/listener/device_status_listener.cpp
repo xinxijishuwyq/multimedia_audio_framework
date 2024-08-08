@@ -16,20 +16,21 @@
 #define LOG_TAG "DeviceStatusListener"
 #endif
 
-#include <securec.h>
 #include "device_status_listener.h"
+#include <securec.h>
 #include "hdf_device_class.h"
 #include "v4_0/audio_types.h"
-#include "bluetooth_def.h"
 
 #ifdef BLUETOOTH_ENABLE
 
 #include "audio_bluetooth_manager.h"
+#include "bluetooth_def.h"
 #include "audio_info.h"
 
 #endif
 
 #include "audio_errors.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
