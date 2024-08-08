@@ -387,7 +387,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinksCb(pa_context *c, const pa_sink_inf
 
 std::vector<SinkInfo> PulseAudioServiceAdapterImpl::GetAllSinks()
 {
-    AUDIO_INFO_LOG("GetAllSinks enter.");
+    AUDIO_PRERELEASE_LOGI("GetAllSinks enter.");
     lock_guard<mutex> lock(lock_);
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
@@ -594,7 +594,7 @@ int32_t PulseAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setM
 
 vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
 {
-    AUDIO_INFO_LOG("GetAllSinkInputs enter");
+    AUDIO_PRERELEASE_LOGI("GetAllSinkInputs enter");
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
     userData->sinkInfos = GetAllSinks();

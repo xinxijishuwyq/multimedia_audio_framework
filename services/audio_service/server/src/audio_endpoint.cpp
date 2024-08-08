@@ -1049,7 +1049,7 @@ bool AudioEndpointInner::StopDevice()
 int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
 {
     InitLatencyMeasurement();
-    AUDIO_INFO_LOG("OnStart endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
+    AUDIO_PRERELEASE_LOGI("OnStart endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     if (endpointStatus_ == RUNNING) {
         AUDIO_INFO_LOG("OnStart find endpoint already in RUNNING.");
         return SUCCESS;
@@ -1068,13 +1068,13 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
 
 int32_t AudioEndpointInner::OnPause(IAudioProcessStream *processStream)
 {
-    AUDIO_INFO_LOG("OnPause endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
+    AUDIO_PRERELEASE_LOGI("OnPause endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     if (endpointStatus_ == RUNNING) {
         endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
     }
     if (endpointStatus_ == IDEL) {
         // delay call sink stop when no process running
-        AUDIO_INFO_LOG("OnPause status is IDEL, need delay call stop");
+        AUDIO_PRERELEASE_LOGI("OnPause status is IDEL, need delay call stop");
         delayStopTime_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME;
     }
     // todo
@@ -1762,7 +1762,7 @@ bool AudioEndpointInner::KeepWorkloopRunning()
 
     // when return false, EndpointWorkLoopFuc will continue loop immediately. Wait to avoid a inifity loop.
     std::unique_lock<std::mutex> lock(loopThreadLock_);
-    AUDIO_INFO_LOG("Status is %{public}s now, wait for %{public}s...", GetStatusStr(endpointStatus_).c_str(),
+    AUDIO_PRERELEASE_LOGI("Status is %{public}s now, wait for %{public}s...", GetStatusStr(endpointStatus_).c_str(),
         GetStatusStr(targetStatus).c_str());
     threadStatus_ = WAITTING;
     workThreadCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_IN_DEFAULT));

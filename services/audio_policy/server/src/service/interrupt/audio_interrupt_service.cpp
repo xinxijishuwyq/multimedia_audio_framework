@@ -289,7 +289,7 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(const int32_t zoneId, cons
         audioInterrupt.streamUsage, (audioInterrupt.audioFocusType).sourceType);
 
     if (audioInterrupt.parallelPlayFlag) {
-        AUDIO_INFO_LOG("allow parallel play");
+        AUDIO_PRERELEASE_LOGI("allow parallel play");
         return SUCCESS;
     }
 
@@ -325,7 +325,7 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
         audioInterrupt.streamUsage, (audioInterrupt.audioFocusType).sourceType);
 
     if (audioInterrupt.parallelPlayFlag) {
-        AUDIO_INFO_LOG("allow parallel play");
+        AUDIO_PRERELEASE_LOGI("allow parallel play");
         return SUCCESS;
     }
 
