@@ -1089,6 +1089,7 @@ private:
 
     AudioModuleInfo primaryMicModuleInfo_ = {};
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
+    std::atomic<bool> isAdapterInfoMap_ = false;
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 
