@@ -523,6 +523,17 @@ public:
         return true;
     }
 
+    std::queue<T> PopAllNotWait()
+    {
+        std::queue<T> retQueue = {};
+        std::unique_lock<std::mutex> lock(mutexLock_);
+        retQueue.swap(queueT_);
+
+        cvNotFull_.notify_all();
+
+        return retQueue;
+    }
+
     unsigned int Size()
     {
         std::unique_lock<std::mutex> lock(mutexLock_);

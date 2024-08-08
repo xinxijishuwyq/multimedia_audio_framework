@@ -995,14 +995,9 @@ void RendererInClientInner::WriteCallbackFunc()
         if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
             AUDIO_WARNING_LOG("The queue is too long, reducing data through loops");
         }
-        while (!cbBufferQueue_.IsEmpty()) {
+        BufferDesc temp;
+        while (cbBufferQueue_.PopNotWait(temp)) {
             Trace traceQueuePop("RendererInClientInner::QueueWaitPop");
-            // If client didn't call Enqueue in OnWriteData, pop will block here.
-            BufferDesc temp = cbBufferQueue_.Pop();
-            if (temp.buffer == nullptr) {
-                AUDIO_WARNING_LOG("Queue pop error: get nullptr.");
-                break;
-            }
             if (state_ != RUNNING) { break; }
             traceQueuePop.End();
             // call write here.
@@ -1399,10 +1394,6 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
     // clear write callback
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         cbThreadReleased_ = true; // stop loop
-        if (cbBufferQueue_.IsEmpty()) {
-            std::lock_guard<std::mutex> lockWriteCb(writeCbMutex_);
-            cbBufferQueue_.PushNoWait({nullptr, 0, 0});
-        }
         cbThreadCv_.notify_all();
         FutexTool::FutexWake(clientBuffer_->GetFutex(), IS_PRE_EXIT);
         if (callbackLoop_.joinable()) {
