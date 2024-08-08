@@ -27,7 +27,7 @@
 #include "napi/native_common.h"
 #include "napi/native_node_api.h"
 #include "napi_base_context.h"
-#include "audio_common_log.h"
+#include "audio_log.h"
 #include "audio_info.h"
 #include "audio_capturer.h"
 #include "audio_system_manager.h"

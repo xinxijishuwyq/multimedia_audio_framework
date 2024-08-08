@@ -25,7 +25,7 @@
 #include <string>
 #include "audio_utils_c.h"
 #include "audio_errors.h"
-#include "audio_common_log.h"
+#include "audio_log.h"
 #ifdef FEATURE_HITRACE_METER
 #include "hitrace_meter.h"
 #endif
