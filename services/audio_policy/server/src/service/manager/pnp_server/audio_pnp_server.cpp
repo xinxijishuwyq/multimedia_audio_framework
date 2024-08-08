@@ -24,7 +24,7 @@
 #include "securec.h"
 #include "audio_errors.h"
 #include "audio_input_thread.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_socket_thread.h"
 
 using namespace std;

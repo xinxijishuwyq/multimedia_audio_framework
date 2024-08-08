@@ -19,7 +19,7 @@
 #include <string>
 #include <mutex>
 
-#include "audio_log.h"
+#include "audio_service_log.h"
 #include "audio_info.h"
 #include "i_audio_stream.h"
 

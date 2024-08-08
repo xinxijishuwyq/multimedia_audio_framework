@@ -18,7 +18,7 @@
 
 #include "native_audiorenderer.h"
 #include "audio_renderer.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
