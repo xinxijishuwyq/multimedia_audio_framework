@@ -1743,6 +1743,9 @@ bool AudioPolicyService::FillWakeupStreamPropInfo(const AudioStreamInfo &streamI
 bool AudioPolicyService::ConstructWakeupAudioModuleInfo(const AudioStreamInfo &streamInfo,
     AudioModuleInfo &audioModuleInfo)
 {
+    if (!isAdapterInfoMap_.load()) {
+        return false;
+    }
     auto it = adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[std::string(PRIMARY_WAKEUP)]));
     if (it == adapterInfoMap_.end()) {
         AUDIO_ERR_LOG("can not find adapter info");
@@ -4681,6 +4684,7 @@ void AudioPolicyService::OnAudioPolicyXmlParsingCompleted(
             break;
         }
     }
+    isAdapterInfoMap_.store(true);
 
     audioDeviceManager_.UpdateEarpieceStatus(hasEarpiece_);
 }
@@ -5807,6 +5811,9 @@ int32_t AudioPolicyService::GetPreferredOutputStreamTypeInner(StreamUsage stream
             return flag;
         }
     }
+    if (!isAdapterInfoMap_.load()) {
+        return AUDIO_FLAG_NORMAL;
+    }
     if (adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sinkPortName])) == adapterInfoMap_.end()) {
         return AUDIO_FLAG_NORMAL;
     }
@@ -5859,6 +5866,9 @@ int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceTy
         if (enableFastVoip_) {
             return AUDIO_FLAG_VOIP_FAST;
         }
+        return AUDIO_FLAG_NORMAL;
+    }
+    if (!isAdapterInfoMap_.load()) {
         return AUDIO_FLAG_NORMAL;
     }
     if (adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sourcePortName])) == adapterInfoMap_.end()) {
