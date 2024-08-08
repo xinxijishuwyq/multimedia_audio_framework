@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "audio_schedule.h": "c",
-        "audio_common_log.h": "c",
-        "audio_hdiadapter_info.h": "c",
-        "audio_effect_chain_adapter.h": "c",
-        "playback_capturer_adapter.h": "c"
-    }
-}
