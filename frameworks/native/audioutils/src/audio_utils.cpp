@@ -1189,7 +1189,7 @@ const std::string AudioInfoDumpUtils::GetDeviceVolumeTypeName(DeviceVolumeType d
     return deviceTypeName;
 }
 
-static std::unordered_map<AudioVolumeType, AudioStreamType> g_defaultVolumeMap = {
+static std::unordered_map<AudioStreamType, AudioStreamType> g_defaultVolumeMap = {
     {STREAM_VOICE_CALL, STREAM_VOICE_CALL},
     {STREAM_VOICE_MESSAGE, STREAM_VOICE_CALL},
     {STREAM_VOICE_COMMUNICATION, STREAM_VOICE_CALL},
@@ -1215,12 +1215,12 @@ static std::unordered_map<AudioVolumeType, AudioStreamType> g_defaultVolumeMap =
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
     {STREAM_ALL, STREAM_ALL},
 }
-static std::unordered_map<AudioVolumeType, AudioStreamType>& GetVolumeMap() {
+static std::unordered_map<AudioStreamType, AudioStreamType>& GetVolumeMap() {
     return g_defaultVolumeMap;
 }
 
-AudioVolumeType GetVolumeTypeFromStreamType(AudioVolumeType streamType) {
-    std::unordered_map<AudioVolumeType, AudioStreamType> map = GetVolumeMap();
+AudioStreamType GetVolumeTypeFromStreamType(AudioStreamType streamType) {
+    std::unordered_map<AudioStreamType, AudioStreamType> map = GetVolumeMap();
     auto it = map.find(streamType);
     if (it != map.end()) {
         return it->second;
