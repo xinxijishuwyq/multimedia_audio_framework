@@ -116,7 +116,7 @@ private:
     std::string traceTag_;
     IStatus status_ = I_STATUS_IDLE;
     bool offloadEnable_ = false;
-    bool standByEnable_ = false;
+    std::atomic<bool> standByEnable_ = false;
 
     // for inner-cap
     std::mutex dupMutex_;
