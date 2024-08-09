@@ -100,8 +100,6 @@ public:
 
     virtual float GetMaxStreamVolume() const = 0;
 
-    virtual int32_t UpdateSwapDeviceStatus() = 0;
-
     virtual bool IsVolumeUnadjustable() = 0;
 
     virtual void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
