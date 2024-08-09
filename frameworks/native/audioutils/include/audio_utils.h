@@ -229,7 +229,7 @@ public:
     static const std::string GetDeviceVolumeTypeName(DeviceVolumeType deviceType);
 };
 
-AudioVolumeType GetVolumeTypeFromStreamType(AudioVolumeType streamType);
+AudioStreamType GetVolumeTypeFromStreamType(AudioStreamType streamType);
 AudioStreamType GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage);
 template<typename T>
 class ObjectRefMap {
