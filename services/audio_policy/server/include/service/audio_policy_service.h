@@ -1076,6 +1076,7 @@ private:
     mutable std::shared_mutex deviceStatusUpdateSharedMutex_;
 
     bool isArmUsbDevice_ = false;
+    bool hasDpDevice_ = false; // Only the first dp device is supported.
 
     AudioDeviceManager &audioDeviceManager_;
     AudioStateManager &audioStateManager_;

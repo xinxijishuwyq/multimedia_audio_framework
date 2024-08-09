@@ -3566,6 +3566,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
     for (auto it = connectedDevices_.begin(); it != connectedDevices_.end();) {
         it = find_if(it, connectedDevices_.end(), isPresent);
         if (it != connectedDevices_.end()) {
+            if ((*it)->deviceType_ == DEVICE_TYPE_DP) { hasDpDevice_ = false; }
             if ((*it)->deviceId_ == audioStateManager_.GetPreferredMediaRenderDevice()->deviceId_) {
                 audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
             }
@@ -3681,11 +3682,13 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(AudioDeviceDescriptor &up
 
     // DP device only for output.
     if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {
+        CHECK_AND_RETURN_RET_LOG(!hasDpDevice_, ERROR, "DP device already exists, ignore this one.");
         int32_t result = HandleDpDevice(updatedDesc.deviceType_, updatedDesc.macAddress_);
         if (result != SUCCESS) {
             result = RehandlePnpDevice(updatedDesc.deviceType_, OUTPUT_DEVICE, updatedDesc.macAddress_);
         }
-        return result;
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Load dp failed.");
+        hasDpDevice_ = true;
     }
 
     return SUCCESS;
