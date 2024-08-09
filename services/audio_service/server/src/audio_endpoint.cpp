@@ -39,6 +39,7 @@
 #include "i_stream_manager.h"
 #include "linear_pos_time_model.h"
 #include "policy_handler.h"
+#include "media_monitor_manager.h"
 #include "audio_log_utils.h"
 #ifdef DAUDIO_ENABLE
 #include "remote_fast_audio_renderer_sink.h"
@@ -166,6 +167,7 @@ public:
 
 private:
     AudioProcessConfig GetInnerCapConfig();
+    void StartThread(const IAudioSinkAttr &attr);
     void MixToDupStream(const std::vector<AudioStreamData> &srcDataList);
     bool ConfigInputPoint(const DeviceInfo &deviceInfo);
     int32_t PrepareDeviceBuffer(const DeviceInfo &deviceInfo);
@@ -272,6 +274,7 @@ private:
     size_t dupBufferSize_ = 0;
     std::unique_ptr<uint8_t []> dupBuffer_ = nullptr;
     FILE *dumpC2SDup_ = nullptr; // client to server inner-cap dump file
+    std::string dupDumpName_ = "";
 
     IMmapAudioRendererSink *fastSink_ = nullptr;
     IMmapAudioCapturerSource *fastSource_ = nullptr;
@@ -312,6 +315,8 @@ private:
     bool needReSyncPosition_ = true;
     FILE *dumpDcp_ = nullptr;
     FILE *dumpHdi_ = nullptr;
+    std::string dumpDcpName_ = "";
+    std::string dumpHdiName_ = "";
     mutable int64_t volumeDataCount_ = 0;
     std::string logUtilsTag_ = "";
 
@@ -451,11 +456,11 @@ int32_t AudioEndpointInner::InitDupStream()
     dupStream_->RegisterStatusCallback(dupStreamCallback_);
     dupStream_->RegisterWriteCallback(dupStreamCallback_);
 
-    // eg: /data/local/tmp/LocalDevice6_0_48000_2_1_c2s_dup.pcm
+    // eg: /data/local/tmp/LocalDevice6_0_c2s_dup_48000_2_1.pcm
     AudioStreamInfo tempInfo = processConfig.streamInfo;
-    std::string dupDumpName = GetEndpointName() + "_" + std::to_string(tempInfo.samplingRate) + "_" +
-        std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "_c2s_dup.pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dupDumpName, &dumpC2SDup_);
+    dupDumpName_ = GetEndpointName() + "_c2s_dup_" + std::to_string(tempInfo.samplingRate) + "_" +
+        std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dupDumpName_, &dumpC2SDup_);
 
     AUDIO_INFO_LOG("Dup Renderer %{public}d with Endpoint status: %{public}s", dupStreamIndex_,
         GetStatusStr(endpointStatus_).c_str());
@@ -650,6 +655,8 @@ bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
     updatePosTimeThread_ = std::thread([this] { this->AsyncGetPosTime(); });
     pthread_setname_np(updatePosTimeThread_.native_handle(), "OS_AudioEpUpdate");
 
+    dumpHdiName_ = "endpoint_hdi_audio_" + std::to_string(attr.sampleRate) + "_"
+        + std::to_string(attr.channel) + "_" + std::to_string(attr.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
     return true;
 }
@@ -676,6 +683,25 @@ IMmapAudioCapturerSource *AudioEndpointInner::GetFastSource(const std::string &n
         return FastAudioCapturerSource::GetVoipInstance();
     }
     return nullptr;
+}
+
+void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
+{
+    endpointStatus_ = UNLINKED;
+    isInited_.store(true);
+    endpointWorkThread_ = std::thread([this] { this->EndpointWorkLoopFuc(); });
+    pthread_setname_np(endpointWorkThread_.native_handle(), "OS_AudioEpLoop");
+
+    updatePosTimeThread_ = std::thread([this] { this->AsyncGetPosTime(); });
+    pthread_setname_np(updatePosTimeThread_.native_handle(), "OS_AudioEpUpdate");
+
+    dumpHdiName_ = "endpoint_hdi_audio_" + std::to_string(attr.sampleRate) + "_"
+        + std::to_string(attr.channel) + "_" + std::to_string(attr.format) + ".pcm";
+    dumpDcpName_ = "endpoint_dcp_audio_" + std::to_string(attr.sampleRate) + "_"
+        + std::to_string(attr.channel) + "_" + std::to_string(attr.format) + ".pcm";
+
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_DCP_FILENAME, &dumpDcp_);
 }
 
 bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
@@ -725,17 +751,7 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
 
     bool ret = readTimeModel_.ConfigSampleRate(dstStreamInfo_.samplingRate);
     CHECK_AND_RETURN_RET_LOG(ret != false, false, "Config LinearPosTimeModel failed.");
-
-    endpointStatus_ = UNLINKED;
-    isInited_.store(true);
-    endpointWorkThread_ = std::thread([this] { this->EndpointWorkLoopFuc(); });
-    pthread_setname_np(endpointWorkThread_.native_handle(), "OS_AudioEpLoop");
-
-    updatePosTimeThread_ = std::thread([this] { this->AsyncGetPosTime(); });
-    pthread_setname_np(updatePosTimeThread_.native_handle(), "OS_AudioEpUpdate");
-
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_DCP_FILENAME, &dumpDcp_);
+    StartThread(attr);
     return true;
 }
 
@@ -1456,6 +1472,10 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
             curReadSpan->readStartTime = ClockTime::GetCurNano();
             DumpFileUtil::WriteDumpFile(dumpDcp_, static_cast<void *>(streamData.bufferDesc.buffer),
                 streamData.bufferDesc.bufLength);
+            if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+                Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpDcpName_,
+                    static_cast<void *>(streamData.bufferDesc.buffer), streamData.bufferDesc.bufLength);
+            }
         }
     }
 }
@@ -1499,6 +1519,11 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
     DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
         dstStreamData.bufferDesc.bufLength);
     DfxOperation(dstStreamData.bufferDesc, dstStreamInfo_.format, dstStreamInfo_.channels);
+
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpHdiName_,
+            static_cast<void *>(dstStreamData.bufferDesc.buffer), dstStreamData.bufferDesc.bufLength);
+    }
 
     CheckUpdateState(reinterpret_cast<char *>(dstStreamData.bufferDesc.buffer),
         dstStreamData.bufferDesc.bufLength);
@@ -1876,7 +1901,10 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
     int32_t ret = dstAudioBuffer_->GetReadbuffer(curReadPos, readBuf);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get read buffer fail, ret %{public}d.", ret);
     DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(readBuf.buffer), readBuf.bufLength);
-
+    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpHdiName_,
+            static_cast<void *>(readBuf.buffer), readBuf.bufLength);
+    }
     WriteToProcessBuffers(readBuf);
     ret = memset_s(readBuf.buffer, readBuf.bufLength, 0, readBuf.bufLength);
     if (ret != EOK) {
