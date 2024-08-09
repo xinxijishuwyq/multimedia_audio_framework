@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <string>
 #include <map>
+#include <unordered_map>
 #include <mutex>
 #include <ctime>
 #include <sys/time.h>
@@ -229,8 +230,16 @@ public:
     static const std::string GetDeviceVolumeTypeName(DeviceVolumeType deviceType);
 };
 
-AudioStreamType GetVolumeTypeFromStreamType(AudioStreamType streamType);
-AudioStreamType GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage);
+class VolumeMapUtils {
+public:
+    static AudioStreamType GetVolumeTypeFromStreamType(AudioStreamType streamType);
+    static AudioStreamType GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage);
+
+private:
+    static std::unordered_map<AudioStreamType, AudioStreamType> defaultVolumeMap;
+    static std::unordered_map<AudioStreamType, AudioStreamType>& GetVolumeMap();
+};
+
 template<typename T>
 class ObjectRefMap {
 public:

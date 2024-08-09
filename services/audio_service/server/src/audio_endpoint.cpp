@@ -1436,7 +1436,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         AudioStreamData streamData;
         Volume vol = {true, 1.0f, 0};
         AudioStreamType streamType = processList_[i]->GetAudioStreamType();
-        AudioVolumeType volumeType = GetVolumeTypeFromStreamType(streamType);
+        AudioVolumeType volumeType = VolumeMapUtils::GetVolumeTypeFromStreamType(streamType);
         DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
         if (deviceInfo_.networkId == LOCAL_NETWORK_ID &&
             (deviceInfo_.deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || !isSupportAbsVolume_) &&

@@ -175,7 +175,7 @@ void VolumeDataMaintainer::SetStreamVolume(AudioStreamType streamType, int32_t v
 
 void VolumeDataMaintainer::SetStreamVolumeInternal(AudioStreamType streamType, int32_t volumeLevel)
 {
-    AudioStreamType streamForVolumeMap = GetVolumeTypeFromStreamType(streamType);
+    AudioStreamType streamForVolumeMap = VolumeMapUtils::GetVolumeTypeFromStreamType(streamType);
     volumeLevelMap_[streamForVolumeMap] = volumeLevel;
 }
 
@@ -187,7 +187,7 @@ int32_t VolumeDataMaintainer::GetStreamVolume(AudioStreamType streamType)
 
 int32_t VolumeDataMaintainer::GetStreamVolumeInternal(AudioStreamType streamType)
 {
-    AudioStreamType streamForVolumeMap = GetVolumeTypeFromStreamType(streamType);
+    AudioStreamType streamForVolumeMap = VolumeMapUtils::GetVolumeTypeFromStreamType(streamType);
     return volumeLevelMap_[streamForVolumeMap];
 }
 
@@ -241,7 +241,7 @@ bool VolumeDataMaintainer::SaveMuteStatusInternal(DeviceType deviceType, AudioSt
 bool VolumeDataMaintainer::SetStreamMuteStatus(AudioStreamType streamType, bool muteStatus)
 {
     std::lock_guard<std::mutex> lock(volumeMutex_);
-    AudioStreamType streamForVolumeMap = GetVolumeTypeFromStreamType(streamType);
+    AudioStreamType streamForVolumeMap = VolumeMapUtils::GetVolumeTypeFromStreamType(streamType);
     muteStatusMap_[streamForVolumeMap] = muteStatus;
     return true;
 }
@@ -283,7 +283,7 @@ bool VolumeDataMaintainer::GetStreamMute(AudioStreamType streamType)
 
 bool VolumeDataMaintainer::GetStreamMuteInternal(AudioStreamType streamType)
 {
-    AudioStreamType streamForVolumeMap = GetVolumeTypeFromStreamType(streamType);
+    AudioStreamType streamForVolumeMap = VolumeMapUtils::GetVolumeTypeFromStreamType(streamType);
     return muteStatusMap_[streamForVolumeMap];
 }
 

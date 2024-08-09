@@ -314,7 +314,7 @@ public:
 
     virtual std::pair<float, int32_t> OnGetVolumeDbCb(AudioStreamType streamType)
     {
-        AudioStreamType streamForVolumeMap = GetVolumeTypeFromStreamType(streamType);
+        AudioStreamType streamForVolumeMap = VolumeMapUtils::GetVolumeTypeFromStreamType(streamType);
         int32_t volumeLevel = audioAdapterManager_->GetStreamVolume(streamForVolumeMap);
 
         bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();

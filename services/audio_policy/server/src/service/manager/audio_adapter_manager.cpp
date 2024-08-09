@@ -341,7 +341,7 @@ void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
 
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 {
-    AudioStreamType streamForVolumeMap = GetVolumeTypeFromStreamType(streamType);
+    AudioStreamType streamForVolumeMap = VolumeMapUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t volumeLevel =
         volumeDataMaintainer_.GetStreamVolume(streamType) * (GetStreamMute(streamType) ? 0 : 1);
 
@@ -1090,7 +1090,7 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
 void AudioAdapterManager::ResetRemoteCastDeviceVolume()
 {
     for (auto &streamType: VOLUME_TYPE_LIST) {
-        AudioStreamType streamAlias = GetVolumeTypeFromStreamType(streamType);
+        AudioStreamType streamAlias = VolumeMapUtils::GetVolumeTypeFromStreamType(streamType);
         int32_t volumeLevel = GetMaxVolumeLevel(streamAlias);
         volumeDataMaintainer_.SaveVolume(DEVICE_TYPE_REMOTE_CAST, streamType, volumeLevel);
     }
@@ -1584,7 +1584,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
 {
     AUDIO_DEBUG_LOG("CalculateVolumeDbNonlinear for stream: %{public}d devicetype:%{public}d volumeLevel:%{public}d",
         streamType, deviceType, volumeLevel);
-    AudioStreamType streamAlias = GetVolumeTypeFromStreamType(streamType);
+    AudioStreamType streamAlias = VolumeMapUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t minVolIndex = GetMinVolumeLevel(streamAlias);
     int32_t maxVolIndex = GetMaxVolumeLevel(streamAlias);
     if (minVolIndex < 0 || maxVolIndex < 0 || minVolIndex >= maxVolIndex) {

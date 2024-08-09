@@ -836,7 +836,7 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
         if (changeInfo->rendererState != RENDERER_RUNNING) {
             continue;
         }
-        AudioStreamType rendererVolumeType = GetVolumeTypeFromContentUsage((changeInfo->rendererInfo).contentType,
+        AudioStreamType rendererVolumeType = VolumeMapUtils::GetVolumeTypeFromContentUsage((changeInfo->rendererInfo).contentType,
             (changeInfo->rendererInfo).streamUsage);
         if (rendererVolumeType == volumeType) {
             // An active stream has been found, return true directly.
@@ -1028,7 +1028,7 @@ void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStre
 void AudioStreamCollector::WriterRenderStreamChangeSysEvent(AudioStreamChangeInfo &streamChangeInfo)
 {
     bool isOutput = true;
-    AudioStreamType streamType = GetVolumeTypeFromContentUsage(
+    AudioStreamType streamType = VolumeMapUtils::GetVolumeTypeFromContentUsage(
         streamChangeInfo.audioRendererChangeInfo.rendererInfo.contentType,
         streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
     uint64_t transactionId = audioSystemMgr_->GetTransactionId(
@@ -1101,7 +1101,7 @@ void AudioStreamCollector::WriterCaptureStreamChangeSysEvent(AudioStreamChangeIn
 void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
     const std::unique_ptr<AudioRendererChangeInfo> &audioRendererChangeInfo)
 {
-    AudioStreamType streamType = GetVolumeTypeFromContentUsage(audioRendererChangeInfo->rendererInfo.contentType,
+    AudioStreamType streamType = VolumeMapUtils::GetVolumeTypeFromContentUsage(audioRendererChangeInfo->rendererInfo.contentType,
         audioRendererChangeInfo->rendererInfo.streamUsage);
     uint64_t transactionId = audioSystemMgr_->GetTransactionId(
         audioRendererChangeInfo->outputDeviceInfo.deviceType, OUTPUT_DEVICE);

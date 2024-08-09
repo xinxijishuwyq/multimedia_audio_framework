@@ -287,7 +287,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
         if (volumeApplyToAll_) {
             streamInFocus = AudioStreamType::STREAM_ALL;
         } else {
-            streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
+            streamInFocus = VolumeMapUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
         }
         if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(streamInFocus)) {
             AUDIO_INFO_LOG("VolumeKeyEvents: volumeKey: Up. volumeType %{public}d is mute. Unmute.", streamInFocus);
@@ -639,7 +639,7 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
         return ERR_PERMISSION_DENIED;
     }
 
-    AudioStreamType streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
+    AudioStreamType streamInFocus = VolumeMapUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
     if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
         streamInFocus = AudioStreamType::STREAM_MUSIC;
     }
