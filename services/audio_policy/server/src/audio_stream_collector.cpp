@@ -20,6 +20,7 @@
 
 #include "audio_client_tracker_callback_proxy.h"
 #include "audio_spatialization_service.h"
+#include "audio_utils.h"
 
 #include "media_monitor_manager.h"
 
