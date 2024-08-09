@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "audio_hdi_log.h": "c",
+        "audio_source_type.h": "c"
+    }
+}

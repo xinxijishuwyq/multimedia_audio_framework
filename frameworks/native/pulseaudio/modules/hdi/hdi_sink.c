@@ -44,7 +44,7 @@
 
 #include "securec.h"
 
-#include "audio_common_log.h"
+#include "audio_hdi_log.h"
 #include "audio_schedule.h"
 #include "audio_utils_c.h"
 #include "audio_hdiadapter_info.h"
