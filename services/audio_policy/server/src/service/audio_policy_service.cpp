@@ -5250,7 +5250,7 @@ void AudioPolicyService::WriteOutDeviceChangedSysEvents(const sptr<AudioDeviceDe
     bean->Add("STREAMID", sinkInput.streamId);
     bean->Add("STREAMTYPE", sinkInput.streamType);
     bean->Add("DEVICETYPE", deviceDescriptor->deviceType_);
-    bean->Add("NETWORKID", GetEncryptStr(deviceDescriptor->networkId_));
+    bean->Add("NETWORKID", ConvertNetworkId(deviceDescriptor->networkId_));
     bean->Add("ADDRESS", GetEncryptAddr(deviceDescriptor->macAddress_));
     bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
     bean->Add("BT_TYPE", deviceDescriptor->deviceCategory_);
@@ -5267,7 +5267,7 @@ void AudioPolicyService::WriteInDeviceChangedSysEvents(const sptr<AudioDeviceDes
     bean->Add("STREAMID", sourceOutput.streamId);
     bean->Add("STREAMTYPE", sourceOutput.streamType);
     bean->Add("DEVICETYPE", deviceDescriptor->deviceType_);
-    bean->Add("NETWORKID", GetEncryptStr(deviceDescriptor->networkId_));
+    bean->Add("NETWORKID", ConvertNetworkId(deviceDescriptor->networkId_));
     bean->Add("ADDRESS", GetEncryptAddr(deviceDescriptor->macAddress_));
     bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
     bean->Add("BT_TYPE", deviceDescriptor->deviceCategory_);

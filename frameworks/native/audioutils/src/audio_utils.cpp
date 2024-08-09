@@ -1214,6 +1214,15 @@ std::string GetEncryptStr(const std::string &src)
     return dst;
 }
 
+std::string ConvertNetworkId(const std::string &networkId)
+{
+    if (!networkId.empty() && networkId != LOCAL_NETWORK_ID) {
+        return REMOTE_NETWORK_ID;
+    }
+
+    return networkId;
+}
+
 AudioDump& AudioDump::GetInstance()
 {
     static AudioDump mAudioDump;

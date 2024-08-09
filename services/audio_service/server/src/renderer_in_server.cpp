@@ -177,6 +177,16 @@ int32_t RendererInServer::Init()
     return SUCCESS;
 }
 
+void RendererInServer::WriterRenderStreamStandbySysEvent()
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_STANDBY,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("STREAMID", static_cast<int32_t>(streamIndex_));
+    bean->Add("STANDBY", standByEnable_ ? 1 : 0);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 void RendererInServer::OnStatusUpdate(IOperation operation)
 {
     AUDIO_INFO_LOG("%{public}u recv operation:%{public}d standByEnable_:%{public}s", streamIndex_, operation,
@@ -191,6 +201,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
                 standByEnable_ = false;
                 AUDIO_INFO_LOG("%{public}u recv stand by started", streamIndex_);
                 audioServerBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
+                WriterRenderStreamStandbySysEvent();
                 return;
             }
             status_ = I_STATUS_STARTED;
@@ -201,6 +212,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             if (standByEnable_) {
                 AUDIO_INFO_LOG("%{public}s recv stand by paused", traceTag_.c_str());
                 audioServerBuffer_->GetStreamStatus()->store(STREAM_STAND_BY);
+                WriterRenderStreamStandbySysEvent();
                 return;
             }
             status_ = I_STATUS_PAUSED;
