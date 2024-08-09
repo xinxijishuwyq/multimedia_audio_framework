@@ -1221,7 +1221,7 @@ std::unordered_map<AudioStreamType, AudioStreamType>& VolumeMapUtils::GetVolumeM
 }
 
 AudioStreamType VolumeMapUtils::GetVolumeTypeFromStreamType(AudioStreamType streamType) {
-    std::unordered_map<AudioStreamType, AudioStreamType> map = GetVolumeMapp();
+    std::unordered_map<AudioStreamType, AudioStreamType> map = GetVolumeMap();
     auto it = map.find(streamType);
     if (it != map.end()) {
         return it->second;
