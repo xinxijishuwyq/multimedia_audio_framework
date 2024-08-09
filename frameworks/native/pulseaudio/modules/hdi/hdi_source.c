@@ -35,7 +35,7 @@
 #include <stdint.h>
 
 #include "audio_hdiadapter_info.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_source_type.h"
 #include "audio_utils_c.h"
 #include "capturer_source_adapter.h"

@@ -34,7 +34,7 @@
 #include <v1_0/iaudio_manager.h>
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_utils.h"
 #include "i_audio_device_adapter.h"
 #include "i_audio_device_manager.h"
