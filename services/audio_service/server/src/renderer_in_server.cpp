@@ -281,9 +281,7 @@ void RendererInServer::StandByCheck()
     }
 
     // call enable stand by
-    std::unique_lock<std::mutex> lock(statusLock_);
     standByEnable_ = true;
-    lock.unlock();
     // PaAdapterManager::PauseRender will hold mutex, may cause dead lock with pa_lock
     if (managerType_ == PLAYBACK) {
         stream_->Pause();
