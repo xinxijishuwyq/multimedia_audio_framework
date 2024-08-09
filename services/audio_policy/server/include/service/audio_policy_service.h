@@ -741,6 +741,8 @@ private:
 
     void SetOffloadVolume(AudioStreamType streamType, int32_t volume);
 
+    void SetOffloadMute(AudioStreamType streamType, bool mute);
+
     AudioStreamType OffloadStreamType();
 
     void RemoveDeviceInRouterMap(std::string networkId);
