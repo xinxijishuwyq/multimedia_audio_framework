@@ -942,7 +942,7 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute,
     SetSharedVolume(streamType, currentActiveDevice_.deviceType_, vol);
 
     // offload sink mute
-    SetOffloadMute(streamType, mute, streamUsage);
+    SetOffloadMute(streamType, mute);
     return result;
 }
 
