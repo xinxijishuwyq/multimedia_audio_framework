@@ -481,7 +481,6 @@ private:
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi);
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi);
     bool GetStreamMuteInternal(AudioStreamType streamType);
-    AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
     bool IsVolumeTypeValid(AudioStreamType streamType);
     bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
 

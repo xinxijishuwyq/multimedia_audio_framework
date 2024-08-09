@@ -675,7 +675,7 @@ void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
 float ProRendererStreamImpl::GetStreamVolume()
 {
     float volume = 1.0f;
-    AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(processConfig_.streamType);
+    AudioVolumeType volumeType = GetVolumeTypeFromStreamType(processConfig_.streamType);
     DeviceType currentOutputDevice = PolicyHandler::GetInstance().GetActiveOutPutDevice();
     Volume vol = {true, 1.0f, 0};
     if (PolicyHandler::GetInstance().GetSharedVolume(volumeType, currentOutputDevice, vol)) {

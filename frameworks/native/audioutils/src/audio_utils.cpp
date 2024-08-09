@@ -1189,6 +1189,56 @@ const std::string AudioInfoDumpUtils::GetDeviceVolumeTypeName(DeviceVolumeType d
     return deviceTypeName;
 }
 
+static std::unordered_map<AudioVolumeType, AudioStreamType> g_defaultVolumeMap = {
+    {STREAM_VOICE_CALL, STREAM_VOICE_CALL},
+    {STREAM_VOICE_MESSAGE, STREAM_VOICE_CALL},
+    {STREAM_VOICE_COMMUNICATION, STREAM_VOICE_CALL},
+    {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL},
+
+    {STREAM_RING, STREAM_RING},
+    {STREAM_SYSTEM, STREAM_RING},
+    {STREAM_NOTIFICATION, STREAM_RING},
+    {STREAM_SYSTEM_ENFORCED, STREAM_RING},
+    {STREAM_DTMF, STREAM_RING},
+    {STREAM_VOICE_RING, STREAM_RING},
+
+    {STREAM_MUSIC, STREAM_MUSIC},
+    {STREAM_MEDIA, STREAM_MUSIC},
+    {STREAM_MOVIE, STREAM_MUSIC},
+    {STREAM_GAME, STREAM_MUSIC},
+    {STREAM_SPEECH, STREAM_MUSIC},
+    {STREAM_NAVIGATION, STREAM_MUSIC},
+
+    {STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
+    {STREAM_ALARM, STREAM_ALARM},
+    {STREAM_ACCESSIBILITY, STREAM_ACCESSIBILITY},
+    {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
+    {STREAM_ALL, STREAM_ALL},
+}
+static std::unordered_map<AudioVolumeType, AudioStreamType>& GetVolumeMap() {
+    return g_defaultVolumeMap;
+}
+
+AudioVolumeType GetVolumeTypeFromStreamType(AudioVolumeType streamType) {
+    std::unordered_map<AudioVolumeType, AudioStreamType> map = GetVolumeMap();
+    auto it = map.find(streamType);
+    if (it != map.end()) {
+        return it->second;
+    }
+    return STREAM_MUSIC;
+}
+
+AudioStreamType GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage)
+{
+    AudioStreamType streamType = STREAM_MUSIC;
+    auto pos = streamTypeMap_.find(make_pair(contentType, streamUsage));
+    if (pos != streamTypeMap_.end()) {
+        streamType = pos->second;
+    }
+    return GetVolumeTypeFromStreamType(streamType);
+}
+
+
 std::string GetEncryptStr(const std::string &src)
 {
     if (src.empty()) {

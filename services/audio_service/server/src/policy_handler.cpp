@@ -109,43 +109,6 @@ bool PolicyHandler::InitVolumeMap()
     return true;
 }
 
-AudioVolumeType PolicyHandler::GetVolumeTypeFromStreamType(AudioStreamType streamType)
-{
-    switch (streamType) {
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_MESSAGE:
-        case STREAM_VOICE_COMMUNICATION:
-        case STREAM_VOICE_CALL_ASSISTANT:
-            return STREAM_VOICE_CALL;
-        case STREAM_RING:
-        case STREAM_SYSTEM:
-        case STREAM_NOTIFICATION:
-        case STREAM_SYSTEM_ENFORCED:
-        case STREAM_DTMF:
-        case STREAM_VOICE_RING:
-            return STREAM_RING;
-        case STREAM_MUSIC:
-        case STREAM_MEDIA:
-        case STREAM_MOVIE:
-        case STREAM_GAME:
-        case STREAM_SPEECH:
-        case STREAM_NAVIGATION:
-            return STREAM_MUSIC;
-        case STREAM_VOICE_ASSISTANT:
-            return STREAM_VOICE_ASSISTANT;
-        case STREAM_ALARM:
-            return STREAM_ALARM;
-        case STREAM_ACCESSIBILITY:
-            return STREAM_ACCESSIBILITY;
-        case STREAM_ULTRASONIC:
-            return STREAM_ULTRASONIC;
-        case STREAM_ALL:
-            return STREAM_ALL;
-        default:
-            return STREAM_MUSIC;
-    }
-}
-
 bool PolicyHandler::GetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume &vol)
 {
     CHECK_AND_RETURN_RET_LOG((iPolicyProvider_ != nullptr && volumeVector_ != nullptr), false,
