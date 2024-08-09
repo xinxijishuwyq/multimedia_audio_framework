@@ -1039,28 +1039,6 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
             break;
     }
 }
-
-int32_t PulseAudioServiceAdapterImpl::UpdateSwapDeviceStatus()
-{
-    CHECK_AND_RETURN_RET_LOG(mContext != nullptr, ERROR, "UpdateClusterModule mContext is nullptr");
-    PaLockGuard palock(mMainLoop);
-
-    swapStatus = 1 - swapStatus;
-    pa_proplist *proplist = pa_proplist_new();
-    if (proplist == nullptr) {
-        AUDIO_ERR_LOG("Update swap status and new proplist return nullptr!");
-        return ERROR;
-    }
-    pa_proplist_sets(proplist, "device.swap.status", std::to_string(swapStatus).c_str());
-    pa_operation *operation = pa_context_proplist_update(mContext, PA_UPDATE_REPLACE, proplist, nullptr, nullptr);
-    if (operation == nullptr) {
-        AUDIO_ERR_LOG("UpdateClusterModule pa_context_proplist_update returned nullptr");
-        return ERROR;
-    }
-
-    pa_operation_unref(operation);
-    return SUCCESS;
-}
 } // namespace AudioStandard
 } // namespace OHOS
 
