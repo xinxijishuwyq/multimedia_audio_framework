@@ -1088,6 +1088,8 @@ private:
     std::mutex offloadMutex_;
 
     AudioModuleInfo primaryMicModuleInfo_ = {};
+    std::mutex defaultDeviceLoadMutex_;
+    std::condition_variable loadDefaultDeviceCV_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
     std::atomic<bool> isAdapterInfoMap_ = false;
 

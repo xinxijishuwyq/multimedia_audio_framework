@@ -67,6 +67,7 @@ static const int64_t SET_BT_ABS_SCENE_DELAY_MS = 120000; // 120ms
 static const int64_t NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS = 300000; // 300ms
 static const unsigned int BUFFER_CALC_20MS = 20;
 static const unsigned int BUFFER_CALC_1000MS = 1000;
+static const int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_US = 500000; // 500ms
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -4385,7 +4386,10 @@ bool AudioPolicyService::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo 
         AddAudioDevice(moduleInfo, devType);
     }
 
+    std::lock_guard<std::mutex> lock(defaultDeviceLoadMutex_);
     isPrimaryMicModuleInfoLoaded_ = true;
+    loadDefaultDeviceCV_.notify_all();
+
     return true;
 }
 
@@ -5987,8 +5991,19 @@ DeviceType AudioPolicyService::GetDeviceTypeFromPin(AudioPin hdiPin)
 
 std::vector<sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
 {
-    std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos = {};
+    if (!isPrimaryMicModuleInfoLoaded_.load()) {
+        std::unique_lock<std::mutex> lock(defaultDeviceLoadMutex_);
+        bool loadWaiting = loadDefaultDeviceCV_.wait_for(lock,
+            std::chrono::milliseconds(WAIT_LOAD_DEFAULT_DEVICE_TIME_US),
+            [this] { return isPrimaryMicModuleInfoLoaded_.load(); }
+        );
+        if (!loadWaiting) {
+            AUDIO_ERR_LOG("load default device time out");
+        }
+    }
 
+    std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos = {};
+    std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
     for (auto& v : volumeGroups_) {
         sptr<VolumeGroupInfo> info = new(std::nothrow) VolumeGroupInfo(v->volumeGroupId_, v->mappingId_, v->groupName_,
             v->networkId_, v->connectType_);
