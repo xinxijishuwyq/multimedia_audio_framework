@@ -55,7 +55,6 @@ public:
         uint32_t sessionId, const InterruptEventInternal &interruptEvent) override;
 
     void Init(sptr<AudioPolicyServer> server);
-    // void InitSessionService(const std::shared_ptr<AudioSessionService> &sessionService);
     void AddDumpInfo(std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> &audioInterruptZonesMapDump);
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
 
@@ -65,7 +64,7 @@ public:
     // interfaces for AudioSessionService
     int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy);
     int32_t DeactivateAudioSession(const int32_t callerPid);
-    bool IsAudioSessionActive(const int32_t callerPid);
+    bool IsAudioSessionActivated(const int32_t callerPid);
 
     // deprecated interrupt interfaces
     int32_t SetAudioManagerInterruptCallback(const sptr<IRemoteObject> &object);
@@ -200,7 +199,7 @@ private:
         const AudioFocusEntry &focusEntry);
     bool IsIncomingStreamLowPriority(const AudioFocusEntry &focusEntry);
     bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
-    void UpdateHintTypeForSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
+    void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void HandleSessionTimeOutEvent(const int32_t pid);
     void HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId);
 

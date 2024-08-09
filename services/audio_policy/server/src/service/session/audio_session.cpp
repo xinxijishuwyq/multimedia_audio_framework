@@ -79,8 +79,8 @@ int32_t AudioSession::AddAudioInterrpt(const std::pair<AudioInterrupt, AudioFocu
         AUDIO_WARNING_LOG("The streamId has been added. The old interrupt will be coverd.");
     }
     interruptMap_[streamId] = interruptPair;
-    if (!sessionTimer_->IsSessionTimerRunning(callerPid_)) {
-        sessionTimer_->StartTimer(callerPid_);
+    if (sessionTimer_ != nullptr && sessionTimer_->IsSessionTimerRunning(callerPid_)) {
+        sessionTimer_->StopTimer(callerPid_);
     }
     return SUCCESS;
 }
@@ -96,8 +96,8 @@ int32_t AudioSession::RemoveAudioInterrpt(const std::pair<AudioInterrupt, AudioF
         return SUCCESS;
     }
     interruptMap_.erase(streamId);
-    if (interruptMap_.empty() && sessionTimer_->IsSessionTimerRunning(callerPid_)) {
-        sessionTimer_->StopTimer(callerPid_);
+    if (interruptMap_.empty() && sessionTimer_ != nullptr && !sessionTimer_->IsSessionTimerRunning(callerPid_)) {
+        sessionTimer_->StartTimer(callerPid_);
     }
     return SUCCESS;
 }
@@ -112,8 +112,8 @@ int32_t AudioSession::RemoveAudioInterrptByStreamId(const uint32_t &streamId)
         return SUCCESS;
     }
     interruptMap_.erase(streamId);
-    if (interruptMap_.empty() && sessionTimer_->IsSessionTimerRunning(callerPid_)) {
-        sessionTimer_->StopTimer(callerPid_);
+    if (interruptMap_.empty() && sessionTimer_ != nullptr && !sessionTimer_->IsSessionTimerRunning(callerPid_)) {
+        sessionTimer_->StartTimer(callerPid_);
     }
     return SUCCESS;
 }

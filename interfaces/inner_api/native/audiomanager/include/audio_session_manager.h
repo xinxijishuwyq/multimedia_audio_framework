@@ -64,7 +64,7 @@ public:
      * @return Returns <b>true</b> if the audio session is active; returns <b>false</b> otherwise.
      * @since 12
      */
-    bool IsAudioSessionActive();
+    bool IsAudioSessionActivated();
 
     /**
      * @brief Set audio session callback.

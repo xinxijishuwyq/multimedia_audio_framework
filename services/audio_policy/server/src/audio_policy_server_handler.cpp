@@ -995,6 +995,9 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
         case EventAudioServerCmd::CONCURRENCY_EVENT_WITH_SESSIONID:
             HandleConcurrencyEventWithSessionID(event);
             break;
+        case EventAudioServerCmd::AUDIO_SESSION_DEACTIVE_EVENT:
+            HandleAudioSessionDeactiveCallback(event);
+            break;
         default:
             break;
     }
@@ -1046,9 +1049,6 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
             break;
         case EventAudioServerCmd::HEAD_TRACKING_ENABLED_CHANGE:
             HandleHeadTrackingEnabledChangeEvent(event);
-            break;
-        case EventAudioServerCmd::AUDIO_SESSION_DEACTIVE_EVENT:
-            HandleAudioSessionDeactiveCallback(event);
             break;
         default:
             break;

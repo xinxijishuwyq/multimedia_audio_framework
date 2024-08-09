@@ -105,7 +105,7 @@ public:
 
     virtual int32_t DeactivateAudioSession() = 0;
 
-    virtual bool IsAudioSessionActive() = 0;
+    virtual bool IsAudioSessionActivated() = 0;
 
     virtual int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;

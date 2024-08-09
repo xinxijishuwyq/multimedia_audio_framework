@@ -29,8 +29,8 @@ struct AudioSessionStrategy {
 };
 
 enum class AudioSessionDeactiveReason {
-    LOW_PRIORITY = 0, // 应用焦点被抢占
-    TIMEOUT = 1, // 会话超时（1分钟没有音频流）
+    LOW_PRIORITY = 0, // All audio streams have been interrupted.
+    TIMEOUT = 1, // The audio session remains empty for one minute.
 };
 
 struct AudioSessionDeactiveEvent {

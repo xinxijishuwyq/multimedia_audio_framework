@@ -44,12 +44,10 @@ static const std::unordered_map<AudioStreamType, AudioSessionType> SESSION_TYPE_
 
 AudioSessionService::AudioSessionService()
 {
-    Init();
 }
 
 AudioSessionService::~AudioSessionService()
 {
-    AUDIO_ERR_LOG("should not happen");
 }
 
 void AudioSessionService::Init()
@@ -60,13 +58,14 @@ void AudioSessionService::Init()
     sessionTimer_->SetAudioSessionTimerCallback(shared_from_this());
 }
 
-bool AudioSessionService::IsSameTypeForAudioSession(const AudioStreamType &newType, const AudioStreamType &oldType)
+bool AudioSessionService::IsSameTypeForAudioSession(const AudioStreamType incomingType,
+    const AudioStreamType existedType)
 {
-    if (SESSION_TYPE_MAP.count(newType) == 0 || SESSION_TYPE_MAP.count(oldType) == 0) {
-        AUDIO_WARNING_LOG("The stream type (new: %{public}d or old: %{public}d) is invalid!", newType, oldType);
+    if (SESSION_TYPE_MAP.count(incomingType) == 0 || SESSION_TYPE_MAP.count(existedType) == 0) {
+        AUDIO_WARNING_LOG("The stream type (new:%{public}d or old:%{public}d) is invalid!", incomingType, existedType);
         return false;
     }
-    return SESSION_TYPE_MAP.at(newType) == SESSION_TYPE_MAP.at(oldType);
+    return SESSION_TYPE_MAP.at(incomingType) == SESSION_TYPE_MAP.at(existedType);
 }
 
 int32_t AudioSessionService::ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy)
@@ -95,7 +94,7 @@ int32_t AudioSessionService::DeactivateAudioSession(const int32_t callerPid)
     return DeactivateAudioSessionInternal(callerPid);
 }
 
-int32_t AudioSessionService::DeactivateAudioSessionInternal(const int32_t callerPid)
+int32_t AudioSessionService::DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout)
 {
     AUDIO_INFO_LOG("DeactivateAudioSessionInternal: callerPid %{public}d", callerPid);
     if (sessionMap_.count(callerPid) == 0) {
@@ -106,12 +105,14 @@ int32_t AudioSessionService::DeactivateAudioSessionInternal(const int32_t caller
     sessionMap_[callerPid]->Deactivate();
     sessionMap_.erase(callerPid);
 
-    sessionTimer_->StopTimer(callerPid);
+    if (!isSessionTimeout) {
+        sessionTimer_->StopTimer(callerPid);
+    }
 
     return SUCCESS;
 }
 
-bool AudioSessionService::IsAudioSessionActive(const int32_t callerPid)
+bool AudioSessionService::IsAudioSessionActivated(const int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     if (sessionMap_.count(callerPid) == 0) {
@@ -119,9 +120,7 @@ bool AudioSessionService::IsAudioSessionActive(const int32_t callerPid)
         AUDIO_WARNING_LOG("The audio seesion of pid %{public}d is not found!", callerPid);
         return false;
     }
-    AudioSessionState state = sessionMap_[callerPid]->GetSessionState();
-
-    return state == AudioSessionState::SESSION_ACTIVE;
+    return true;
 }
 
 int32_t AudioSessionService::SetSessionTimeOutCallback(
@@ -148,18 +147,13 @@ std::shared_ptr<AudioSession> AudioSessionService::GetAudioSessionByPid(const in
     return sessionMap_[callerPid];
 }
 
-int32_t AudioSessionService::DeactivateSessionByInterruptService(const int32_t callerPid)
-{
-    return SUCCESS;
-}
-
 // Audio session timer callback
 void AudioSessionService::OnAudioSessionTimeOut(const int32_t callerPid)
 {
     AUDIO_INFO_LOG("OnAudioSessionTimeOut: callerPid %{public}d", callerPid);
-    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-
-    DeactivateAudioSessionInternal(callerPid);
+    std::unique_lock<std::mutex> lock(sessionServiceMutex_);
+    DeactivateAudioSessionInternal(callerPid, true);
+    lock.unlock();
 
     auto cb = timeOutCallback_.lock();
     if (cb == nullptr) {

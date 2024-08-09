@@ -163,7 +163,7 @@ public:
 
     int32_t DeactivateAudioSession();
 
-    bool IsAudioSessionActive();
+    bool IsAudioSessionActivated();
 
     int32_t SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback);
 

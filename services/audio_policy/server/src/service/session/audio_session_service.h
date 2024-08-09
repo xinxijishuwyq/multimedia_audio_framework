@@ -33,27 +33,25 @@ public:
 class AudioSessionService : public AudioSessionTimerCallback, public std::enable_shared_from_this<AudioSessionService> {
 public:
     AudioSessionService();
-    virtual ~AudioSessionService();
+    ~AudioSessionService() override;
 
     // Audio session manager interfaces
     int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy);
     int32_t DeactivateAudioSession(const int32_t callerPid);
-    bool IsAudioSessionActive(const int32_t callerPid);
+    bool IsAudioSessionActivated(const int32_t callerPid);
 
     // Audio session timer callback
     void OnAudioSessionTimeOut(const int32_t callerPid) override;
 
     // other public interfaces
+    void Init();
     int32_t SetSessionTimeOutCallback(const std::shared_ptr<SessionTimeOutCallback> &timeOutCallback);
     std::shared_ptr<AudioSession> GetAudioSessionByPid(const int32_t callerPid);
-    int32_t DeactivateSessionByInterruptService(const int32_t callerPid);
 
-    static bool IsSameTypeForAudioSession(const AudioStreamType &newType, const AudioStreamType &oldType);
+    static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
 
 private:
-    void Init();
-    int32_t DeactivateAudioSessionInternal(const int32_t callerPid);
-    // void SendAudioSessionDeactiveEvent(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
+    int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);
 
     std::mutex sessionServiceMutex_;
     std::shared_ptr<AudioSessionTimer> sessionTimer_;

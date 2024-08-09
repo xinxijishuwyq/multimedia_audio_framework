@@ -1628,7 +1628,6 @@ int32_t AudioPolicyManager::SetHighResolutionExist(bool highResExist)
 
 int32_t AudioPolicyManager::ActivateAudioSession(const AudioSessionStrategy &strategy)
 {
-    AUDIO_INFO_LOG("ActivateAudioSession");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->ActivateAudioSession(strategy);
@@ -1636,23 +1635,20 @@ int32_t AudioPolicyManager::ActivateAudioSession(const AudioSessionStrategy &str
 
 int32_t AudioPolicyManager::DeactivateAudioSession()
 {
-    AUDIO_INFO_LOG("DeactivateAudioSession");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->DeactivateAudioSession();
 }
 
-bool AudioPolicyManager::IsAudioSessionActive()
+bool AudioPolicyManager::IsAudioSessionActivated()
 {
-    AUDIO_INFO_LOG("IsAudioSessionActive");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
-    return gsp->IsAudioSessionActive();
+    return gsp->IsAudioSessionActivated();
 }
 
 int32_t AudioPolicyManager::SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
 {
-    AUDIO_INFO_LOG("SetAudioSessionCallback");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(audioSessionCallback != nullptr, ERR_INVALID_PARAM, "audioSessionCallback is nullptr");
@@ -1664,27 +1660,29 @@ int32_t AudioPolicyManager::SetAudioSessionCallback(const std::shared_ptr<AudioS
             return result;
         }
     }
-    audioPolicyClientStubCB_->AddAudioSessionCallback(audioSessionCallback);
-    return SUCCESS;
-
+    if (audioPolicyClientStubCB_ == nullptr) {
+        AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null");
+        return ERROR_ILLEGAL_STATE;
+    }
+    return audioPolicyClientStubCB_->AddAudioSessionCallback(audioSessionCallback);
 }
 
 int32_t AudioPolicyManager::UnsetAudioSessionCallback()
 {
-    AUDIO_INFO_LOG("Remove all audio session callbacks");
-    if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->RemoveAudioSessionCallback();
+    if (audioPolicyClientStubCB_ == nullptr) {
+        AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null");
+        return ERROR_ILLEGAL_STATE;
     }
-    return SUCCESS;
+    return audioPolicyClientStubCB_->RemoveAudioSessionCallback();
 }
 
 int32_t AudioPolicyManager::UnsetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
 {
-    AUDIO_INFO_LOG("Remove one audio session callbacks");
-    if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->RemoveAudioSessionCallback(audioSessionCallback);
+    if (audioPolicyClientStubCB_ == nullptr) {
+        AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null");
+        return ERROR_ILLEGAL_STATE;
     }
-    return SUCCESS;
+    return audioPolicyClientStubCB_->RemoveAudioSessionCallback(audioSessionCallback);
 }
 
 AudioSpatializationSceneType AudioPolicyManager::GetSpatializationSceneType()

@@ -31,7 +31,6 @@ AudioSessionTimer::AudioSessionTimer()
 
 AudioSessionTimer::~AudioSessionTimer()
 {
-
 }
 
 void AudioSessionTimer::StartTimer(const int32_t callerPid)
@@ -88,11 +87,9 @@ bool AudioSessionTimer::IsSessionTimerRunning(const int32_t callerPid)
 
 void AudioSessionTimer::TimerLoopFunc()
 {
-    AUDIO_INFO_LOG("1");
-    for(;;) {
-        AUDIO_INFO_LOG("2");
+    AUDIO_INFO_LOG("Start the session timer loop");
+    for (;;) {
         std::unique_lock<std::mutex> lock(sessionTimerMutex_);
-        AUDIO_INFO_LOG("3");
         if (timerMap_.empty()) {
             AUDIO_INFO_LOG("The audio session timer map is empty. Exit.");
             break;
@@ -105,7 +102,7 @@ void AudioSessionTimer::TimerLoopFunc()
                 SendSessionTimeOutCallback(iter->first);
                 iter = timerMap_.erase(iter);
             } else {
-                iter++;
+                ++iter;
             }
         }
         lock.unlock();
@@ -115,7 +112,7 @@ void AudioSessionTimer::TimerLoopFunc()
         bool waitResult = timerCond_.wait_for(loopLock, std::chrono::seconds(1),
             [this]() { return (state_ == TimerState::TIMER_STOPPED); });
         if (!waitResult) {
-            AUDIO_INFO_LOG("sleep 1s. continue.");
+            AUDIO_DEBUG_LOG("sleep 1s. continue.");
         }
         if (state_ == TimerState::TIMER_STOPPED) {
             AUDIO_INFO_LOG("The audio session timer has been stopped!");

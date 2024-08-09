@@ -767,19 +767,20 @@ int32_t AudioPolicyProxy::DeactivateAudioSession()
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::IsAudioSessionActive()
+bool AudioPolicyProxy::IsAudioSessionActivated()
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
     int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_SESSION_ACTIVE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "activate interrupt failed, error: %{public}d", error);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_SESSION_ACTIVATED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false,
+        "Failed to query IsAudioSessionActivated, error: %{public}d", error);
 
-    return reply.ReadInt32();
+    return reply.ReadBool();
 }
 
 void AudioPolicyProxy::ReadAudioFocusInfo(MessageParcel &reply,

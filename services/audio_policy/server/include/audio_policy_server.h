@@ -183,7 +183,7 @@ public:
 
     int32_t DeactivateAudioSession() override;
 
-    bool IsAudioSessionActive() override;
+    bool IsAudioSessionActivated() override;
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
         const sptr<IRemoteObject> &object, const int32_t zoneId = 0) override;
@@ -477,6 +477,7 @@ private:
     void CheckSubscribePowerStateChange();
 
     void CheckStreamMode(const int64_t activateSessionId);
+    bool CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy);
 
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
@@ -535,7 +536,6 @@ private:
 
     AudioPolicyService& audioPolicyService_;
     std::shared_ptr<AudioInterruptService> interruptService_;
-    // std::shared_ptr<AudioSessionService> sessionService_;
 
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;

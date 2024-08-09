@@ -115,7 +115,7 @@ public:
 
     int32_t DeactivateAudioSession() override;
 
-    bool IsAudioSessionActive() override;
+    bool IsAudioSessionActivated() override;
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
         const sptr<IRemoteObject> &object, const int32_t zoneID = 0) override;
