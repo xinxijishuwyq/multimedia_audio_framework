@@ -332,14 +332,16 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
 
 int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
 {
+    Trace trace("PaRendererStreamImpl::GetCurrentPosition");
     PaLockGuard lock(mainloop_);
-    pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
-    if (operation != nullptr) {
-        pa_operation_unref(operation);
-    } else {
-        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
-        return ERR_OPERATION_FAILED;
+
+    pa_usec_t curTimeGetLatency = pa_rtclock_now();
+    if (curTimeGetLatency - preTimeGetPaLatency_ > 20000 || firstGetPaLatency_) { // 20000 cycle time
+        UpdatePaTimingInfo();
+        firstGetPaLatency_ = false;
+        preTimeGetPaLatency_ = curTimeGetLatency;
     }
+
     pa_usec_t paLatency {0};
     int32_t negative {0};
     if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0) {
@@ -401,7 +403,7 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
             pa_threaded_mainloop_signal(this->mainloop_, 0);
         }, nullptr, XcollieFlag);
     pa_usec_t curTimeGetLatency = pa_rtclock_now();
-    if (curTimeGetLatency - preTimeGetLatency_ < 20000 && !firstGetLatency_ && offloadEnable_) { // 20000 cycle time
+    if (curTimeGetLatency - preTimeGetLatency_ < 20000 && !firstGetLatency_) { // 20000 cycle time
         latency = preLatency_;
         return SUCCESS;
     }
@@ -413,15 +415,7 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
     pa_usec_t cacheLatency {0};
     int32_t negative {0};
 
-    pa_operation *operation = pa_stream_update_timing_info(paStream_, PAStreamUpdateTimingInfoSuccessCb, (void *)this);
-    if (operation != nullptr) {
-        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-            pa_threaded_mainloop_wait(mainloop_);
-        }
-        pa_operation_unref(operation);
-    } else {
-        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
-    }
+    UpdatePaTimingInfo();
 
     if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0) {
         if (negative) {
@@ -1206,6 +1200,19 @@ int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
     AUDIO_PRERELEASE_LOGI("set client volume success");
 
     return SUCCESS;
+}
+
+void PaRendererStreamImpl::UpdatePaTimingInfo()
+{
+    pa_operation *operation = pa_stream_update_timing_info(paStream_, PAStreamUpdateTimingInfoSuccessCb, (void *)this);
+    if (operation != nullptr) {
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(mainloop_);
+        }
+        pa_operation_unref(operation);
+    } else {
+        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
