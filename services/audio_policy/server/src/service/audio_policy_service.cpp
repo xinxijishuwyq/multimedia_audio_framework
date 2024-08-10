@@ -4541,9 +4541,7 @@ void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
             std::string identity = IPCSkeleton::ResetCallingIdentity();
             gsp->SetOutputDeviceSink(deviceType, sinkName);
             IPCSkeleton::SetCallingIdentity(identity);
-
-            int res = audioPolicyManager_.UpdateSwapDeviceStatus();
-            CHECK_AND_RETURN_LOG(res == SUCCESS, "Failed to update client swap device status");
+            
             break;
         }
         default:

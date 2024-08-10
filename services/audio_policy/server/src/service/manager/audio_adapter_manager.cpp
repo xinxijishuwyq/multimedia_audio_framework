@@ -1581,13 +1581,6 @@ float AudioAdapterManager::GetMaxStreamVolume() const
     return MAX_STREAM_VOLUME;
 }
 
-int32_t AudioAdapterManager::UpdateSwapDeviceStatus()
-{
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
-        "UpdateSwapDeviceStatus audio adapter null");
-    return audioServiceAdapter_->UpdateSwapDeviceStatus();
-}
-
 bool AudioAdapterManager::IsVolumeUnadjustable()
 {
     return isVolumeUnadjustable_;
