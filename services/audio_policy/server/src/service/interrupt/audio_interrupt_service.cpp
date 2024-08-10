@@ -351,7 +351,7 @@ void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int &
                 CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is nullptr");
                 handler_->SendInterruptEventWithSessionIdCallback(interruptEvent, (*it).first.sessionId);
                 CHECK_AND_RETURN_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
-                audioInterruptZone->audioFocusInfoList.erase(it);
+                it = audioInterruptZone->audioFocusInfoList.erase(it);
             }
         }
     }
