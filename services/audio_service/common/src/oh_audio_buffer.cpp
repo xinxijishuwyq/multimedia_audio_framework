@@ -561,6 +561,7 @@ int32_t OHAudioBuffer::SetCurWriteFrame(uint64_t writeFrame)
 
 int32_t OHAudioBuffer::SetCurReadFrame(uint64_t readFrame)
 {
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, ERR_INVALID_PARAM, "basicBufferInfo_ is nullptr");
     uint64_t oldBasePos = basicBufferInfo_->basePosInFrame.load();
     uint64_t oldReadPos = basicBufferInfo_->curReadFrame.load();
     if (readFrame == oldReadPos) {
