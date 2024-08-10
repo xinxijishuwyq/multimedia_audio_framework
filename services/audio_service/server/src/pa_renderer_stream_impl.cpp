@@ -334,6 +334,9 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
 {
     Trace trace("PaRendererStreamImpl::GetCurrentPosition");
     PaLockGuard lock(mainloop_);
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
+    }
 
     pa_usec_t curTimeGetLatency = pa_rtclock_now();
     if (curTimeGetLatency - preTimeGetPaLatency_ > 20000 || firstGetPaLatency_) { // 20000 cycle time
