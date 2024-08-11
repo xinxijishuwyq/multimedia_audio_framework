@@ -47,6 +47,7 @@ const uint64_t AUDIO_NS_PER_US = 1000;
 const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t AUDIO_NS_PER_S = 1000000000;
+const uint64_t AUDIO_CYCLE_TIME_US = 20000;
 const float MIN_VOLUME = 0.0;
 const float MAX_VOLUME = 1.0;
 
@@ -339,7 +340,7 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     }
 
     pa_usec_t curTimeGetLatency = pa_rtclock_now();
-    if (curTimeGetLatency - preTimeGetPaLatency_ > 20000 || firstGetPaLatency_) { // 20000 cycle time
+    if (curTimeGetLatency - preTimeGetPaLatency_ > AUDIO_CYCLE_TIME_US || firstGetPaLatency_) { // 20000 cycle time
         UpdatePaTimingInfo();
         firstGetPaLatency_ = false;
         preTimeGetPaLatency_ = curTimeGetLatency;
@@ -406,7 +407,7 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
             pa_threaded_mainloop_signal(this->mainloop_, 0);
         }, nullptr, XcollieFlag);
     pa_usec_t curTimeGetLatency = pa_rtclock_now();
-    if (curTimeGetLatency - preTimeGetLatency_ < 20000 && !firstGetLatency_) { // 20000 cycle time
+    if (curTimeGetLatency - preTimeGetLatency_ < AUDIO_CYCLE_TIME_US && !firstGetLatency_) { // 20000 cycle time
         latency = preLatency_;
         return SUCCESS;
     }
