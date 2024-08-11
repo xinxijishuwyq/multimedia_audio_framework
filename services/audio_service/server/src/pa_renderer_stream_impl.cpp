@@ -1210,7 +1210,12 @@ void PaRendererStreamImpl::UpdatePaTimingInfo()
 {
     pa_operation *operation = pa_stream_update_timing_info(paStream_, PAStreamUpdateTimingInfoSuccessCb, (void *)this);
     if (operation != nullptr) {
+        auto start_time = std::chrono::steady_clock::now();
         while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+            if ((std::chrono::steady_clock::now() - start_time) > std::chrono::seconds(PA_STREAM_IMPL_TIMEOUT)) {
+                AUDIO_ERR_LOG("pa_stream_update_timing_info time out");
+                break;
+            }
             pa_threaded_mainloop_wait(mainloop_);
         }
         pa_operation_unref(operation);
