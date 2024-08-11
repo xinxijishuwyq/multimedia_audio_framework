@@ -310,15 +310,7 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
         return ERR_ILLEGAL_STATE;
     }
 
-    pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
-    if (operation != nullptr) {
-        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-            pa_threaded_mainloop_wait(mainloop_);
-        }
-        pa_operation_unref(operation);
-    } else {
-        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
-    }
+    UpdatePaTimingInfo();
 
     const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
     if (info == nullptr) {
