@@ -155,7 +155,11 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_MICROPHONE_MUTE_PERSISTENT",
     "GET_MICROPHONE_MUTE_PERSISTENT",
     "INJECT_INTERRUPTION",
+    "ACTIVATE_AUDIO_SESSION",
+    "DEACTIVATE_AUDIO_SESSION",
+    "IS_AUDIO_SESSION_ACTIVATED",
 };
+
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),
     "keep same with AudioPolicyInterfaceCode");
@@ -1153,6 +1157,26 @@ void AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal(MessageParcel 
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::ActivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioSessionStrategy strategy;
+    strategy.concurrencyMode = static_cast<AudioConcurrencyMode>(data.ReadInt32());
+    int32_t result = ActivateAudioSession(strategy);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::DeactivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = DeactivateAudioSession();
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::IsAudioSessionActivatedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool result = IsAudioSessionActivated();
+    reply.WriteBool(result);
+}
+
 void AudioPolicyManagerStub::CreateAudioInterruptZoneInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::set<int32_t> pids;
@@ -1209,12 +1233,6 @@ void AudioPolicyManagerStub::OnMiddleEigRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     switch (code) {
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_DEVICE_REFINER_CALLBACK):
-            SetAudioDeviceRefinerCallbackInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AUDIO_DEVICE_REFINER_CALLBACK):
-            UnsetAudioDeviceRefinerCallbackInternal(data, reply);
-            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::TRIGGER_FETCH_DEVICE):
             TriggerFetchDeviceInternal(data, reply);
             break;
@@ -1247,6 +1265,15 @@ void AudioPolicyManagerStub::OnMiddleEigRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::INJECT_INTERRUPTION):
             InjectInterruptionInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_AUDIO_SESSION):
+            ActivateAudioSessionInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_AUDIO_SESSION):
+            DeactivateAudioSessionInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_SESSION_ACTIVATED):
+            IsAudioSessionActivatedInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
@@ -1294,6 +1321,12 @@ void AudioPolicyManagerStub::OnMiddleSevRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HEAD_TRACKING_DATA_REQUESTED):
             IsHeadTrackingDataRequestedInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_DEVICE_REFINER_CALLBACK):
+            SetAudioDeviceRefinerCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AUDIO_DEVICE_REFINER_CALLBACK):
+            UnsetAudioDeviceRefinerCallbackInternal(data, reply);
             break;
         default:
             OnMiddleEigRemoteRequest(code, data, reply, option);

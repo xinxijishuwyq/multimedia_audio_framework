@@ -51,6 +51,7 @@ public:
     void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) override;
     void OnSpatializationEnabledChange(const bool &enabled) override;
     void OnHeadTrackingEnabledChange(const bool &enabled) override;
+    void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyClientProxy> delegator_;

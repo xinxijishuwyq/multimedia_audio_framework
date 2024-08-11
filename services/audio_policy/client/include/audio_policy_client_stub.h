@@ -47,6 +47,7 @@ private:
     void HandleHeadTrackingDeviceChange(MessageParcel &data, MessageParcel &reply);
     void HandleSpatializationEnabledChange(MessageParcel &data, MessageParcel &reply);
     void HandleHeadTrackingEnabledChange(MessageParcel &data, MessageParcel &reply);
+    void HandleAudioSessionCallback(MessageParcel &data, MessageParcel &reply);
 
     void OnMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply);
 };
