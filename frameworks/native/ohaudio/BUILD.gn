@@ -168,7 +168,7 @@ ohos_executable("oh_audio_renderer_test") {
 
 ohos_executable("oh_audio_session_manager_test") {
   stack_protector_ret = true
-  
+
   sanitize = {
     cfi = true
     cfi_cross_dso = true
