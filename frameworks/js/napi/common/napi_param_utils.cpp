@@ -1049,5 +1049,15 @@ napi_status NapiParamUtils::SetExtraAudioParametersInfo(const napi_env &env,
 
     return status;
 }
+
+napi_status NapiParamUtils::GetAudioSessionStrategy(const napi_env &env,
+    AudioSessionStrategy audioSessionStrategy, napi_value in)
+{
+    int32_t propValue = 0;
+    napi_status status = NapiParamUtils::GetValueInt32(env, "concurrencyMode", propValue, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetAudioSessionStrategy: Failed to retireve concurrencyMode");
+    audioSessionStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(propValue);
+    return status;
+}
 } // namespace AudioStandard
 } // namespace OHOS
