@@ -39,7 +39,7 @@ napi_status NapiParamUtils::GetParam(const napi_env &env, napi_callback_info inf
 napi_status NapiParamUtils::GetValueInt32(const napi_env &env, int32_t &value, napi_value in)
 {
     napi_status status = napi_get_value_int32(env, in, &value);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueInt32 napi_get_value_int32 failed");
+    CHECK_AND_RETURN_RET_PRELOG(status == napi_ok, status, "GetValueInt32 napi_get_value_int32 failed");
     return status;
 }
 
@@ -57,7 +57,6 @@ napi_status NapiParamUtils::GetValueInt32(const napi_env &env, const std::string
     napi_status status = napi_get_named_property(env, in, fieldStr.c_str(), &jsValue);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueInt32 napi_get_named_property failed");
     status = GetValueInt32(env, value, jsValue);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueInt32 napi_get_value_int32 failed");
     return status;
 }
 
@@ -1048,6 +1047,16 @@ napi_status NapiParamUtils::SetExtraAudioParametersInfo(const napi_env &env,
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueString failed");
     }
 
+    return status;
+}
+
+napi_status NapiParamUtils::GetAudioSessionStrategy(const napi_env &env,
+    AudioSessionStrategy audioSessionStrategy, napi_value in)
+{
+    int32_t propValue = 0;
+    napi_status status = NapiParamUtils::GetValueInt32(env, "concurrencyMode", propValue, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetAudioSessionStrategy: Failed to retireve concurrencyMode");
+    audioSessionStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(propValue);
     return status;
 }
 } // namespace AudioStandard

@@ -336,6 +336,13 @@ void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
         InitKVStoreInternal();
     }
 
+    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(STREAM_RING);
+    int32_t volumeLevel =
+        volumeDataMaintainer_.GetStreamVolume(STREAM_RING) * ((ringerMode != RINGER_MODE_NORMAL) ? 0 : 1);
+
+    // Save volume in local prop for bootanimation
+    SaveRingtoneVolumeToLocal(streamForVolumeMap, volumeLevel);
+
     volumeDataMaintainer_.SaveRingerMode(ringerMode);
 }
 
@@ -1121,6 +1128,11 @@ void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
         // if read ringer mode success, data is loaded.
         isLoaded_ = volumeDataMaintainer_.GetRingerMode(ringerMode_);
     }
+    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(STREAM_RING);
+    int32_t volumeLevel =
+        volumeDataMaintainer_.GetStreamVolume(STREAM_RING) * ((ringerMode_ != RINGER_MODE_NORMAL) ? 0 : 1);
+    // Save volume in local prop for bootanimation
+    SaveRingtoneVolumeToLocal(streamForVolumeMap, volumeLevel);
 }
 
 void AudioAdapterManager::CloneVolumeMap(void)
@@ -1532,13 +1544,6 @@ float AudioAdapterManager::GetMinStreamVolume() const
 float AudioAdapterManager::GetMaxStreamVolume() const
 {
     return MAX_STREAM_VOLUME;
-}
-
-int32_t AudioAdapterManager::UpdateSwapDeviceStatus()
-{
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
-        "UpdateSwapDeviceStatus audio adapter null");
-    return audioServiceAdapter_->UpdateSwapDeviceStatus();
 }
 
 bool AudioAdapterManager::IsVolumeUnadjustable()

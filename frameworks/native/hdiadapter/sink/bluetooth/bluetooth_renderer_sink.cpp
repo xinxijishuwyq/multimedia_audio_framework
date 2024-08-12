@@ -36,7 +36,7 @@
 #endif
 
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_utils.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
@@ -526,7 +526,7 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
         ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
         stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
         if (logMode_ || stamp >= STAMP_THRESHOLD_MS) {
-            AUDIO_WARNING_LOG("A2dp RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms " \
+            AUDIO_PRERELEASE_LOGW("A2dp RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms " \
                 "writeLen[%{public}" PRIu64 "] returns: %{public}x", len, stamp, writeLen, ret);
         }
         if (ret == RENDER_FRAME_NUM) {

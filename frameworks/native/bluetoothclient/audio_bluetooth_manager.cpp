@@ -19,7 +19,7 @@
 #include "audio_bluetooth_manager.h"
 #include "bluetooth_def.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "bluetooth_audio_manager.h"
 #include "bluetooth_device_manager.h"
 #include "bluetooth_device_utils.h"

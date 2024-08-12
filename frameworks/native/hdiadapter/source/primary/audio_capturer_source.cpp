@@ -31,7 +31,7 @@
 #endif
 #include "v4_0/iaudio_manager.h"
 
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "parameters.h"

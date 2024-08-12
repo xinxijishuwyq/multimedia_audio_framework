@@ -25,7 +25,7 @@
 #include <pulsecore/core.h>
 #include <pulsecore/namereg.h>
 #include "audio_effect_chain_adapter.h"
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "playback_capturer_adapter.h"
 
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver);

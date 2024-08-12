@@ -741,6 +741,8 @@ private:
 
     void SetOffloadVolume(AudioStreamType streamType, int32_t volume);
 
+    void SetOffloadMute(AudioStreamType streamType, bool mute);
+
     AudioStreamType OffloadStreamType();
 
     void RemoveDeviceInRouterMap(std::string networkId);
@@ -1076,6 +1078,7 @@ private:
     mutable std::shared_mutex deviceStatusUpdateSharedMutex_;
 
     bool isArmUsbDevice_ = false;
+    bool hasDpDevice_ = false; // Only the first dp device is supported.
 
     AudioDeviceManager &audioDeviceManager_;
     AudioStateManager &audioStateManager_;
@@ -1088,7 +1091,10 @@ private:
     std::mutex offloadMutex_;
 
     AudioModuleInfo primaryMicModuleInfo_ = {};
+    std::mutex defaultDeviceLoadMutex_;
+    std::condition_variable loadDefaultDeviceCV_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
+    std::atomic<bool> isAdapterInfoMap_ = false;
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 

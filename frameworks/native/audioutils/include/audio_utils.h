@@ -140,6 +140,7 @@ void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b);
 void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b);
 
 std::string GetEncryptStr(const std::string &str);
+std::string ConvertNetworkId(const std::string &networkId);
 
 enum ConvertHdiFormat {
     SAMPLE_U8_C = 0,
@@ -531,6 +532,17 @@ public:
         cvNotFull_.notify_all();
 
         return true;
+    }
+
+    std::queue<T> PopAllNotWait()
+    {
+        std::queue<T> retQueue = {};
+        std::unique_lock<std::mutex> lock(mutexLock_);
+        retQueue.swap(queueT_);
+
+        cvNotFull_.notify_all();
+
+        return retQueue;
     }
 
     unsigned int Size()

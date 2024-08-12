@@ -28,7 +28,7 @@
 #include <pulsecore/core-util.h>
 #include <pulsecore/namereg.h>
 
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_enhance_chain_adapter.h"
 
 pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver);

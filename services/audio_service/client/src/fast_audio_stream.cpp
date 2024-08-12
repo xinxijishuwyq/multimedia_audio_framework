@@ -465,7 +465,7 @@ int32_t FastAudioStream::ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_INFO_LOG("StartAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("StartAudioStream enter.");
     CHECK_AND_RETURN_RET_LOG((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED),
         false, "Illegal state:%{public}u", state_);
 
@@ -499,7 +499,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
 
 bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 {
-    AUDIO_INFO_LOG("PauseAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("PauseAudioStream enter.");
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false,
         "state is not RUNNING. Illegal state:%{public}u", state_);
     State oldState = state_;
@@ -546,7 +546,7 @@ bool FastAudioStream::StopAudioStream()
 
 bool FastAudioStream::FlushAudioStream()
 {
-    AUDIO_INFO_LOG("FlushAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("FlushAudioStream enter.");
     return true;
 }
 

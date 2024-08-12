@@ -173,7 +173,7 @@ void NapiAudioVolumeGroupManager::Destructor(napi_env env, void *nativeObject, v
         auto obj = static_cast<NapiAudioVolumeGroupManager*>(nativeObject);
         ObjectRefMap<NapiAudioVolumeGroupManager>::DecreaseRef(obj);
     }
-    AUDIO_INFO_LOG("Destructor is successful");
+    AUDIO_PRERELEASE_LOGI("Destructor is successful");
 }
 
 napi_value NapiAudioVolumeGroupManager::Construct(napi_env env, napi_callback_info info)
@@ -190,7 +190,7 @@ napi_value NapiAudioVolumeGroupManager::Construct(napi_env env, napi_callback_in
     napi_value args[PARAM1] = { nullptr};
     status = napi_get_cb_info(env, info, &argCount, args, &jsThis, nullptr);
     NapiParamUtils::GetValueInt32(env, groupId, args[PARAM0]);
-    AUDIO_INFO_LOG("Construct() %{public}d", groupId);
+    AUDIO_PRERELEASE_LOGI("Construct() %{public}d", groupId);
 
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, undefinedResult, "Failed in NapiAudioVolumeGroupManager::Construct()!");
     unique_ptr<NapiAudioVolumeGroupManager> napiAudioVolumeGroupManager = make_unique<NapiAudioVolumeGroupManager>();
@@ -411,7 +411,7 @@ napi_value NapiAudioVolumeGroupManager::GetMaxVolume(napi_env env, napi_callback
 
 napi_value NapiAudioVolumeGroupManager::GetMaxVolumeSync(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("GetMaxVolumeSync");
+    AUDIO_PRERELEASE_LOGI("GetMaxVolumeSync");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};

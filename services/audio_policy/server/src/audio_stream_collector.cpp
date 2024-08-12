@@ -1064,7 +1064,7 @@ void AudioStreamCollector::WriterRenderStreamChangeSysEvent(AudioStreamChangeInf
     bean->Add("PIPE_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType);
     bean->Add("STREAM_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
     bean->Add("SAMPLE_RATE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.samplingRate);
-    bean->Add("NETWORKID", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.networkId);
+    bean->Add("NETWORKID", ConvertNetworkId(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.networkId));
     bean->Add("ENCODING_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.encodingType);
     bean->Add("CHANNEL_LAYOUT", streamChangeInfo.audioRendererChangeInfo.rendererInfo.channelLayout);
     bean->Add("EFFECT_CHAIN", effectChainType);
@@ -1100,7 +1100,7 @@ void AudioStreamCollector::WriterCaptureStreamChangeSysEvent(AudioStreamChangeIn
     bean->Add("STREAM_TYPE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
     bean->Add("SAMPLE_RATE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.samplingRate);
     bean->Add("MUTED", streamChangeInfo.audioCapturerChangeInfo.muted);
-    bean->Add("NETWORKID", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.networkId);
+    bean->Add("NETWORKID", ConvertNetworkId(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.networkId));
     bean->Add("ENCODING_TYPE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.encodingType);
     bean->Add("CHANNEL_LAYOUT", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.channelLayout);
     bean->Add("EFFECT_CHAIN", effectChainType);
@@ -1136,7 +1136,7 @@ void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
     bean->Add("PIPE_TYPE", audioRendererChangeInfo->rendererInfo.pipeType);
     bean->Add("STREAM_TYPE", audioRendererChangeInfo->rendererInfo.streamUsage);
     bean->Add("SAMPLE_RATE", audioRendererChangeInfo->rendererInfo.samplingRate);
-    bean->Add("NETWORKID", audioRendererChangeInfo->outputDeviceInfo.networkId);
+    bean->Add("NETWORKID", ConvertNetworkId(audioRendererChangeInfo->outputDeviceInfo.networkId));
     bean->Add("ENCODING_TYPE", audioRendererChangeInfo->rendererInfo.encodingType);
     bean->Add("CHANNEL_LAYOUT", audioRendererChangeInfo->rendererInfo.channelLayout);
     bean->Add("EFFECT_CHAIN", effectChainType);
@@ -1171,7 +1171,7 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
     bean->Add("STREAM_TYPE", audioCapturerChangeInfo->capturerInfo.sourceType);
     bean->Add("SAMPLE_RATE", audioCapturerChangeInfo->capturerInfo.samplingRate);
     bean->Add("MUTED", audioCapturerChangeInfo->muted);
-    bean->Add("NETWORKID", audioCapturerChangeInfo->inputDeviceInfo.networkId);
+    bean->Add("NETWORKID", ConvertNetworkId(audioCapturerChangeInfo->inputDeviceInfo.networkId));
     bean->Add("ENCODING_TYPE", audioCapturerChangeInfo->capturerInfo.encodingType);
     bean->Add("CHANNEL_LAYOUT", audioCapturerChangeInfo->capturerInfo.channelLayout);
     bean->Add("EFFECT_CHAIN", effectChainType);

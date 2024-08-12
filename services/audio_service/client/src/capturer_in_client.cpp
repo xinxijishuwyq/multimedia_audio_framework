@@ -1025,6 +1025,7 @@ void CapturerInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
     cbBuffer_ = std::make_unique<uint8_t[]>(cbBufferSize_);
     BufferDesc temp = {cbBuffer_.get(), cbBufferSize_, cbBufferSize_};
+    cbBufferQueue_.Clear();
     cbBufferQueue_.Push(temp);
 }
 

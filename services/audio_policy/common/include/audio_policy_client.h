@@ -48,7 +48,8 @@ enum class AudioPolicyClientCode {
     ON_HEAD_TRACKING_DEVICE_CHANGE,
     ON_SPATIALIZATION_ENABLED_CHANGE,
     ON_HEAD_TRACKING_ENABLED_CHANGE,
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_HEAD_TRACKING_ENABLED_CHANGE,
+    ON_AUDIO_SESSION_DEACTIVE,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_AUDIO_SESSION_DEACTIVE,
 };
 class IAudioPolicyClient : public IRemoteBroker {
 public:
@@ -74,6 +75,7 @@ public:
     virtual void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) = 0;
     virtual void OnSpatializationEnabledChange(const bool &enabled) = 0;
     virtual void OnHeadTrackingEnabledChange(const bool &enabled) = 0;
+    virtual void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) = 0;
 
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;

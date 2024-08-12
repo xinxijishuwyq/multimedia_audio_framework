@@ -18,41 +18,17 @@
 
 #include "audio_policy_server.h"
 
-#include <csignal>
-#include <memory>
-#include <unordered_set>
-#include <vector>
-#include <condition_variable>
-
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
-#include "key_event.h"
-#include "key_option.h"
+
 #endif
-#include "power_mgr_client.h"
 
 #include "privacy_kit.h"
-#include "accesstoken_kit.h"
-#include "permission_state_change_info.h"
-#include "token_setproc.h"
 #include "tokenid_kit.h"
-#include "want.h"
 #include "common_event_manager.h"
-
-#include "ipc_skeleton.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
-
 #include "audio_policy_log.h"
-#include "audio_errors.h"
 #include "audio_utils.h"
-#include "audio_policy_manager_listener_proxy.h"
-#include "audio_routing_manager_listener_proxy.h"
-#include "i_standard_audio_policy_manager_listener.h"
-#include "microphone_descriptor.h"
-#include "parameter.h"
 #include "parameters.h"
-
 #include "media_monitor_manager.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
@@ -280,7 +256,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
     keyOption->SetFinalKeyDown(true);
     keyOption->SetFinalKeyDownDuration(VOLUME_KEY_DURATION);
     int32_t keySubId = im->SubscribeKeyEvent(keyOption, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
-        AUDIO_INFO_LOG("Receive volume key event: %{public}s.",
+        AUDIO_PRERELEASE_LOGI("Receive volume key event: %{public}s.",
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
         std::lock_guard<std::mutex> lock(keyEventMutex_);
         AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
@@ -1721,7 +1697,7 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
         if (id == TRACKER_CLIENT) {
             deathRecipient_->SetNotifyCb([this] (int uid) { this->RegisteredTrackerClientDied(uid); });
         } else {
-            AUDIO_INFO_LOG("RegisteredStreamListenerClientDied register!!");
+            AUDIO_PRERELEASE_LOGI("RegisteredStreamListenerClientDied register!!");
             deathRecipient_->SetNotifyCb([this] (pid_t pid) { this->RegisteredStreamListenerClientDied(pid); });
         }
         bool result = object->AddDeathRecipient(deathRecipient_);
@@ -2606,7 +2582,7 @@ AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()
     CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, bundleInfo, "systemAbilityManager is nullptr");
 
     sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, bundleInfo, "remoteObject is nullptr");
+    CHECK_AND_RETURN_RET_PRELOG(remoteObject != nullptr, bundleInfo, "remoteObject is nullptr");
 
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, bundleInfo, "bundleMgrProxy is nullptr");
@@ -2737,5 +2713,62 @@ int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, Inter
     return audioPolicyServerHandler_->SendInterruptEventInternalCallback(interruptEvent);
 }
 
+bool AudioPolicyServer::CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy)
+{
+    bool result = false;
+    switch (sessionStrategy.concurrencyMode) {
+        case AudioConcurrencyMode::DEFAULT:
+        case AudioConcurrencyMode::MIX_WITH_OTHERS:
+        case AudioConcurrencyMode::DUCK_OTHERS:
+        case AudioConcurrencyMode::PAUSE_OTHERS:
+            result = true;
+            break;
+        default:
+            AUDIO_ERR_LOG("Invalid concurrency mode: %{public}d!",
+                static_cast<int32_t>(sessionStrategy.concurrencyMode));
+            result = false;
+            break;
+    }
+    return result;
+}
+
+int32_t AudioPolicyServer::ActivateAudioSession(const AudioSessionStrategy &strategy)
+{
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
+    if (!CheckAudioSessionStrategy(strategy)) {
+        AUDIO_ERR_LOG("The audio session strategy is invalid!");
+        return ERR_INVALID_PARAM;
+    }
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d",
+        static_cast<int32_t>(strategy.concurrencyMode), callerPid);
+    return interruptService_->ActivateAudioSession(callerPid, strategy);
+}
+
+int32_t AudioPolicyServer::DeactivateAudioSession()
+{
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    AUDIO_INFO_LOG("deactivate audio session for pid %{public}d", callerPid);
+    return interruptService_->DeactivateAudioSession(callerPid);
+}
+
+bool AudioPolicyServer::IsAudioSessionActivated()
+{
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        return false;
+    }
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    bool isActive = interruptService_->IsAudioSessionActivated(callerPid);
+    AUDIO_INFO_LOG("callerPid %{public}d, isSessionActive: %{public}d.", callerPid, isActive);
+    return isActive;
+}
 } // namespace AudioStandard
 } // namespace OHOS

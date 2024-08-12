@@ -204,7 +204,7 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
         effectMode_ = EFFECT_NONE;
     }
     rendererInfo_.sceneType = GetEffectSceneName(rendererInfo_.streamUsage);
-    AUDIO_INFO_LOG("SetRendererInfo with flag %{public}d, sceneType %{public}s", rendererInfo_.rendererFlags,
+    AUDIO_PRERELEASE_LOGI("SetRendererInfo with flag %{public}d, sceneType %{public}s", rendererInfo_.rendererFlags,
         rendererInfo_.sceneType.c_str());
     AudioSpatializationState spatializationState =
         AudioPolicyManager::GetInstance().GetSpatializationState(rendererInfo_.streamUsage);
@@ -728,7 +728,7 @@ int32_t RendererInClientInner::SetInnerVolume(float volume)
         AUDIO_ERR_LOG("Set Client Volume failed:%{public}u", ret);
         return -1;
     }
-    AUDIO_INFO_LOG("SetClientVolume success, volume: %{public}f", volume);
+    AUDIO_PRERELEASE_LOGI("SetClientVolume success, volume: %{public}f", volume);
     return SUCCESS;
 }
 
@@ -995,14 +995,9 @@ void RendererInClientInner::WriteCallbackFunc()
         if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
             AUDIO_WARNING_LOG("The queue is too long, reducing data through loops");
         }
-        while (!cbBufferQueue_.IsEmpty()) {
+        BufferDesc temp;
+        while (cbBufferQueue_.PopNotWait(temp)) {
             Trace traceQueuePop("RendererInClientInner::QueueWaitPop");
-            // If client didn't call Enqueue in OnWriteData, pop will block here.
-            BufferDesc temp = cbBufferQueue_.Pop();
-            if (temp.buffer == nullptr) {
-                AUDIO_WARNING_LOG("Queue pop error: get nullptr.");
-                break;
-            }
             if (state_ != RUNNING) { break; }
             traceQueuePop.End();
             // call write here.
@@ -1370,7 +1365,7 @@ bool RendererInClientInner::StopAudioStream()
 
 bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_PRERELEASE_LOGI("Enter");
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already released, do nothing");
@@ -1399,10 +1394,6 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
     // clear write callback
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         cbThreadReleased_ = true; // stop loop
-        if (cbBufferQueue_.IsEmpty()) {
-            std::lock_guard<std::mutex> lockWriteCb(writeCbMutex_);
-            cbBufferQueue_.PushNoWait({nullptr, 0, 0});
-        }
         cbThreadCv_.notify_all();
         FutexTool::FutexWake(clientBuffer_->GetFutex(), IS_PRE_EXIT);
         if (callbackLoop_.joinable()) {
@@ -1541,6 +1532,8 @@ bool RendererInClientInner::DrainAudioStream(bool stopFlag)
 
 void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
 {
+    std::lock_guard<std::mutex> lockSetPreferredFrameSize(setPreferredFrameSizeMutex_);
+    userSettedPreferredFrameSize_ = frameSize;
     CHECK_AND_RETURN_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID,
         "playing audiovivid, frameSize is always 1024.");
     size_t maxCbBufferSize =
@@ -1703,7 +1696,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     FirstFrameProcess();
 
-    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
+    CHECK_AND_RETURN_RET_PRELOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
         "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
 
     // hold lock
@@ -1721,7 +1714,7 @@ void RendererInClientInner::ResetFramePosition()
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
     int32_t ret = ipcStream_->GetAudioPosition(lastFlushPosition_, timestampVal);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Get position failed: %{public}u", ret);
+        AUDIO_PRERELEASE_LOGE("Get position failed: %{public}u", ret);
         return;
     }
     lastFramePosition_ = 0;
@@ -2119,6 +2112,11 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.sessionId = sessionId_;
     info.streamTrackerRegistered = streamTrackerRegistered_;
     GetStreamSwitchInfo(info);
+
+    {
+        std::lock_guard<std::mutex> lock(setPreferredFrameSizeMutex_);
+        info.userSettedPreferredFrameSize = userSettedPreferredFrameSize_;
+    }
 }
 
 void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)

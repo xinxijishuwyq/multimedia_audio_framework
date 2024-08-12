@@ -121,8 +121,6 @@ public:
 
     float GetMaxStreamVolume(void) const;
 
-    int32_t UpdateSwapDeviceStatus();
-
     bool IsVolumeUnadjustable();
 
     float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType, int32_t volumeLevel);

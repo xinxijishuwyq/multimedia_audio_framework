@@ -561,6 +561,7 @@ int32_t OHAudioBuffer::SetCurWriteFrame(uint64_t writeFrame)
 
 int32_t OHAudioBuffer::SetCurReadFrame(uint64_t readFrame)
 {
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, ERR_INVALID_PARAM, "basicBufferInfo_ is nullptr");
     uint64_t oldBasePos = basicBufferInfo_->basePosInFrame.load();
     uint64_t oldReadPos = basicBufferInfo_->curReadFrame.load();
     if (readFrame == oldReadPos) {
@@ -664,6 +665,16 @@ SpanInfo *OHAudioBuffer::GetSpanInfoByIndex(uint32_t spanIndex)
 uint32_t OHAudioBuffer::GetSpanCount()
 {
     return spanConut_;
+}
+
+int64_t OHAudioBuffer::GetLastWrittenTime()
+{
+    return lastWrittenTime_;
+}
+
+void OHAudioBuffer::SetLastWrittenTime(int64_t time)
+{
+    lastWrittenTime_ = time;
 }
 
 std::atomic<uint32_t> *OHAudioBuffer::GetFutex()

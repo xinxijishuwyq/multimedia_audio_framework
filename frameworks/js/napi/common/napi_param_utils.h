@@ -27,7 +27,7 @@
 #include "napi/native_common.h"
 #include "napi/native_node_api.h"
 #include "napi_base_context.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_info.h"
 #include "audio_capturer.h"
 #include "audio_system_manager.h"
@@ -205,6 +205,8 @@ public:
     static napi_status GetExtraParametersVector(const napi_env &env, std::vector<std::string> &subKeys, napi_value in);
     static napi_status SetExtraAudioParametersInfo(const napi_env &env,
         const std::vector<std::pair<std::string, std::string>> &extraParameters, napi_value &result);
+    static napi_status GetAudioSessionStrategy(
+        const napi_env &env, AudioSessionStrategy audioSessionStrategy, napi_value in);
 };
 } // namespace AudioStandard
 } // namespace OHOS

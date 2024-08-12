@@ -169,12 +169,22 @@ int32_t RendererInServer::Init()
 
     // eg: /data/data/.pulse_dir/10000_100001_48000_2_1_server_in.pcm
     AudioStreamInfo tempInfo = processConfig_.streamInfo;
-    dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + std::to_string(streamIndex_)
-        + "renderer_server_in_" + std::to_string(tempInfo.samplingRate) + "_"
+    dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_)
+        + "_renderer_server_in_" + std::to_string(tempInfo.samplingRate) + "_"
         + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpC2S_);
 
     return SUCCESS;
+}
+
+void RendererInServer::WriterRenderStreamStandbySysEvent()
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_STANDBY,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("STREAMID", static_cast<int32_t>(streamIndex_));
+    bean->Add("STANDBY", standByEnable_ ? 1 : 0);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void RendererInServer::OnStatusUpdate(IOperation operation)
@@ -191,6 +201,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
                 standByEnable_ = false;
                 AUDIO_INFO_LOG("%{public}u recv stand by started", streamIndex_);
                 audioServerBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
+                WriterRenderStreamStandbySysEvent();
                 return;
             }
             status_ = I_STATUS_STARTED;
@@ -201,6 +212,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             if (standByEnable_) {
                 AUDIO_INFO_LOG("%{public}s recv stand by paused", traceTag_.c_str());
                 audioServerBuffer_->GetStreamStatus()->store(STREAM_STAND_BY);
+                WriterRenderStreamStandbySysEvent();
                 return;
             }
             status_ = I_STATUS_PAUSED;
@@ -281,9 +293,7 @@ void RendererInServer::StandByCheck()
     }
 
     // call enable stand by
-    std::unique_lock<std::mutex> lock(statusLock_);
     standByEnable_ = true;
-    lock.unlock();
     // PaAdapterManager::PauseRender will hold mutex, may cause dead lock with pa_lock
     if (managerType_ == PLAYBACK) {
         stream_->Pause();
@@ -539,9 +549,12 @@ int32_t RendererInServer::UpdateWriteIndex()
     }
 
     if (afterDrain == true) {
-        afterDrain = false;
-        AUDIO_DEBUG_LOG("After drain, start write data");
-        WriteData();
+        if (writeLock_.try_lock()) {
+            afterDrain = false;
+            AUDIO_DEBUG_LOG("After drain, start write data");
+            WriteData();
+            writeLock_.unlock();
+        }
     }
     return SUCCESS;
 }
@@ -636,7 +649,7 @@ int32_t RendererInServer::Pause()
 
 int32_t RendererInServer::Flush()
 {
-    AUDIO_INFO_LOG("Flush.");
+    AUDIO_PRERELEASE_LOGI("Flush.");
     Trace trace(traceTag_ + " Flush");
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_STARTED) {
@@ -803,7 +816,7 @@ int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp)
 {
     if (status_ == I_STATUS_STOPPED) {
-        AUDIO_WARNING_LOG("Current status is stopped");
+        AUDIO_PRERELEASE_LOGW("Current status is stopped");
         return ERR_ILLEGAL_STATE;
     }
     stream_->GetCurrentPosition(framePos, timestamp);

@@ -49,7 +49,6 @@ public:
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName) override;
     int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId,
         uint32_t sourceIndex, std::string sourceName) override;
-    int32_t UpdateSwapDeviceStatus() override;
 
     // Static Member functions
     static void PaGetSinksCb(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
@@ -91,7 +90,6 @@ private:
     std::mutex lock_;
     bool isSetDefaultSink_ = false;
     bool isSetDefaultSource_ = false;
-    int32_t swapStatus = 0;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

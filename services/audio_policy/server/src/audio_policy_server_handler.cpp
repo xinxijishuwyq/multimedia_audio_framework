@@ -180,6 +180,19 @@ bool AudioPolicyServerHandler::SendVolumeKeyEventCallback(const VolumeEvent &vol
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendAudioSessionDeactiveCallback(
+    const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->sessionDeactivePair = sessionDeactivePair;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::AUDIO_SESSION_DEACTIVE_EVENT,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendAudioSessionDeactiveCallback event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendAudioFocusInfoChangeCallback(int32_t callbackCategory,
     const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
@@ -547,6 +560,27 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             static_cast<int32_t>(eventContextObj->volumeEvent.volumeType), eventContextObj->volumeEvent.volume,
             static_cast<int32_t>(eventContextObj->volumeEvent.updateUi));
         volumeChangeCb->OnVolumeKeyEvent(eventContextObj->volumeEvent);
+    }
+}
+
+void AudioPolicyServerHandler::HandleAudioSessionDeactiveCallback(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    int32_t clientPid = eventContextObj->sessionDeactivePair.first;
+    auto iterator = audioPolicyClientProxyAPSCbsMap_.find(clientPid);
+    if (iterator == audioPolicyClientProxyAPSCbsMap_.end()) {
+        AUDIO_ERR_LOG("AudioSessionDeactiveCallback: no client callback for client pid %{public}d", clientPid);
+        return;
+    } else {
+        sptr<IAudioPolicyClient> audioSessionCb = iterator->second;
+        if (audioSessionCb == nullptr) {
+            AUDIO_ERR_LOG("AudioSessionDeactiveCallback: nullptr for client pid %{public}d", clientPid);
+            return;
+        }
+        AUDIO_INFO_LOG("Trigger AudioSessionDeactiveCallback for client pid : %{public}d", clientPid);
+        audioSessionCb->OnAudioSessionDeactive(eventContextObj->sessionDeactivePair.second);
     }
 }
 
@@ -960,6 +994,9 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
     switch (eventId) {
         case EventAudioServerCmd::CONCURRENCY_EVENT_WITH_SESSIONID:
             HandleConcurrencyEventWithSessionID(event);
+            break;
+        case EventAudioServerCmd::AUDIO_SESSION_DEACTIVE_EVENT:
+            HandleAudioSessionDeactiveCallback(event);
             break;
         default:
             break;

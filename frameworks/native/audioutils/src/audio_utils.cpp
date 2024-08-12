@@ -25,7 +25,7 @@
 #include <string>
 #include "audio_utils_c.h"
 #include "audio_errors.h"
-#include "audio_log.h"
+#include "audio_common_log.h"
 #ifdef FEATURE_HITRACE_METER
 #include "hitrace_meter.h"
 #endif
@@ -225,7 +225,7 @@ bool PermissionUtil::VerifyIsSystemApp()
     bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     CHECK_AND_RETURN_RET(!tmp, true);
 
-    AUDIO_ERR_LOG("Check system app permission reject");
+    AUDIO_PRERELEASE_LOGE("Check system app permission reject");
     return false;
 }
 
@@ -258,7 +258,7 @@ bool PermissionUtil::VerifySystemPermission()
     bool tmp = VerifyIsSystemApp();
     CHECK_AND_RETURN_RET(!tmp, true);
 
-    AUDIO_ERR_LOG("Check system permission reject");
+    AUDIO_PRERELEASE_LOGE("Check system permission reject");
     return false;
 }
 
@@ -1254,6 +1254,15 @@ std::string GetEncryptStr(const std::string &src)
     }
 
     return dst;
+}
+
+std::string ConvertNetworkId(const std::string &networkId)
+{
+    if (!networkId.empty() && networkId != LOCAL_NETWORK_ID) {
+        return REMOTE_NETWORK_ID;
+    }
+
+    return networkId;
 }
 
 AudioDump& AudioDump::GetInstance()

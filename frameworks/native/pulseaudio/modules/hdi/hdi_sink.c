@@ -44,7 +44,7 @@
 
 #include "securec.h"
 
-#include "audio_log.h"
+#include "audio_hdi_log.h"
 #include "audio_schedule.h"
 #include "audio_utils_c.h"
 #include "audio_hdiadapter_info.h"
@@ -1103,7 +1103,6 @@ static void SinkRenderMultiChannelInputsDrop(pa_sink *si, pa_mix_info *infoIn, u
 
 static void silenceData(pa_mix_info *infoIn, pa_sink *si)
 {
-    AUDIO_INFO_LOG("silenceData.");
     pa_memchunk_make_writable(&infoIn->chunk, 0);
     void *tmpdata = pa_memblock_acquire_chunk(&infoIn->chunk);
     memset_s(tmpdata, infoIn->chunk.length, 0, infoIn->chunk.length);
@@ -1165,14 +1164,14 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
     const char *sinkFadeoutPause = pa_proplist_gets(sinkIn->proplist, "fadeoutPause");
     if (pa_safe_streq(sinkFadeoutPause, "2") && (sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING)) {
         silenceData(infoIn, si);
-        AUDIO_INFO_LOG("after pause fadeout done, silenceData");
+        AUDIO_PRERELEASE_LOGI("after pause fadeout done, silenceData");
         return;
     }
 
     if (pa_atomic_load(&u->primary.fadingFlagForPrimary) == 1 &&
         u->primary.primarySinkInIndex == (int32_t)sinkIn->index) {
         if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
-            AUDIO_INFO_LOG("pa_memblock_is_silence");
+            AUDIO_PRERELEASE_LOGI("pa_memblock_is_silence");
             return;
         }
         //do fading in
@@ -1300,6 +1299,7 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
     const char *sinkFadeoutPause = pa_proplist_gets(sinkIn->proplist, "fadeoutPause");
     if (pa_safe_streq(sinkFadeoutPause, "2")) {
         silenceData(infoIn, si);
+        AUDIO_PRERELEASE_LOGI("silenceData.");
         return;
     }
 
