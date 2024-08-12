@@ -336,7 +336,7 @@ void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
         InitKVStoreInternal();
     }
 
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(STREAM_RING);
+    AudioStreamType streamForVolumeMap = VolumeMapUtils::GetVolumeTypeFromStreamType(STREAM_RING);
     int32_t volumeLevel =
         volumeDataMaintainer_.GetStreamVolume(STREAM_RING) * ((ringerMode != RINGER_MODE_NORMAL) ? 0 : 1);
 
@@ -1128,7 +1128,7 @@ void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
         // if read ringer mode success, data is loaded.
         isLoaded_ = volumeDataMaintainer_.GetRingerMode(ringerMode_);
     }
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(STREAM_RING);
+    AudioStreamType streamForVolumeMap = VolumeMapUtils::GetVolumeTypeFromStreamType(STREAM_RING);
     int32_t volumeLevel =
         volumeDataMaintainer_.GetStreamVolume(STREAM_RING) * ((ringerMode_ != RINGER_MODE_NORMAL) ? 0 : 1);
     // Save volume in local prop for bootanimation
