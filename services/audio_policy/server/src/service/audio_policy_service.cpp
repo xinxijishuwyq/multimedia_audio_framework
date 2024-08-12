@@ -4907,11 +4907,11 @@ int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
         AddAudioCapturerMicrophoneDescriptor(streamChangeInfo.audioCapturerChangeInfo.sessionId, DEVICE_TYPE_NONE);
         if (apiVersion < API_11) {
             UpdateDeviceInfo(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo,
-                new AudioDeviceDescriptor(currentActiveInputDevice_), true, true);
+                new AudioDeviceDescriptor(currentActiveInputDevice_), false, false);
         }
     } else if (apiVersion < API_11) {
         UpdateDeviceInfo(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo,
-            new AudioDeviceDescriptor(currentActiveDevice_), true, true);
+            new AudioDeviceDescriptor(currentActiveDevice_), false, false);
     }
     return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
 }
