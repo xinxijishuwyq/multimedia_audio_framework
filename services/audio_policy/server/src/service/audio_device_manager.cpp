@@ -404,7 +404,7 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
     };
 
     auto removeBeginIt = std::remove_if(descArray.begin(), descArray.end(), isPresent);
-    size_t deleteNum = descArray.end() - removeBeginIt;
+    size_t deleteNum = static_cast<uint32_t>(descArray.end() - removeBeginIt);
     descArray.erase(removeBeginIt, descArray.end());
 
     AUDIO_INFO_LOG("Remove %{public}zu desc from %{public}s list, and then %{public}s", deleteNum,
