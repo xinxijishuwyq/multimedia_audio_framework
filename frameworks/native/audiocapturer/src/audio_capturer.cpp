@@ -262,7 +262,6 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
         audioStream_->SetApplicationCachePath(cachePath_);
     }
-
     int32_t ret = InitAudioStream(audioStreamParams);
 
     // When the fast stream creation fails, a normal stream is created
