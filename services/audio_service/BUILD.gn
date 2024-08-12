@@ -438,10 +438,6 @@ ohos_shared_library("audio_service") {
     external_deps += [ "sensor:sensor_interface_native" ]
   }
 
-  if (window_manager_enable == true) {
-    external_deps += [ "window_manager:libdm" ]
-  }
-
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
   }

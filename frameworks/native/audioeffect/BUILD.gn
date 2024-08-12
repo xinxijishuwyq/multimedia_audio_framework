@@ -86,10 +86,6 @@ ohos_shared_library("audio_effect") {
     external_deps += [ "sensor:sensor_interface_native" ]
   }
 
-  if (window_manager_enable == true) {
-    external_deps += [ "window_manager:libdm" ]
-  }
-
   version_script = "../../../audio_framework.versionscript"
 
   part_name = "audio_framework"

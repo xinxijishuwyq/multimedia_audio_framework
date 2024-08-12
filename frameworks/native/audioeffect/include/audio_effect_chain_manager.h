@@ -194,17 +194,6 @@ private:
     std::shared_ptr<HeadTracker> headTracker_;
 #endif
 
-#ifdef WINDOW_MANAGER_ENABLE
-    class AudioRotationListener : public OHOS::Rosen::DisplayManager::IDisplayListener {
-    public:
-        void OnCreate(Rosen::DisplayId displayId) override;
-        void OnDestroy(Rosen::DisplayId displayId) override;
-        void OnChange(Rosen::DisplayId displayId) override;
-    };
-
-    sptr<AudioRotationListener> audioRotationListener_;
-#endif
-
     std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam_;
     int8_t effectHdiInput_[SEND_HDI_COMMAND_LEN];
 };
