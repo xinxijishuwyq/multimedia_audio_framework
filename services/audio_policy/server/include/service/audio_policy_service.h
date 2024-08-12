@@ -929,9 +929,9 @@ private:
     bool LoadToneDtmfConfig();
 
     void CreateRecoveryThread();
-    void RecoveryPerferredDevices();
+    void RecoveryPreferredDevices();
 
-    int32_t HandleRecoveryPerferredDevices(int32_t perferredType, int32_t deviceType,
+    int32_t HandleRecoveryPreferredDevices(int32_t preferredType, int32_t deviceType,
         int32_t usageOrSourceType);
 
     int32_t HandleDeviceChangeForFetchOutputDevice(unique_ptr<AudioDeviceDescriptor> &desc,
