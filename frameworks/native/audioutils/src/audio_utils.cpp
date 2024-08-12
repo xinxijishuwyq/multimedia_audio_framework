@@ -1216,11 +1216,13 @@ std::unordered_map<AudioStreamType, AudioStreamType> VolumeMapUtils::defaultVolu
     {STREAM_ALL, STREAM_ALL},
 };
 
-std::unordered_map<AudioStreamType, AudioStreamType>& VolumeMapUtils::GetVolumeMap() {
-    return defaultVolumeMap;
+std::unordered_map<AudioStreamType, AudioStreamType>& VolumeMapUtils::GetVolumeMap() 
+{
+    return defaultVolumeMap_;
 }
 
-AudioStreamType VolumeMapUtils::GetVolumeTypeFromStreamType(AudioStreamType streamType) {
+AudioStreamType VolumeMapUtils::GetVolumeTypeFromStreamType(AudioStreamType streamType) 
+{
     std::unordered_map<AudioStreamType, AudioStreamType> map = GetVolumeMap();
     auto it = map.find(streamType);
     if (it != map.end()) {

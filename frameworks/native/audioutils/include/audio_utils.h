@@ -235,7 +235,7 @@ public:
     static AudioStreamType GetVolumeTypeFromStreamType(AudioStreamType streamType);
 
 private:
-    static std::unordered_map<AudioStreamType, AudioStreamType> defaultVolumeMap;
+    static std::unordered_map<AudioStreamType, AudioStreamType> defaultVolumeMap_;
     static std::unordered_map<AudioStreamType, AudioStreamType>& GetVolumeMap();
 };
 
