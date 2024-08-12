@@ -442,7 +442,7 @@ napi_status NapiAudioCapturer::ReadFromNative(shared_ptr<AudioCapturerAsyncConte
         }
     }
     if (bytesRead <= 0) {
-        delete []buffer;
+        delete [] buffer;
         return status;
     }
     context->bytesRead = static_cast<size_t>(bytesRead);
@@ -478,7 +478,7 @@ napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)
 
     auto complete = [env, context](napi_value &output) {
         NapiParamUtils::CreateArrayBuffer(env, context->bytesRead, context->buffer, output);
-        delete []context->buffer;
+        delete [] context->buffer;
         context->buffer = nullptr;
     };
 
