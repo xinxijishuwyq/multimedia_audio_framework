@@ -893,7 +893,7 @@ int32_t AudioEffectChainManager::SetHdiParam(const std::string &sceneType, const
     effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO] = hdiEffectMode_;
     AUDIO_PRERELEASE_LOGI("set hdi room mode sceneType: %{public}d, effectMode: %{public}d", effectHdiInput_[1],
         effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO]);
-    ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi room mode failed");
         return ret;

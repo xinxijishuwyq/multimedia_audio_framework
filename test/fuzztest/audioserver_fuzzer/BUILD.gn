@@ -49,6 +49,7 @@ ohos_fuzztest("AudioServerFuzzTest") {
     "ipc:ipc_single",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
+    "hilog:libhilog",
   ]
 }
 
