@@ -262,8 +262,17 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
         audioStream_->SetApplicationCachePath(cachePath_);
     }
-
     int32_t ret = InitAudioStream(audioStreamParams);
+    // When the fast stream creation fails, a normal stream is created
+    if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
+        AUDIO_INFO_LOG("Create fast Stream fail, record by normal stream");
+        streamClass = IAudioStream::PA_STREAM;
+        audioStream_ = IAudioStream::GetRecordStream(streamClass, audioStreamParams, audioStreamType_, appInfo_.appUid);
+        CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "Get normal record stream failed");
+        ret = InitAudioStream(audioStreamParams);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init normal audio stream failed");
+        audioStream_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
 
     RegisterCapturerPolicyServiceDiedCallback();
