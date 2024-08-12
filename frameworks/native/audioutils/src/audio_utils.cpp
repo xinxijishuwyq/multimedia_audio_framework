@@ -1229,17 +1229,6 @@ AudioStreamType VolumeMapUtils::GetVolumeTypeFromStreamType(AudioStreamType stre
     return STREAM_MUSIC;
 }
 
-AudioStreamType VolumeMapUtils::GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage)
-{
-    AudioStreamType streamType = STREAM_MUSIC;
-    auto pos = streamTypeMap_.find(make_pair(contentType, streamUsage));
-    if (pos != streamTypeMap_.end()) {
-        streamType = pos->second;
-    }
-    return GetVolumeTypeFromStreamType(streamType);
-}
-
-
 std::string GetEncryptStr(const std::string &src)
 {
     if (src.empty()) {

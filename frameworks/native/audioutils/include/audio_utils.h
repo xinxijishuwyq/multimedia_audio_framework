@@ -233,7 +233,6 @@ public:
 class VolumeMapUtils {
 public:
     static AudioStreamType GetVolumeTypeFromStreamType(AudioStreamType streamType);
-    static AudioStreamType GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage);
 
 private:
     static std::unordered_map<AudioStreamType, AudioStreamType> defaultVolumeMap;

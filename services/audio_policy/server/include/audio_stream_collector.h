@@ -93,6 +93,7 @@ private:
     int32_t UpdateRendererDeviceInfo(DeviceInfo &outputDeviceInfo);
     int32_t UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceInfo);
     int32_t UpdateRendererStreamInternal(AudioStreamChangeInfo &streamChangeInfo);
+    AudioStreamType GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage);
     AudioStreamType GetStreamTypeFromSourceType(SourceType sourceType);
     void WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriterRenderStreamChangeSysEvent(AudioStreamChangeInfo &streamChangeInfo);
