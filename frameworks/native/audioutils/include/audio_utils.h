@@ -231,13 +231,13 @@ public:
     static const std::string GetDeviceVolumeTypeName(DeviceVolumeType deviceType);
 };
 
-class VolumeMapUtils {
+class VolumeUtils {
 public:
-    static AudioStreamType GetVolumeTypeFromStreamType(AudioStreamType streamType);
+    static AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
 
 private:
-    static std::unordered_map<AudioStreamType, AudioStreamType> defaultVolumeMap_;
-    static std::unordered_map<AudioStreamType, AudioStreamType>& GetVolumeMap();
+    static std::unordered_map<AudioStreamType, AudioVolumeType> defaultVolumeMap_;
+    static std::unordered_map<AudioStreamType, AudioVolumeType>& GetVolumeMap();
 };
 
 template<typename T>

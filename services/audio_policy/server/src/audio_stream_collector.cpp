@@ -836,7 +836,7 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
         if (changeInfo->rendererState != RENDERER_RUNNING) {
             continue;
         }
-        AudioStreamType rendererVolumeType = GetVolumeTypeFromContentUsage((changeInfo->rendererInfo).contentType,
+        AudioVolumeType rendererVolumeType = GetVolumeTypeFromContentUsage((changeInfo->rendererInfo).contentType,
             (changeInfo->rendererInfo).streamUsage);
         if (rendererVolumeType == volumeType) {
             // An active stream has been found, return true directly.
@@ -886,7 +886,7 @@ AudioStreamType AudioStreamCollector::GetVolumeTypeFromContentUsage(ContentType 
     if (pos != streamTypeMap_.end()) {
         streamType = pos->second;
     }
-    return VolumeMapUtils::GetVolumeTypeFromStreamType(streamType);
+    return VolumeUtils::GetVolumeTypeFromStreamType(streamType);
 }
 
 AudioStreamType AudioStreamCollector::GetStreamTypeFromSourceType(SourceType sourceType)
