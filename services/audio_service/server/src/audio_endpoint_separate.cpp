@@ -231,7 +231,7 @@ bool AudioEndpointSeparate::Config(const DeviceInfo &deviceInfo)
     }
 
     Volume vol = {true, 1.0f, 0};
-    AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(streamType_);
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType_);
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
     PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
     fastSink_->SetVolume(vol.volumeFloat, vol.volumeFloat);

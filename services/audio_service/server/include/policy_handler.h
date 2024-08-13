@@ -41,9 +41,6 @@ public:
 
     bool InitVolumeMap();
 
-    // keep same with AudioPolicyServer
-    AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
-
     bool GetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume &vol);
 
     void SetActiveOutputDevice(DeviceType deviceType);

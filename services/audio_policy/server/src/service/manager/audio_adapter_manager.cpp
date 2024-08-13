@@ -336,7 +336,7 @@ void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
         InitKVStoreInternal();
     }
 
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(STREAM_RING);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(STREAM_RING);
     int32_t volumeLevel =
         volumeDataMaintainer_.GetStreamVolume(STREAM_RING) * ((ringerMode != RINGER_MODE_NORMAL) ? 0 : 1);
 
@@ -348,7 +348,7 @@ void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
 
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 {
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t volumeLevel =
         volumeDataMaintainer_.GetStreamVolume(streamType) * (GetStreamMute(streamType) ? 0 : 1);
 
@@ -932,41 +932,6 @@ AudioStreamType AudioAdapterManager::GetStreamIDByType(std::string streamType)
     return stream;
 }
 
-AudioStreamType AudioAdapterManager::GetStreamForVolumeMap(AudioStreamType streamType)
-{
-    switch (streamType) {
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_MESSAGE:
-        case STREAM_VOICE_COMMUNICATION:
-        case STREAM_VOICE_CALL_ASSISTANT:
-            return STREAM_VOICE_CALL;
-        case STREAM_RING:
-        case STREAM_SYSTEM:
-        case STREAM_NOTIFICATION:
-        case STREAM_SYSTEM_ENFORCED:
-        case STREAM_DTMF:
-        case STREAM_VOICE_RING:
-            return STREAM_RING;
-        case STREAM_MUSIC:
-        case STREAM_MEDIA:
-        case STREAM_MOVIE:
-        case STREAM_GAME:
-        case STREAM_SPEECH:
-        case STREAM_NAVIGATION:
-            return STREAM_MUSIC;
-        case STREAM_VOICE_ASSISTANT:
-            return STREAM_VOICE_ASSISTANT;
-        case STREAM_ALARM:
-            return STREAM_ALARM;
-        case STREAM_ACCESSIBILITY:
-            return STREAM_ACCESSIBILITY;
-        case STREAM_ULTRASONIC:
-            return STREAM_ULTRASONIC;
-        default:
-            return STREAM_MUSIC;
-    }
-}
-
 DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
 {
     switch (deviceType) {
@@ -1132,7 +1097,7 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
 void AudioAdapterManager::ResetRemoteCastDeviceVolume()
 {
     for (auto &streamType: VOLUME_TYPE_LIST) {
-        AudioStreamType streamAlias = GetStreamForVolumeMap(streamType);
+        AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
         int32_t volumeLevel = GetMaxVolumeLevel(streamAlias);
         volumeDataMaintainer_.SaveVolume(DEVICE_TYPE_REMOTE_CAST, streamType, volumeLevel);
     }
@@ -1163,7 +1128,7 @@ void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
         // if read ringer mode success, data is loaded.
         isLoaded_ = volumeDataMaintainer_.GetRingerMode(ringerMode_);
     }
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(STREAM_RING);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(STREAM_RING);
     int32_t volumeLevel =
         volumeDataMaintainer_.GetStreamVolume(STREAM_RING) * ((ringerMode_ != RINGER_MODE_NORMAL) ? 0 : 1);
     // Save volume in local prop for bootanimation
@@ -1624,7 +1589,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
 {
     AUDIO_DEBUG_LOG("CalculateVolumeDbNonlinear for stream: %{public}d devicetype:%{public}d volumeLevel:%{public}d",
         streamType, deviceType, volumeLevel);
-    AudioStreamType streamAlias = GetStreamForVolumeMap(streamType);
+    AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t minVolIndex = GetMinVolumeLevel(streamAlias);
     int32_t maxVolIndex = GetMaxVolumeLevel(streamAlias);
     if (minVolIndex < 0 || maxVolIndex < 0 || minVolIndex >= maxVolIndex) {

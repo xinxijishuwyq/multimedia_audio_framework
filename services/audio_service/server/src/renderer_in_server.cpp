@@ -1029,7 +1029,7 @@ int32_t RendererInServer::OffloadSetVolume(float volume)
         return ERR_INVALID_PARAM;
     }
 
-    AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(processConfig_.streamType);
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
     Volume vol = {false, 0.0f, 0};
     PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
