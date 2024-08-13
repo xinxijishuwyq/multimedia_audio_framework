@@ -1051,13 +1051,26 @@ napi_status NapiParamUtils::SetExtraAudioParametersInfo(const napi_env &env,
 }
 
 napi_status NapiParamUtils::GetAudioSessionStrategy(const napi_env &env,
-    AudioSessionStrategy audioSessionStrategy, napi_value in)
+    AudioSessionStrategy &audioSessionStrategy, napi_value in)
 {
-    int32_t propValue = 0;
-    napi_status status = NapiParamUtils::GetValueInt32(env, "concurrencyMode", propValue, in);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetAudioSessionStrategy: Failed to retireve concurrencyMode");
-    audioSessionStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(propValue);
-    return status;
+    int32_t intValue = {0};
+    napi_status status = napi_generic_failure;
+    status = GetValueInt32(env, "concurrencyMode", intValue, in);
+    if (status == napi_ok) {
+        audioSessionStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(intValue);
+        return napi_ok;
+    } else {
+        AUDIO_ERR_LOG("invaild concurrencyMode");
+        return napi_generic_failure;
+    }
+}
+
+napi_status NapiParamUtils::SetAudioSessionDeactiveEvent(
+    const napi_env &env, const AudioSessionDeactiveEvent &deactiveEvent, napi_value &result)
+{
+    napi_create_object(env, &result);
+    SetValueInt32(env, "reason", static_cast<int32_t>(deactiveEvent.deactiveReason), result);
+    return napi_ok;
 }
 } // namespace AudioStandard
 } // namespace OHOS
