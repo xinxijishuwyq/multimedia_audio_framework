@@ -671,7 +671,7 @@ void AudioPolicyManagerStub::GetSinkLatencyFromXmlInternal(MessageParcel &data, 
     reply.WriteUint32(ret);
 }
 
-void AudioPolicyManagerStub::GetPerferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetPreferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioRendererInfo rendererInfo;
     rendererInfo.Unmarshalling(data);
@@ -679,7 +679,7 @@ void AudioPolicyManagerStub::GetPerferredOutputStreamTypeInternal(MessageParcel 
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::GetPerferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetPreferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioCapturerInfo capturerInfo;
     capturerInfo.Unmarshalling(data);
@@ -1546,10 +1546,10 @@ void AudioPolicyManagerStub::OnMiddleSecRemoteRequest(
             GetSinkLatencyFromXmlInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_OUTPUT_STREAM_TYPE):
-            GetPerferredOutputStreamTypeInternal(data, reply);
+            GetPreferredOutputStreamTypeInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_INPUT_STREAM_TYPE):
-            GetPerferredInputStreamTypeInternal(data, reply);
+            GetPreferredInputStreamTypeInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_TRACKER):
             RegisterTrackerInternal(data, reply);
