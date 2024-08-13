@@ -278,7 +278,6 @@ public:
     }
 private:
     std::vector<std::shared_ptr<AudioRendererOutputDeviceChangeCallback>> callbacks_;
-    std::shared_ptr<AudioRendererDeviceChangeCallback> oldCallback_;
     AudioRendererPrivate *renderer_ = nullptr;
     std::mutex audioRendererObjMutex_;
     std::mutex callbackMutex_;
