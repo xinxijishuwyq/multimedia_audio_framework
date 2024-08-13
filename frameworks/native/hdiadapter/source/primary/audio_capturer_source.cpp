@@ -22,6 +22,8 @@
 #include <dlfcn.h>
 #include <string>
 #include <cinttypes>
+#include <thread>
+#include <future>
 
 #include "securec.h"
 #ifdef FEATURE_POWER_MANAGER
@@ -109,6 +111,7 @@ private:
     void CheckLatencySignal(uint8_t *frame, size_t replyBytes);
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
+    int32_t DoStop();
 
     IAudioSourceAttr attr_ = {};
     bool sourceInited_ = false;
@@ -154,6 +157,8 @@ private:
     bool signalDetected_ = false;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     std::mutex managerAndAdapterMutex_;
+
+    std::mutex statusMutex_;
 };
 
 class AudioCapturerSourceWakeup : public AudioCapturerSource {
@@ -412,6 +417,7 @@ bool AudioCapturerSourceInner::IsInited(void)
 
 void AudioCapturerSourceInner::DeInit()
 {
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     Trace trace("AudioCapturerSourceInner::DeInit");
     AudioXCollie sourceXCollie("AudioCapturerSourceInner::DeInit", DEINIT_TIME_OUT_SECONDS);
     AUDIO_INFO_LOG("Start deinit of source inner");
@@ -579,6 +585,7 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
 
 int32_t AudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;
     openMic_ = attr_.openMicSpeaker;
@@ -647,8 +654,9 @@ float AudioCapturerSourceInner::GetMaxAmplitude()
 
 int32_t AudioCapturerSourceInner::Start(void)
 {
-    AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
 
+    AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
     Trace trace("AudioCapturerSourceInner::Start");
 
     InitLatencyMeasurement();
@@ -953,11 +961,11 @@ int32_t AudioCapturerSourceInner::GetPresentationPosition(uint64_t& frames, int6
     return ret;
 }
 
-int32_t AudioCapturerSourceInner::Stop(void)
+int32_t AudioCapturerSourceInner::DoStop()
 {
     AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
 
-    Trace trace("AudioCapturerSourceInner::Stop");
+    Trace trace("AudioCapturerSourceInner::DoStop");
 
     DeinitLatencyMeasurement();
 
@@ -983,8 +991,25 @@ int32_t AudioCapturerSourceInner::Stop(void)
     return SUCCESS;
 }
 
+int32_t AudioCapturerSourceInner::Stop(void)
+{
+    Trace trace("AudioCapturerSourceInner::Stop");
+    std::promise<void> promiseEnsueThreadLock;
+    auto futureWaitThreadLock = promiseEnsueThreadLock.get_future();
+    std::thread threadAsyncStop([&promiseEnsueThreadLock, this] {
+        std::lock_guard<std::mutex> statusLock(statusMutex_);
+        promiseEnsueThreadLock.set_value();
+        DoStop();
+    });
+    futureWaitThreadLock.get();
+    threadAsyncStop.detach();
+
+    return SUCCESS;
+}
+
 int32_t AudioCapturerSourceInner::Pause(void)
 {
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
 
     Trace trace("AudioCapturerSourceInner::Pause");
@@ -999,8 +1024,8 @@ int32_t AudioCapturerSourceInner::Pause(void)
 
 int32_t AudioCapturerSourceInner::Resume(void)
 {
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
-
     Trace trace("AudioCapturerSourceInner::Resume");
     if (paused_ && audioCapture_ != nullptr) {
         int32_t ret = audioCapture_->Resume(audioCapture_);
@@ -1013,8 +1038,8 @@ int32_t AudioCapturerSourceInner::Resume(void)
 
 int32_t AudioCapturerSourceInner::Reset(void)
 {
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
-
     Trace trace("AudioCapturerSourceInner::Reset");
     if (started_ && audioCapture_ != nullptr) {
         audioCapture_->Flush(audioCapture_);
@@ -1025,8 +1050,8 @@ int32_t AudioCapturerSourceInner::Reset(void)
 
 int32_t AudioCapturerSourceInner::Flush(void)
 {
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
-
     Trace trace("AudioCapturerSourceInner::Flush");
     if (started_ && audioCapture_ != nullptr) {
         audioCapture_->Flush(audioCapture_);
