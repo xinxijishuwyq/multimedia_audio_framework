@@ -55,7 +55,7 @@ static const std::string PIPE_DISTRIBUTED_INPUT = "distributed_input";
 static const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 std::string PIPE_WAKEUP_INPUT = "wakeup_input";
 static const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
-static const int32_t WAIT_OFFLOAD_CLOSE_TIME_S = 3; // 3s
+static const int32_t WAIT_OFFLOAD_CLOSE_TIME_S = 10; // 10s
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
 static const int64_t SELECT_DEVICE_MUTE_MS = 200000; // 200ms
 static const int64_t SELECT_OFFLOAD_DEVICE_MUTE_MS = 600000; // 600ms
@@ -772,7 +772,12 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
         offloadSessionID_ = sessionId;
 
         AUDIO_DEBUG_LOG("sessionId[%{public}d] try get offload stream", sessionId);
-        MoveToNewPipeInner(sessionId, PIPE_TYPE_OFFLOAD);
+        if (MoveToNewPipeInner(sessionId, PIPE_TYPE_OFFLOAD) != SUCCESS) {
+            AUDIO_ERR_LOG("sessionId[%{public}d]  CallingUid[%{public}d] StreamType[%{public}d] "
+                "failed to offload stream", sessionId, CallingUid, streamType);
+            offloadSessionID_.reset();
+            return;
+        }
         SetOffloadMode();
     } else {
         if (sessionId == *(offloadSessionID_)) {
@@ -6263,13 +6268,13 @@ int32_t AudioPolicyService::LoadOffloadModule()
     {
         std::lock_guard<std::mutex> lock(offloadOpenMutex_);
         if (IOHandles_.find(OFFLOAD_PRIMARY_SPEAKER) != IOHandles_.end()) {
-            AUDIO_ERR_LOG("offload is open");
-            return ERROR;
+            AUDIO_INFO_LOG("offload is open");
+            return SUCCESS;
         }
 
         DeviceType deviceType = DEVICE_TYPE_SPEAKER;
         AudioModuleInfo moduleInfo = ConstructOffloadAudioModuleInfo(deviceType);
-        OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+        return OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
     }
     return SUCCESS;
 }
@@ -6407,7 +6412,7 @@ int32_t AudioPolicyService::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType
     streamCollector_.GetPipeType(sessionId, oldPipeType);
     if (oldPipeType == pipeType) {
         AUDIO_ERR_LOG("the same type [%{public}d],no need to move", pipeType);
-        return ERROR;
+        return SUCCESS;
     }
     Trace trace("AudioPolicyService::MoveToNewPipeInner");
     AUDIO_INFO_LOG("start move stream into new pipe %{public}d", pipeType);
@@ -6420,8 +6425,9 @@ int32_t AudioPolicyService::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType
             if (!CheckStreamOffloadMode(sessionId, streamType)) {
                 return ERROR;
             }
-            LoadOffloadModule();
-
+            if (LoadOffloadModule() != SUCCESS) {
+                return ERROR;
+            }
             portName = GetSinkPortName(deviceType, pipeType);
             ret = MoveToOutputDevice(sessionId, portName);
             break;
