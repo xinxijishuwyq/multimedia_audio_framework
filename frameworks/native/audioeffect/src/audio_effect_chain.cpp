@@ -166,7 +166,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     if (audioEffectRotation == nullptr) {
         data[3] = 0; // 3:rotation index
     } else {
-        data[3] = audioEffectRotation->GetRotation(); // 3:rotation index
+        data[3] = static_cast<int32_t>(audioEffectRotation->GetRotation()); // 3:rotation index
     }
 #else
     data[3] = 0; // 3:rotation index
@@ -179,7 +179,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
         data[4] = audioEffectVolume->GetApVolume(sceneType_); // 4:volume index
     }
     AUDIO_DEBUG_LOG("set ap integration volume: %{public}d", data[4]); // 4:volume index
-    data[5] = extraEffectChainType_; // 5:extra effect chain type index
+    data[5] = static_cast<int32_t>(extraEffectChainType_); // 5:extra effect chain type index
     AUDIO_DEBUG_LOG("set extra effect chain type: %{public}d", extraEffectChainType_);
     data[6] = spatialDeviceType_; // 6:spatial device type index
     AUDIO_DEBUG_LOG("set ap integration spatial device type: %{public}d", data[6]); // 6:spatial device type index
