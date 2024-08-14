@@ -96,7 +96,6 @@
               "//foundation/multimedia/audio_framework/sa_profile:audio_service_sa_profile",
               "//foundation/multimedia/audio_framework/services/audio_service:audio_service_packages",
               "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_packages",
-              "//third_party/pulseaudio/ohosbuild:pulseaudio_packages",
               "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/modules:pa_extend_modules"
             ]
           },

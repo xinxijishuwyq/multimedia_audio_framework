@@ -19,4 +19,24 @@ group("pa_extend_modules") {
     "hdi:module-hdi-sink",
     "hdi:module-hdi-source",
   ]
+
+  external_deps = [
+    "pulseaudio:cli",
+    "pulseaudio:module-cli-protocol-unix",
+    "pulseaudio:module-native-protocol-fd",
+    "pulseaudio:module-native-protocol-tcp",
+    "pulseaudio:module-native-protocol-unix",
+    "pulseaudio:module-suspend-on-idle",
+    "pulseaudio:pa_client_config",
+    "pulseaudio:pa_daemon_config",
+    "pulseaudio:pa_default_config",
+    "pulseaudio:protocol-cli",
+    "pulseaudio:protocol-native",
+    "pulseaudio:pulse",
+    "pulseaudio:pulse-simple",
+    "pulseaudio:pulseaudio",
+    "pulseaudio:pulsecommon",
+    "pulseaudio:pulsecore",
+    "pulseaudio:sonic",
+  ]
 }
