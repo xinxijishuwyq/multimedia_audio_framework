@@ -78,7 +78,7 @@ void NapiAudioSessionCallback::WorkCallbackAudioSessionChangeDone(uv_work_t *wor
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-    AUDIO_DEBUG_LOG("JsCallBack %{public}s, uv_queue_work_with_qos start", request.c_str());
+    AUDIO_INFO_LOG("JsCallBack %{public}s, uv_queue_work_with_qos start", request.c_str());
     do {
         CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s canceled", request.c_str());
 
@@ -87,17 +87,15 @@ void NapiAudioSessionCallback::WorkCallbackAudioSessionChangeDone(uv_work_t *wor
         CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
             request.c_str());
 
-        // Call back function
         napi_value args[ARGS_ONE] = { nullptr };
-        NapiParamUtils::SetValueInt32(env, "deactiveReason",
-            static_cast<int32_t>(event->audioSessionDeactiveEvent.deactiveReason), args[PARAM0]);
+        NapiParamUtils::SetAudioSessionDeactiveEvent(env, event->audioSessionDeactiveEvent, args[PARAM0]);
         CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
-            "%{public}s fail to create ringer mode callback", request.c_str());
+            "%{public}s fail to SetAudioSessionDeactiveEvent callback", request.c_str());
 
         const size_t argCount = ARGS_ONE;
         napi_value result = nullptr;
         nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call audioSession callback",
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call SetaudioSession callback",
             request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);

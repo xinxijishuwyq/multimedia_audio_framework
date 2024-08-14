@@ -88,7 +88,7 @@ napi_value NapiAudioSessionMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("activateAudioSession", ActivateAudioSession),
         DECLARE_NAPI_FUNCTION("deactivateAudioSession", DeactivateAudioSession),
-        DECLARE_NAPI_FUNCTION("IsAudioSessionActivated", IsAudioSessionActivated),
+        DECLARE_NAPI_FUNCTION("isAudioSessionActivated", IsAudioSessionActivated),
     };
 
     status = napi_define_class(env, AUDIO_SESSION_MGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -148,7 +148,7 @@ napi_value NapiAudioSessionMgr::ActivateAudioSession(napi_env env, napi_callback
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetAudioSessionStrategy(env, context->audioSessionStrategy, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "getvoltype failed",
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "getAudioSessionStrategy failed",
             NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
@@ -245,7 +245,7 @@ void NapiAudioSessionMgr::RegisterAudioSessionCallback(napi_env env, napi_value 
 
     std::shared_ptr<NapiAudioSessionCallback> cb =
         std::static_pointer_cast<NapiAudioSessionCallback>(napiSessionMgr->audioSessionCallbackNapi_);
-    cb->SaveCallbackReference(args[PARAM0]);
+    cb->SaveCallbackReference(args[PARAM1]);
 
     AUDIO_INFO_LOG("OnRendererStateChangeCallback is successful");
 }
