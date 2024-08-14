@@ -152,7 +152,7 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager(
  *
  * @param audioSessionManager the {@link #OH_AudioSessionManager}
  * returned by the {@link #OH_AudioManager_GetAudioSessionManager}
- * @param strategy the {@link #OH_AudioSession_Strategy}
+ * @param strategy pointer of {@link #OH_AudioSession_Strategy}
  * which is used for setting audio session strategy
  * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
  * or {@link #AUDIOCOMMON_REULT_INVALID_PARAM} if parameter validation fails
@@ -160,7 +160,7 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager(
  * @since 12
  */
 OH_AudioCommon_Result OH_AudioSessionManager_ActivateAudioSession(
-    OH_AudioSessionManager *audioSessionManager, OH_AudioSession_Strategy strategy);
+    OH_AudioSessionManager *audioSessionManager, const OH_AudioSession_Strategy *strategy);
 
 /**
  * @brief Deactivate the audio session for the current pid application.

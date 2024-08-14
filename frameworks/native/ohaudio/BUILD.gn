@@ -181,6 +181,7 @@ ohos_executable("oh_audio_session_manager_test") {
   include_dirs = [
     "../../../interfaces/kits/c/audio_manager/",
     "../../../interfaces/kits/c/common/",
+    "../../../interfaces/kits/c/audio_renderer/",
   ]
 
   sources = [ "test/example/oh_audio_session_manager_test.cpp" ]
