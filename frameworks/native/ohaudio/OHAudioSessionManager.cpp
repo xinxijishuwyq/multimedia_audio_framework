@@ -58,14 +58,14 @@ OH_AudioCommon_Result OH_AudioSessionManager_UnregisterSessionDeactivatedCallbac
 }
 
 OH_AudioCommon_Result OH_AudioSessionManager_ActivateAudioSession(
-    OH_AudioSessionManager *audioSessionManager, OH_AudioSession_Strategy strategy)
+    OH_AudioSessionManager *audioSessionManager, const OH_AudioSession_Strategy *strategy)
 {
     OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
     OHOS::AudioStandard::AudioSessionStrategy audioStrategy;
     audioStrategy.concurrencyMode =
-        static_cast<OHOS::AudioStandard::AudioConcurrencyMode>(strategy.concurrencyMode);
+        static_cast<OHOS::AudioStandard::AudioConcurrencyMode>(strategy->concurrencyMode);
     return ohAudioSessionManager->ActivateAudioSession(audioStrategy);
 }
 
