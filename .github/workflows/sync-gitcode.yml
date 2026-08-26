@@ -1,4 +1,4 @@
-name: Sync from GitCode
+name: Trace GitCode large file
 
 on:
   push:
@@ -7,17 +7,23 @@ on:
       - .github/workflows/sync-gitcode.yml
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  sync:
+  trace:
     runs-on: ubuntu-latest
     steps:
-      - name: Sync GitCode master to GitHub master
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Trace commits containing oversized file
         run: |
           set -euo pipefail
           git clone --bare --single-branch --branch master https://gitcode.com/openharmony/multimedia_audio_framework.git upstream.git
           cd upstream.git
-          git push --force-with-lease=refs/heads/master:${GITHUB_SHA} "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" refs/heads/master:refs/heads/master
+          FILE='.vs/multimedia_audio_framework/v17/ipch/AutoPCH/3abffa31398b1c9d/AUDIO_POLICY_SERVER.ipch'
+          echo '=== FIRST ADDITION ==='
+          git log master --reverse --diff-filter=A --format='%H%x09%aI%x09%an%x09%s' -- "$FILE"
+          echo '=== ALL PATH CHANGES ==='
+          git log master --format='%H%x09%aI%x09%an%x09%s' -- "$FILE"
+          echo '=== BLOBS AND SIZES ==='
+          git rev-list --objects master | awk -v path="$FILE" 'index($0, " " path) {print $1}' | sort -u | while read -r oid; do
+            printf '%s\t%s bytes\n' "$oid" "$(git cat-file -s "$oid")"
+          done
