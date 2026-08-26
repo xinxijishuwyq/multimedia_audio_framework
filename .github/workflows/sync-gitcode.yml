@@ -13,11 +13,11 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Mirror GitCode master to GitHub master
+      - name: Sync GitCode master to GitHub master
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          git clone --mirror https://gitcode.com/openharmony/multimedia_audio_framework.git upstream.git
+          git clone --bare --single-branch --branch master https://gitcode.com/openharmony/multimedia_audio_framework.git upstream.git
           cd upstream.git
           git push --force-with-lease=refs/heads/master:${GITHUB_SHA} "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" refs/heads/master:refs/heads/master
